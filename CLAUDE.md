@@ -4,7 +4,7 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 ## 1. The documents, and their order
 
-1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.0, frozen 2026-09-07. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.1 — frozen at 0.5.0 on 2026-09-07 and patched the same day (D-135 – D-138); wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
 2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-131 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
 3. `recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
 4. `provenance/` — `WISHMAIL SPEC v0 3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.

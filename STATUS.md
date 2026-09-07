@@ -1,10 +1,12 @@
 # STATUS — WISHMail, ETHOnline 2026
 
-The one file in this repository where ordering is allowed. Specification: 0.5.0 (frozen 2026-09-07). Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+The one file in this repository where ordering is allowed. Specification: 0.5.1 — frozen at 0.5.0 on 2026-09-07 and patched the same day (D-135 – D-138); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
 
 ## 1. Scope line (RECORD)
 
 The Excalidraw map is the ratified scope: **green/blue = BUILD, orange = STRETCH, dashed = SPEC or VENUE.** Full product is the judging posture; the registry layer is load-bearing. Do not re-propose scoping down.
+
+**The spec and the BUILD are not the same document** (Sonic, 2026-09-07): *the spec survives ongoing development; the BUILD is for this window.* A scope question is therefore answered twice and not once — what this window ships, and what the specification says. Where the BUILD is narrower, it defers a claim and says so in LIMITATIONS rather than widening the specification to fit, and rather than inventing a deployment artifact to make a claim true. The first instance is the POSTMASTER claim's deferral on T-P16-1, §4 below.
 
 ## 2. Build set, as ranked by Sonic (RECORD, D-23; carried from v0.3 §17 with the spec's current names)
 
@@ -49,9 +51,12 @@ VERIFIER before anything that writes: it is the floor of every class, it needs n
 | `$POSTAGE` token ID + treasury, `hedera:testnet` | `spec/pins.json`, §4.1 table, LIMITATIONS | unfilled — T-P9-2 blocks any claim until filled |
 | Price topic (`wishmail:prices:1`) | claim `prices`, LIMITATIONS | unfilled |
 | x402 facilitator for `hedera:testnet` | price list `methods[].facilitator`, LIMITATIONS L-11 | **filled (D-132, RECORD 09-07)** — x402.org: `https://x402.org/facilitator`, scheme `exact`, `hedera:testnet`, USDC `0.0.429274` (6 dp), fee payer `0.0.9185802`, no signup. `hedera:mainnet`: none anywhere |
-| `hbar` leg `rate.source` | price list `methods[].rate`, LIMITATIONS | unfilled — Sonic's stated preference: SaucerSwap HBAR/USDC (ledger E, Q-6; RECORD) |
-| Reference Postmaster price numbers | price topic | RECORD (ledger E, Q-6): $0.10 USDC per stamp; bundle of 12 for $1.00; HBAR by rate, fallback fixed unit price at HBAR = $0.07 |
+| `hbar` leg `rate.source` | price list `methods[].rate`, LIMITATIONS | **fetched 09-07** — `https://api.saucerswap.finance/tokens`, pair `HBAR/USD`, read as HBAR's `priceUsd` at `id: "0.0.0"` (ledger §H). Written into the price list when it is published; the reader is `buy_stamp`'s, downstream |
+| Reference Postmaster price numbers | price topic | RECORD (ledger E, Q-6; bundle on both legs, Sonic 09-07): $0.10 USDC per stamp; bundle of 12 for $1.00 on **both** methods; the `hbar` leg carries `rate.reference` of $0.10 USD and no `unitPrice` (D-136); fallback, if the rate source fails, a fixed unit price at HBAR = $0.07 |
 | Registered schema digests (14) + wire strings | `spec/pins.json` (T-P9-9) | unfilled until HCS-13 registration |
+| HIP-991, HIP-423 | §1.6, `spec/pins.json` | **filled 09-07 (D-135)** — both were `n/a`; every doorbell property had been second-hand from our own ADRs |
+
+**Deferred claim (RECORD, Sonic 09-07).** The MVP BUILD covers **pre-funded Hedera accounts only**, so the first price list carries exactly the two `hedera:testnet` methods and the **POSTMASTER claim is deferred on T-P16-1**. §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" — is unmet by this deployment, and that is stated rather than dodged: no non-Hedera method is invented to make the claim true. Stated in LIMITATIONS where §15.5 expects it. The underlying contradiction between §14.2 and L-11 is a spec question, not a build item, and is logged in ledger §G item 8 for the next spec pass; it was deliberately **not** patched in 0.5.1.
 
 ## 5. Build facts the spec does not carry
 

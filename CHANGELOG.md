@@ -2,6 +2,39 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.1] — 2026-09-07
+
+A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). Two schemas change, which a patch permits **only because nothing is registered under HCS-13 yet**: §1.7 says a patch "changes no wire string, and once a minor version's schemas are registered it changes no schema," and `registeredSchemas` in `spec/pins.json` is null throughout (T-P9-9). After registration the same corrections would be 0.6. The register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways.
+
+The repository's **first `CHANGED` markers**, which D-131 set the convention up for: `D-135` on §1.6, `D-136` on §5.4 and §14.3, and `D-135, D-136` on §18.2's index.
+
+### Added
+
+- **§1.6 pins HIP-991 and HIP-423** (D-135) **[S]** ruling, **[CC]** fetch and text. Both rows read `Final · n/a`. FETCHED 2026-09-07 from `hashgraph/hedera-improvement-proposal`: HIP-991 @ `03701720`, `HIP/hip-991.md`, blob `179b61be…`, sha256 `772a8504…`, release 0.59.5; HIP-423 @ `0c4f195b`, `HIP/hip-423.md`, blob `f5fbb1d4…`, sha256 `2bcf4d7c…`, release v0.57.0. `spec/pins.json`'s `hips` block filled to the standards shape. **This closed a real exposure:** every property the doorbell of §4.4 depends on — a fee denominated in a fungible HTS token, the fee-exempt key list, the fee schedule key — had entered this repository as assertion in its own ADRs, and Q-12 was closed and the stamp made fungible on that basis. D-020, D-044 and D-049 gain the citation beside their inference and are not edited away. Two facts were nowhere recorded before the fetch: that a topic created without a fee schedule key can never gain one (`:97`), and that HIP-991 waives a fee **by signature** (`:110-113`).
+- **`StampReceipt.rate`** (D-136), `{source, pair, value, at}`, present exactly when the method that bought the stamps is priced by reference. Closes §14.3's "the receipt records the rate used and when," which §5.4 had given no field for — a gap raised at the outfitting and carried in `stamp-receipt.schema.json`'s `$comment` until now.
+- **`rate.reference {amount, asset}`** in §14.3 (D-136). T-P11-4's third branch — "the referenced rate applied to the reference price" — had named a reference price that was not a field of anything. It is one now, so the test **becomes true rather than being changed**, and three pricing branches map to three fields exactly.
+
+### Changed
+
+- **Prices are decimal strings in the asset's natural unit** (D-136) **[S]**: never atomic units, which bake a network's decimals into a document a Verifier reads, and never JSON numbers, since §5.1 canonicalizes under RFC 8785 and a float is a hazard. Conversion to atomic units happens when the x402 `PAYMENT-REQUIRED` is issued.
+- **A rate-priced method carries `rate` in place of `unitPrice`, never both** (D-136). A published `unitPrice` on a rate-priced method is a number nobody charges, which §14.3's own MUST forbids. A bundle's price follows its method's pricing basis — the method's asset when fixed-priced, the reference asset when rate-priced — so one bundle of twelve for $1.00 is offered on both legs alike (§4.5).
+- **§14.3's two pipes are read differently** (D-136). `payTo | facilitator` is **inclusive**, because §14.2 has the `PAYMENT-REQUIRED` carry the Postmaster's receiving address — which *is* `payTo` — so an x402 method needs it alongside `facilitator`. `unitPrice | rate` is **exclusive**. `price-list.schema.json` had encoded the first as `oneOf` at the outfitting; that was an over-reading by **[CC]** and would have rejected the very message this deployment publishes. Now `anyOf` and `oneOf` respectively.
+- **T-P7-4 tests that an owner's answer costs nothing** (D-137) **[S]**. FETCHED from the pinned HCS-10 blob: `index.md:498` has an agent send `connection_created` "on its own Inbound Topic," memo `hcs-10:op:4:1` (`:522`, topic type 1 = inbound per `:362`). Unexempted, a recipient pays a stamp to answer its own doorbell — so §4.4's "owes nothing to answer" is false and, more sharply, so is its arithmetic: "first contact therefore costs one stamp to ring" becomes two. The row tests the outcome, not the mechanism; §4.4's exemption stays a MAY. No requirement added, nothing to invalidate (T-P9-2 blocks every claim), so not a minor bump.
+- **T-P17-1 follows the declared policy for each topic type** (D-138) **[S]**. §4.6's "owned by keys the agent generated" means the *admin* key; the row's "admin/submit keys set to the agent's keys" over-read it, and **no doorbell could satisfy it** — an inbound topic must accept a stranger's `connection_request`. The pinned HCS-10 text is explicit (`index.md:113-114`): inbound is "Public (No Key), Submit Key, or Fee-gated (HIP-991)", outbound "Has submit key (only agent can write)". D-138 carries the key policy as a table, and because the reference Postmaster provisions its own agent by the customer path, that table is the template every provisioned agent inherits.
+- Ledger §B rows **D-135 – D-138**; §H rows for HIP-991, HIP-423, the HCS-10 key configurations, and SaucerSwap — the last being its first entry in the register, having appeared twice in the whole repository until now, both times as an unfilled preference.
+- §18.2's ADR index states its own criterion — a decision that shaped no sentence of the document is not indexed — and gains D-135 and D-136, which did. D-132, D-133, D-134, D-137 and D-138 stay out, unchanged in effect from the outfitting's note.
+- Version strings: `README.md`, `STATUS.md`, `LIMITATIONS.md`, `CONTRIBUTING.md`, `CLAUDE.md`, the ledger's title and resume block. §18.2's "D-125 Frozen as 0.5.0" row is history and stands.
+
+### Fixed
+
+- Ledger §B row ordering: **D-88** sat between D-131 and D-132, and **D-65** between D-81 and D-82. Both returned to sequence; §B is now D-42 – D-138 ascending with no gaps. **[CC]** (D-65 was not in the reported defect list and was found by the ordering check.)
+- The ledger's title read `# WISHMail v0.4.2 — Working ledger` against a v0.5 filename and a 0.5.0 text.
+
+### Deferred, not fixed
+
+- **The POSTMASTER claim is deferred on T-P16-1** (RECORD **[S]**). The MVP BUILD covers pre-funded Hedera accounts only, so both published methods are on `hedera:testnet` and §14.2's MUST — at least one method requiring no pre-funded Hedera account — is unmet. Stated in LIMITATIONS under L-11 and in STATUS §4. **No non-Hedera method was invented to make the claim true.**
+- **The §14.2 / L-11 seam is logged, not patched.** §14.2 says that on a Hedera network the buyer "has an account already"; L-11 says the keyless leg "is satisfied on `hedera:testnet` through this facilitator." Both cannot hold. Ledger §G item 8 carries it with both citations for the next specification pass; §19.3 is the identified home, and writing it there in this patch would have added a third `CHANGED` marker.
+
 ## [Unreleased]
 
 ### 2026-09-07 — repository outfitting (STATUS.md §3 step 0; CLAUDE.md §4) **[CC]**

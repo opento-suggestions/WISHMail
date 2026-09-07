@@ -3,7 +3,7 @@
   "$id": "urn:wishmail:0.5:stamp-receipt",
   "title": "StampReceipt",
   "description": "StampReceipt — WISHMAIL_SPEC_v0_5.md §5.4.",
-  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it. NOTE: §14.3 says \"the receipt records the rate used and when\" for a method priced by reference to another asset, and §5.4 gives StampReceipt no rate field. This schema tracks §5.4. The gap is raised as a decision candidate and is not closed here.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it. NOT EXPRESSIBLE HERE, HELD BY TEST: `rate` is present exactly when the method that bought these stamps is priced by reference (§5.4, §14.3), which this schema cannot check because the method is not carried on the receipt; T-P11-4 is the court. D-136 (0.5.1) added `rate` and closed the gap this comment previously raised.",
   "type": "object",
   "properties": {
     "ledgerTag": {
@@ -46,6 +46,36 @@
       ],
       "additionalProperties": false,
       "description": "What was charged. §14.3: exactly what the price message current at the purchase yields (T-P11-4)."
+    },
+    "rate": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "The source the Postmaster read, as the price list names it (§14.3)."
+        },
+        "pair": {
+          "type": "string",
+          "description": "The pair the Postmaster read, as the price list names it (§14.3)."
+        },
+        "value": {
+          "type": "string",
+          "description": "The rate the Postmaster read, as a decimal string (§14.3, D-136)."
+        },
+        "at": {
+          "type": "string",
+          "description": "When it read it."
+        }
+      },
+      "required": [
+        "source",
+        "pair",
+        "value",
+        "at"
+      ],
+      "additionalProperties": false,
+      "description": "Present exactly when the method that bought these stamps is priced by reference to another asset (§5.4, §14.3). Absent on a fixed-price method.",
+      "$comment": "§14.3: \"the receipt records the rate used and when\". T-P11-4 is the court for presence, since the receipt does not carry the method."
     },
     "holder": {
       "type": "string",

@@ -60,14 +60,16 @@
             "type": "string"
           },
           "payTo": {
-            "type": "string"
+            "type": "string",
+            "description": "The Postmaster’s receiving address (§14.2). Present on every method; a method settled through a facilitator carries both (§14.3, D-136)."
           },
           "facilitator": {
-            "type": "string"
+            "type": "string",
+            "description": "The facilitator that settles this leg, where one does (§14.2)."
           },
           "unitPrice": {
             "type": "string",
-            "description": "The price of one stamp in the method’s asset."
+            "description": "The price of one stamp in the method’s asset, as a decimal string in that asset’s natural unit — never atomic units, never a JSON number (§14.3, D-136). Absent on a rate-priced method."
           },
           "bundles": {
             "type": "array",
@@ -88,7 +90,7 @@
               ],
               "additionalProperties": false
             },
-            "description": "A price for a count, offered to everyone alike (§4.5, §14.3)."
+            "description": "A price for a count, offered to everyone alike (§4.5, §14.3). A bundle’s price follows its method’s pricing basis: the method’s own asset where the method is fixed-priced, the reference asset where it is rate-priced (§14.3, D-136)."
           },
           "rate": {
             "type": "object",
@@ -98,36 +100,72 @@
               },
               "pair": {
                 "type": "string"
+              },
+              "reference": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "The price of one stamp in the reference asset, as a decimal string (§14.3, D-136)."
+                  },
+                  "asset": {
+                    "type": "string",
+                    "description": "The reference asset the rate converts from."
+                  }
+                },
+                "required": [
+                  "amount",
+                  "asset"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
               "source",
-              "pair"
+              "pair",
+              "reference"
             ],
             "additionalProperties": false,
-            "description": "For a method priced by reference to another asset (§14.2, §14.3)."
+            "description": "For a method priced by reference to another asset (§14.2, §14.3). Carried in place of `unitPrice`; `source` and `pair` name what the Postmaster reads at purchase to convert `reference` into the amount it quotes."
           }
         },
         "required": [
           "method",
           "network",
-          "asset",
-          "unitPrice"
+          "asset"
         ],
         "additionalProperties": false,
-        "oneOf": [
+        "allOf": [
           {
-            "required": [
-              "payTo"
+            "anyOf": [
+              {
+                "required": [
+                  "payTo"
+                ]
+              },
+              {
+                "required": [
+                  "facilitator"
+                ]
+              }
             ]
           },
           {
-            "required": [
-              "facilitator"
+            "oneOf": [
+              {
+                "required": [
+                  "unitPrice"
+                ]
+              },
+              {
+                "required": [
+                  "rate"
+                ]
+              }
             ]
           }
         ],
-        "$comment": "§14.3 writes the receiving party as `payTo | facilitator`: exactly one of the two."
+        "$comment": "§14.3's two pipes are read differently, and D-136 records why. `payTo | facilitator` is INCLUSIVE — §14.2 has the PAYMENT-REQUIRED carry the Postmaster's receiving address, which is `payTo`, so an x402 method needs it alongside `facilitator`, not instead of it — hence anyOf. `unitPrice | rate` is EXCLUSIVE — a method priced two ways publishes a number nobody charges, which §14.3's own MUST forbids — hence oneOf."
       }
     },
     "provisioning": {

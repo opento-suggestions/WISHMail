@@ -7,8 +7,8 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.0 |
-| Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3) |
+| Specification | 0.5.1 |
+| Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
 | Ledger tags deployed | `hedera:testnet` only (§15.5) |
@@ -46,6 +46,10 @@ A Postmaster that will not sell, a doorbell that does not answer, a registry tha
 
 Four of the six pinned HCS standards (HCS-10, HCS-11, HCS-13, HCS-14) are `Draft` and change by pull request; HCS-1 and HCS-2 are `Published`. This release conforms to the blobs named in §1.6 at `hiero-ledger/hiero-consensus-specifications @ 7046156c` and to `x402-foundation/x402 @ 0c04a84e`, recorded in `spec/pins.json`, and not to any later text. HCS-10's size limit is stated as one kilobyte and nowhere in bytes; this release enforces `CHUNK_WIRE_MAX` = 1000 bytes on the whole `message` operation (§7.4).
 
+A second silence in the same standard bears on the doorbell. HCS-10 offers the inbound topic as "Public (No Key), Submit Key, or Fee-gated (HIP-991)" (`index.md:113`) and has an agent answer a connection request "on its own Inbound Topic" (`index.md:498`) — but the word "exempt" does not appear anywhere in the pinned blob. The standard therefore describes a fee-gated inbound topic without addressing that its owner must submit to it to answer, and would have the owner pay to answer its own door. This release exempts the agent's own key at the doorbell's creation, so first contact costs the one stamp §4.4 says it costs (D-137, D-138; T-P7-4).
+
+HIP-991 and HIP-423 were carried in §1.6 as `n/a` until 2026-09-07 and are now pinned by blob (D-135). Until that fetch, every property this release's doorbell depends on — a fee denominated in a fungible HTS token, the fee-exempt key list, the fee schedule key — rested on assertions in this project's own decision records rather than on the standard's text.
+
 ## L-8 — Registry roots are what they are
 
 `nanda`: a NANDA v2 index is a database served by one operator over TLS with nothing signed, logged, or snapshottable; every `nanda` resolution is endorsed `blurred`, proves where the sender was told to send, and cannot be re-obtained by anyone later (§9.4). `hol`: a registration submitted through the broker is anchored under the registry operator's key and resolves `blurred`; the mainnet anchor has been observed silent for months; an agent the broker lists but the ledger does not is unresolvable (§9.5). `dns`: unsigned answers are `blurred`. HCS-14's `registry` parameter is a routing hint and endorses nothing. This release recommends, and its provisioning offers, declaration under `hcs14` with the agent's own key.
@@ -61,6 +65,10 @@ Mirror independence is required and tested (T-P4-3); running-hash verification i
 ## L-11 — The USDC leg on a Hedera network is testnet-only at this version
 
 A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a mainnet USDC-on-Hedera leg would need a self-hosted facilitator. This release's `x402-usdc` method names the **x402.org facilitator** — `https://x402.org/facilitator`, scheme `exact`, network `hedera:testnet`, asset USDC `0.0.429274` (6 decimals), facilitator fee payer `0.0.9185802`, requiring no signup, API key, or credit (D-132). Its `/supported` endpoint offered `hedera:testnet` and no Hedera mainnet when read unauthenticated on 2026-09-06, and the x402 documentation lists the same on 2026-09-07; the x402 repository's own facilitator documentation marks x402.org "Testnet only", "Requirements: None", and mentions Hedera nowhere else. The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator. The upstream scheme's replay rule is a SHOULD; this release's own durable payment-reference record is what prevents a second purchase (§14.2, T-P11-5). Account creation for a keyless buyer is by the Postmaster's stamp transfer to a public-key alias (§4.6), never by the settlement.
+
+**This release defers the POSTMASTER claim on T-P16-1, and says why.** Both methods it offers are on `hedera:testnet`, and §14.2 states that on a Hedera network "the buyer signs a Hedera transfer of USDC and so has an account already." So neither method requires no pre-funded Hedera account, and §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" (`Conformance:` T-P16-1) — is unmet here. The reference deployment covers pre-funded Hedera accounts only at this version; it does not add a non-Hedera method to make the claim true, and it does not claim POSTMASTER until the suite passes in full (§1.5, T-P15-3).
+
+That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1.
 
 ## L-12 — A stamp is fungible
 

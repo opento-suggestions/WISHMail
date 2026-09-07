@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.0
+# WISHMail — Specification v0.5.1
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -150,6 +150,7 @@ A claim is scoped to the classes, profiles, and pins it names. Silence claims no
 
 WISHMail rides on standards that are Draft. A pin is a content identifier for a standard's text: the git blob of the standard's file at a named commit in its canonical repository. The canonical repository of the HCS standards is `hiero-ledger/hiero-consensus-specifications`; this specification conforms to the text at commit `7046156c85eaaf29e149fa10232964d33a58d34e`, file by file:
 
+<!-- CHANGED: D-135 -->
 ```
 Standard     Role in WISHMail                     Status      Pin (path · git blob)
 HCS-10       transport                            Draft       docs/standards/hcs-10/index.md · 0cb5d2eb6b98e12e4b44fa8c4fea6e10937b615a
@@ -164,8 +165,10 @@ x402 v2      purchase leg (§14)                   —           x402-foundation
                HTTP transport                                 specs/transports-v2/http.md · a21213c02706208b2268a5fdab7dc6d5b468edbd
                exact scheme                                   specs/schemes/exact/scheme_exact.md · fe27f3c2a971fcc8325c9f65c85bc19f8f93271f
                exact scheme, Hedera                           specs/schemes/exact/scheme_exact_hedera.md · ee3860ccdf351b22a1186c08660cf6929a54d0f6
-HIP-991      fee-gated topics                     Final       n/a
-HIP-423      long-term schedules (§10.4)          Final       n/a
+HIP-991      fee-gated topics                     Final       hashgraph/hedera-improvement-proposal @ 03701720a5d689ef6b0f0ac5f7b8e991d4b595b2:
+                                                             HIP/hip-991.md · 179b61beed7bc25aec32515f079f253f73895485
+HIP-423      long-term schedules (§10.4)          Final       hashgraph/hedera-improvement-proposal @ 0c4f195b464342ff7b8629cb26b278ee323a9ca6:
+                                                             HIP/hip-423.md · f5fbb1d437179b7fb6a6ad853c59b12c04d43633
 SCHEDULE_MAX_LIFETIME   maximum schedule lifetime, all networks          Network     5,356,800 s (62 days)
 ```
 
@@ -657,6 +660,7 @@ MailCoordinates
 
 `StampReceipt` is authored by `buy_stamp`. `Settlement` is observed: it is the affixing transfer as consensus recorded it (§4.3).
 
+<!-- CHANGED: D-136 -->
 ```
 StampReceipt                            Settlement (observed)
   ledgerTag     string                    ledgerTag           string
@@ -664,10 +668,14 @@ StampReceipt                            Settlement (observed)
   amount        integer   stamps bought   from                string   the sender's account
   txRef         string    the purchase    to                  string   the treasury
   price         {amount, currency}        amount              integer  stamps affixed
-  holder        string    account or      memo                string   "wishmail:" + aadHash
-                          public-key      consensusTimestamp  timestamp
+  rate?         {source, pair,            memo                string   "wishmail:" + aadHash
+                 value, at}               consensusTimestamp  timestamp
+  holder        string    account or
+                          public-key
                           alias
 ```
+
+`rate` is present exactly when the method that bought these stamps is priced by reference to another asset (§14.3): `value` is the rate the Postmaster read and `at` is when it read it.
 
 ### 5.5 Envelope
 
@@ -1785,17 +1793,19 @@ A payment reference MUST settle at most one purchase: a replayed `PAYMENT-SIGNAT
 
 The Postmaster publishes what it charges on consensus. The price list is a message on the Postmaster's price topic — an HCS topic whose sole submit key is the Postmaster's and whose memo is `wishmail:prices:1` — and the conformance claim names the topic as `prices` (§5.10). The price current at a purchase is the latest price message with a consensus timestamp before the purchase's; the Postmaster reads it from a mirror node at every purchase, and a Verifier reads the same message to check what was charged.
 
+<!-- CHANGED: D-136 -->
 ```
 PriceList
   spec           string          the specification version
   stampToken     {ledgerTag, tokenId, treasury}
-  methods        [{method, network, asset, payTo | facilitator,
-                   unitPrice, bundles? [{count, price}], rate? {source, pair}}]
+  methods        [{method, network, asset, payTo?, facilitator?,
+                   unitPrice? | rate? {source, pair, reference {amount, asset}},
+                   bundles? [{count, price}]}]
   provisioning?  {method, unitPrice}         the provisioned path (§4.6), if offered
   validFrom      timestamp
 ```
 
-`unitPrice` is the price of one stamp in the method's asset; a bundle is a price for a count, offered to everyone alike; `rate`, for a method priced by reference to another asset, names the source and pair the Postmaster reads at purchase to derive the amount it quotes; the buyer signs that amount and no other, the quote stands for the transaction's valid duration, and the receipt records the rate used and when. Every number is the Postmaster's; this document fixes that there is one schedule, that it is on consensus before it is charged, and that it is the same for everyone (§4.5).
+`unitPrice` is the price of one stamp in the method's asset, written as a decimal string in that asset's natural unit — not in atomic units, which bake a network's decimals into a document a Verifier reads, and not as a JSON number, because the message is canonical JSON (§5.1) and a float is a hazard. A bundle is a price for a count, offered to everyone alike. A method priced by reference to another asset carries `rate` in place of `unitPrice`: `reference` is the price of one stamp in the reference asset, and `source` and `pair` name what the Postmaster reads at purchase to convert it into the amount it quotes. A method carries `unitPrice` or `rate`, never both. A bundle's price follows its method's pricing basis — the method's own asset where the method is fixed-priced, the reference asset where it is rate-priced — so that the rate converts a bundle at purchase exactly as it converts `reference`. A method names where the money goes: `payTo`, the Postmaster's receiving address, and `facilitator` where one settles the leg (§14.2); at least one is present. An `x402-usdc` method carries both, because the requirements it issues name the receiving address (§14.2). The buyer signs that amount and no other, the quote stands for the transaction's valid duration, and the receipt records the rate used and when (§5.4). Every number is the Postmaster's; this document fixes that there is one schedule, that it is on consensus before it is charged, and that it is the same for everyone (§4.5).
 
 The Postmaster MUST publish a price message before charging under it, MUST charge exactly what the price message current at the purchase yields, and MUST NOT charge under a price it has not published.
 `Conformance:` T-P11-4 — for every method the fixture Postmaster offers, `buy_stamp` charges what the price message current at the receipt's consensus timestamp yields — `count × unitPrice`, a bundle's price at its count, or the referenced rate applied to the reference price — for each of two buyers and each of three counts; a purchase attempted with no price message on the topic, or at an amount the current message does not yield, is rejected; two buyers at the same consensus time are charged the same. T-P11-2.
@@ -2043,8 +2053,9 @@ The appendices are informative. They index the record beside this document — i
 
 ### 18.2 ADR index
 
-Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here.
+Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
+<!-- CHANGED: D-135, D-136 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2136,6 +2147,8 @@ D-128  The A2A AgentCard is held                                      §16.8
 D-129  Four of the six pinned standards are Draft                     §13.2, §15.3
 D-130  Postage is spent at affix and consumed at settlement           §15.3
 D-131  CHANGED markers begin at this commit                           §1
+D-135  HIP-991 and HIP-423 pinned                                     §1.6
+D-136  Rate-priced methods; prices are decimal strings                §5.4, §14.3
 ```
 
 ### 18.3 Concordance of identifiers (informative)

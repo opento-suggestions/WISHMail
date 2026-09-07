@@ -1,6 +1,6 @@
 {
   "_readme": "Machine-readable form of WISHMAIL_SPEC_v0_5.md §1.6 (see also §18.4). A value of null is an UNFILLED pin: the conformance suite refuses to produce a report while any pin here is null (T-P9-2). Standards digests are FETCHED 2026-09-06 by the recon reports in this repository; each sha256 is over the RAW GIT BLOB BYTES (git cat-file blob <blobSha> | sha256sum), never over a working-tree checkout — core.autocrlf corrupts working-tree digests. Nothing in this file is normative; §1.6 is.",
-  "spec": "0.5.0",
+  "spec": "0.5.1",
   "minorVersion": "0.5",
 
   "standards": {
@@ -97,8 +97,27 @@
   },
 
   "hips": {
-    "hip-991": { "role": "fee-gated topics", "status": "Final", "pin": "n/a" },
-    "hip-423": { "role": "long-term schedules (§10.4)", "status": "Final", "pin": "n/a" }
+    "_note": "Pinned by D-135 (2026-09-07). Both rows read `n/a` at 0.5.0; every property the doorbell's HIP-991 fee configuration depends on was second-hand assertion in this repository's own ADRs until then. Same digest recipe as the standards above: sha256 over the raw git blob bytes.",
+    "hip-991": {
+      "role": "fee-gated topics",
+      "status": "Final",
+      "release": "0.59.5",
+      "repo": "https://github.com/hashgraph/hedera-improvement-proposal",
+      "commit": "03701720a5d689ef6b0f0ac5f7b8e991d4b595b2",
+      "path": "HIP/hip-991.md",
+      "blobSha": "179b61beed7bc25aec32515f079f253f73895485",
+      "sha256": "772a85045258af12da52494305e8945c0bfc633335c2091e0e63a328235359c7"
+    },
+    "hip-423": {
+      "role": "long-term schedules (§10.4)",
+      "status": "Final",
+      "release": "v0.57.0",
+      "repo": "https://github.com/hashgraph/hedera-improvement-proposal",
+      "commit": "0c4f195b464342ff7b8629cb26b278ee323a9ca6",
+      "path": "HIP/hip-423.md",
+      "blobSha": "f5fbb1d437179b7fb6a6ad853c59b12c04d43633",
+      "sha256": "2bcf4d7c844c6a8e0306cca38b6157943c17c06c2bae843482488f88b2ec6dd2"
+    }
   },
 
   "networkConstants": {
