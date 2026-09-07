@@ -4,7 +4,7 @@
 
 **What an ADR is here.** One file per decision, keyed to the decision number in `spec/CONFORMANCE_TESTS_v0_5.md` §B. A new decision gets the next number after the last in §B, a row in §B, and a file here — the same change.
 
-**Coverage.** Complete as of 2026-09-07: **D-1 – D-138, no gaps.** Three provenances, and each file says which it has.
+**Coverage.** Complete as of 2026-09-07: **D-1 – D-144, no gaps.** Three provenances, and each file says which it has.
 
 - **D-1 – D-41** are backfilled from `provenance/WISHMAIL SPEC v0 3.md` §13 and the 2026-09-04 handoff, `Status: carried`. They precede the ledger, so §B does not hold them.
 - **D-42 – D-131** are written from §B's rows, `Status: accepted`. **§B is their source of truth and each file quotes its row verbatim**, under a `## Decision` heading, without alteration. Context, Alternatives and Consequences beside it are Claude Code's reading; where they and §B differ, §B governs, and where either and the specification differ, the specification governs.

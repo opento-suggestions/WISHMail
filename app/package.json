@@ -1,0 +1,20 @@
+{
+  "name": "@wishmail/app",
+  "version": "0.5.1",
+  "private": true,
+  "type": "module",
+  "description": "The reference implementation. Provisioning scripts under src/ops/ stand up the Postmaster's entities on hedera:testnet.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "provision": "tsx src/ops/provision.ts"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.81.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}
