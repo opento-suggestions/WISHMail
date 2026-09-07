@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:return-receipt",
+  "title": "ReturnReceipt",
+  "description": "ReturnReceipt — WISHMAIL_SPEC_v0_5.md §5.8.",
+  "$comment": "Signed by the recipient’s key alone; the sender funded it; the recipient pays nothing (§10.4, T-P1-8, T-P16-2). Binds one envelope and one postmark and cannot be re-worn (P-1). AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "envelopeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The AAD hash acknowledged."
+    },
+    "postmarkRef": {
+      "type": "object",
+      "description": "Chunk 0’s postmark.",
+      "properties": {
+        "topicId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        },
+        "sequenceNumber": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "topicId",
+        "sequenceNumber"
+      ],
+      "additionalProperties": false
+    },
+    "recipient": {
+      "type": "string",
+      "description": "The recipient’s operator_id, inboundTopicId@accountId (§2.3)."
+    },
+    "keyEpoch": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The epoch under which the envelope opened."
+    },
+    "proof": {
+      "type": "object",
+      "description": "uri: the manifest’s postmark on the recipient’s manifest topic (§10.4).",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256, lowercase hex (§5.1)."
+        },
+        "uri": {
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+              "properties": {
+                "ledgerTag": {
+                  "type": "string",
+                  "enum": [
+                    "hedera:testnet",
+                    "hedera:mainnet"
+                  ],
+                  "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+                  "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+                },
+                "topicId": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                  "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+                },
+                "sequenceNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "ledgerTag",
+                "topicId",
+                "sequenceNumber"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The manifest’s canonical location. Null until `send` publishes the manifest (§6.2, §6.4 step 2)."
+        }
+      },
+      "required": [
+        "hash"
+      ],
+      "additionalProperties": false
+    },
+    "witness": {
+      "type": "object",
+      "description": "The executed schedule (§10.4, HIP-423).",
+      "properties": {
+        "ledgerTag": {
+          "type": "string",
+          "enum": [
+            "hedera:testnet",
+            "hedera:mainnet"
+          ],
+          "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+          "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+        },
+        "scheduleId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        },
+        "executedTimestamp": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "Consensus timestamp, seconds.nanos (§5.1)."
+        }
+      },
+      "required": [
+        "ledgerTag",
+        "scheduleId",
+        "executedTimestamp"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "envelopeId",
+    "postmarkRef",
+    "recipient",
+    "keyEpoch",
+    "proof",
+    "witness"
+  ],
+  "additionalProperties": false
+}

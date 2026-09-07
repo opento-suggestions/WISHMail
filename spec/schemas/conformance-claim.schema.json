@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:conformance-claim",
+  "title": "ConformanceClaim",
+  "description": "ConformanceClaim — WISHMAIL_SPEC_v0_5.md §5.10.",
+  "$comment": "A claim is scoped to the classes, profiles, and pins it names. Silence claims nothing (§1.5). AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "string",
+      "description": "The specification version claimed (§1.5)."
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "VERIFIER",
+          "CORRESPONDENT",
+          "RECIPIENT",
+          "POSTMASTER"
+        ]
+      },
+      "description": "A claim MUST NOT name a class whose suite did not pass in full (§1.5, T-P15-3)."
+    },
+    "profiles": {
+      "type": "object",
+      "description": "Resolution profiles claimed per class (§1.4).",
+      "propertyNames": {
+        "enum": [
+          "VERIFIER",
+          "CORRESPONDENT",
+          "RECIPIENT",
+          "POSTMASTER"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "hcs14",
+            "dns",
+            "nanda",
+            "hol"
+          ],
+          "description": "Resolution profile identifier (§9). A release claiming the `document` extension (§16.5) widens this enum."
+        }
+      }
+    },
+    "pins": {
+      "type": "object",
+      "description": "The pinned revisions tested against; MUST equal §1.6’s (T-P9-1, T-P9-2)."
+    },
+    "stampToken": {
+      "type": "object",
+      "properties": {
+        "ledgerTag": {
+          "type": "string",
+          "enum": [
+            "hedera:testnet",
+            "hedera:mainnet"
+          ],
+          "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+          "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+        },
+        "tokenId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        },
+        "treasury": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        }
+      },
+      "required": [
+        "ledgerTag",
+        "tokenId",
+        "treasury"
+      ],
+      "additionalProperties": false
+    },
+    "suite": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "reportDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256, lowercase hex (§5.1)."
+        }
+      },
+      "required": [
+        "version",
+        "date",
+        "reportDigest"
+      ],
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "string",
+      "description": "Path to the LIMITATIONS document (§15.4, T-P15-2)."
+    },
+    "prices": {
+      "type": "object",
+      "description": "The Postmaster’s price topic (§14.3).",
+      "properties": {
+        "ledgerTag": {
+          "type": "string",
+          "enum": [
+            "hedera:testnet",
+            "hedera:mainnet"
+          ],
+          "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+          "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+        },
+        "topicId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        }
+      },
+      "required": [
+        "ledgerTag",
+        "topicId"
+      ],
+      "additionalProperties": false
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "An extension binds only a release that names it here (§16.1, D-111)."
+    }
+  },
+  "required": [
+    "spec",
+    "classes",
+    "profiles",
+    "pins",
+    "stampToken",
+    "suite",
+    "limitations",
+    "prices",
+    "extensions"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:mail-coordinates",
+  "title": "MailCoordinates",
+  "description": "MailCoordinates — WISHMAIL_SPEC_v0_5.md §5.3.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "address": {
+      "type": "string",
+      "description": "The typed address, as resolved (§2.2)."
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "hcs14",
+        "dns",
+        "nanda",
+        "hol"
+      ],
+      "description": "Resolution profile identifier (§9). A release claiming the `document` extension (§16.5) widens this enum."
+    },
+    "ledgerTag": {
+      "type": "string",
+      "enum": [
+        "hedera:testnet",
+        "hedera:mainnet"
+      ],
+      "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+      "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+    },
+    "account": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "The agent’s account (HCS-10 operator_id’s account half; §10)."
+    },
+    "doorbell": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Inbound topic (§2.2)."
+    },
+    "log": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Outbound topic. Optional."
+    },
+    "x25519Pub": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Current encryption public key."
+    },
+    "keyEpoch": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Monotonic counter over the agent’s published encryption keys (§7.6)."
+    },
+    "resolutionProof": {
+      "type": "object",
+      "description": "A proof by reference (§5.2, D-26): the hash, and the canonical location its manifest is dereferenced at. The manifest is never carried in-band.",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256, lowercase hex (§5.1)."
+        },
+        "uri": {
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+              "properties": {
+                "ledgerTag": {
+                  "type": "string",
+                  "enum": [
+                    "hedera:testnet",
+                    "hedera:mainnet"
+                  ],
+                  "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+                  "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+                },
+                "topicId": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                  "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+                },
+                "sequenceNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "ledgerTag",
+                "topicId",
+                "sequenceNumber"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The manifest’s canonical location. Null until `send` publishes the manifest (§6.2, §6.4 step 2)."
+        }
+      },
+      "required": [
+        "hash"
+      ],
+      "additionalProperties": false
+    },
+    "trustClass": {
+      "type": "string",
+      "enum": [
+        "math",
+        "economic-game",
+        "hardware-TEE",
+        "social-committee"
+      ],
+      "description": "Trust class (§2.2, §9)."
+    },
+    "endorsements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "missing",
+          "vague",
+          "blurred",
+          "stale",
+          "timed-out",
+          "withheld"
+        ]
+      },
+      "description": "Endorsements — what the proof could not see (§2.2). Orthogonal to trust class."
+    },
+    "resolvedAt": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Query time, as bound into the proof’s inputs. Compared against the profile’s TTL (§9.1)."
+    }
+  },
+  "required": [
+    "address",
+    "profile",
+    "ledgerTag",
+    "account",
+    "doorbell",
+    "x25519Pub",
+    "keyEpoch",
+    "resolutionProof",
+    "trustClass",
+    "endorsements",
+    "resolvedAt"
+  ],
+  "additionalProperties": false
+}

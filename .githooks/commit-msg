@@ -1,0 +1,46 @@
+#!/bin/sh
+# WISHMail commit-msg hook: Conventional Commits + DCO sign-off.
+# Enable once per clone:  git config core.hooksPath .githooks
+# See CONTRIBUTING.md.
+
+MSG_FILE="$1"
+
+# Ignore comment lines and everything after the scissors line.
+BODY=$(sed -e '/^# ------------------------ >8 ------------------------$/,$d' -e '/^#/d' "$MSG_FILE")
+SUBJECT=$(printf '%s\n' "$BODY" | sed -e '/^[[:space:]]*$/d' -e 'q')
+
+# Merge, revert and fixup commits pass through.
+case "$SUBJECT" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*) exit 0 ;;
+esac
+
+TYPES='feat|fix|spec|test|docs|chore|refactor'
+SCOPES='spec|schemas|vectors|pins|adr|ledger|conformance|app|sdk|cli|mcp|web|repo'
+
+if ! printf '%s' "$SUBJECT" | grep -Eq "^($TYPES)(\(($SCOPES)\))?!?: .+"; then
+  echo "commit-msg: subject is not a Conventional Commit." >&2
+  echo "  got:      $SUBJECT" >&2
+  echo "  expected: <type>(<scope>): <subject>" >&2
+  echo "  types:    $TYPES" >&2
+  echo "  scopes:   $SCOPES" >&2
+  echo "  See CONTRIBUTING.md." >&2
+  exit 1
+fi
+
+if printf '%s' "$SUBJECT" | grep -Eq '\.$'; then
+  echo "commit-msg: subject ends with a period; drop it." >&2
+  exit 1
+fi
+
+if [ "$(printf '%s' "$SUBJECT" | wc -c)" -gt 72 ]; then
+  echo "commit-msg: subject is longer than 72 bytes." >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$BODY" | grep -Eq '^Signed-off-by: .+ <.+@.+>$'; then
+  echo "commit-msg: no Signed-off-by line (DCO 1.1, see the DCO file)." >&2
+  echo "  Commit with: git commit -s" >&2
+  exit 1
+fi
+
+exit 0

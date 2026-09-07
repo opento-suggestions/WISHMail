@@ -24,3 +24,28 @@ hs_err_pid*
 replay_pid*
 
 *.env
+# ---------------------------------------------------------------------------
+# WISHMail
+# ---------------------------------------------------------------------------
+
+# Secrets. P-13: no private-key material anywhere, ever. `*.env` alone does not
+# catch `.env.local` or `.env.testnet`, which is why this is a prefix match with
+# the example negated back in.
+.env*
+!.env.example
+
+# TypeScript / Node (app/, conformance/)
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

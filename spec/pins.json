@@ -1,0 +1,170 @@
+{
+  "_readme": "Machine-readable form of WISHMAIL_SPEC_v0_5.md §1.6 (see also §18.4). A value of null is an UNFILLED pin: the conformance suite refuses to produce a report while any pin here is null (T-P9-2). Standards digests are FETCHED 2026-09-06 by the recon reports in this repository; each sha256 is over the RAW GIT BLOB BYTES (git cat-file blob <blobSha> | sha256sum), never over a working-tree checkout — core.autocrlf corrupts working-tree digests. Nothing in this file is normative; §1.6 is.",
+  "spec": "0.5.0",
+  "minorVersion": "0.5",
+
+  "standards": {
+    "hcs-10": {
+      "role": "transport",
+      "status": "Draft",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-10/index.md",
+      "blobSha": "0cb5d2eb6b98e12e4b44fa8c4fea6e10937b615a",
+      "sha256": "688372d38323656cdff5de2d210f07e78db811738ccd327666a856f2fcacd198"
+    },
+    "hcs-14": {
+      "role": "agent ID (uaid:aid / uaid:did)",
+      "status": "Draft",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-14/index.md",
+      "blobSha": "969de3aa2fccaea10f50165f82620ae6172b017d",
+      "sha256": "9f53ea7d51d3bd6d88b06f5483b497ca37ef156406ff515375a78c3a616a9ab9"
+    },
+    "hcs-11": {
+      "role": "profile declaration",
+      "status": "Draft",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-11.md",
+      "blobSha": "aa5ba9ede21b31cb84dde93e119302fd5ae127a9",
+      "sha256": "fd7d9f4d893b9c3d11e33cf6cc8a6861e13a37ec02e1fb03b6bddb3916da1e82"
+    },
+    "hcs-13": {
+      "role": "schema registry",
+      "status": "Draft",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-13.md",
+      "blobSha": "07f1ac67b344d6655b98ce8196b3053fe1b4f566",
+      "sha256": "1bdb3e679de720d5c8cfe8e2f91adfc35d4c4606093193c566cc24647f15104a"
+    },
+    "hcs-1": {
+      "role": "HCS-11 profile storage (§9)",
+      "status": "Published",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-1.md",
+      "blobSha": "0d8cca5f0adac613a149244e769672ea3060328a",
+      "sha256": "389128dfe5ab94d83fdb56af22f22d497eee859101ed6e51ee311812242de9cb"
+    },
+    "hcs-2": {
+      "role": "declaration registry (§9.2)",
+      "status": "Published",
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-2.md",
+      "blobSha": "dc0ad9a1a052f4a9f2ee750161d61f7f8d28ef07",
+      "sha256": "7ec2c681a11024389e950af3f63e3c0ede2d920f4d592e5265aef3f6044c9591"
+    },
+    "x402-v2-core": {
+      "role": "purchase leg (§14) — core specification",
+      "status": "no status line upstream; Protocol Version 2, version-history table dates v2.0 2025-12-09",
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/x402-specification-v2.md",
+      "blobSha": "3b4631af0684748966eafcdf6a6a90a8cbbf7198",
+      "sha256": "cb66bdef710298233316b02d48fce4a9417ec5449ed9cab7f5d9fe6a454920cd"
+    },
+    "x402-v2-http": {
+      "role": "purchase leg (§14) — HTTP transport",
+      "status": "no status line upstream",
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/transports-v2/http.md",
+      "blobSha": "a21213c02706208b2268a5fdab7dc6d5b468edbd",
+      "sha256": "4f0298aaa23ac75de0eb49b1e96e6e67a5b910d7527b3a71c63e426b3bf5bdfb"
+    },
+    "x402-scheme-exact": {
+      "role": "purchase leg (§14) — exact scheme",
+      "status": "no status line upstream",
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/schemes/exact/scheme_exact.md",
+      "blobSha": "fe27f3c2a971fcc8325c9f65c85bc19f8f93271f",
+      "sha256": "ffbac28df2e3c3bdfd2edf8512f22d0ddc26500f6d5c7c028c266f91ca27b97a"
+    },
+    "x402-scheme-exact-hedera": {
+      "role": "purchase leg (§14) — exact scheme, Hedera",
+      "status": "no status line upstream",
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/schemes/exact/scheme_exact_hedera.md",
+      "blobSha": "ee3860ccdf351b22a1186c08660cf6929a54d0f6",
+      "sha256": "4d2b0f81ca16c07d9895f0acc7dd032b53f6f21a9ef44838f30a9f14cc327f15"
+    }
+  },
+
+  "hips": {
+    "hip-991": { "role": "fee-gated topics", "status": "Final", "pin": "n/a" },
+    "hip-423": { "role": "long-term schedules (§10.4)", "status": "Final", "pin": "n/a" }
+  },
+
+  "networkConstants": {
+    "SCHEDULE_MAX_LIFETIME": {
+      "role": "maximum schedule lifetime, all networks",
+      "status": "Network",
+      "seconds": 5356800,
+      "note": "62 days"
+    }
+  },
+
+  "registryAnchors": {
+    "_note": "§1.6 records these as deployment facts listed in §9.5, not as a pinned text; the HOL broker's API is not a dependency (D-103). Reproduced here because pins.json is the machine-readable form of the §1.6 table.",
+    "hol": {
+      "hedera:mainnet": ["0.0.9297139", "0.0.10080724"],
+      "hedera:testnet": ["0.0.6913983"]
+    }
+  },
+
+  "specConstants": {
+    "_note": "Fixed by the specification, not pinned from an external text; recorded here so the suite reads one file. CHUNK_WIRE_MAX §7.4; OUNCE_BYTES and MAX_WEIGHT §7.5; memos §4.3, §9.1, §14.3.",
+    "CHUNK_WIRE_MAX": 1000,
+    "OUNCE_BYTES": 4096,
+    "MAX_WEIGHT": 16,
+    "settlementMemoPrefix": "wishmail:",
+    "manifestTopicMemo": "wishmail:manifest:1",
+    "priceTopicMemo": "wishmail:prices:1"
+  },
+
+  "wireStrings": {
+    "_note": "The strings that carry major.minor and no finer (§1.7). A change to any of these is a new minor version, never a patch.",
+    "aadProtocol": "wishmail",
+    "aadVersion": "0.5",
+    "hpkeInfo": "wishmail/0.5/seal",
+    "schemaRefMinorVersion": "0.5"
+  },
+
+  "ledgerTags": ["hedera:testnet", "hedera:mainnet"],
+
+  "stampToken": {
+    "_note": "§4.1. Filled at the first deployment on a network. T-P9-2 blocks any claim naming a network whose token is unfilled.",
+    "hedera:testnet": { "tokenId": null, "treasury": null },
+    "hedera:mainnet": { "tokenId": null, "treasury": null }
+  },
+
+  "registeredSchemas": {
+    "_note": "§5.11, §1.7, T-P9-4, T-P9-9. schemaRef is HCS-13's version-pinned locator hcs://13/<topicId>#<sequenceNumber> for minor version 0.5; sha256 is the digest of the registered schema, which a release's shipped spec/schemas/ file must equal. Both are null until HCS-13 registration; the digests of the current stub files are deliberately NOT recorded here, because nothing is registered yet.",
+    "proof": { "schemaRef": null, "sha256": null },
+    "mail-coordinates": { "schemaRef": null, "sha256": null },
+    "stamp-receipt": { "schemaRef": null, "sha256": null },
+    "settlement": { "schemaRef": null, "sha256": null },
+    "envelope": { "schemaRef": null, "sha256": null },
+    "chunk": { "schemaRef": null, "sha256": null },
+    "postmark": { "schemaRef": null, "sha256": null },
+    "return-receipt": { "schemaRef": null, "sha256": null },
+    "attempted-delivery-slip": { "schemaRef": null, "sha256": null },
+    "evidence-bundle": { "schemaRef": null, "sha256": null },
+    "narrative": { "schemaRef": null, "sha256": null },
+    "conformance-claim": { "schemaRef": null, "sha256": null },
+    "declaration": { "schemaRef": null, "sha256": null },
+    "price-list": { "schemaRef": null, "sha256": null }
+  },
+
+  "provenance": {
+    "standardsFetchedAt": "2026-09-06",
+    "standardsSource": ["recon/pins-recon-2026-09-06.md", "recon/pins.draft.json", "recon/hol-x402-recon-2026-09-06.md", "recon/hol-x402.pins.draft.json"],
+    "ratifiedBy": "D-92 (HCS standards), D-102 (x402), D-103 (HOL anchors are not a pin), D-114 (ledger tags), D-125 (wire strings at 0.5)"
+  }
+}

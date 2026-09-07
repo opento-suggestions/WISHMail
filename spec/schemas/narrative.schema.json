@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:narrative",
+  "title": "Narrative",
+  "description": "Narrative — WISHMAIL_SPEC_v0_5.md §5.10.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "bundleDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The digest of the evidence this narrative reads. The narrative’s one MUST (§11.7, T-P3-4, D-85)."
+    },
+    "text": {
+      "type": "string",
+      "description": "Prose produced from the bundle and from nothing else (§11.7)."
+    }
+  },
+  "required": [
+    "bundleDigest",
+    "text"
+  ],
+  "additionalProperties": false
+}

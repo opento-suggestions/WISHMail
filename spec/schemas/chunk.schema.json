@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:chunk",
+  "title": "Chunk",
+  "description": "Chunk — WISHMAIL_SPEC_v0_5.md §5.6.",
+  "$comment": "NOT EXPRESSIBLE HERE, HELD BY TEST: `nx` is required on every chunk of index i < n-1 and forbidden on the chunk of index n-1 (§7.4). JSON Schema cannot compare `i` against `n`, so T-P1-11 and T-P9-3 are the court. Also held by test: the whole HCS-10 `message` operation carrying this Chunk as a JSON string in `data` is at most CHUNK_WIRE_MAX = 1000 bytes and carries no chunkInfo (§7.4, T-P9-7). AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "p": {
+      "const": "wishmail"
+    },
+    "s": {
+      "type": "string",
+      "pattern": "^hcs://13/[0-9]+\\.[0-9]+\\.[0-9]+#[0-9]+$",
+      "description": "schemaRef (§5.11)."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "aadHash — the envelope identifier (§7.2)."
+    },
+    "i": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Index, from 0."
+    },
+    "n": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "chunkCount. A chunk whose `n` differs from chunk 0’s is a conflicting chunk and is not of this envelope (§8.5)."
+    },
+    "d": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "This slice of ciphertext."
+    },
+    "nx": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Digest of chunk i+1’s slice; absent on the last chunk (§7.4)."
+    },
+    "hdr": {
+      "type": "object",
+      "description": "Chunk 0 only. The header, which rebuilds to `id` through the AAD (§5.6, §7.2).",
+      "properties": {
+        "l": {
+          "type": "string",
+          "enum": [
+            "hedera:testnet",
+            "hedera:mainnet"
+          ],
+          "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+          "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+        },
+        "pr": {
+          "type": "string",
+          "enum": [
+            "hcs14",
+            "dns",
+            "nanda",
+            "hol"
+          ],
+          "description": "Resolution profile identifier (§9). A release claiming the `document` extension (§16.5) widens this enum."
+        },
+        "rp": {
+          "type": "object",
+          "description": "resolutionProof {hash, uri} in the chunk’s short keys.",
+          "properties": {
+            "h": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "SHA-256, lowercase hex (§5.1)."
+            },
+            "u": {
+              "type": "object",
+              "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+              "properties": {
+                "ledgerTag": {
+                  "type": "string",
+                  "enum": [
+                    "hedera:testnet",
+                    "hedera:mainnet"
+                  ],
+                  "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+                  "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+                },
+                "topicId": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                  "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+                },
+                "sequenceNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "ledgerTag",
+                "topicId",
+                "sequenceNumber"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "h",
+            "u"
+          ],
+          "additionalProperties": false
+        },
+        "nc": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "nonce."
+        },
+        "ke": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "keyEpoch."
+        },
+        "ep": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "ephemeralPub."
+        },
+        "st": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+@[0-9]+\\.[0-9]+$",
+          "description": "settlementRef."
+        },
+        "w": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "weight."
+        },
+        "h": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "ciphertextDigest, over the whole ciphertext. Appears inside `hdr` and nowhere else (T-P9-3)."
+        },
+        "cb": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "ciphertextBytes."
+        },
+        "rr": {
+          "type": "boolean",
+          "description": "Return receipt requested (§7.7)."
+        }
+      },
+      "required": [
+        "l",
+        "pr",
+        "rp",
+        "nc",
+        "ke",
+        "ep",
+        "st",
+        "w",
+        "h",
+        "cb",
+        "rr"
+      ],
+      "additionalProperties": false,
+      "$comment": "`nx` is forbidden inside `hdr` and `h` appears only here (T-P9-3)."
+    }
+  },
+  "required": [
+    "p",
+    "s",
+    "id",
+    "i",
+    "n",
+    "d"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "$comment": "Chunk 0 carries the header; no other chunk does (§5.6).",
+      "if": {
+        "properties": {
+          "i": {
+            "const": 0
+          }
+        },
+        "required": [
+          "i"
+        ]
+      },
+      "then": {
+        "required": [
+          "hdr"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "hdr"
+          ]
+        }
+      }
+    }
+  ]
+}

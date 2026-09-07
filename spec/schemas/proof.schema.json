@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:proof",
+  "title": "Proof",
+  "description": "Proof — WISHMAIL_SPEC_v0_5.md §5.2.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "rule": {
+      "type": "object",
+      "description": "What fired: a profile at its pin, or a WISHMail rule at this specification’s version.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Digest of the canonical input bytes; a structured locator that dereferences to them (form per §9 / §10); for inputs not on consensus, a snapshot of the bytes read (§9.1).",
+      "properties": {
+        "digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256, lowercase hex (§5.1)."
+        },
+        "locator": {
+          "type": "object",
+          "description": "Structured, never a string (§5.2). Its shape is the profile’s or the proof kind’s (§9, §10)."
+        },
+        "snapshot": {
+          "description": "The bytes a rule read from a source that is not on consensus (§2.2, §9.1). REQUIRED for a non-consensus profile: T-P6-2 rejects a manifest without one at `send`."
+        }
+      },
+      "required": [
+        "digest",
+        "locator"
+      ],
+      "additionalProperties": false
+    },
+    "output": {
+      "description": "What the rule produced: {digest} or a value (§5.2)."
+    },
+    "meaning": {
+      "type": "object",
+      "description": "The reasoner’s statement of what the output means; the canonical location; what its verification rests on; what it could not see.",
+      "properties": {
+        "statement": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "object",
+          "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+          "properties": {
+            "ledgerTag": {
+              "type": "string",
+              "enum": [
+                "hedera:testnet",
+                "hedera:mainnet"
+              ],
+              "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+              "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+            },
+            "topicId": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+              "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+            },
+            "sequenceNumber": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "ledgerTag",
+            "topicId",
+            "sequenceNumber"
+          ],
+          "additionalProperties": false
+        },
+        "trustClass": {
+          "type": "string",
+          "enum": [
+            "math",
+            "economic-game",
+            "hardware-TEE",
+            "social-committee"
+          ],
+          "description": "Trust class (§2.2, §9)."
+        },
+        "endorsements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "vague",
+              "blurred",
+              "stale",
+              "timed-out",
+              "withheld"
+            ]
+          },
+          "description": "Endorsements — what the proof could not see (§2.2). Orthogonal to trust class."
+        }
+      },
+      "required": [
+        "statement",
+        "uri",
+        "trustClass",
+        "endorsements"
+      ],
+      "additionalProperties": false
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over the canonical JSON (RFC 8785) of {rule, inputs, output, meaning} with `hash` absent (§5.1)."
+    }
+  },
+  "required": [
+    "rule",
+    "inputs",
+    "output",
+    "meaning",
+    "hash"
+  ],
+  "additionalProperties": false
+}

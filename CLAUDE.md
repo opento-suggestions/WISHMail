@@ -4,10 +4,10 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 ## 1. The documents, and their order
 
-1. `WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.0, frozen 2026-09-07. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
-2. `CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-131 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
-3. The recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
-4. `WISHMAIL_SPEC_v0_3.md` and the handoff — **provenance only.** They bind nothing. Use them to backfill ADRs D-1 – D-41 and for nothing else.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.0, frozen 2026-09-07. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-131 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
+3. `recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
+4. `provenance/` — `WISHMAIL SPEC v0 3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.
 5. `STATUS.md` — the build set as Sonic ranks it, and the demo shape. The one file where "what we build first" is an ordering.
 6. The Excalidraw scope map — the ratified scope line: green/blue = BUILD, orange = STRETCH, dashed = SPEC or VENUE. Do not re-propose scoping down. Full product is the judging posture, and the registry layer is load-bearing.
 
@@ -40,15 +40,17 @@ These are stated in the spec with tests; they are repeated here because they are
 One monorepo, mirroring `agentrust-io`:
 
 ```
-spec/            WISHMAIL_SPEC_v0_5.md; spec/schemas/ one JSON Schema per §5 object and the
-                 §9.1 declaration (fourteen files, named per §18.5, suffix .schema.json);
-                 spec/vectors/ (aad.json, seal.json); spec/pins.json; spec/adr/ D-1 onward
+spec/            WISHMAIL_SPEC_v0_5.md and CONFORMANCE_TESTS_v0_5.md; spec/schemas/ one JSON
+                 Schema per §5 object and the §9.1 declaration (fourteen files, named per
+                 §18.5, suffix .schema.json); spec/vectors/ (aad.json, seal.json);
+                 spec/pins.json; spec/adr/ TEMPLATE.md and D-nnn.md, D-1 onward
 conformance/     one test per T-<P-ID>-<n>, keyed to §12; fixtures; the §8.5 exception corpus;
                  the report a conformance claim names
 app/             the reference implementation: MCP server (the resource server of §14.2),
                  the WebMCP page as its client, SDK, CLI, resolvers — each declaring the
                  spec version and the classes and profiles it claims
 CHANGELOG.md · LIMITATIONS.md (fourteen sections, L-1 – L-14, in order) · STATUS.md · LICENSE
+CONTRIBUTING.md · DCO · .githooks/commit-msg (git config core.hooksPath .githooks)
 ```
 
 **Outfit the repo before writing code.** DCO sign-off on every commit. Conventional Commits. `CHANGELOG.md` from the first commit. ASCII diagrams, never images, in spec and docs. Schemas follow the spec; a schema change without a spec change is not a change to WISHMail (§1.7).

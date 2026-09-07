@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:price-list",
+  "title": "PriceList",
+  "description": "PriceList — WISHMAIL_SPEC_v0_5.md §14.3.",
+  "$comment": "One schedule, on consensus before it is charged, the same for everyone (§4.5, §14.3, D-101). A message on the Postmaster’s price topic, memo `wishmail:prices:1`, sole submit key the Postmaster’s. The numbers are a deployment’s, not this specification’s (Q-6, §19.2). T-P11-4, T-P11-2. AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "string"
+    },
+    "stampToken": {
+      "type": "object",
+      "properties": {
+        "ledgerTag": {
+          "type": "string",
+          "enum": [
+            "hedera:testnet",
+            "hedera:mainnet"
+          ],
+          "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+          "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+        },
+        "tokenId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        },
+        "treasury": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+        }
+      },
+      "required": [
+        "ledgerTag",
+        "tokenId",
+        "treasury"
+      ],
+      "additionalProperties": false
+    },
+    "methods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "x402-usdc",
+              "hbar"
+            ],
+            "description": "§6.3, §14.2. A release claiming the spending-cap extension (§16.4) widens this enum."
+          },
+          "network": {
+            "type": "string",
+            "description": "CAIP-2 (§14.2)."
+          },
+          "asset": {
+            "type": "string"
+          },
+          "payTo": {
+            "type": "string"
+          },
+          "facilitator": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string",
+            "description": "The price of one stamp in the method’s asset."
+          },
+          "bundles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "price": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "count",
+                "price"
+              ],
+              "additionalProperties": false
+            },
+            "description": "A price for a count, offered to everyone alike (§4.5, §14.3)."
+          },
+          "rate": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "pair": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "pair"
+            ],
+            "additionalProperties": false,
+            "description": "For a method priced by reference to another asset (§14.2, §14.3)."
+          }
+        },
+        "required": [
+          "method",
+          "network",
+          "asset",
+          "unitPrice"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "payTo"
+            ]
+          },
+          {
+            "required": [
+              "facilitator"
+            ]
+          }
+        ],
+        "$comment": "§14.3 writes the receiving party as `payTo | facilitator`: exactly one of the two."
+      }
+    },
+    "provisioning": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "unitPrice": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "unitPrice"
+      ],
+      "additionalProperties": false,
+      "description": "The provisioned path (§4.6), if offered. Provisioning is never required (§4.6, D-57)."
+    },
+    "validFrom": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Consensus timestamp, seconds.nanos (§5.1)."
+    }
+  },
+  "required": [
+    "spec",
+    "stampToken",
+    "methods",
+    "validFrom"
+  ],
+  "additionalProperties": false
+}

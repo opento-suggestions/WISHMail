@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:declaration",
+  "title": "Declaration",
+  "description": "Declaration — WISHMAIL_SPEC_v0_5.md §9.1.",
+  "$comment": "One declaration, three surfaces (§9.1): under `hcs14` the HCS-11 profile supplies account, doorbell and log and `properties.wishmail` supplies the rest; the `dns` and `nanda` surfaces carry the whole object. No profile reads another to resolve (§9.7). AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "v": {
+      "const": 1
+    },
+    "ledgerTag": {
+      "type": "string",
+      "enum": [
+        "hedera:testnet",
+        "hedera:mainnet"
+      ],
+      "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+      "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+    },
+    "account": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "The recipient’s Hedera account."
+    },
+    "doorbell": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Its HCS-10 inbound topic. Carries a HIP-991 fee of exactly one stamp, collected by the treasury (§4.4, T-P7-4)."
+    },
+    "log": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Its HCS-10 outbound topic. Optional."
+    },
+    "manifestTopic": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Its manifest topic: memo `wishmail:manifest:1`, sole submit key the agent’s (§9.1, T-P17-3)."
+    },
+    "x25519Pub": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Its current encryption key."
+    },
+    "keyEpoch": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "v",
+    "ledgerTag",
+    "account",
+    "doorbell",
+    "manifestTopic",
+    "x25519Pub",
+    "keyEpoch"
+  ],
+  "additionalProperties": false
+}

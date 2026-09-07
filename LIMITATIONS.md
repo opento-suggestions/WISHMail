@@ -14,7 +14,7 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Ledger tags deployed | `hedera:testnet` only (§15.5) |
 | Stamp token | `$POSTAGE` on `hedera:testnet`, token ID `[fill at deployment]`, treasury `[fill at deployment]` |
 | Price topic | `[fill at deployment]` (memo `wishmail:prices:1`) |
-| Payment methods | `x402-usdc` via facilitator `[fill at deployment]`; `hbar` |
+| Payment methods | `x402-usdc` via the x402.org facilitator, `https://x402.org/facilitator`, scheme `exact`, network `hedera:testnet`, asset USDC `0.0.429274` (6 decimals), facilitator fee payer `0.0.9185802`, no signup or key (D-132); `hbar` |
 | Registry anchors read | HOL testnet anchor `0.0.6913983` (§9.5); mainnet anchors not read |
 | Conformance run | suite version `[fill at claim]`, date `[fill at claim]`, report digest `[fill at claim]` |
 
@@ -60,7 +60,7 @@ Mirror independence is required and tested (T-P4-3); running-hash verification i
 
 ## L-11 — The USDC leg on a Hedera network is testnet-only at this version
 
-A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a mainnet USDC-on-Hedera leg would need a self-hosted facilitator. This release's `x402-usdc` method names facilitator `[fill at deployment]` on `hedera:testnet`. The keyless leg (P-16) is satisfied by `[fill at deployment: the x402 network named in the price list]`. The upstream scheme's replay rule is a SHOULD; this release's own durable payment-reference record is what prevents a second purchase (§14.2, T-P11-5). Account creation for a keyless buyer is by the Postmaster's stamp transfer to a public-key alias (§4.6), never by the settlement.
+A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a mainnet USDC-on-Hedera leg would need a self-hosted facilitator. This release's `x402-usdc` method names the **x402.org facilitator** — `https://x402.org/facilitator`, scheme `exact`, network `hedera:testnet`, asset USDC `0.0.429274` (6 decimals), facilitator fee payer `0.0.9185802`, requiring no signup, API key, or credit (D-132). Its `/supported` endpoint offered `hedera:testnet` and no Hedera mainnet when read unauthenticated on 2026-09-06, and the x402 documentation lists the same on 2026-09-07; the x402 repository's own facilitator documentation marks x402.org "Testnet only", "Requirements: None", and mentions Hedera nowhere else. The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator. The upstream scheme's replay rule is a SHOULD; this release's own durable payment-reference record is what prevents a second purchase (§14.2, T-P11-5). Account creation for a keyless buyer is by the Postmaster's stamp transfer to a public-key alias (§4.6), never by the settlement.
 
 ## L-12 — A stamp is fungible
 

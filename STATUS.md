@@ -22,7 +22,7 @@ Demo shape: offered in v0.3, not chosen (v0.3 §19 item 3). Open for Sonic.
 
 ```
 0  repo outfitting: layout, DCO, Conventional Commits, CHANGELOG, ADR backfill D-1..41,
-   spec/pins.json from pins_draft.json, spec/schemas/ (14 files), CLAUDE.md
+   spec/pins.json from recon/pins.draft.json, spec/schemas/ (14 files), CLAUDE.md   [DONE 09-07]
 1  primitives: RFC 8785 canonical JSON; SHA-256; HPKE RFC 9180 (X25519/HKDF-SHA256/AES-256-GCM);
    AAD build + id; chunker/chain (§7.4); reassembly walk (§8.5, §11.3)
    -> spec/vectors/aad.json, seal.json generated here and cross-checked (T-P1-4, T-P1-5)
@@ -48,7 +48,7 @@ VERIFIER before anything that writes: it is the floor of every class, it needs n
 |---|---|---|
 | `$POSTAGE` token ID + treasury, `hedera:testnet` | `spec/pins.json`, §4.1 table, LIMITATIONS | unfilled — T-P9-2 blocks any claim until filled |
 | Price topic (`wishmail:prices:1`) | claim `prices`, LIMITATIONS | unfilled |
-| x402 facilitator for `hedera:testnet` | price list `methods[].facilitator`, LIMITATIONS L-11 | unfilled — see hol-x402 recon O-items |
+| x402 facilitator for `hedera:testnet` | price list `methods[].facilitator`, LIMITATIONS L-11 | **filled (D-132, RECORD 09-07)** — x402.org: `https://x402.org/facilitator`, scheme `exact`, `hedera:testnet`, USDC `0.0.429274` (6 dp), fee payer `0.0.9185802`, no signup. `hedera:mainnet`: none anywhere |
 | `hbar` leg `rate.source` | price list `methods[].rate`, LIMITATIONS | unfilled — Sonic's stated preference: SaucerSwap HBAR/USDC (ledger E, Q-6; RECORD) |
 | Reference Postmaster price numbers | price topic | RECORD (ledger E, Q-6): $0.10 USDC per stamp; bundle of 12 for $1.00; HBAR by rate, fallback fixed unit price at HBAR = $0.07 |
 | Registered schema digests (14) + wire strings | `spec/pins.json` (T-P9-9) | unfilled until HCS-13 registration |
@@ -71,4 +71,8 @@ VERIFIER before anything that writes: it is the floor of every class, it needs n
 
 ## 6. Open for Sonic
 
-Demo shape · HCS-10 by hand vs SDK · which classes the first claim names · LICENSE · whether `hol` is BUILD on the map · the x402 testnet facilitator · the running-hash integrity check (L-10: implement or not) · submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item).
+Demo shape · HCS-10 by hand vs SDK · which classes the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) · submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item).
+
+**Closed since.** The x402 testnet facilitator — D-132, 09-07: x402.org, `hedera:testnet` only. LICENSE — Apache 2.0, stated as a non-negotiable in `CLAUDE.md` §3 and present in the repository since the initial commit; `CONTRIBUTING.md` and `README.md` name it, and contributions are certified under DCO 1.1 with no CLA.
+
+**Next.** HCS/HTS operations — the ingredients the spec recipe calls for, before any WISHMail code: the `$POSTAGE` token and its treasury (§4.1), the price topic (§14.3, memo `wishmail:prices:1`), and the per-agent topics of §4.6 (doorbell with its HIP-991 one-stamp fee collected by the treasury, log, manifest topic with memo `wishmail:manifest:1`). `hedera-testnet-mcp` is connected and is for this. `HCS-10 by hand vs SDK` decides how the operations that *carry envelopes* are written; it does not block creating a token or a topic.

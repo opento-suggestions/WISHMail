@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:evidence-bundle",
+  "title": "EvidenceBundle",
+  "description": "EvidenceBundle — WISHMAIL_SPEC_v0_5.md §5.10.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "spec": {
+      "type": "string"
+    },
+    "ledgerTags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "hedera:testnet",
+          "hedera:mainnet"
+        ],
+        "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+        "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+      }
+    },
+    "window": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "Consensus timestamp, seconds.nanos (§5.1)."
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "Consensus timestamp, seconds.nanos (§5.1)."
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+      }
+    },
+    "correspondence": {
+      "type": "array",
+      "description": "Ordered by the consensus timestamp of each entry’s canonical chunk 0, ties by lane topic ID then sequence number (§11.7).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "envelope": {
+            "$ref": "urn:wishmail:0.5:envelope"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "STAMPED",
+              "SUBMITTED",
+              "SETTLED",
+              "ACKED"
+            ],
+            "description": "Envelope state (§8.3)."
+          },
+          "chunks": {
+            "type": "array",
+            "items": {
+              "$ref": "urn:wishmail:0.5:postmark"
+            },
+            "description": "By index (§11.7)."
+          },
+          "offChain": {
+            "type": "array",
+            "items": {
+              "$ref": "urn:wishmail:0.5:postmark"
+            },
+            "description": "Off-chain, unrooted, and conflicting chunks: recorded, never used (§8.5). By consensus timestamp."
+          },
+          "settlement": {
+            "$ref": "urn:wishmail:0.5:settlement"
+          },
+          "returnReceipt": {
+            "$ref": "urn:wishmail:0.5:return-receipt"
+          },
+          "requests": {
+            "type": "array",
+            "description": "Receipt requests: the lane’s `transaction` operations and their schedules (§10.4). By consensus timestamp.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scheduleId": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                  "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+                },
+                "sequenceNumber": {
+                  "type": "integer"
+                },
+                "consensusTimestamp": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+$",
+                  "description": "Consensus timestamp, seconds.nanos (§5.1)."
+                },
+                "status": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "scheduleId",
+                "sequenceNumber",
+                "consensusTimestamp",
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "slip": {
+            "$ref": "urn:wishmail:0.5:attempted-delivery-slip"
+          },
+          "appraisal": {
+            "type": "object",
+            "properties": {
+              "declared": {
+                "type": "object",
+                "properties": {
+                  "trustClass": {
+                    "type": "string",
+                    "enum": [
+                      "math",
+                      "economic-game",
+                      "hardware-TEE",
+                      "social-committee"
+                    ],
+                    "description": "Trust class (§2.2, §9)."
+                  },
+                  "endorsements": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "missing",
+                        "vague",
+                        "blurred",
+                        "stale",
+                        "timed-out",
+                        "withheld"
+                      ]
+                    },
+                    "description": "Endorsements — what the proof could not see (§2.2). Orthogonal to trust class."
+                  }
+                },
+                "required": [
+                  "trustClass",
+                  "endorsements"
+                ],
+                "additionalProperties": false
+              },
+              "appraised": {
+                "type": "object",
+                "properties": {
+                  "standing": {
+                    "type": "string",
+                    "enum": [
+                      "verified",
+                      "unverified",
+                      "unstamped",
+                      "unbound"
+                    ],
+                    "description": "Appraised standing, ordered verified > unverified > unstamped > unbound (§11.5)."
+                  },
+                  "reasons": {
+                    "$ref": "#/$defs/reasons"
+                  }
+                },
+                "required": [
+                  "standing",
+                  "reasons"
+                ],
+                "additionalProperties": false
+              },
+              "resolution": {
+                "type": "object",
+                "properties": {
+                  "standing": {
+                    "type": "string",
+                    "enum": [
+                      "verified",
+                      "unverified"
+                    ]
+                  },
+                  "reasons": {
+                    "$ref": "#/$defs/reasons"
+                  }
+                },
+                "required": [
+                  "standing",
+                  "reasons"
+                ],
+                "additionalProperties": false
+              },
+              "receipt": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "acked",
+                      "unclaimed",
+                      "invalid",
+                      "none"
+                    ]
+                  },
+                  "reasons": {
+                    "$ref": "#/$defs/reasons"
+                  }
+                },
+                "required": [
+                  "status",
+                  "reasons"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "declared",
+              "appraised",
+              "resolution",
+              "receipt"
+            ],
+            "additionalProperties": false,
+            "$comment": "Appraised never exceeds declared (P-12). The envelope’s standing is the lowest across the binding, postage, and resolution checks; the receipt does not lower it and nothing raises it (§11.5)."
+          }
+        },
+        "required": [
+          "envelope",
+          "state",
+          "chunks",
+          "offChain",
+          "requests",
+          "appraisal"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "orphans": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:wishmail:0.5:settlement"
+      },
+      "description": "Settlements counting for no envelope in scope (F-3). By the settlement’s consensus timestamp (§11.7)."
+    },
+    "observations": {
+      "type": "object",
+      "description": "What the Verifier saw at its own clock. EXCLUDED from `digest`, and without bearing on any state or standing (§11.6, D-82).",
+      "properties": {
+        "appraisedAt": {
+          "type": "string"
+        },
+        "mirror": {
+          "type": "string"
+        },
+        "drift": {
+          "type": "array"
+        },
+        "disagreement": {
+          "type": "array"
+        },
+        "integrity": {}
+      },
+      "required": [
+        "appraisedAt",
+        "mirror",
+        "drift",
+        "disagreement"
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over the canonical JSON (RFC 8785) of the bundle with `digest` and `observations` absent; the bundle’s identifier (§11.7). T-P3-1 compares it."
+    }
+  },
+  "required": [
+    "spec",
+    "ledgerTags",
+    "window",
+    "topics",
+    "correspondence",
+    "orphans",
+    "observations",
+    "digest"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^T-P[0-9]+-[0-9]+$"
+      },
+      "description": "Every reason is the identifier of the conformance test whose fixture exercises the condition found, in the order of §11.5’s table (D-88)."
+    }
+  }
+}

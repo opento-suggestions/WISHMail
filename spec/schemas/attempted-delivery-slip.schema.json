@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:0.5:attempted-delivery-slip",
+  "title": "AttemptedDeliverySlip",
+  "description": "AttemptedDeliverySlip — WISHMAIL_SPEC_v0_5.md §5.9.",
+  "$comment": "A proof of absence. Expiry is not silence; a slip carries no negative claim about the recipient and is never superseded (§2.2, §10.5, F-6). AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it.",
+  "type": "object",
+  "properties": {
+    "ledgerTag": {
+      "type": "string",
+      "enum": [
+        "hedera:testnet",
+        "hedera:mainnet"
+      ],
+      "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+      "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+    },
+    "address": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "hcs14",
+        "dns",
+        "nanda",
+        "hol"
+      ],
+      "description": "Resolution profile identifier (§9). A release claiming the `document` extension (§16.5) widens this enum."
+    },
+    "resolutionProof": {
+      "type": "object",
+      "description": "A proof by reference (§5.2, D-26): the hash, and the canonical location its manifest is dereferenced at. The manifest is never carried in-band.",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256, lowercase hex (§5.1)."
+        },
+        "uri": {
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+              "properties": {
+                "ledgerTag": {
+                  "type": "string",
+                  "enum": [
+                    "hedera:testnet",
+                    "hedera:mainnet"
+                  ],
+                  "description": "Ledger tag (§5.1). The core defines exactly these two and refuses every other; an extension that claims another ledger widens this enum (§16.7).",
+                  "$comment": "T-P9-11 — an envelope whose AAD names an undefined ledger tag is rejected at send and appraises unbound at replay."
+                },
+                "topicId": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+                  "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+                },
+                "sequenceNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "ledgerTag",
+                "topicId",
+                "sequenceNumber"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The manifest’s canonical location. Null until `send` publishes the manifest (§6.2, §6.4 step 2)."
+        }
+      },
+      "required": [
+        "hash"
+      ],
+      "additionalProperties": false
+    },
+    "doorbell": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Hedera entity in canonical form 0.0.N (§5.1)."
+    },
+    "connectionRequestSeq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "consensusTimestamp": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Of the connection request."
+    },
+    "log": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "The sender’s outbound topic."
+    },
+    "logSeq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The outbound connection_request record."
+    },
+    "window": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Seconds waited. The one authored field; every other is observed (§5.9)."
+    },
+    "endorsement": {
+      "const": "timed-out"
+    }
+  },
+  "required": [
+    "ledgerTag",
+    "address",
+    "profile",
+    "resolutionProof",
+    "doorbell",
+    "connectionRequestSeq",
+    "consensusTimestamp",
+    "log",
+    "logSeq",
+    "window",
+    "endorsement"
+  ],
+  "additionalProperties": false
+}
