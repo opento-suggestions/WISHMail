@@ -1,0 +1,275 @@
+{
+  "_note": "No NANDA repo carries a Status/Version line of the kind HCS specs use. The `status` field below records what is actually determinable from the file or its repo, not a declared spec status. All sha256 values are over raw git blob bytes (git cat-file blob | sha256sum), not the CRLF working tree.",
+
+  "agentfacts-schema": {
+    "repo": "https://github.com/projnanda/agentfacts-format",
+    "commit": "89e938c08a7166341201568055c0a3b6852d26e4",
+    "path": "agentfacts_schema.json",
+    "blobSha": "37deb4afcf8ccf147d99b060bb5a4b10ce3f1057",
+    "sha256": "34495d046d6c579209296c8a4ffcd32b7ff2624733d63eda6ada8df8dbef1745",
+    "bytes": 7583,
+    "status": "no status field; JSON Schema draft-07; $id https://agentfacts.org/schema/v1; repo untouched since 2025-06-17",
+    "lastChange": {
+      "commit": "89e938c08a7166341201568055c0a3b6852d26e4",
+      "date": "2025-06-17T00:33:18-04:00",
+      "message": "Add files via upload"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "agentfacts-readme": {
+    "repo": "https://github.com/projnanda/agentfacts-format",
+    "commit": "89e938c08a7166341201568055c0a3b6852d26e4",
+    "path": "README.md",
+    "blobSha": "f0be87bd25765f852b43b2638da40a33f08fcea1",
+    "sha256": "331821a18c527ce50cfe3a2123dffe718c2e0b69c456e2cc45603c37d708bf70",
+    "bytes": 6510,
+    "status": "no status field",
+    "lastChange": {
+      "commit": "89e938c08a7166341201568055c0a3b6852d26e4",
+      "date": "2025-06-17T00:33:18-04:00",
+      "message": "Add files via upload"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+
+  "index-v2-readme": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "README.md",
+    "blobSha": "785045db3ab7ae7a8dfa7ed0f8a211faee220828",
+    "sha256": "40e9a0c9dd834eca425b3a42e623d6eaa5b3ffdd18901f9115717c4e220217ad",
+    "bytes": 10016,
+    "status": "no status field; documents the live deployment at api.nandaindex.org",
+    "lastChange": {
+      "commit": "b4afb41d863ce8af2148f6104b545472d80372f8",
+      "date": "2026-07-28T12:41:47-07:00",
+      "message": "analytics update"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-locator-parser": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/src/lib/locatorParser.ts",
+    "blobSha": "c1bb40116d94098eb59e11965a5c4317b01ccdcc",
+    "sha256": "248e03739e081df4d1a9824501d9b7cad70a1eab56ebbc21bb1ba7afb8bff42a",
+    "bytes": 3660,
+    "status": "implementation; the de-facto normative name grammar",
+    "lastChange": {
+      "commit": "ce5ccc83b3966f5f61bd6d6ae5c9cb917985e57f",
+      "date": "2026-06-16T23:21:49-07:00",
+      "message": "schema consistency + resolution flows"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-media-types": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/src/lib/mediaTypes.ts",
+    "blobSha": "2a5c4fefa394528d9dc4d1eb0e51c9e426692b9b",
+    "sha256": "d71e5dcc73fcf6d0282071aeaa5bc4960acd34755b238ee07b3052fffa68aef2",
+    "bytes": 2428,
+    "status": "implementation; self-described 'single source of truth' for media_type vocabulary",
+    "lastChange": {
+      "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+      "date": "2026-07-29T17:19:27-07:00",
+      "message": "Merge PR #20: feat(index): pointer-only ANS registry media type"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-index-record-types": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/src/types/api/index-record.ts",
+    "blobSha": "40361314d49f6bc619c4ae7ad5397968fb8bdeb7",
+    "sha256": "e6dfabf1630773a348719424af0523c68eeb067a0a6072330093b23f71a988d4",
+    "bytes": 4157,
+    "status": "implementation; INDEX_RECORD_SCHEMA + TRUST_MANIFEST_SCHEMA",
+    "lastChange": {
+      "commit": "1f078b46fa0b8b59467772084751ad4f57168b5c",
+      "date": "2026-07-18T20:07:25-07:00",
+      "message": "feat: add agentic search with ARD-compliant discovery and LLM-enriched ranking"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-orgs-routes": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/src/routes/orgs.ts",
+    "blobSha": "d239c403eb2d0be0f6d0a2faf5ef0bd4de1e6de5",
+    "sha256": "7de11a5e79ccfeaaa744a151a05255adb028c361a8aa00c89c1627222f6587f9",
+    "bytes": 20160,
+    "status": "implementation; registration flow + create/update body schemas",
+    "lastChange": {
+      "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+      "date": "2026-07-29T17:19:27-07:00",
+      "message": "Merge PR #20: feat(index): pointer-only ANS registry media type"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-migration-003": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/db/migrations/003_nanda_v2.sql",
+    "blobSha": "179c19f4463f74835469cf109e961481c7c425e6",
+    "sha256": "41bb26549cc4229749ba4a5d2536c7fa54ca5bc99efb2e598ba3effbfe785022",
+    "bytes": 2420,
+    "status": "implementation; the migration that dropped signed entity_owners and audit_log",
+    "lastChange": {
+      "commit": "7af4965e29750973b83ecef946d5205055188a08",
+      "date": "2026-06-09T16:34:56-04:00",
+      "message": "init nanda-index: server + web migrated from GARR/garr-web"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-migration-010": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/db/migrations/010_catalog_entry_fields.sql",
+    "blobSha": "08730055b2cff7c03296914bf6750238c6c4fcb0",
+    "sha256": "ebbf4dac97c8e84b10ad47de4ed54c59341190cfc775a382d420cb49f17ce516",
+    "bytes": 811,
+    "status": "implementation; adds nullable trust_manifest JSONB",
+    "lastChange": {
+      "commit": "08570e5c93e8559551f225f1522b5077f1d49a97",
+      "date": "2026-07-01T15:40:12-04:00",
+      "message": "feat: add version and trustManifest to index record for AI Catalog parity"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "index-v2-signing": {
+    "repo": "https://github.com/projnanda/nanda-index-v2",
+    "commit": "9e6d64a6f8de24e954dfa1479138cdbf60385e39",
+    "path": "server/src/services/signing.ts",
+    "blobSha": "458e3c6d5a0242e994919681844771bb6d5f725d",
+    "sha256": "e545d8e74bb15bc3dc3a0c19c4ae00f82978a5c039aab6ea083984da692152f3",
+    "bytes": 5040,
+    "status": "DEAD CODE — no module in server/src imports it; verified by grep at this commit",
+    "lastChange": {
+      "commit": "7af4965e29750973b83ecef946d5205055188a08",
+      "date": "2026-06-09T16:34:56-04:00",
+      "message": "init nanda-index: server + web migrated from GARR/garr-web"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+
+  "site-nanda-index-doc": {
+    "repo": "https://github.com/projnanda/projnanda",
+    "commit": "34c541cdbc7a1139db29f867f414987c3cd6347f",
+    "path": "home/13.NANDAIndex.md",
+    "blobSha": "fa083c9311cf316526c944d81d084b550ad50c5b",
+    "sha256": "249add2187bb1fcc1386e80dc11debb22c8fd40ba5bb00fd2453c6ecfa96235f",
+    "bytes": 5025,
+    "status": "marketing/community site content (docsify), served at projectnanda.org; not a specification",
+    "lastChange": {
+      "commit": "d886a5b9a670950726f8a036543f66162045de7c",
+      "date": "2026-08-20T19:26:51+05:30",
+      "message": "chore: fix encoding glitches and special characters in markdown files"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "site-faq": {
+    "repo": "https://github.com/projnanda/projnanda",
+    "commit": "34c541cdbc7a1139db29f867f414987c3cd6347f",
+    "path": "faq_nanda.md",
+    "blobSha": "8a9784d37994058ceb42176c4e0f1c1162fba1ad",
+    "sha256": "06388aceb053b9dcdf2d59ae5aac2050e17a5429db5dee61810df7373fb23ae6",
+    "bytes": 16770,
+    "status": "marketing/community FAQ; not a specification",
+    "lastChange": {
+      "commit": "d886a5b9a670950726f8a036543f66162045de7c",
+      "date": "2026-08-20T19:26:51+05:30",
+      "message": "chore: fix encoding glitches and special characters in markdown files"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+
+  "list39-agentfact-model": {
+    "repo": "https://github.com/projnanda/list-39",
+    "commit": "d86f605228307cbef65474451e565e9d497b8daa",
+    "path": "models/AgentFact.js",
+    "blobSha": "3dbb0db30016b9e0be5bccc779199ce8f6149410",
+    "sha256": "c75e8cc6a581904f31360aca0f51e451d63efee01f9f3578cc181328670b97c4",
+    "bytes": 2848,
+    "status": "implementation; backs list39.org AgentFacts hosting",
+    "lastChange": {
+      "commit": "04c0fd8ccab4139f96a5625cd2b85a7e39036cad",
+      "date": "2025-06-15T22:45:53-04:00",
+      "message": "Initial commit: List39 Agent Facts Registry - Complete Express.js backend with MongoDB, Google OAuth, public JSON API, and production-ready security features"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+  "list39-public-route": {
+    "repo": "https://github.com/projnanda/list-39",
+    "commit": "d86f605228307cbef65474451e565e9d497b8daa",
+    "path": "routes/public.js",
+    "blobSha": "0fa17ab60ace173ebc6451a8f23dd74b220301a2",
+    "sha256": "512a2589acbb78781725efc1a42000f54c1469089d9a3fb96279ea349ad50c27",
+    "bytes": 6378,
+    "status": "implementation; defines the GET /@<username>.json AgentFacts locator",
+    "lastChange": {
+      "commit": "04c0fd8ccab4139f96a5625cd2b85a7e39036cad",
+      "date": "2025-06-15T22:45:53-04:00",
+      "message": "Initial commit: List39 Agent Facts Registry - Complete Express.js backend with MongoDB, Google OAuth, public JSON API, and production-ready security features"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+
+  "index-v1-server": {
+    "repo": "https://github.com/projnanda/nanda-index-frontend",
+    "commit": "dff3643b81c37f5bc5a2ad92fc427325c4222a02",
+    "path": "server.js",
+    "blobSha": "a62cd2f322c048b3961cbe3c715199361c6ed6dc",
+    "sha256": "3705d5e33935a7bf5baa285286289caf0f6f9683e9e61b3501d43953e9685d17",
+    "bytes": 8042,
+    "status": "implementation; the v1 index (username + agent_facts_link). Superseded by nanda-index-v2 but its deployment at index.projectnanda.org still answers.",
+    "lastChange": {
+      "commit": "dff3643b81c37f5bc5a2ad92fc427325c4222a02",
+      "date": "2025-06-15T20:56:51-04:00",
+      "message": "Initial commit: NANDA Index - Autonomous Agent Registry with REST API and OAuth authentication"
+    },
+    "fetchedAt": "2026-09-06T18:10:00Z"
+  },
+
+  "_papers": {
+    "_note": "Not content-addressable by git. arXiv assigns immutable versioned IDs; no vN suffix was captured, so re-pin as 2507.14263vN if the affidavit needs byte stability.",
+    "beyond-dns": {
+      "url": "https://arxiv.org/abs/2507.14263",
+      "title": "Beyond DNS: Unlocking the Internet of AI Agents via the NANDA Index and Verified AgentFacts",
+      "citationDate": "2025/07/18",
+      "role": "The only document that describes signed AgentFacts, key rotation, revocation and the quilt. Design intent, not implemented in any repo pinned above.",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    },
+    "adaptive-resolver": {
+      "url": "https://arxiv.org/abs/2508.03113",
+      "title": "NANDA Adaptive Resolver: Architecture for Dynamic Resolution of AI Agent Names",
+      "citationDate": "2025/08/05",
+      "role": "Describes the adaptive_resolver concept whose only schema presence is endpoints.adaptive_resolver {url, policies}.",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    }
+  },
+
+  "_liveSurfaces": {
+    "_note": "HTTP surfaces with no commit, no content hash, no snapshot. Values observed once on 2026-09-06 and not reproducible.",
+    "index-api": {
+      "url": "https://api.nandaindex.org",
+      "observed": "GET /health -> {\"status\":\"ok\",\"db\":\"ok\"}; GET /api/v1/index returns live IndexRecords with no signature field",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    },
+    "index-v1-site": {
+      "url": "https://index.projectnanda.org/",
+      "observed": "HTTP 200 text/html; separate deployment from api.nandaindex.org",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    },
+    "list39": {
+      "url": "https://list39.org/",
+      "observed": "connection failed (curl exit 000) on two attempts from this host; OPEN whether the AgentFacts host is currently reachable",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    },
+    "mit-group-page": {
+      "url": "https://nanda.media.mit.edu",
+      "observed": "redirects (302 chain) to https://www.media.mit.edu/groups/nanda/overview/ ; MIT Media Lab group page, no specification content",
+      "fetchedAt": "2026-09-06T18:10:00Z"
+    }
+  }
+}

@@ -1,0 +1,473 @@
+{
+  "_meta": {
+    "purpose": "Content pins for WISHMail reconnaissance of the HOL Registry Broker (Target A) and x402 (Target B).",
+    "fetchedAt": "2026-09-06",
+    "method": "Every sha256 is computed over RAW GIT BLOB BYTES via `git cat-file blob <blobSha> | sha256sum`, never over the working-tree checkout. This machine runs core.autocrlf=true, so working-tree digests differ from object-store digests. blobSha is the git object id (`git rev-parse HEAD:<path>`). bytes is `git cat-file -s`.",
+    "readOnly": "All repositories were cloned (--filter=blob:none) and never modified. All HTTP was idempotent GET. No registration, purchase, write, or transaction was performed."
+  },
+
+  "targetA_hol": {
+    "_note": "There is NO public source repository for the Registry Broker SERVER. Only clients, docs and skills are open. See report CONTRADICTION C-1.",
+
+    "hcs-14-canonical": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-14/canonical.ts",
+      "blobSha": "259bd2895f23e70da6d1eb8f6c5dea674b5ab259",
+      "sha256": "aa6f53500b6b0c37c24c3e4bd3d7669310825a063c76ed050c9dac55d5fd4f66",
+      "bytes": 1803,
+      "status": "no status field; package @hashgraphonline/standards-sdk 0.1.158-canary.0",
+      "lastChange": { "commit": "245b7e8e67338afbd06e1425b02a67f1043088d5", "date": "2025-11-02", "message": "feat: new interactive cli" },
+      "role": "AID canonicalization: key order [skills,name,nativeId,protocol,registry,version]; JSON.stringify; registry+protocol lowercased.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-14-did": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-14/did.ts",
+      "blobSha": "53168f72523a7893a219062288454e3e6ccc247c",
+      "sha256": "3eaae96e3cf286300e2cc822c02f1a8cab7854569aedcbf6d8df288a2628f287",
+      "bytes": 5581,
+      "status": "no status field",
+      "lastChange": { "commit": "6a7036f812a3352f0e2e645b5dd8cdde4ae11469", "date": "2025-09-11", "message": "fix: hcs-11 impl" },
+      "role": "sha384 over canonical JSON, base58 (Bitcoin alphabet, NOT multibase-prefixed); param order [uid,registry,proto,nativeId,domain,src].",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-14-base58": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-14/base58.ts",
+      "blobSha": "aa1b1dc7a60ed1bfba7f1fcb0075874f06e72572",
+      "sha256": "b68d455d10d159af78bdf6e6b050cf10a65c20376adf30a88f975b037e07c16b",
+      "bytes": 2047,
+      "status": "no status field",
+      "lastChange": { "commit": "9e91c2258bf158182cd323951fcaa0b7e73d089e", "date": "2025-09-07", "message": "feat: hcs-14 implementation" },
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-14-sdk": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-14/sdk.ts",
+      "blobSha": "dad2560bdd2672fc0b67ce33008118f76d2f92e0",
+      "sha256": "b6e805d0eee825d9bb780057c8e7c305a75e03ddb843db4de1f5d4e6aedb2fb4",
+      "bytes": 12705,
+      "status": "no status field",
+      "lastChange": { "commit": "28ccf5da3186b7269982a56f933148107f82da99", "date": "2026-02-24", "message": "feat(hcs-14): add ANS profile resolver adapter (#147)" },
+      "role": "createDidWithUaid: for Hedera, nativeId = toHederaCaip10(network, operatorId); for proto=hcs-10, uid = inboundTopicId@accountId.",
+      "fetchedAt": "2026-09-06"
+    },
+    "rb-client-agents": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/services/registry-broker/client/agents.ts",
+      "blobSha": "06dc2217358cf61ecbd7c0ca6df17470003b0828",
+      "sha256": "b3bc64c4fa66485e02875d2781ef20de4435fb3bbd0e5aecd78c1177bb9cad44",
+      "bytes": 9449,
+      "status": "no status field",
+      "lastChange": { "commit": "3273eda935f93ccf5109ccac0f7e79a0113ac655", "date": "2026-01-21", "message": "fix: wc + jsr entry" },
+      "role": "resolveUaid -> GET /resolve/{uaid}; registerAgent; validateUaid.",
+      "fetchedAt": "2026-09-06"
+    },
+    "rb-client-utils": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/services/registry-broker/client/utils.ts",
+      "blobSha": "9e3171ccd4312239038bf761d34a466b91a364be",
+      "sha256": "2ba8472db6ec7839caa3ab9beb76a1fe7074dab8b970c4debb90a1f8bf0e5964",
+      "bytes": 7555,
+      "status": "no status field",
+      "lastChange": { "commit": "49bef953552c24fb07f76fc02d8c9447bc60c23e", "date": "2025-12-12", "message": "chore: ci fixes" },
+      "role": "LOAD-BEARING: line 131 declares X402NetworkId as the union of base and base-sepolia only. HOL's own x402 leg is EVM-only.",
+      "fetchedAt": "2026-09-06"
+    },
+    "rb-client-schemas": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/services/registry-broker/schemas.ts",
+      "blobSha": "843a2a073587982acd2f50111efac6ba0906afd0",
+      "sha256": "3bda4198c9c1f80bc70b6fad053613da1df656cdfd88f7c2cdc0dabff268e2b1",
+      "bytes": 82409,
+      "status": "no status field",
+      "lastChange": { "commit": "d771aaad19760196461ce495cacfe04bda9ffc37", "date": "2026-05-08", "message": "feat(registry-broker): export chat type system (#174)" },
+      "role": "lines 392-394: resolveResponseSchema wraps searchHitSchema, which has no `profile` field. Contradicts the published OpenAPI AgentDetail.",
+      "fetchedAt": "2026-09-06"
+    },
+    "rb-client-package": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "packages/rb-client/package.json",
+      "blobSha": "fd2cb2cb35b716416eebf5d53c119a9b4e655b17",
+      "sha256": "12b48d0fb14af864f1ee3395421789d9c375c43cfa0e6bbf578756e341311b3c",
+      "bytes": 2136,
+      "status": "@hol-org/rb-client 0.1.158-canary.0 in tree; npm dist-tags.latest 0.1.186 at fetch time",
+      "lastChange": { "commit": "2b6cabdc47e30c952131b2c37b016cebf88ce360", "date": "2026-04-04", "message": "ci: switch npm publishing to trusted publishing" },
+      "role": "peerDependencies include x402 and x402-axios (both optional).",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-25-adapter-x402-impl": {
+      "repo": "https://github.com/hashgraph-online/standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-25/adapters/x402.ts",
+      "blobSha": "feb2788b501411646b83aa66ef5b0ea71a95e415",
+      "sha256": "e2b229a60a39c4f0f60ba4149cfa81e6b47bec458d796769354d17fa282b2e6c",
+      "bytes": 2260,
+      "status": "no status field",
+      "lastChange": { "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d", "date": "2026-09-02", "message": "feat(hcs-25): implement signal and adapter catalogs (#179)" },
+      "fetchedAt": "2026-09-06"
+    },
+
+    "registry-api-reference": {
+      "repo": "https://github.com/hashgraph-online/registry-broker-skills",
+      "commit": "00f007be8dbfad81d53d06d71fd5c3743eac5f83",
+      "path": "references/API.md",
+      "blobSha": "d031ca40789c7c09bc8f2899efefed71673b0cc4",
+      "sha256": "2a030f3456df912918f58e849162089c1a17ce1db60386de00bc3905fc6b1560",
+      "bytes": 6124,
+      "status": "no status field; package @hol-org/registry 1.5.2",
+      "lastChange": { "commit": "6fad75fee68e10a604a8e0064f0a66b849d970f3", "date": "2026-02-01", "message": "feat: add scripts, examples, and references for complete skill package" },
+      "role": "The endpoint/auth table. Base URL https://hol.org/registry/api/v1. Search, agents and resolve are all Auth: No.",
+      "fetchedAt": "2026-09-06"
+    },
+    "registry-skills-auth": {
+      "repo": "https://github.com/hashgraph-online/registry-broker-skills",
+      "commit": "00f007be8dbfad81d53d06d71fd5c3743eac5f83",
+      "path": "src/auth.ts",
+      "blobSha": "42b8eb1b4cc413c9c63b5a5f57faa9d56424bda0",
+      "sha256": "be3aa279e29e384516850df44cbf919ab015ea0d37facd0c69311abedbbb6236",
+      "bytes": 3056,
+      "status": "no status field",
+      "lastChange": { "commit": "45ceab728f5f6e2515d67d941cb2ca99d0d1ef09", "date": "2026-02-11", "message": "feat: new skill commands" },
+      "role": "Ledger auth defaults to base / base-sepolia (EVM), lines 30-36.",
+      "fetchedAt": "2026-09-06"
+    },
+    "registry-skills-config": {
+      "repo": "https://github.com/hashgraph-online/registry-broker-skills",
+      "commit": "00f007be8dbfad81d53d06d71fd5c3743eac5f83",
+      "path": "src/config.ts",
+      "blobSha": "08c4143df2628955911a343462eb587dc9e0b4fe",
+      "sha256": "6da4f05846ea5c96b94a46f4fe4d3d072462f6cc63deff35de2553b7b1c6654a",
+      "bytes": 310,
+      "status": "no status field",
+      "lastChange": { "commit": "45ceab728f5f6e2515d67d941cb2ca99d0d1ef09", "date": "2026-02-11", "message": "feat: new skill commands" },
+      "fetchedAt": "2026-09-06"
+    },
+
+    "docs-free-tier": {
+      "repo": "https://github.com/hashgraph-online/hcs-improvement-proposals",
+      "commit": "bd508bad70e3a5a660b149d7a183dd30b814d29f",
+      "path": "docs/registry-broker/free-tier.md",
+      "blobSha": "f058c462108d42692036bbf55f21bea90b850443",
+      "sha256": "ff4468c74928e08133b1e5d8f170ec460e1a115c73d48a75519a84640d42b8a9",
+      "bytes": 2395,
+      "status": "docs page, no status field",
+      "lastChange": { "commit": "5e22fe6d9b44e40e5438dd4d03eb8b50208bbcec", "date": "2026-06-11", "message": "docs(registry-broker): document free SKALE ERC-8004 registration (#279)" },
+      "role": "Line 33: rate windows and thresholds are deliberately unpublished.",
+      "fetchedAt": "2026-09-06"
+    },
+    "docs-search": {
+      "repo": "https://github.com/hashgraph-online/hcs-improvement-proposals",
+      "commit": "bd508bad70e3a5a660b149d7a183dd30b814d29f",
+      "path": "docs/registry-broker/search.md",
+      "blobSha": "aa00b9b77b7a9660549afd2572847d13dd212206",
+      "sha256": "704dff94dc79ab5c3671cea9523f6f18443d3bd53f8a9b0bed4e537fb78632c6",
+      "bytes": 11160,
+      "status": "docs page, no status field",
+      "lastChange": { "commit": "980c381411fdbe74f48423489e33f3dd14a72dbe", "date": "2026-02-23", "message": "feat: add skill badges docs (#240)" },
+      "role": "Line 199: rate-limit bucketing order (API key, then account, then IP); 429 carries Retry-After.",
+      "fetchedAt": "2026-09-06"
+    },
+    "docs-faq": {
+      "repo": "https://github.com/hashgraph-online/hcs-improvement-proposals",
+      "commit": "bd508bad70e3a5a660b149d7a183dd30b814d29f",
+      "path": "docs/registry-broker/getting-started/faq.md",
+      "blobSha": "34d2fc09cbe1aacec0b41b9951a5460cc8b3b73b",
+      "sha256": "19560f043cdaa64d4f3c6c2b192c2f027ea7a85ce71647878401b6a87ce8efed",
+      "bytes": 7677,
+      "status": "docs page, no status field",
+      "lastChange": { "commit": "6b226ff16556e0c2a7e4f51071f7ef8977d0e081", "date": "2026-03-21", "message": "fix: sdk updates (#258)" },
+      "role": "Line 18: enumerates the free (unauthenticated) endpoints.",
+      "fetchedAt": "2026-09-06"
+    },
+    "docs-gitignore": {
+      "repo": "https://github.com/hashgraph-online/hcs-improvement-proposals",
+      "commit": "bd508bad70e3a5a660b149d7a183dd30b814d29f",
+      "path": ".gitignore",
+      "blobSha": "f8637f66a26a3594f37f8bb996c68d843da45d68",
+      "sha256": "7c6bbf0957b9b6a68ad712a61d43c4eb9444f151392b5408312239f926773f73",
+      "bytes": 865,
+      "status": "n/a",
+      "lastChange": { "commit": "36fc6a95c32dcb9ca28630d12cf6205ae657ad0a", "date": "2026-02-04", "message": "chore: fix missing link (#237)" },
+      "role": "Lines 19-28: all normative standard text is gitignored and synced at build time from hiero-consensus-specifications. The task-1 canonicity finding still holds at this commit.",
+      "fetchedAt": "2026-09-06"
+    },
+
+    "hcs-25-standard": {
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-25.md",
+      "blobSha": "68be2d7c2349efc3802a91814056c89cde691857",
+      "sha256": "15d4da1006f9251f9b9a849f4803ad20bc86d485904a069ae55e1897dfff2f1c",
+      "bytes": 33015,
+      "status": "Draft (line 9); Version 1.0 (line 11)",
+      "role": "AI Trust Score Methodology. The broker fields trustScores / trustScoreUpdatedAt / trustScoreConfigVersion come from here.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-25-adapter-x402": {
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-25/adapters/x402.md",
+      "blobSha": "868a9c76f7dbcb2111cdb2040ae7508f58572b62",
+      "sha256": "5cb96fb46758c464ab52e4b27651010a000b09e83a266c79e3d586f4f8c6700e",
+      "bytes": 715,
+      "status": "title says (Adapter): x402 Usage (Informative) — informative, not normative",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-25-signal-x402": {
+      "repo": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-25/signals/x402.md",
+      "blobSha": "a81893e9372f4f4353505819695953f0432b6e1a",
+      "sha256": "8d3c9f4e418df128607409aa13e10c3a7b0e8ce172b39a287111d289156b456e",
+      "bytes": 1299,
+      "status": "title says (Signal): x402 Usage (Informative) — informative, not normative",
+      "fetchedAt": "2026-09-06"
+    }
+  },
+
+  "targetB_x402": {
+    "_canonical": "x402-foundation/x402 holds the normative spec. coinbase/x402 is a GitHub fork of it (parent field via GitHub API) and says so in its own README lines 1-3. See report CONTRADICTION C-6.",
+
+    "spec-v2": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/x402-specification-v2.md",
+      "blobSha": "3b4631af0684748966eafcdf6a6a90a8cbbf7198",
+      "sha256": "cb66bdef710298233316b02d48fce4a9417ec5449ed9cab7f5d9fe6a454920cd",
+      "bytes": 38469,
+      "status": "NO status line. Header is Protocol Version: 2 (line 3). Version History table at lines 723-729 lists v2.0 dated 2025-12-9.",
+      "lastChange": { "commit": "e187dda1ef0c69c85416625342e5bb7c4b857dac", "date": "2026-08-31", "message": "fix(py): add server-only extension_responses sidechannel (#3306)" },
+      "fetchedAt": "2026-09-06"
+    },
+    "spec-v1": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/x402-specification-v1.md",
+      "blobSha": "0940e3abf16ec235989eace54707348e3a615d0a",
+      "sha256": "4484cd856f3add013ba64485b5234364429fe46dc8f846e9bcc72f50eb80b7b6",
+      "bytes": 25857,
+      "status": "NO status line",
+      "fetchedAt": "2026-09-06"
+    },
+    "transport-http-v2": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/transports-v2/http.md",
+      "blobSha": "a21213c02706208b2268a5fdab7dc6d5b468edbd",
+      "sha256": "4f0298aaa23ac75de0eb49b1e96e6e67a5b910d7527b3a71c63e426b3bf5bdfb",
+      "bytes": 7396,
+      "status": "NO status line",
+      "lastChange": { "commit": "b6d5bffd73f56b72c37f888c743224dab63e35ff", "date": "2026-05-26", "message": "docs(spec): clarify HTTP payment required header (#2320)" },
+      "role": "Header Summary table at lines 164-170: PAYMENT-REQUIRED / PAYMENT-SIGNATURE / PAYMENT-RESPONSE.",
+      "fetchedAt": "2026-09-06"
+    },
+    "scheme-exact": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/schemes/exact/scheme_exact.md",
+      "blobSha": "fe27f3c2a971fcc8325c9f65c85bc19f8f93271f",
+      "sha256": "ffbac28df2e3c3bdfd2edf8512f22d0ddc26500f6d5c7c028c266f91ca27b97a",
+      "bytes": 11005,
+      "status": "NO status line",
+      "lastChange": { "commit": "7488a46fb7fa411e4b1e34c4b0f670cd357eb05e", "date": "2026-09-02", "message": "fix(stellar): accept CAP-71 V2 address credentials for Protocol 28 (#3279)" },
+      "role": "Line 41 replay MUST. Line 92 lists the per-network documents and OMITS Hedera.",
+      "fetchedAt": "2026-09-06"
+    },
+    "scheme-exact-hedera": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "specs/schemes/exact/scheme_exact_hedera.md",
+      "blobSha": "ee3860ccdf351b22a1186c08660cf6929a54d0f6",
+      "sha256": "4d2b0f81ca16c07d9895f0acc7dd032b53f6f21a9ef44838f30a9f14cc327f15",
+      "bytes": 9872,
+      "status": "NO status line",
+      "lastChange": { "commit": "d00e38818fafe1499ad369ab65e0dca84e1cca23", "date": "2026-07-03", "message": "Hardened Hedera facilitator verify (#2707)" },
+      "firstAdded": { "commit": "ae26f5e1f362bef93d1fa37a76d45384befbc71f", "date": "2026-02-06", "author": "Peter Swierzy", "message": "feat: Implement exact payment scheme specification for Hedera HTS FT ... (#792)" },
+      "fetchedAt": "2026-09-06"
+    },
+    "scheme-exact-hedera-STALE-FORK-COPY": {
+      "repo": "https://github.com/coinbase/x402",
+      "commit": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",
+      "path": "specs/schemes/exact/scheme_exact_hedera.md",
+      "blobSha": "05da42aa5ad5af72988c045200c230c5891b2292",
+      "sha256": "NOT COMPUTED - recorded only to demonstrate divergence from the canonical blob ee3860cc",
+      "status": "STALE. Differs from the x402-foundation blob ee3860cc; predates the 2026-07-03 hardening commit. DO NOT USE.",
+      "fetchedAt": "2026-09-06"
+    },
+    "network-and-token-support": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "docs/core-concepts/network-and-token-support.mdx",
+      "blobSha": "a77ce147259bcf1de50426a3ae0061fcd02bbd45",
+      "sha256": "a55580685ee1bfc5a5f4ac9e0d3ebaffe9563c700515ec048e1575019503d65e",
+      "bytes": 19025,
+      "status": "docs page, no status line",
+      "lastChange": { "commit": "aeb0fddd2f9131a46f8f7ee93aca3fca4da98401", "date": "2026-08-24", "message": "Update docs/core-concepts/network-and-token-support.mdx (#3257)" },
+      "role": "THE NETWORK REGISTRY. Lines 174-181 Hedera USDC. Lines 306 and 317: the x402.org facilitator supports hedera:testnet.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hedera-mechanism-constants": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "typescript/packages/mechanisms/hedera/src/constants.ts",
+      "blobSha": "3708735e07672281f42d571453ecee9e876e563a",
+      "sha256": "2afbb31ddeceba2d175f65adc8ba95a363b6c004330227ce474bfe6a56b0de71",
+      "bytes": 1200,
+      "status": "shipped package @x402/hedera",
+      "lastChange": { "commit": "d00e38818fafe1499ad369ab65e0dca84e1cca23", "date": "2026-07-03", "message": "Hardened Hedera facilitator verify (#2707)" },
+      "role": "HEDERA_TESTNET_USDC 0.0.429274; HEDERA_MAINNET_USDC 0.0.456858; decimals 6; HBAR_ASSET_ID 0.0.0.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hedera-mechanism-defaultAssets": {
+      "repo": "https://github.com/x402-foundation/x402",
+      "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+      "path": "typescript/packages/mechanisms/hedera/src/defaultAssets.ts",
+      "blobSha": "92f25e8b745bf76aa4d06532c11b854e62b060cb",
+      "sha256": "d9ac532dd2d2613fa6ddacd84c1b21e54ba9b69359eec8f6f24ec933bab967e7",
+      "bytes": 1907,
+      "status": "shipped package @x402/hedera",
+      "lastChange": { "commit": "4f587236e99928d05677ab63a0bafe6120dc1111", "date": "2026-08-13", "message": "feat(TS): spend controls (#3124)" },
+      "fetchedAt": "2026-09-06"
+    }
+  },
+
+  "_liveSurfaces": {
+    "_warning": "NOT CONTENT-ADDRESSABLE. These are HTTP responses captured at fetch time; they can change without notice and carry no signature. Recorded as evidence, not as pins.",
+    "hol-openapi": {
+      "url": "https://hol.org/registry/api/v1/openapi.json",
+      "http": 200,
+      "bytes": 261092,
+      "sha256OfResponseBody": "6a38959c61cd543d0b279ca1fbebd0225689b5c1cfa0c0b4cb0305679c9c8eab",
+      "declaredVersion": "openapi 3.1.0, info.version 0.1.0",
+      "paths": 115,
+      "securitySchemes": "ABSENT - components.securitySchemes is undefined; only 2 operations across the whole document declare `security`",
+      "fetchedAt": "2026-09-06"
+    },
+    "hol-registries": {
+      "url": "https://hol.org/registry/api/v1/registries",
+      "http": 200,
+      "auth": "none",
+      "value": ["erc-8004","agentverse","virtuals-protocol","coinbase-x402-bazaar","pulsemcp","moltbook","godaddy-ans","nanda","openrouter","erc-8004-solana","hashgraph-online","a2a-registry","hol","near-ai","a2a-protocol","openconvai"],
+      "fetchedAt": "2026-09-06"
+    },
+    "hol-stats": {
+      "url": "https://hol.org/registry/api/v1/stats",
+      "http": 200,
+      "auth": "none",
+      "totalAgents": 249167,
+      "counts": { "hol": 33, "hashgraph-online": 359, "openconvai": 2, "nanda": 2635, "coinbase-x402-bazaar": 28427, "erc-8004": 70901 },
+      "lastUpdate": "2026-09-06T22:08:36.309Z",
+      "status": "operational",
+      "fetchedAt": "2026-09-06"
+    },
+    "hol-response-headers": {
+      "url": "https://hol.org/registry/api/v1/registries",
+      "cacheControl": "public, max-age=0, s-maxage=60, stale-while-revalidate=30",
+      "rateLimitHeaders": "NONE present on a 200 response",
+      "x-hol-registry-proxy": "1",
+      "x-hol-resolve-override": "registry.hashgraphonline.com",
+      "fetchedAt": "2026-09-06"
+    },
+    "hol-auth-probe": {
+      "note": "GET /credits/providers and GET /credits/purchase/x402/minimums both returned 401 {\"error\":\"Authentication required\"} unauthenticated. GET /search, /registries, /stats, /agents/{uaid}, /resolve/{uaid}, /registries/{registry}/search all returned 200 unauthenticated.",
+      "fetchedAt": "2026-09-06"
+    },
+    "x402org-facilitator-supported": {
+      "url": "https://x402.org/facilitator/supported",
+      "http": 200,
+      "auth": "none",
+      "hederaKind": { "x402Version": 2, "scheme": "exact", "network": "hedera:testnet", "extra": { "feePayer": "0.0.9185802" } },
+      "hederaSigner": "0.0.9185802",
+      "networks": ["eip155:84532","solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1","algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe","aptos:2","stellar:testnet","hedera:testnet","xrpl:1","base-sepolia","solana-devnet"],
+      "hederaMainnet": "ABSENT",
+      "extensions": ["builder-code","eip2612GasSponsoring","erc20ApprovalGasSponsoring"],
+      "fetchedAt": "2026-09-06"
+    }
+  },
+
+  "_onChainEvidence": {
+    "_note": "Public mirror-node GETs only. No key, no Hedera client, no transaction. Recorded because these are the only content-addressed artifacts anywhere on the HOL side.",
+    "hol-registry-topic-mainnet": {
+      "topicId": "0.0.10080724",
+      "network": "mainnet",
+      "memo": "hcs-2:0:86400",
+      "adminKey": "ED25519",
+      "submitKey": "ED25519 (SET)",
+      "customFeesFixedFees": [],
+      "messages": 23,
+      "messagePayloadProtocol": "every message carries p=hcs-10, which contradicts the hcs-2 memo; see HCS-2 line 306",
+      "distinctOnChainPayers": 1,
+      "onChainPayer": "0.0.10022745",
+      "firstMessage": "2025-11-04T04:12:50.053Z",
+      "lastMessage": "2025-11-10T02:35:01.700Z",
+      "registryValuesCarried": { "hol": 20, "hashgraph-online": 3 },
+      "fetchedAt": "2026-09-06"
+    },
+    "hol-registry-topic-testnet": {
+      "topicId": "0.0.6913983",
+      "network": "testnet",
+      "memo": "hcs-10:0:300:3",
+      "adminKey": null,
+      "submitKey": null,
+      "customFeesFixedFees": [],
+      "distinctOnChainSubmitters": 1,
+      "onChainSubmitter": "0.0.2659396",
+      "note": "No submit key and no HIP-991 custom fee. The feeCredits field in broker records is broker credits, not an on-chain fee.",
+      "fetchedAt": "2026-09-06"
+    },
+    "verifiedChain": {
+      "_claim": "The registry-to-profile chain is fully re-derivable from a mirror node with no broker, and every hash checks out. Verified 2026-09-06.",
+      "step1": {
+        "topic": "0.0.10080724",
+        "seq": 6,
+        "consensusTimestamp": "1762262209.809943000",
+        "onChainPayer": "0.0.10022745",
+        "messageOps": "p=hcs-10, op=register, uaid=uaid:aid:4ZFPnAVFTnZpPFqzRm7h1bvR9AWLYFEvZmqVEqHqA9UtBp5L5G2gbVodjpCsMV7xR9;uid=sdk-erc8004-demo-mhkld2e7;registry=hol;proto=a2a;nativeId=https://integrated-enough-moving-culture.trycloudflare.com/.well-known/agent.json , t_id=0.0.10081297",
+        "brokerClaimedPayloadHash": "d9407a4a957464849b97f20e3b887f8391e58c0c4a180dc2298bbc23d6ddf7e2",
+        "verified": "sha256(raw HCS message bytes) equals brokerClaimedPayloadHash - MATCH"
+      },
+      "step2": {
+        "topic": "0.0.10081297",
+        "memo": "hcs-2:1:86400",
+        "seq": 1,
+        "message": "p=hcs-2, op=register, t_id=0.0.10081296",
+        "conformsToHcs2": true
+      },
+      "step3": {
+        "topic": "0.0.10081296",
+        "memo": "087ed2e66961ee7ee81ecda1e716f43089ebc1ac3a9d234ff5a5367e2117590b:brotli:base64",
+        "chunkShape": "HCS-1 chunk with o=0 and c=data:application/json;base64,...",
+        "verified": "sha256(brotli-decompressed JSON) equals the memo hash 087ed2e6... - MATCH, per hcs-1.md line 58 (SHA-256 of the file before any compression)",
+        "note": "Content duplicated identically at seq 1 and seq 2.",
+        "profileCarries": "properties.tags and properties.agentFactsUrl - the HCS-11 free extension point IS carried on chain."
+      },
+      "uaidRecomputation": {
+        "verified": true,
+        "target": "4ZFPnAVFTnZpPFqzRm7h1bvR9AWLYFEvZmqVEqHqA9UtBp5L5G2gbVodjpCsMV7xR9",
+        "canonicalJson": "{\"skills\":[0,4,18],\"name\":\"sdk-erc8004-demo-mhkld2e7\",\"nativeId\":\"https://integrated-enough-moving-culture.trycloudflare.com/.well-known/agent.json\",\"protocol\":\"a2a\",\"registry\":\"hol\",\"version\":\"1.0\"}",
+        "recipe": "base58btc(sha384(utf8(canonicalJson)))",
+        "note": "Reproduced exactly from canonical.ts and did.ts against a live broker record. The AID half of a HOL UAID is math."
+      }
+    },
+    "hol-registry-population": {
+      "source": "GET /api/v1/search?registries=hol&limit=50 (unauthenticated), 2026-09-06",
+      "total": 33,
+      "withOnChainRegistryEntry": 32,
+      "withoutOnChainRegistryEntry": 1,
+      "networkSplit": { "mainnet": 19, "testnet": 13 },
+      "topicSplit": { "mainnet 0.0.10080724": 19, "testnet 0.0.6913983": 13 },
+      "distinctOnChainSubmitters": { "mainnet": ["0.0.10022745"], "testnet": ["0.0.2659396"] },
+      "brokerClaimedPayerAccountIds": { "0.0.9297067": 15, "0.0.10022745": 4, "0.0.2656337": 4, "0.0.2659396": 4 },
+      "discrepancy": "For 15 mainnet records the broker reports payerAccountId 0.0.9297067, but every transactionId it publishes for those same records begins 0.0.10022745@. The broker's own record refutes its own payer field."
+    }
+  }
+}

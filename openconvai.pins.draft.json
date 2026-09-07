@@ -1,0 +1,439 @@
+{
+  "_meta": {
+    "purpose": "Content pins for WISHMail reconnaissance of OpenConvAI (the HCS-10 standard and the `openconvai` registry key aggregated by the HOL registry broker).",
+    "fetchedAt": "2026-09-06",
+    "companionReport": "openconvai-recon-2026-09-06.md",
+    "method": "Every repository `sha256` is computed over RAW GIT BLOB BYTES via `git cat-file blob <blobSha> | sha256sum`, never over the working-tree checkout. This machine runs core.autocrlf=true, so working-tree digests differ from object-store digests. blobSha is the git object id (`git rev-parse HEAD:<path>`). bytes is `git cat-file -s`.",
+    "onChainDigestMethod": "Digests of on-chain content state their own recipe in a `recipe` field. HCS-1 content is reassembled by concatenating the `c` field of each message in sequence order, stripping the `data:application/json;base64,` prefix, base64-decoding, then brotli-decompressing. The topic memo carries `<sha256 of the decompressed bytes>:brotli:base64`.",
+    "readOnly": "All repositories were pre-existing clones and were never modified. All HTTP was idempotent GET. No registration, purchase, write, or Hedera transaction was performed. POST /register/{uaid}/openconvai was deliberately NOT called; its schema is read from the published OpenAPI document."
+  },
+
+  "repos": {
+    "hiero-consensus-specifications": {
+      "url": "https://github.com/hiero-ledger/hiero-consensus-specifications",
+      "head": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "headDate": "2026-08-31",
+      "headMessage": "ci: add CodeQL analysis and Dependabot for GitHub Actions (#39)",
+      "note": "The commit the brief names."
+    },
+    "standards-sdk": {
+      "url": "https://github.com/hashgraph-online/standards-sdk",
+      "head": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "headDate": "2026-09-02",
+      "headMessage": "feat(hcs-25): implement signal and adapter catalogs (#179)"
+    },
+    "registry-broker-skills": {
+      "url": "https://github.com/hashgraph-online/registry-broker-skills",
+      "head": "00f007be8dbfad81d53d06d71fd5c3743eac5f83"
+    },
+    "hcs-improvement-proposals": {
+      "url": "https://github.com/hashgraph-online/hcs-improvement-proposals",
+      "head": "bd508bad70e3a5a660b149d7a183dd30b814d29f",
+      "headDate": "2026-09-02",
+      "note": "Read for registry topic IDs. Contains NONE: every `registryTopicId` in its docs is a placeholder (0.0.9601, 0.0.111, 0.0.12345, 0.0.999). See report OPEN O-2."
+    }
+  },
+
+  "files": {
+    "hcs-10-spec": {
+      "repo": "hiero-consensus-specifications",
+      "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+      "path": "docs/standards/hcs-10/index.md",
+      "blobSha": "0cb5d2eb6b98e12e4b44fa8c4fea6e10937b615a",
+      "sha256": "688372d38323656cdff5de2d210f07e78db811738ccd327666a856f2fcacd198",
+      "bytes": 63600,
+      "status": "Draft (stated at line 8)",
+      "lastChange": { "commit": "675f6d06450c72c63f52191eb090e7b2bdbb405c", "date": "2025-12-16", "message": "Feat/specifications onto main (#2)" },
+      "role": "LOAD-BEARING. Line 6 titles the standard 'HCS-10 OpenConvAI'. Line 70 abstract asserts a 'guarded registry'. Lines 112/319 give registry key config as 'Public or Fee-gated (HIP-991)' with NO submit-key option. Lines 179/319 give registry memo `hcs-10:0:{ttl}:3:[metadataTopicId]`. Lines 401-424 give the register operation: {p, op, account_id, m} with NO signature field and account_id REQUIRED. Line 893 contradicts 179/319 by calling it 'the HCS-2 registry topic'.",
+      "keyLines": {
+        "6": "# HCS-10 OpenConvAI Standard: AI Agent Communication on HCS",
+        "70": "abstract; 'registering agents in a guarded registry'",
+        "112": "| **Registry** | Directory of registered AI agents | Public or Fee-gated (HIP-991) |",
+        "179": "hcs-10:0:{ttl}:3:[metadataTopicId]",
+        "319": "registry row of the consolidated memo table, same memo form",
+        "401-424": "Register Operation: JSON shape + field table; account_id required, no signature",
+        "893": "'The agent registers with the Registry by submitting a message to the HCS-2 registry topic:'"
+      },
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-10-registrations": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-10/registrations.ts",
+      "blobSha": "070f1b3fe15e2ba4a4f07b24edff042ef7c2d57a",
+      "sha256": "65326d9acbd5fd91fadc48521e6b4b56ae47995182e3426c2843895363bb6f29",
+      "bytes": 9371,
+      "status": "no status field",
+      "lastChange": { "commit": "bc990f58328b016c341840ee641a8669fbee0d65", "date": "2025-08-03", "message": "chore: swappable logger" },
+      "role": "LOAD-BEARING for section 3. Lines 134 and 268 default baseUrl to 'https://moonscape.tech' (now 404). Lines 208-221: POST /api/request-register with body {accountId} ONLY - no signature, no key, no proof of control. Lines 31-38: POST /api/request-confirm with {transaction_id}. Returns {transaction_id, transaction} for the CALLER to execute.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-10-sdk": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-10/sdk.ts",
+      "blobSha": "26a8148fa0d2b589c0f0e1fc9be15ec8f07b225b",
+      "sha256": "5c2f6ebb2003b0415dbc9eb6b0973fcafe79ba2906af7f830df794f16cfdb4ae",
+      "bytes": 95764,
+      "status": "no status field",
+      "lastChange": { "commit": "41fbe53bccc7a7ba3ae7e4f33dc27d7c33092c68", "date": "2026-03-18", "message": "feat: allow injecting existing Hedera SDK clients (#153)" },
+      "role": "DECISIVE for section 3. Line 136 defaults guardedRegistryBaseUrl to 'https://moonscape.tech'. Lines 1815-1821: Transaction.fromBytes(base64 from server) then `await transaction.execute(this.client)` - the AGENT's own client signs and pays, i.e. a client-submits path exists. Lines 1886-1893: separate registerAgent() whose doc comment reads 'Registers an agent with the guarded registry. Should be called by a registry.' - the ORG-side entry point. Lines 1925-1948: getInboundTopicType detects HIP-991 FEE_BASED topics via fee_schedule_key + custom_fees.fixed_fees.",
+      "keyLines": {
+        "136": "this.guardedRegistryBaseUrl = config.guardedRegistryBaseUrl || 'https://moonscape.tech';",
+        "1815-1821": "Transaction.fromBytes(...); await transaction.execute(this.client);",
+        "1888": "* Registers an agent with the guarded registry. Should be called by a registry."
+      },
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-10-browser": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-10/browser.ts",
+      "blobSha": "9fb956a86c4301bcde49283d47462e58c85b78cf",
+      "sha256": "ea8329af6c93587e18c15bb20046eb77af3cb8fab318857b5035ea098555f210",
+      "bytes": 45384,
+      "status": "no status field",
+      "lastChange": { "commit": "bc990f58328b016c341840ee641a8669fbee0d65", "date": "2025-08-03", "message": "chore: swappable logger" },
+      "role": "Corroborates section 3. Line 76 declares guardedRegistryTopicId. Line 122 defaults base URL to moonscape.tech. Lines 812-818: same Transaction.fromBytes then this.hwc.executeTransactionWithErrorHandling - the USER'S WALLET signs.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-10-types": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-10/types.ts",
+      "blobSha": "3f86a80703b47cc0ac972e5783811528e41645fb",
+      "sha256": "a3527fe8f7c69a4c1a4edfc9f635ab6fe19a394b8b38571c10c79d48e036c8f9",
+      "bytes": 7473,
+      "status": "no status field",
+      "lastChange": { "commit": "41fbe53bccc7a7ba3ae7e4f33dc27d7c33092c68", "date": "2026-03-18", "message": "feat: allow injecting existing Hedera SDK clients (#153)" },
+      "role": "Lines 304-310 define RegistrationsApiResponse { registrations, transaction_id?, transaction?, error?, details? } - the `transaction` field is the base64 the agent executes.",
+      "fetchedAt": "2026-09-06"
+    },
+    "hcs-10-tx": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/hcs-10/tx.ts",
+      "blobSha": "27388dcee968d1d6e6dd76c9e226b275207bc466",
+      "sha256": "067ae4c3e0f6485a36e1f7a75bffbe01d7303200537a221738f5d752f8b2a731",
+      "bytes": 7632,
+      "status": "no status field",
+      "lastChange": { "commit": "3db630cbeb50e9870813199a53c7c12e9bf85bf1", "date": "2025-09-25", "message": "chore: cleanup" },
+      "role": "buildHcs10CreateRegistryTopicTx (line 93) and buildHcs10RegistryRegisterTx (line 224) - transaction builders; the register builder targets params.registryTopicId.",
+      "fetchedAt": "2026-09-06"
+    },
+    "registry-broker-schemas": {
+      "repo": "standards-sdk",
+      "commit": "98825d12fd9c41b6547899852cde9f166cb6e08d",
+      "path": "src/services/registry-broker/schemas.ts",
+      "blobSha": "843a2a073587982acd2f50111efac6ba0906afd0",
+      "sha256": "3bda4198c9c1f80bc70b6fad053613da1df656cdfd88f7c2cdc0dabff268e2b1",
+      "bytes": 82409,
+      "status": "no status field",
+      "lastChange": { "commit": "d771aaad19760196461ce495cacfe04bda9ffc37", "date": "2026-05-08", "message": "feat(registry-broker): export chat type system (RouteType, ReplyMode, ErrorCode, SessionState, DeliveryState, ReadinessStatus) (#174)" },
+      "role": "Lines 971, 999, 1027 carry `openConvAI` zod fields. Note the SDK has NO hardcoded HCS-10 registry topic ID anywhere in src/.",
+      "fetchedAt": "2026-09-06"
+    },
+    "broker-protocols-doc": {
+      "repo": "registry-broker-skills",
+      "commit": "00f007be8dbfad81d53d06d71fd5c3743eac5f83",
+      "path": "references/PROTOCOLS.md",
+      "blobSha": "849b28c163a1d69789e8c9540aae13997891f7be",
+      "sha256": "7dd1e2454cf1fcc3870641108fa70e15b3dd645623359d99af43e47c1b31c84a",
+      "bytes": 2777,
+      "status": "no status field",
+      "lastChange": { "commit": "6fad75fee68e10a604a8e0064f0a66b849d970f3", "date": "2026-02-01", "message": "feat: add scripts, examples, and references for complete skill package" },
+      "role": "Lines 70-75 declare OpenConvAI's UAID prefix as `uaid:hcs10:*`. CONTRADICTED by live data: zero on-chain or broker records use that prefix; all use uaid:aid: or uaid:did:. See report C-9.",
+      "fetchedAt": "2026-09-06"
+    },
+    "broker-api-doc": {
+      "repo": "registry-broker-skills",
+      "commit": "00f007be8dbfad81d53d06d71fd5c3743eac5f83",
+      "path": "references/API.md",
+      "blobSha": "d031ca40789c7c09bc8f2899efefed71673b0cc4",
+      "sha256": "2a030f3456df912918f58e849162089c1a17ce1db60386de00bc3905fc6b1560",
+      "bytes": 6124,
+      "status": "no status field",
+      "lastChange": { "commit": "6fad75fee68e10a604a8e0064f0a66b849d970f3", "date": "2026-02-01", "message": "feat: add scripts, examples, and references for complete skill package" },
+      "role": "Line 95: `| POST | /register/{uaid}/openconvai | Prepare OpenConvAI registration | Yes |` - documents the endpoint and that it requires auth.",
+      "fetchedAt": "2026-09-06"
+    }
+  },
+
+  "topics": {
+    "_note": "Read 2026-09-06. Mirror endpoints: mainnet = https://mainnet-public.mirrornode.hedera.com/api/v1 ; testnet = https://testnet.mirrornode.hedera.com/api/v1",
+
+    "0.0.9297139": {
+      "network": "mainnet",
+      "mirror": "https://mainnet-public.mirrornode.hedera.com/api/v1/topics/0.0.9297139",
+      "memo": "hcs-10:0:86400:3:0.0.9297136",
+      "memoConformsToHcs10RegistryForm": true,
+      "createdTimestamp": "1750712877.754722185",
+      "adminKey": "cb63a66581f7d36909cb... (SET)",
+      "submitKey": "cb63a66581f7d36909cb... (SET)",
+      "feeScheduleKey": null,
+      "customFees": { "created_timestamp": "1750712877.754722185", "fixed_fees": [] },
+      "hip991Fee": false,
+      "messagesRead": 17,
+      "messagesTotal": 17,
+      "distinctPayers": { "0.0.9297067": 17 },
+      "firstConsensus": "1750728766.639511000",
+      "lastConsensus": "1774328871.756504592",
+      "ops": { "hcs-10/register": 17 },
+      "role": "THE canonical HCS-10 registry deployment. Its metadataTopicId 0.0.9297136 names it 'Hashgraph Online', NOT 'OpenConvAI'. Sole payer 0.0.9297067 == the operator account named in that metadata. Reported by the HOL broker as backing registry key `hashgraph-online`.",
+      "containsOpenconvaiAgents": false
+    },
+
+    "0.0.9297136": {
+      "network": "mainnet",
+      "mirror": "https://mainnet-public.mirrornode.hedera.com/api/v1/topics/0.0.9297136",
+      "memo": "ffd95dad80ceb8e9e3381f448ecdb70ce1fd6f1b9b8fb927a93c01e087646639:brotli:base64",
+      "createdTimestamp": "1750712856.130771000",
+      "messagesRead": 2,
+      "distinctPayers": { "0.0.9297135": 2 },
+      "role": "HCS-1 registry-metadata file for 0.0.9297139. DECISIVE for report C-1.",
+      "digests": {
+        "recipe": "sha256(brotli_decompress(base64_decode(concat(messages[].c))))",
+        "sha256Decompressed": "ffd95dad80ceb8e9e3381f448ecdb70ce1fd6f1b9b8fb927a93c01e087646639",
+        "sha256RawCompressed": "26219886f77c5d55a2ca669ec3366399c90403817ed09c45aacc456e1174cb71",
+        "verifiedAgainstMemo": true
+      },
+      "content": {
+        "version": "1.0",
+        "name": "Hashgraph Online",
+        "description": "Discover, find, and connect with native entities on Hedera through HCS-10, including, but not limited to, humans, AI, MCP Servers, and robots.",
+        "operator": { "account": "0.0.9297067", "name": "Hashgraph Online", "contact": "https://hashgraphonline.com" },
+        "categories": ["AI", "MCP", "Hedera", "OpenConvAI"],
+        "tags": ["AI"],
+        "links": { "website": "https://hashgraphonline.com", "documentation": "https://hashgraphonline.com/docs", "community": "https://t.me/hashinals" }
+      }
+    },
+
+    "0.0.10080724": {
+      "network": "mainnet",
+      "mirror": "https://mainnet-public.mirrornode.hedera.com/api/v1/topics/0.0.10080724",
+      "memo": "hcs-2:0:86400",
+      "memoConformsToHcs10RegistryForm": false,
+      "createdTimestamp": "1762229166.454157000",
+      "adminKey": "9974658017d7fb9a2540448f... (SET)",
+      "submitKey": "9974658017d7fb9a2540448f... (SET)",
+      "feeScheduleKey": null,
+      "customFees": { "created_timestamp": "1762229166.454157000", "fixed_fees": [] },
+      "hip991Fee": false,
+      "messagesRead": 23,
+      "messagesTotal": 23,
+      "distinctPayers": { "0.0.10022745": 23 },
+      "firstConsensus": "1762229570.053939000",
+      "lastConsensus": "1762742101.700152706",
+      "ops": { "hcs-10/register": 23 },
+      "role": "The earlier recon's mainnet `hol` anchor. Declares HCS-2 in its memo but carries p=hcs-10 register messages. Serves broker keys `hol` AND `hashgraph-online`.",
+      "containsOpenconvaiAgents": false,
+      "sampleMessage": "{\"p\":\"hcs-10\",\"op\":\"register\",\"uaid\":\"uaid:aid:3wmP2tD792wXUYSEeNiHtTbgkDTfJNJxThNAxbNTD1VwPT1PadrzaCtpjM75AVCrWb;uid=sdk-erc8004-demo-mhk1xr32;registry=hol;proto=a2a;nativeId=https://large-knights-differential-homes.trycloudflare.com/.well-known/agent.json\",\"t_id\":\"0.0.10080737\"}"
+    },
+
+    "0.0.6913983": {
+      "network": "testnet",
+      "mirror": "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.6913983",
+      "memo": "hcs-10:0:300:3",
+      "memoConformsToHcs10RegistryForm": true,
+      "hasMetadataTopicId": false,
+      "createdTimestamp": "1758937408.123126556",
+      "adminKey": null,
+      "submitKey": null,
+      "feeScheduleKey": null,
+      "customFees": { "created_timestamp": "1758937408.123126556", "fixed_fees": [] },
+      "hip991Fee": false,
+      "unguarded": true,
+      "messagesRead": 380,
+      "messagesTotal": 380,
+      "pagesFollowed": 4,
+      "distinctPayers": { "0.0.2659396": 380 },
+      "firstConsensus": "1758937744.146083470",
+      "lastConsensus": "1763503558.796733702",
+      "ops": { "hcs-10/register": 380 },
+      "distinctAccountIdClaimed": { "0.0.2659396": 21, "0.0.2656337": 1, "0.0.7124407": 2, "0.0.7138207": 1, "0.0.7217589": 2 },
+      "messageShapeCensus": {
+        "[op,p,t_id,uaid]": 350,
+        "[account_id,op,p,uaid]": 20,
+        "[account_id,inbound_topic_id,memo,metadata,op,p,profile]": 7,
+        "[memo,metadata,op,p,t_id]": 1,
+        "[op,p,profile_reference,t_id]": 1,
+        "[op,p,t_id]": 1
+      },
+      "specConformance": "account_id is REQUIRED by HCS-10 but present in only 27 of 380 messages (7.1%).",
+      "registryParamCensus": "registry=hol or absent; registry=openconvai appears ZERO times.",
+      "role": "LOAD-BEARING. The earlier recon's testnet `hol` anchor AND the only topic where an `openconvai`-labelled agent is actually registered - under registry=hol. No admin key and no submit key: anyone may write, claiming any account_id.",
+      "containsOpenconvaiAgents": true
+    },
+
+    "0.0.7124416": {
+      "network": "testnet",
+      "memo": "1c164c42d6bfdba05791e31ab1277dff2f919ef48b624d793ea8d54cdd7d0c04:brotli:base64",
+      "createdTimestamp": "1761343622.545095092",
+      "submitKey": "36db875860dc717f7e27a48881784df8094928f3b9de38c0b4a57ba5a3568e4a",
+      "messagesRead": 2,
+      "distinctPayers": { "0.0.7124415": 2 },
+      "duplicateChunks": true,
+      "role": "HCS-11 profile (HCS-1 file) for testnet agent 0.0.7124407. Both messages carry byte-identical `c`. Submit key and payer both differ from the agent's own key/account: inscribed by a service.",
+      "digests": {
+        "recipe": "sha256(brotli_decompress(base64_decode(messages[0].c)))",
+        "sha256Decompressed": "1c164c42d6bfdba05791e31ab1277dff2f919ef48b624d793ea8d54cdd7d0c04",
+        "decompressedBytes": 595,
+        "verifiedAgainstMemo": true
+      }
+    },
+
+    "0.0.10058327": {
+      "network": "mainnet",
+      "memo": "112686d724f2a0dc083dded7665da02dd3c2ce207151435ed6302ebb773b9991:brotli:base64",
+      "messagesRead": 2,
+      "distinctPayers": { "0.0.10058325": 2 },
+      "role": "HCS-11 profile (HCS-1 file) for mainnet agent 0.0.10058320.",
+      "digests": {
+        "recipe": "sha256(brotli_decompress(base64_decode(messages[0].c)))",
+        "sha256Decompressed": "112686d724f2a0dc083dded7665da02dd3c2ce207151435ed6302ebb773b9991",
+        "verifiedAgainstMemo": true
+      }
+    },
+
+    "0.0.7124409": { "network": "testnet", "memo": "hcs-10:0:60:1", "role": "outbound topic of testnet agent", "adminKey": "6a7d1acc5da36be2c2ed... (SET)", "submitKey": "6a7d1acc5da36be2c2ed... (SET)", "customFees": { "fixed_fees": [] } },
+    "0.0.7124410": { "network": "testnet", "memo": "hcs-10:0:60:0:0.0.7124407", "role": "inbound topic of testnet agent; PUBLIC (no submit key)", "adminKey": "6a7d1acc5da36be2c2ed... (SET)", "submitKey": null, "feeScheduleKey": null, "customFees": { "created_timestamp": "1761343576.796853076", "fixed_fees": [] }, "hip991Fee": false },
+    "0.0.7124411": { "network": "testnet", "memo": "", "role": "did:hedera document topic, NOT the HCS-11 profile. Embedded in the agent's UAID. seq 1 is a DID `create` event.", "adminKey": "6a7d1acc5da36be2c2ed... (SET)", "submitKey": "6a7d1acc5da36be2c2ed... (SET)", "messagesRead": 1, "distinctPayers": { "0.0.7124407": 1 } },
+    "0.0.10058322": { "network": "mainnet", "memo": "hcs-10:0:60:0:0.0.10058320", "role": "inbound topic of mainnet agent; PUBLIC", "submitKey": null, "feeScheduleKey": null, "customFees": { "created_timestamp": "1761489701.924921360", "fixed_fees": [] }, "hip991Fee": false }
+  },
+
+  "accounts": {
+    "0.0.7124407": {
+      "network": "testnet",
+      "memo": "hcs-11:hcs://1/0.0.7124416",
+      "createdTimestamp": "1761343566.086100201",
+      "key": "6a7d1acc5da36be2c2ed0f3b47a09dae15fc2b17171abd06519bfccdea12aac5",
+      "role": "The testnet `openconvai` agent 'Bob'. Its account memo is the entry point of the verifiable chain."
+    },
+    "0.0.10058320": {
+      "network": "mainnet",
+      "memo": "hcs-11:hcs://1/0.0.10058327",
+      "createdTimestamp": "1761489689.701209000",
+      "role": "The mainnet `openconvai` agent 'Bob'. Registered on NO topic found (report OPEN O-3)."
+    },
+    "0.0.9297067": { "network": "mainnet", "role": "Operator named in the 0.0.9297136 registry metadata; sole payer of all 17 messages on registry 0.0.9297139." },
+    "0.0.10022745": { "network": "mainnet", "role": "Sole payer of all 23 messages on 0.0.10080724." },
+    "0.0.2659396": { "network": "testnet", "role": "Sole payer of all 380 messages on 0.0.6913983, while claiming 5 distinct account_id values." }
+  },
+
+  "agents": {
+    "_note": "The complete `openconvai` registry population as served by the HOL broker on 2026-09-06: total = 2, both named 'Bob', both test fixtures, NEITHER carrying metadata.registryEntry.",
+    "testnet-bob": {
+      "brokerUaid": "uaid:did:5JqZcBxcJ7yk6eXjvk6rr21yCbnou7BVhCqdJMaAkhHV_0.0.7124411;uid=0.0.7124410@0.0.7124407;registry=openconvai;proto=hcs-10;nativeId=hedera:testnet:0.0.7124407",
+      "onChainProfileUaid": "uaid:did:5JqZcBxcJ7yk6eXjvk6rr21yCbnou7BVhCqdJMaAkhHV_0.0.7124411;uid=0.0.7124410@0.0.7124407;proto=hcs-10;nativeId=hedera:testnet:0.0.7124407",
+      "onChainRegisterUaid": "uaid:did:5JqZcBxcJ7yk6eXjvk6rr21yCbnou7BVhCqdJMaAkhHV_0.0.7124411;uid=0.0.7124410@0.0.7124407;registry=hol;proto=hcs-10;nativeId=hedera:testnet:0.0.7124407",
+      "registryLabelDivergence": "broker says registry=openconvai; ledger says registry=hol; profile carries no registry param at all. See report C-3.",
+      "accountId": "0.0.7124407",
+      "inboundTopicId": "0.0.7124410",
+      "outboundTopicId": "0.0.7124409",
+      "didTopicId": "0.0.7124411",
+      "profileTopicId": "0.0.7124416",
+      "brokerRegistryEntry": null,
+      "anchoredOn": "0.0.6913983 (testnet), seq 153 and seq 163, both payer 0.0.2659396",
+      "registerMessages": [
+        { "seq": 153, "consensus": "1761343846.496907000", "payer": "0.0.2659396", "raw": "{\"p\":\"hcs-10\",\"op\":\"register\",\"uaid\":\"uaid:aid:2cSNjEjwwQTkHNRUp98JsqYFpHwZX168DsavYMTVjCfqdEDCZboUGtYZwYkJBcvZ6w;uid=bob;registry=hol;proto=hcs-10;nativeId=hedera:testnet:0.0.7124407\",\"account_id\":\"0.0.7124407\"}" },
+        { "seq": 163, "consensus": "1761487707.005607000", "payer": "0.0.2659396", "raw": "{\"p\":\"hcs-10\",\"op\":\"register\",\"uaid\":\"uaid:did:5JqZcBxcJ7yk6eXjvk6rr21yCbnou7BVhCqdJMaAkhHV_0.0.7124411;uid=0.0.7124410@0.0.7124407;registry=hol;proto=hcs-10;nativeId=hedera:testnet:0.0.7124407\",\"account_id\":\"0.0.7124407\"}" }
+      ],
+      "payerEqualsClaimedAccount": false
+    },
+    "mainnet-bob": {
+      "brokerUaid": "uaid:did:7ZwrfmExkPk5rZ9jnPixvPjkyxpMK8kjAxFKKbUNw8Lo_0.0.10058323;uid=0.0.10058322@0.0.10058320;registry=openconvai;proto=hcs-10;nativeId=hedera:mainnet:0.0.10058320",
+      "onChainProfileUaid": "uaid:did:7ZwrfmExkPk5rZ9jnPixvPjkyxpMK8kjAxFKKbUNw8Lo_0.0.10058323;uid=0.0.10058322@0.0.10058320;proto=hcs-10;nativeId=hedera:mainnet:0.0.10058320",
+      "accountId": "0.0.10058320",
+      "inboundTopicId": "0.0.10058322",
+      "outboundTopicId": "0.0.10058321",
+      "didTopicId": "0.0.10058323",
+      "profileTopicId": "0.0.10058327",
+      "brokerRegistryEntry": null,
+      "anchoredOn": null,
+      "note": "Found on NO registry topic. Absent from all 17 messages of 0.0.9297139 and all 23 of 0.0.10080724. See report OPEN O-3."
+    }
+  },
+
+  "http": {
+    "_note": "All GET, all 2026-09-06, all unauthenticated.",
+    "broker-registries": { "url": "https://hol.org/registry/api/v1/registries", "status": 200, "value": ["erc-8004","agentverse","virtuals-protocol","coinbase-x402-bazaar","pulsemcp","moltbook","godaddy-ans","nanda","openrouter","erc-8004-solana","hashgraph-online","a2a-registry","hol","near-ai","a2a-protocol","openconvai"] },
+    "broker-protocols": { "url": "https://hol.org/registry/api/v1/protocols", "status": 200, "value": ["ans","hcs-10","mcp","a2a","xmtp","uagent","acp-virtuals","acp","openconvai","openai","openrouter","near-ai","virtuals-protocol","oasf","x402","ws","rest","grpc","mqtt","hybrid","p2p"], "note": "openconvai and hcs-10 listed as TWO distinct protocols. See report OPEN O-5." },
+    "broker-search-openconvai": { "url": "https://hol.org/registry/api/v1/registries/openconvai/search?limit=20", "status": 200, "total": 2, "registryEntriesPresent": 0 },
+    "broker-search-hashgraph-online": { "url": "https://hol.org/registry/api/v1/registries/hashgraph-online/search?limit=100", "status": 200, "total": 359, "registryTopicIdsSeen": { "0.0.10080724 (mainnet)": 2, "0.0.9297139 (mainnet)": 1 } },
+    "broker-search-hol": { "url": "https://hol.org/registry/api/v1/registries/hol/search?limit=100", "status": 200, "total": 33, "registryTopicIdsSeen": { "0.0.10080724 (mainnet)": 6, "0.0.6913983 (testnet)": 3 } },
+    "broker-additional-registries": { "url": "https://hol.org/registry/api/v1/register/additional-registries", "status": 200, "registryIds": ["erc-8004", "erc-8004-solana"], "note": "openconvai is NOT a paid registration target." },
+    "broker-federation": { "url": "https://hol.org/registry/api/v1/bridge/federation/registries", "status": 200, "value": { "registries": [] } },
+    "broker-agents-404": { "url": "https://hol.org/registry/api/v1/agents?registry=openconvai&limit=50", "status": 404, "value": { "error": "Not found", "path": "/api/v1/agents" }, "note": "The OpenAPI documents /api/v1/agents/{uaid} but there is no collection route." },
+    "moonscape-root": { "url": "https://moonscape.tech/", "status": 200, "title": "Moonscape Labs | AI Agent Infrastructure & HCS Integration" },
+    "moonscape-openconvai": { "url": "https://moonscape.tech/openconvai", "status": 404, "note": "The OpenConvAI Portal is gone." },
+    "moonscape-request-register": { "url": "https://moonscape.tech/api/request-register", "status": 404, "note": "SDK-hardcoded registration endpoint. DEAD. See report C-4." },
+    "moonscape-request-confirm": { "url": "https://moonscape.tech/api/request-confirm", "status": 404, "note": "SDK-hardcoded confirmation endpoint. DEAD." },
+    "moonscape-registrations": { "url": "https://moonscape.tech/api/registrations", "status": 404, "note": "SDK-hardcoded search endpoint. DEAD." }
+  },
+
+  "openapi": {
+    "_note": "Read from the earlier recon's cached copy, not re-fetched. Pin carries over from hol-x402.pins.draft.json.",
+    "url": "https://hol.org/registry/api/v1/openapi.json",
+    "infoVersion": "0.1.0",
+    "bytes": 261092,
+    "sha256": "6a38959c...8eab (see hol-x402.pins.draft.json for the full digest)",
+    "pathCount": 115,
+    "openconvaiEndpoint": {
+      "path": "/api/v1/register/{uaid}/openconvai",
+      "method": "post",
+      "summary": "Prepare OpenConvAI registration data",
+      "description": "Returns helper instructions and profile data required to onboard a registered agent into OpenConvAI.",
+      "requestSchema": {
+        "name": "OpenConvaiBridgeRequest",
+        "type": "object",
+        "required": ["operatorId"],
+        "properties": { "operatorId": { "type": "string" }, "submitToHCS": { "type": "boolean", "default": false } },
+        "additionalProperties": false
+      },
+      "responseSchema": {
+        "name": "OpenConvaiBridgeResponse",
+        "type": "object",
+        "required": ["success", "message", "openConvAIData"],
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" },
+          "openConvAIData": {
+            "type": "object",
+            "required": ["operatorId", "profile", "registrationSource"],
+            "properties": {
+              "operatorId": { "type": "string" },
+              "profile": { "type": "object", "additionalProperties": true },
+              "submitToHCS": { "type": "boolean" },
+              "registrationSource": { "type": "string" },
+              "originalVirtualTopic": { "type": "string" },
+              "instructions": { "type": "object", "additionalProperties": true }
+            }
+          }
+        }
+      },
+      "finding": "submitToHCS is a REQUEST flag (caller-set, default false), NOT a client-submits instruction as the earlier recon's O-4 speculated. `instructions` is untyped so its shape cannot be read statically. NOT CALLED - resolving it requires a write. See report OPEN O-1.",
+      "callStatus": "NOT CALLED (write, out of scope)"
+    }
+  },
+
+  "verifications": [
+    { "claim": "Registry metadata topic memo hash", "recipe": "sha256(brotli_decompress(base64_decode(concat(c))))", "topic": "0.0.9297136", "expected": "ffd95dad80ceb8e9e3381f448ecdb70ce1fd6f1b9b8fb927a93c01e087646639", "result": "MATCH" },
+    { "claim": "Testnet agent HCS-11 profile hash", "recipe": "sha256(brotli_decompress(base64_decode(c)))", "topic": "0.0.7124416", "expected": "1c164c42d6bfdba05791e31ab1277dff2f919ef48b624d793ea8d54cdd7d0c04", "result": "MATCH" },
+    { "claim": "Mainnet agent HCS-11 profile hash", "recipe": "sha256(brotli_decompress(base64_decode(c)))", "topic": "0.0.10058327", "expected": "112686d724f2a0dc083dded7665da02dd3c2ce207151435ed6302ebb773b9991", "result": "MATCH" },
+    { "claim": "Register message binds to the agent's key", "recipe": "compare mirror payer_account_id with the message's own account_id", "scope": "420 messages across 0.0.9297139, 0.0.10080724, 0.0.6913983", "result": "NO SUCH BINDING EXISTS - 0 of 420 messages were paid by the account they claim; the register op has no signature field." }
+  ],
+
+  "section95Verdict": {
+    "question": "Can an OpenConvAI registration resolve WITHOUT `blurred` under section 9.5?",
+    "profileContentLeg": { "blurred": false, "why": "Content-addressed by sha256 in the HCS-1 topic memo; recomputed and matched for both live agents. A past profile is re-obtainable and claims about it are falsifiable." },
+    "registrationBindingLeg": { "blurred": true, "why": "The register message has no signature field; in 420 of 420 observed messages the payer is an operator, not the claimed agent." },
+    "registryLabelLeg": { "blurred": true, "contradicted": true, "why": "The broker's registry=openconvai is not derivable from any on-chain byte; the ledger says registry=hol for the same agent." },
+    "unblurredPathExists": true,
+    "unblurredPathBlockers": [
+      "Never exercised: 0 of 420 observed register messages were self-submitted.",
+      "The server that mints the transaction bytes (moonscape.tech/api/request-register) returns 404.",
+      "Direct self-submission to testnet 0.0.6913983 is possible (no keys) but the registry then adds no attestation, only a timestamp."
+    ],
+    "wouldSatisfyW2": "Yes on the SDK path - `transaction.execute(this.client)` makes payer == account_id, checkable by the same Closure test ontologic-hello-world already runs in src/verify.ts."
+  }
+}
