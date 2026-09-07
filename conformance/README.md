@@ -40,6 +40,8 @@ conformance/
 
 **The VERIFIER suite runs with nothing configured.** No broker, API key, credit, Hedera account, stamp, or recipient key (P-4, T-P4-1). This is why fixtures are files.
 
+**Reads go to a mirror node, directly.** P-3 makes replay a function of public consensus data and P-4 forbids a broker, and together they fix what a mirror node is: a read interface, not a broker. The suite reads the mirror node's REST API itself. **Nothing in `conformance/` may depend on an agent kit, an SDK convenience wrapper, or any service that reads on the suite's behalf** — such a dependency would put a party between the Verifier and the consensus data whose absence P-4 is about, and would make T-P3-1's byte-identical evidence a property of that party rather than of the ledger. The same rule holds for `app/`'s Verifier path. Where a tool is used to orient during development, what it returns is not the record; the mirror node's response is (see `app/OPERATIONS.md`).
+
 **A reason is a test identifier.** §11.5 fixes that every reason a Verifier reports names the test whose fixture exercises the condition found. There is no reason without a test, as there is no requirement without one (§1.3, D-88). A Verifier that finds a condition §11.5's table does not name has found a defect in the specification and reports `T-P12-2`.
 
 **Determinism is the point of most of it.** Two Verifiers on the same scope and window produce evidence with the same digest, byte for byte, from any mirror node, at any time (P-3; T-P3-1, T-P4-3). `observations` is excluded from that digest because two Verifiers at two clocks cannot agree on it (§11.6, D-82).

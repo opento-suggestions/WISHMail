@@ -37,6 +37,17 @@ The repository's **first `CHANGED` markers**, which D-131 set the convention up 
 
 ## [Unreleased]
 
+### 2026-09-07 — the tooling rule for Phase B, settled against the agent kit's own schemas **[S]** ruling, **[CC]** reconnaissance
+
+No normative change; no specification sentence and no test moves. This records how the Postmaster's testnet entities will be made, before any of them is made.
+
+- **Every transaction is `@hashgraph/sdk`; every read is mirror-node REST.** `hedera-testnet-mcp` is not used for a write we own. FETCHED 2026-09-07 by JSON-RPC against its endpoint: "Hedera Agent Kit" v0.1.0, 43 tools. Its *signing* posture is correct for P-13 — it returns unsigned bytes and holds no key of ours — but its write tools default the payer to "the operator account," which is its operator and not ours, and `create_topic_tool` has no payer parameter, so a topic it builds names an account we cannot control. D-47 fixes that the Postmaster pays; a payer we cannot name is not the Postmaster. That decides it before HIP-991 is reached.
+- **Two requirements are additionally unsayable through it.** `create_topic_tool` has no `customFees`, `feeScheduleKey` or `feeExemptKeys`, so §4.4's one-stamp doorbell fee and D-138's exempt list cannot be expressed; `create_fungible_token_tool` offers one boolean about the supply key and nothing about admin, freeze, wipe, pause or KYC, so D-141's key posture cannot be expressed. Recorded once as a blanket DIVERGENCE in the new `app/OPERATIONS.md`, with both parameter lists quoted verbatim so the claim is checkable without the agent kit in hand.
+- **`hedera-docs` is unaffected** and is used freely for design questions during BUILD; what it returns is FETCHED, cited with the document named, and never becomes a source the specification cites without a pin (§1.6, L-7).
+- **The suite inherits the reads rule.** `conformance/README.md` now states that P-3 and P-4 together make a mirror node a read interface rather than a broker, and that nothing in `conformance/` may depend on an agent kit or any service that reads on the suite's behalf — otherwise T-P3-1's byte-identical evidence becomes a property of that service rather than of the ledger.
+- Ledger §H gains the reconnaissance as a dated row. The finding is stated as a contribution rather than a complaint: HCS-10 offers a fee-gated inbound topic at `index.md:113` and HIP-991 has supported HTS-denominated topic fees since release 0.59.5, so the gap is in the tooling, not the standards, and naming it precisely is part of supporting the incumbent.
+- `STATUS.md` §5 carries the rule for both servers; §6 "Next" now points at Phase B Step 1 and names its two reporting stops — the HIP-991 probe readback before the real doorbell, and the final verification report.
+
 ### 2026-09-07 — repository outfitting (STATUS.md §3 step 0; CLAUDE.md §4) **[CC]**
 
 No normative change: `spec/WISHMAIL_SPEC_v0_5.md` is byte-identical to the frozen 0.5.0 text, and `spec/CONFORMANCE_TESTS_v0_5.md` to the ledger. The extract-and-diff passes both ways — 83 `T-P*` identifiers in the specification, 83 rows in ledger §A, none on either side alone.
