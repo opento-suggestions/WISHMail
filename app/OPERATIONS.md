@@ -245,7 +245,7 @@ The probe (§6) proved the *template* against consensus on a disposable copy. Th
 | 5 | operator association | operator ↔ `$POSTAGE` | §4.4 — the sender transfers a stamp *to the Postmaster*, which then pays the doorbell fee (D-140) |
 | 6 | agent association | postmaster-agent ↔ `$POSTAGE` | the agent buys and affixes postage like any Correspondent |
 | 7 | price topic | memo `wishmail:prices:1`, submit **and** admin keys the operator's, no fee | D-142 — the price list is the service speaking. §4.6 and T-P17-1 do not reach it (D-146's scope sentence) |
-| 8 | the first `PriceList` | sequence 1, canonical RFC 8785, **565 bytes**, sha256 `5264166e…` (with the real ids substituted) | D-143 as D-145 leaves it — **no `validFrom`** |
+| 8 | the first `PriceList` | sequence 1, canonical RFC 8785, **563 bytes**, sha256 `20aa3b01…` (with the real ids substituted) | D-143 as D-145 leaves it — **no `validFrom`** |
 | 9 | doorbell | memo `hcs-10:0:60:0:<agent>`, **no submit key**, admin key the agent's, **no fee schedule key**, HIP-991 fee of 1 `$POSTAGE` collected by the treasury, exempt list = the agent's own key | D-147 row 1 · §4.4's MUST selects HCS-10's fee-gated inbound option (`index.md:113`) · D-137 |
 | 10 | log | memo `hcs-10:0:60:1`, submit and admin keys the agent's | D-147 row 2 · `index.md:114` |
 | 11 | manifest | memo `wishmail:manifest:1`, the agent's key as **sole** submit key, admin key the agent's | D-147 row 3 · §9.1:1255, T-P17-3 |
@@ -274,7 +274,7 @@ It stops, without writing, on: a prerequisite absent from the record; **ABSENT-B
 
 ### 5. What the plan proved, and the pre-flight state
 
-`npm run provision:plan` resolves all eleven steps. The first `PriceList` **validates** against `spec/schemas/price-list.schema.json` under ajv 2020-12, and the same message **carrying `validFrom` is rejected** by `additionalProperties` — the negative half, because a constraint that accepts everything proves nothing. Canonicalised under RFC 8785 it is 565 bytes, comfortably one HCS message under `CHUNK_WIRE_MAX` 1000.
+`npm run provision:plan` resolves all eleven steps. The first `PriceList` **validates** against `spec/schemas/price-list.schema.json` under ajv 2020-12, and the same message **carrying `validFrom` is rejected** by `additionalProperties` — the negative half, because a constraint that accepts everything proves nothing. Canonicalised under RFC 8785 it is 563 bytes, comfortably one HCS message under `CHUNK_WIRE_MAX` 1000.
 
 Before the run: `spec/pins.json` carries its 32 nulls, `app/deployment/` does not exist, the P-13 grep returns empty, `npm run typecheck` passes, and the operator holds 2510 ℏ.
 
@@ -299,7 +299,7 @@ Ruled 2026-09-08, before the Step 2 signature. **`.env` holds secrets, the netwo
 
 **Requested finding: no path in `app/src` reads an entity id from the environment.** The audit is `grep -rE "process\.env|readSecret\(|envHas\(" app/src`, and its whole output is `identity.ts` reading the three `*_DER_KEY` names, `env.ts` reading `OPERATOR_ID`, `HEDERA_NETWORK`, `MIRROR_NODE_URL`, `WISHMAIL_STATE_DIR`, `MCP_BIND` and `MCP_PORT`, and `probe.ts` reading `PROBE_OUT` for its own log path. Entity ids already came from the ops record through `Ctx.tokenId()`, `Ctx.treasuryId()` and `Ctx.agentId()`, so nothing had to move — the ruling ratifies what the code already did rather than correcting it.
 
-**The first `PriceList` is now a committed file**, `app/price-list.hedera-testnet.json`, which the script submits. What the Postmaster charges is reviewable as a document rather than read out of a function. Exactly three fields are filled at run time, because they cannot be known at commit time: `stampToken.tokenId` and `stampToken.treasury` from the ops record, and `methods[].payTo` from `OPERATOR_ID`. They are `null` in the file, and the schema's account-id pattern means a fill that did not happen is caught by validation rather than published. `asset`, `facilitator` and `rate.source` are asserted against `networks.ts` before submission, so the file and the table cannot drift apart unnoticed. The refactor is byte-neutral: the canonical message is the same 565 bytes with the same sha256 `5264166e…` as the literal it replaced.
+**The first `PriceList` is now a committed file**, `app/price-list.hedera-testnet.json`, which the script submits. What the Postmaster charges is reviewable as a document rather than read out of a function. Exactly three fields are filled at run time, because they cannot be known at commit time: `stampToken.tokenId` and `stampToken.treasury` from the ops record, and `methods[].payTo` from `OPERATOR_ID`. They are `null` in the file, and the schema's account-id pattern means a fill that did not happen is caught by validation rather than published. `asset`, `facilitator` and `rate.source` are asserted against `networks.ts` before submission, so the file and the table cannot drift apart unnoticed. The refactor is byte-neutral: the canonical message is the same 563 bytes with the same sha256 `20aa3b01…` as the literal it replaced.
 
 **A separate, minimal `.env.example` for the Correspondent client** is at `app/sdk/.env.example`, where the SDK and CLI will ship. It is four variables — the agent's own key, an optional account id, the network, and the Postmaster's MCP URL — and it shares nothing with the Postmaster's file. It states what a Correspondent does not need: no operator key, no treasury, no supply key, no state directory. And it says the thing worth saying to whoever reads it first: the Postmaster holds no key of yours, ever (P-13); your key is born in your process and stays there.
 
@@ -350,7 +350,7 @@ Provisioned against **`v0.5.2`**, the tag the ops record cites. Every row below 
 | `agent.manifest` | `topic exists and is not deleted` | memo `wishmail:manifest:1`; the agent's key as **sole** submit key; admin the agent's | PASS |
 | `prices.first` | `sequence 1 is on the price topic` | `sequence_number 1`; `payer_account_id` the operator; message **byte-for-byte** equal to what was submitted | PASS |
 
-The published `PriceList`, canonical under RFC 8785, 546 bytes, sequence 1 on `0.0.10426551` — **no `validFrom`**, `spec` `0.5.2`, and the real token, treasury and `payTo` filled into the committed file:
+The published `PriceList`, canonical under RFC 8785, 563 bytes, sequence 1 on `0.0.10426551` — **no `validFrom`**, `spec` `0.5.2`, and the real token, treasury and `payTo` filled into the committed file:
 
 ```json
 {"methods":[{"asset":"0.0.429274","bundles":[{"count":12,"price":"1.00"}],"facilitator":"https://x402.org/facilitator","method":"x402-usdc","network":"hedera:testnet","payTo":"0.0.8641261","unitPrice":"0.10"},{"asset":"0.0.0","bundles":[{"count":12,"price":"1.00"}],"method":"hbar","network":"hedera:testnet","payTo":"0.0.8641261","rate":{"pair":"HBAR/USD","reference":{"amount":"0.10","asset":"USD"},"source":"https://api.saucerswap.finance/tokens"}}],"spec":"0.5.2","stampToken":{"ledgerTag":"hedera:testnet","tokenId":"0.0.10426208","treasury":"0.0.10426205"}}
@@ -376,6 +376,64 @@ The superseded first manifest, `0.0.10426557`, is recorded in the ops record's *
 That one-line diff is the point, and it took a second attempt. The first writer re-serialised the file with `JSON.stringify`, which dropped the blank lines between blocks and re-wrapped the single-line standards entries — eighty lines of diff for a two-value change, in the machine-readable form of §1.6, which is the appendix of record. The writer now performs a surgical text edit of that one line and **refuses to write at all** if the line is not in its expected form, rather than reformatting everything around it.
 
 **Thirty nulls remain**: the twenty-eight `registeredSchemas` entries, which wait on HCS-13 registration, and the two `hedera:mainnet` stamp-token fields, which wait on a network §15.5 leaves undeployed. So **T-P9-2 still blocks every conformance claim**, which is correct and worth saying plainly: standing up the entities did not make a claim possible, it made one eventually possible.
+
+## Step 3 — the declaration: gate report, written before any signature
+
+**Status: NOT RUN. Nothing in this section has been submitted.** It stops at §6 on an unresolved defect in HCS-14 (ledger §G item 12), which is raised rather than coded around (CLAUDE.md §5). Everything above §6 is settled and is written here first, on the rule Step 2 followed: the gate report is committed before the first transaction, not after it.
+
+Provisioned against **`v0.5.3`**, the tag the ops record will cite. `v0.5.3` is D-150's patch, and it exists *because* of this step: §4.6's `Conformance:` note required every provisioned topic to carry the agent's admin key, and HCS-1 marks a file topic that has one invalid and ignores it — so as landed no HCS-11 profile file could be provisioned conformantly and the whole `hcs14` declare surface was unreachable.
+
+### 1. What it creates, in the forced order
+
+| # | Entity | Declared shape | Warrant |
+|---|---|---|---|
+| 1 | `agent.profileFile` | HCS-1 topic, memo `<sha256 of the plaintext profile>:brotli:base64`, **sole submit key the agent's**, **no admin key**, no fee | **D-150** row 6 · `hcs-1.md:48-49` forbids the admin key; `:56-60` fixes the memo |
+| 2 | `agent.profileChunks` | HCS-1 `{o, c}`, `o=0` prefixed `data:application/json;base64,`, each ≤1024 bytes of base64 — one chunk expected | `hcs-1.md:92-95, 104-109` |
+| 3 | `agent.declRegistry` | HCS-2 topic, memo `hcs-2:0:60`, submit **and** admin keys the agent's, no fee, no exempt list | D-147 row 5 · indexed `0`, so prior entries stay readable at their consensus timestamps (T-P8-3) |
+| 4 | `agent.registryEntry` | `{"p":"hcs-2","op":"register","t_id":"<profileFile>"}`, transaction memo `hcs-2:op:register:0` | §H:359 — `register` is `{p, op, t_id, [metadata], [m]}`; the transaction memo is a SHOULD |
+| 5 | `agent.accountMemo` | `AccountUpdateTransaction` setting the memo to `hcs-11:hcs://2/<declRegistry>`, signed by the agent | §9.2:1284's MUST |
+
+The order is forced and not chosen: the file topic's memo carries the SHA-256 of the profile **plaintext**, so the profile must be final before the topic exists; the registry entry names the file topic; the account memo names the registry topic.
+
+The agent is the Postmaster-agent, `0.0.10426206` — a Correspondent peer and an operational identity, not a spec role (D-140). Its doorbell `0.0.10426553`, log `0.0.10426554` and manifest `0.0.10426591` already stand from Step 2, and the declaration is what makes them findable.
+
+### 2. The profile, and the key that is born for it
+
+The HCS-11 profile carries `inboundTopicId`, `outboundTopicId`, a required `uaid`, and `properties.wishmail = {manifestTopic, x25519Pub, keyEpoch: 1}` — D-70 and §9.2:1275. `properties` is where HCS-11 sanctions it: "an unstructured JSON object … no predefined fields or structure" (`hcs-11.md:217`, §H).
+
+`x25519Pub` is the agent's **encryption** key, and it is the first key in this build that is not a Hedera key. It is born in the agent's process, read in `env.ts` and held in `identity.ts` and nowhere else, exactly as the account keys are (P-13). The gate that enforces that was widened for it in the same change (D-151): it watched `(AGENT|TREASURY)_DER_KEY`, and `AGENT_X25519_DER_KEY` walked straight past.
+
+Before the memo's hash is taken, the declaration object is validated against `spec/schemas/declaration.schema.json` through the one registry of `app/src/schema/loader.ts` — `x25519Pub` against its base64url pattern, `keyEpoch` against `minimum: 0`. A profile that does not validate is not published, on D-143's precedent for the price list.
+
+### 3. What it asserts, and what it reads back
+
+Field by field, against the mirror node, before anything is recorded — and every readback names its predicate, which is the rule Step 2 earned the hard way.
+
+`agent.profileFile`: memo equal to `<sha256>:brotli:base64` where the digest is of the profile **before compression**; `submit_key` the agent's raw hex; **`admin_key` null**, which is the whole of D-150; `fee_schedule_key` null; no custom fee. `agent.profileChunks`: the message at sequence 1, byte-for-byte equal to what was submitted, and the profile it decodes to — base64-decode, then brotli-decompress — hashing to the memo's digest. `agent.declRegistry`: memo `hcs-2:0:60`, submit and admin keys the agent's, `fee_schedule_key` null, no custom fee. `agent.registryEntry`: sequence 1 on the registry topic, `payer_account_id` the operator, the message byte-for-byte, and its `t_id` equal to the file topic. `agent.accountMemo`: the account's `memo` field equal to `hcs-11:hcs://2/<declRegistry>`.
+
+Then the chain is walked exactly as §9.2's rule walks it — account memo → the registry's current entry → the HCS-1 file → the profile → `properties.wishmail` — from a mirror node with nothing else configured. That is the first end-to-end exercise of the `hcs14` resolver's read path, and it is the assertion that matters: not that five entities exist, but that the rule finds them.
+
+### 4. What it writes, and where
+
+`spec/pins.json` is **not touched**. Nothing here is one of §18.4's pins (D-144), so the thirty nulls stay thirty and T-P9-2 still blocks every claim. Everything goes to `app/deployment/hedera-testnet.json`: five rows, each with what built it, which **roles** signed it, the payer, the transaction id, the consensus timestamp, the mirror-node path that confirmed it, and the declared policy verbatim — which is how T-P17-1's "the policy is recorded at creation" is satisfied by construction rather than by a comment. The profile file's row records `adminKey: null` and **why**, citing D-150, so a reader does not read the absence as an omission.
+
+`EntityRecord` gains a `specTag` field and the eleven Step 2 rows are backfilled with `v0.5.2`. The record's single top-level `specTag` was true of the eleven and becomes false the moment a row provisioned against a different tag lands beside them.
+
+### 5. Idempotency, and every way it stops
+
+Step 2's stop conditions carry over unchanged — prerequisite absent, `ABSENT-BUT-ON-LEDGER` resolved by the intent journal first and a step's own backstop second, `RECORDED-BUT-ABSENT`, `DIVERGED`, `CREATED-WRONG` — and two are worth naming for this step in particular.
+
+**An HCS-1 file topic has no admin key, so it can never be deleted.** A profile file published wrong is permanent, and can only be superseded by a new registry entry (§9.2:1284, "prior entries stay on the registry topic"). That is HCS-1's stated purpose — "This ensures that data cannot be deleted, reducing risk for all participants in the protocol" — and it is why the profile is validated and its digest computed before the topic is created rather than after.
+
+**The account memo is the last act, and the only reversible one.** Until it is set, the registry and the file are inert: no resolution reaches them, because §9.2's rule starts at the account memo. So the run can stop after any of the first four steps and leave nothing that resolves.
+
+### 6. STOP — the declaration is not signed, and why
+
+HCS-14 contradicts itself about the canonical key order of the six fields an agent identifier is hashed from, and the two orders give **different identifiers for the same agent**. Its normative step 3 says "sort object keys lexicographically" and its reference function does that; its own worked example puts `skills` first, and that is what is on the ledger. Verified against the ledger rather than against the text, because the standard publishes its expected UAIDs as the literal placeholder `uaid:aid:{base58hash};…` and therefore courts nothing: the live `hedera:testnet` agent `0.0.7124407`'s on-chain identifier reproduces exactly under the example's order and not at all under the normative one (`npm run check:hcs14`, 27 assertions).
+
+It blocks because HCS-11 requires the `uaid` in the profile, the profile's SHA-256 is the file topic's memo — a value that cannot be changed once the topic exists — and §9.2 compares a UAID address against the profile's identifier. An identifier no other implementation computes is one no incumbent can address us by, and it would be baked into an undeletable topic.
+
+`CANONICAL_ORDER` in `app/src/core/hcs14.ts` is deliberately `undefined` and every caller must name an order, so nothing can emit a UAID until this is ruled. The candidates and the lean are in ledger §G item 12. **Sonic rules; the signatures wait.**
 
 ## Entities
 
