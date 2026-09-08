@@ -1,0 +1,87 @@
+{
+  "_readme": "Vectors for WISHMAIL_SPEC_v0_5.md §7.2 — the AAD and the envelope identifier. T-P1-4: every class recomputes `bytes` and `id` from `header` exactly. The key names are §7.2’s six and no others (D-127); `bytes` is their RFC 8785 canonical JSON, which sorts them l, lane, nc, p, rp, v whatever order they are written in; `id` is SHA-256 over `bytes`, lowercase hex. `rebuild` is §5.6’s other direction: a reader with chunk 0’s `hdr` and the topic the chunk arrived on rebuilds the same bytes and so binds the header to the `id` every chunk carries. Lane and proof identifiers here are well-formed and synthetic — the AAD is a function of its six fields and of nothing on any ledger. Frozen; regenerating is a decision, not a chore.",
+  "spec": "0.5.3",
+  "wireVersion": "0.5",
+  "section": "§7.2, with §5.6’s rebuild",
+  "conformance": [
+    "T-P1-4"
+  ],
+  "generated": "2026-09-08",
+  "cases": [
+    {
+      "name": "testnet-minimal",
+      "note": "The ordinary case: one lane, one proof, a fresh nonce.",
+      "header": {
+        "p": "wishmail",
+        "v": "0.5",
+        "l": "hedera:testnet",
+        "lane": "0.0.7000001",
+        "rp": "712cd11213a6170723f34bd18584a10094313f1340085702c2d4ddc4ad150c25",
+        "nc": "PbhuX3xcD2mIZ3TIdIkVXg"
+      },
+      "hdr": {
+        "l": "hedera:testnet",
+        "rp": {
+          "h": "712cd11213a6170723f34bd18584a10094313f1340085702c2d4ddc4ad150c25"
+        },
+        "nc": "PbhuX3xcD2mIZ3TIdIkVXg",
+        "note": "chunk 0’s hdr fields that the AAD is rebuilt from (§5.6)"
+      },
+      "lane": "0.0.7000001",
+      "aadBytesUtf8": "{\"l\":\"hedera:testnet\",\"lane\":\"0.0.7000001\",\"nc\":\"PbhuX3xcD2mIZ3TIdIkVXg\",\"p\":\"wishmail\",\"rp\":\"712cd11213a6170723f34bd18584a10094313f1340085702c2d4ddc4ad150c25\",\"v\":\"0.5\"}",
+      "aadBytesHex": "7b226c223a226865646572613a746573746e6574222c226c616e65223a22302e302e37303030303031222c226e63223a22506268755833786344326d495a33544964496b565867222c2270223a22776973686d61696c222c227270223a2237313263643131323133613631373037323366333462643138353834613130303934333133663133343030383537303263326434646463346164313530633235222c2276223a22302e35227d",
+      "aadBytesLength": 170,
+      "id": "6d0d966a3b9c5925faec9907b99618b46476392ce5aeb8325651310baf545e2f"
+    },
+    {
+      "name": "testnet-multichunk",
+      "note": "A payload past one chunk, so that a reader has a ciphertext to slice (§7.4).",
+      "header": {
+        "p": "wishmail",
+        "v": "0.5",
+        "l": "hedera:testnet",
+        "lane": "0.0.7000002",
+        "rp": "475dd4670ae0023715af367c559e4cfe8311e55ed8b841921591bf95ce3e43aa",
+        "nc": "mxJrZ_kutf-aK6FsavPzHA"
+      },
+      "hdr": {
+        "l": "hedera:testnet",
+        "rp": {
+          "h": "475dd4670ae0023715af367c559e4cfe8311e55ed8b841921591bf95ce3e43aa"
+        },
+        "nc": "mxJrZ_kutf-aK6FsavPzHA",
+        "note": "chunk 0’s hdr fields that the AAD is rebuilt from (§5.6)"
+      },
+      "lane": "0.0.7000002",
+      "aadBytesUtf8": "{\"l\":\"hedera:testnet\",\"lane\":\"0.0.7000002\",\"nc\":\"mxJrZ_kutf-aK6FsavPzHA\",\"p\":\"wishmail\",\"rp\":\"475dd4670ae0023715af367c559e4cfe8311e55ed8b841921591bf95ce3e43aa\",\"v\":\"0.5\"}",
+      "aadBytesHex": "7b226c223a226865646572613a746573746e6574222c226c616e65223a22302e302e37303030303032222c226e63223a226d784a725a5f6b7574662d614b3646736176507a4841222c2270223a22776973686d61696c222c227270223a2234373564643436373061653030323337313561663336376335353965346366653833313165353565643862383431393231353931626639356365336534336161222c2276223a22302e35227d",
+      "aadBytesLength": 170,
+      "id": "459395d3130852c643b777bd827c483ce503426f503e5418bab0b5014cc0842b"
+    },
+    {
+      "name": "mainnet-tag",
+      "note": "The other ledger tag §5.1 defines, so the tag is visibly part of the identifier.",
+      "header": {
+        "p": "wishmail",
+        "v": "0.5",
+        "l": "hedera:mainnet",
+        "lane": "0.0.7000003",
+        "rp": "4ab6ea2458c20e4cfe0623789209709aeb8ff5f1272a138df6e53a7b985eb8a2",
+        "nc": "0Q0eLj0Mm6x-EQHYq_GKrQ"
+      },
+      "hdr": {
+        "l": "hedera:mainnet",
+        "rp": {
+          "h": "4ab6ea2458c20e4cfe0623789209709aeb8ff5f1272a138df6e53a7b985eb8a2"
+        },
+        "nc": "0Q0eLj0Mm6x-EQHYq_GKrQ",
+        "note": "chunk 0’s hdr fields that the AAD is rebuilt from (§5.6)"
+      },
+      "lane": "0.0.7000003",
+      "aadBytesUtf8": "{\"l\":\"hedera:mainnet\",\"lane\":\"0.0.7000003\",\"nc\":\"0Q0eLj0Mm6x-EQHYq_GKrQ\",\"p\":\"wishmail\",\"rp\":\"4ab6ea2458c20e4cfe0623789209709aeb8ff5f1272a138df6e53a7b985eb8a2\",\"v\":\"0.5\"}",
+      "aadBytesHex": "7b226c223a226865646572613a6d61696e6e6574222c226c616e65223a22302e302e37303030303033222c226e63223a22305130654c6a304d6d36782d45514859715f474b7251222c2270223a22776973686d61696c222c227270223a2234616236656132343538633230653463666530363233373839323039373039616562386666356631323732613133386466366535336137623938356562386132222c2276223a22302e35227d",
+      "aadBytesLength": 170,
+      "id": "bced1709711c6ebcbf7276669d4e6b0897125d38db70c8b24717908506ad0eec"
+    }
+  ]
+}

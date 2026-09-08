@@ -31,14 +31,8 @@ import {
   TopicMessageSubmitTransaction,
   type Key,
 } from '@hashgraph/sdk';
-import canonicalize from 'canonicalize';
-import { Ajv2020 } from 'ajv/dist/2020.js';
-import addFormatsImport from 'ajv-formats';
-
-// ajv-formats is CommonJS; under NodeNext without esModuleInterop the default
-// import is the namespace, so unwrap it once here rather than at the call site.
-const addFormats = ((addFormatsImport as unknown as { default?: (a: unknown) => void }).default
-  ?? (addFormatsImport as unknown as (a: unknown) => void));
+import { schemas } from '../schema/loader.js';
+import { canonicalBytes, sha256hex } from '../core/canonical.js';
 import { publicHex, type Signer } from './identity.js';
 import { submit } from './hedera.js';
 import { named, Checks, type BackstopResult, type Ctx, type Discrepancy, type Step } from './step.js';
@@ -62,9 +56,10 @@ export interface AnyStep {
 /** The one cast in the file, in one place, rather than eleven at the call sites. */
 const anon = <W>(st: Step<W>): AnyStep => st as unknown as AnyStep;
 
-export function sha256hex(b: Buffer): string {
-  return createHash('sha256').update(b).digest('hex');
-}
+// SHA-256 and RFC 8785 now live in `src/core/canonical.ts`, because §7.2's AAD
+// needs the same bytes and the same digest and one canonicalization is the
+// point (§5.1). Re-exported here so every existing caller is unmoved.
+export { canonicalBytes, sha256hex };
 
 /* --- shapes the mirror node returns ------------------------------------- */
 
@@ -414,21 +409,17 @@ export function buildPriceList(ctx: Ctx): Record<string, unknown> {
   return raw;
 }
 
+/**
+ * D-143: the first `PriceList` is validated against its schema before it is
+ * submitted, and byte-compared after. The validator is now the one registry of
+ * `src/schema/loader.ts`, which holds all fourteen of §18.5 in one ajv instance
+ * so that cross-file `$ref`s resolve. Behaviour is unchanged: the same draft
+ * 2020-12 build, the same options, the same message form — which matters,
+ * because D-145's negative half turns on `additionalProperties` rejecting a
+ * message that carries `validFrom`.
+ */
 export function validatePriceList(repoRoot: string, msg: unknown): string[] {
-  const schema = JSON.parse(
-    fs.readFileSync(path.join(repoRoot, 'spec', 'schemas', 'price-list.schema.json'), 'utf8'),
-  ) as object;
-  const ajv = new Ajv2020({ strict: false, allErrors: true });
-  addFormats(ajv);
-  const validate = ajv.compile(schema);
-  return validate(msg) ? [] : (validate.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message ?? ''}`.trim());
-}
-
-/** RFC 8785 (§5.1). One library here and in the AAD of §7.2, never hand-rolled. */
-export function canonicalBytes(msg: unknown): Buffer {
-  const s = canonicalize(msg);
-  if (s === undefined) throw new Error('canonicalize returned undefined');
-  return Buffer.from(s, 'utf8');
+  return schemas(repoRoot).validate('price-list', msg);
 }
 
 interface PriceWant { readonly topic: string; readonly bytes: string; readonly sha256: string; readonly warrant: string }

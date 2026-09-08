@@ -15,6 +15,9 @@
     "provision": "npm run provision --workspace app",
     "probe": "npm run probe --workspace app",
     "p13:check": "node scripts/p13-check.mjs",
-    "check:register": "node scripts/extract-and-diff.mjs"
+    "check:register": "node scripts/extract-and-diff.mjs",
+    "check:seal": "npm run check:seal --workspace app",
+    "check:schemas": "npm run check:schemas --workspace app",
+    "check:vectors": "npm run check:vectors --workspace app"
   }
 }

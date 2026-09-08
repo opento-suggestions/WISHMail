@@ -9,7 +9,11 @@
     "typecheck": "tsc --noEmit",
     "provision": "tsx src/ops/provision.ts",
     "probe": "tsx src/ops/probe.ts",
-    "provision:plan": "tsx src/ops/provision.ts --dry-run"
+    "provision:plan": "tsx src/ops/provision.ts --dry-run",
+    "check:seal": "tsx src/core/seal.check.ts",
+    "check:schemas": "tsx src/schema/loader.check.ts",
+    "vectors": "tsx src/vectors/generate.ts",
+    "check:vectors": "tsx src/vectors/vectors.check.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",
