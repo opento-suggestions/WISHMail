@@ -63,6 +63,16 @@ The repository's **first `CHANGED` markers**, which D-131 set the convention up 
 
 ## [Unreleased]
 
+### 2026-09-08 — Step 4 record-keeping: the deployment fields filled **[CC]**
+
+The remainder of the approved plan's Step 4. No normative change: no specification sentence moves, no schema changes, no test is added or amended, the register stays at 83, and the `v0.5.2` tag is not moved.
+
+- **LIMITATIONS** gains the entities where §15.5 expects them: the stamp token `0.0.10426208` and treasury `0.0.10426205`, the price topic `0.0.10426551`, and a paragraph naming the Postmaster-agent's account, doorbell, log and manifest with a pointer to the ops record and the method. It says plainly what this does **not** buy: thirty pins remain unfilled, T-P9-2 refuses a report while any is, and every `[fill at claim]` field stays empty for that reason.
+- **STATUS §4**'s two remaining unfilled rows are filled, each stating what was provisioned and against which tag.
+- **STATUS §6** is rewritten as where the build stands rather than what is next: Phase A, Step 1, Phase A′, the probe and Step 2, each with what it settled; then what is **not** done and what it blocks — no conformance claim is possible, `conformance/` holds none of the 83 tests, `app/` holds no part of the six-tool surface, and the `hcs14` declaration is unbuilt.
+- **Two operational rules earned in Step 2** are written down where the next session will read them: unbuffered output on every long-running script, because a pipe that buffers until exit makes a fast failure look like a hang and cost two killed runs; and a machine-readable file of record is edited surgically and never re-serialised, because `spec/pins.json` is §1.6's machine-readable form and a reviewer must be able to see that exactly two values moved.
+- **The `chunkInfo` finding** is filed under `HCS-10 by hand vs SDK`, which stays open. `TopicMessageSubmitTransaction.freezeWith` attaches `chunkInfo` to every message including a single-chunk one, and §7.4 requires none on an HCS-10 envelope chunk — so that class cannot carry envelopes as-is. Harmless for the price list, which is not an envelope. Reported, not acted on.
+
 ### 2026-09-08 — Step 2: the Postmaster's entities stand on hedera:testnet **[S]** approval, **[CC]** code and record
 
 Eleven entities provisioned against the text tagged **`v0.5.2`**, which is what `app/deployment/hedera-testnet.json` cites. `spec/pins.json` closed exactly two nulls; **thirty remain**, so T-P9-2 still blocks every conformance claim — standing up the entities did not make a claim possible, it made one eventually possible. No specification sentence moves, no schema changes, no test is added or amended, the register stays at 83.

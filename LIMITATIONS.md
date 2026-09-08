@@ -4,6 +4,8 @@ This document is required of every release that claims conformance (spec §1.5, 
 
 Fields marked `[fill at deployment]` are filled when the testnet artifacts exist and before any conformance claim is made (T-P9-2).
 
+**The entities exist as of 2026-09-08.** The Postmaster's operational entities stand on `hedera:testnet`, provisioned against the text tagged `v0.5.2`: the stamp token and treasury below, the price topic below, and the reference Postmaster-agent's account `0.0.10426206` with its doorbell `0.0.10426553`, log `0.0.10426554` and manifest `0.0.10426591`. The full record, with each entity's creation transaction and consensus timestamp and the mirror-node read that confirmed it, is `app/deployment/hedera-testnet.json`; the method is `app/OPERATIONS.md`. **This does not make a claim possible**: `spec/pins.json` still carries thirty unfilled pins — the twenty-eight `registeredSchemas` entries and the two `hedera:mainnet` stamp-token fields — and T-P9-2 refuses a report while any pin is unfilled. Fields marked `[fill at claim]` remain unfilled for that reason.
+
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
@@ -12,8 +14,8 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
 | Ledger tags deployed | `hedera:testnet` only (§15.5) |
-| Stamp token | `$POSTAGE` on `hedera:testnet`, token ID `[fill at deployment]`, treasury `[fill at deployment]` |
-| Price topic | `[fill at deployment]` (memo `wishmail:prices:1`) |
+| Stamp token | `$POSTAGE` on `hedera:testnet`, token ID `0.0.10426208`, treasury `0.0.10426205` (provisioned 2026-09-08 against tag `v0.5.2`; `spec/pins.json`) |
+| Price topic | `0.0.10426551` (memo `wishmail:prices:1`); the first `PriceList` is sequence 1 |
 | Payment methods | `x402-usdc` via the x402.org facilitator, `https://x402.org/facilitator`, scheme `exact`, network `hedera:testnet`, asset USDC `0.0.429274` (6 decimals), facilitator fee payer `0.0.9185802`, no signup or key (D-132); `hbar` |
 | Registry anchors read | HOL testnet anchor `0.0.6913983` (§9.5); mainnet anchors not read |
 | Conformance run | suite version `[fill at claim]`, date `[fill at claim]`, report digest `[fill at claim]` |
