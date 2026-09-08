@@ -63,6 +63,16 @@ The repository's **first `CHANGED` markers**, which D-131 set the convention up 
 
 ## [Unreleased]
 
+### 2026-09-08 — The P-13 gate runs where the build is done **[CC]**
+
+`npm run p13:check` exited 255 without running its grep. The script was a shell one-liner — `git grep … | grep -v … ; test $? -eq 1` — and npm on Windows runs a script through `cmd.exe`, which parses neither the single quotes nor `test`. So the gate that keeps agent key names out of every module but `env.ts` and `identity.ts` **had never run on the machine this build was done on**, and its red exit read as tooling noise rather than as a failure. A check that fails open is worse than no check, because it is trusted. No normative change: no specification sentence moves, no schema changes, no test is added or amended, the register stays at 83.
+
+- **`scripts/p13-check.mjs`** replaces the one-liner; `package.json` runs `node scripts/p13-check.mjs`, which behaves the same on every platform. It distinguishes the two ways `git grep` can exit non-zero — status 1 with no output is "nothing matched", the clean case, and anything else is a real error that exits 2 rather than passing silently.
+- **The invariant is unchanged and still holds**: `AGENT_DER_KEY` and `TREASURY_DER_KEY` are named in `app/src/ops/env.ts` and `app/src/ops/identity.ts` and nowhere else in `app/src`. Every other module takes a `Signer` — public material and a signing callback — and cannot leak a key even by accident, because it is not holding one.
+- **`OPERATOR_DER_KEY` is deliberately outside the gate**, and the script now says so where the pattern is written. An earlier draft of this fix added it and failed on `probe.ts` and `provision.ts`; that was the fix being wrong, not the code. The operator is the Postmaster's own payer under D-47, not an agent, and P-13 is about agent keys — and those two lines name it only to hand it to `fromEnv`, which is in `identity.ts`.
+
+Conformance: T-P13-1, T-P13-2.
+
 ### 2026-09-08 — Step 4 record-keeping: the deployment fields filled **[CC]**
 
 The remainder of the approved plan's Step 4. No normative change: no specification sentence moves, no schema changes, no test is added or amended, the register stays at 83, and the `v0.5.2` tag is not moved.
