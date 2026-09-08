@@ -12,6 +12,8 @@
   },
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "provision": "npm run provision --workspace app"
+    "provision": "npm run provision --workspace app",
+    "probe": "npm run probe --workspace app",
+    "p13:check": "git grep -nE '(AGENT|TREASURY)_DER_KEY' -- app/src | grep -v '^app/src/ops/(env|identity).ts:'; test $? -eq 1"
   }
 }
