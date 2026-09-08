@@ -214,7 +214,7 @@ The post-update topic readback polled with a predicate of `() => true`, which ac
 
 ## Step 2 — the real entities: gate report, before any signature
 
-**Status: not yet run. Nothing has been signed.** Written and committed before the first transaction of Step 2, on the same rule the probe followed. Produced by `npm run provision:plan` (`--dry-run`), which resolves every declared shape, validates the price list, prints the table below, and signs nothing.
+**Status: RUN 2026-09-08. All eleven entities stand on `hedera:testnet`; §§7–10 carry what happened.** §§1–6 were written and committed before the first transaction of Step 2, on the same rule the probe followed. Produced by `npm run provision:plan` (`--dry-run`), which resolves every declared shape, validates the price list, prints the table below, and signs nothing.
 
 The probe (§6) proved the *template* against consensus on a disposable copy. This provisions the entities the deployment keeps, against the text tagged **`v0.5.2`** at `21cb3c2`.
 
@@ -287,8 +287,82 @@ Ruled 2026-09-08, before the Step 2 signature. **`.env` holds secrets, the netwo
 
 **A separate, minimal `.env.example` for the Correspondent client** is at `app/sdk/.env.example`, where the SDK and CLI will ship. It is four variables — the agent's own key, an optional account id, the network, and the Postmaster's MCP URL — and it shares nothing with the Postmaster's file. It states what a Correspondent does not need: no operator key, no treasury, no supply key, no state directory. And it says the thing worth saying to whoever reads it first: the Postmaster holds no key of yours, ever (P-13); your key is born in your process and stays there.
 
+### 7. The readback hang, and the adoption
+
+The first Step 2 run created the treasury, the postmaster-agent and `$POSTAGE` — all three SUCCESS at consensus — and then stopped for ten minutes without submitting anything further. The cause was mine and simple: `fetch` carries no default timeout, so the token's mirror-node readback stalled and waited. The record was never written for an entity that exists, and because the token has no admin key a naive re-run would have created a second `$POSTAGE` and stranded the first forever.
+
+Two fixes, in that order. **The hang**: every mirror request now carries a 15s `AbortSignal.timeout`, and `poll` treats a timed-out or transiently failed read as "not yet" against its own deadline rather than as a crash, so a slow mirror node costs time and never the process. **The orphan**: `journal.ts`, which the plan specified and which had not been built. A transaction id is pinned before submission — `setTransactionId` plus `setRegenerateTransactionId(false)`, so the handle is single-valued — and written through a temp file and a rename, so a run that dies between consensus and the record write leaves behind the one handle that can find what it made.
+
+`ABSENT-BUT-ON-LEDGER` was added to §4's stop conditions, resolved by the journal first and a step's own backstop second. The journal did not apply here: it did not exist when the token was created. So the token was recovered by **the backstop**, which is the only one any step offers. Its conditions were met exactly as ruled:
+
+- **Exactly one candidate.** A token names its treasury, and our treasury is an account created moments earlier that holds nothing else. `GET /accounts/0.0.10426205/tokens` returned one token, and `GET /tokens/0.0.10426208` confirmed `treasury_account_id` is ours. Two candidates would have stopped the run rather than chosen, because the loser could never be deleted.
+- **Field for field.** The adopted token went through `confirm()` unchanged — the same function a created entity goes through, against the same declared `Want`. `type FUNGIBLE_COMMON`, `decimals 0`, `initial_supply 0`, `supply_type INFINITE`, `treasury_account_id 0.0.10426205`, `supply_key` the treasury's raw hex, and all six of `admin_key`, `freeze_key`, `wipe_key`, `pause_key`, `kyc_key`, `fee_schedule_key` null. Adoption is not a shortcut past confirmation; a mismatch would have been `CREATED-WRONG` and nothing would have been written.
+- **A complete row.** The creation transaction `0.0.8641261@1788894041.839314449` and its consensus timestamp `1788894046.551017104` were recovered from the mirror node — the token's `created_timestamp`, then `GET /transactions?timestamp=…` for the transaction at that instant — so the token's row is as complete as the accounts' rows beside it.
+- **The row says so.** `policy.adopted` in the ops record states that the entity was adopted rather than created by the run that recorded it, why, and by which route, and cites this section.
+
+One further bug surfaced and is worth recording, because it looked like a second hang and was not. `mirrorPathFor` asked `ctx.tokenId()` for the token's own `confirmedFrom` — reading the record for a row it was in the middle of building — and threw. The run stopped in seconds; I saw nothing because the output was piped through `tail`, which buffers until the process ends, and I read the silence as a hang. **A pipe that hides progress is not a neutral observer.** The path for the token row now uses the entity's own id, and later runs were watched through a log file rather than a pipe.
+
+### 8. What was created — the run of record, 2026-09-08
+
+Provisioned against **`v0.5.2`**, the tag the ops record cites. Every row below was written from a mirror-node REST read, never an SDK receipt.
+
+| Entity | ID | Built by | Signed by | Creation transaction | Consensus timestamp | Confirmed from |
+|---|---|---|---|---|---|---|
+| `treasury.account` | `0.0.10426205` | AccountCreateTransaction | operator | `0.0.8641261@1788894030.895915675` | `1788894038.750186104` | `/accounts/0.0.10426205` |
+| `agent.account` | `0.0.10426206` | AccountCreateTransaction | operator | `0.0.8641261@1788894037.389411178` | `1788894042.916078489` | `/accounts/0.0.10426206` |
+| `postage.token` | `0.0.10426208` | TokenCreateTransaction | operator + treasury | `0.0.8641261@1788894041.839314449` | `1788894046.551017104` | `/tokens/0.0.10426208` |
+| `postage.mint` | — (an act) | TokenMintTransaction | operator + treasury | `0.0.8641261@1788895929.601780780` | `1788895936.951925104` | `/tokens/0.0.10426208` |
+| `operator.association` | — (an act) | TokenAssociateTransaction | operator | `0.0.8641261@1788895938.588230383` | `1788895942.185374170` | `/accounts/0.0.8641261/tokens?token.id=…` |
+| `agent.association` | — (an act) | TokenAssociateTransaction | operator + agent | `0.0.8641261@1788895941.535451737` | `1788895945.713095293` | `/accounts/0.0.10426206/tokens?token.id=…` |
+| `prices.topic` | `0.0.10426551` | TopicCreateTransaction | operator | `0.0.8641261@1788895943.054415671` | `1788895947.743137568` | `/topics/0.0.10426551` |
+| `prices.first` | — (sequence 1) | TopicMessageSubmitTransaction | operator | `0.0.8641261@1788895947.603820976` | `1788895954.743195291` | `/topics/0.0.10426551/messages?limit=1&order=asc` |
+| `agent.doorbell` | `0.0.10426553` | TopicCreateTransaction | operator + agent | `0.0.8641261@1788895951.943923730` | `1788895956.794141742` | `/topics/0.0.10426553` |
+| `agent.log` | `0.0.10426554` | TopicCreateTransaction | operator + agent | `0.0.8641261@1788895954.671556678` | `1788895958.763292150` | `/topics/0.0.10426554` |
+| `agent.manifest` | `0.0.10426591` | TopicCreateTransaction | operator + agent | `0.0.8641261@1788896134.080208852` | `1788896142.676180052` | `/topics/0.0.10426591` |
+
+**Every readback, with the predicate it waited on and its result.** All PASS, verified again independently after the run.
+
+| Step | Named predicate | Asserted | Result |
+|---|---|---|---|
+| treasury, agent accounts | `account exists and is not deleted` | `account`, `deleted false`, `key` = the key generated for it | PASS |
+| `postage.token` | `token exists` | `FUNGIBLE_COMMON`; `decimals 0`; `initial_supply 0`; `INFINITE`; `treasury_account_id`; `supply_key` = the treasury's; **six nulls** | PASS |
+| `postage.mint` | `total_supply reaches 10000` | `total_supply == 10000`, compared as BigInt | PASS |
+| both associations | `the association appears` | the token in that account's token list | PASS |
+| `prices.topic` | `topic exists and is not deleted` | memo `wishmail:prices:1`; submit **and** admin the operator's; `fee_schedule_key` null; no custom fee; `auto_renew_account` | PASS |
+| `agent.doorbell` | `topic exists and is not deleted` | memo `hcs-10:0:60:0:0.0.10426206`; **`submit_key` null**; admin the agent's; `fee_schedule_key` null; one fixed fee of **1 `0.0.10426208` → `0.0.10426205`**; `fee_exempt_key_list` = the agent's key | PASS |
+| `agent.log` | `topic exists and is not deleted` | memo `hcs-10:0:60:1`; submit and admin the agent's; no fee | PASS |
+| `agent.manifest` | `topic exists and is not deleted` | memo `wishmail:manifest:1`; the agent's key as **sole** submit key; admin the agent's | PASS |
+| `prices.first` | `sequence 1 is on the price topic` | `sequence_number 1`; `payer_account_id` the operator; message **byte-for-byte** equal to what was submitted | PASS |
+
+The published `PriceList`, canonical under RFC 8785, 546 bytes, sequence 1 on `0.0.10426551` — **no `validFrom`**, `spec` `0.5.2`, and the real token, treasury and `payTo` filled into the committed file:
+
+```json
+{"methods":[{"asset":"0.0.429274","bundles":[{"count":12,"price":"1.00"}],"facilitator":"https://x402.org/facilitator","method":"x402-usdc","network":"hedera:testnet","payTo":"0.0.8641261","unitPrice":"0.10"},{"asset":"0.0.0","bundles":[{"count":12,"price":"1.00"}],"method":"hbar","network":"hedera:testnet","payTo":"0.0.8641261","rate":{"pair":"HBAR/USD","reference":{"amount":"0.10","asset":"USD"},"source":"https://api.saucerswap.finance/tokens"}}],"spec":"0.5.2","stampToken":{"ledgerTag":"hedera:testnet","tokenId":"0.0.10426208","treasury":"0.0.10426205"}}
+```
+
+### 9. §4's acceptance test, both halves
+
+**Two runs.** The second created nothing, exited 0, and printed the same eleven rows, every one `existing`. `spec/pins.json` reported `already`.
+
+**Delete one.** `agent.manifest` was removed from the record and the run repeated. It created **one** entity — a new manifest topic, `0.0.10426591` — and nothing else: ten `existing`, one `created`, exit 0. That is the assertion the test makes, and it holds.
+
+The superseded first manifest, `0.0.10426557`, is recorded in the ops record's **`residue`** array rather than deleted or left unmentioned, so `entities` holds exactly one manifest and no reader is left wondering what an orphan topic is. It exists on the ledger, carries the agent as its sole submit key and admin key, is not the deployment's manifest topic, and is deletable under its admin key; it is left in place as the evidence the test ran.
+
+### 10. The pins, and what remains
+
+`spec/pins.json` closed **exactly two** nulls and no others:
+
+```diff
+-    "hedera:testnet": { "tokenId": null, "treasury": null },
++    "hedera:testnet": { "tokenId": "0.0.10426208", "treasury": "0.0.10426205" },
+```
+
+That one-line diff is the point, and it took a second attempt. The first writer re-serialised the file with `JSON.stringify`, which dropped the blank lines between blocks and re-wrapped the single-line standards entries — eighty lines of diff for a two-value change, in the machine-readable form of §1.6, which is the appendix of record. The writer now performs a surgical text edit of that one line and **refuses to write at all** if the line is not in its expected form, rather than reformatting everything around it.
+
+**Thirty nulls remain**: the twenty-eight `registeredSchemas` entries, which wait on HCS-13 registration, and the two `hedera:mainnet` stamp-token fields, which wait on a network §15.5 leaves undeployed. So **T-P9-2 still blocks every conformance claim**, which is correct and worth saying plainly: standing up the entities did not make a claim possible, it made one eventually possible.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
 
-_None yet — Step 2 is gated and unsigned. Phase A′ (0.5.2, tag `v0.5.2` at `21cb3c2`) is the text they will be provisioned against, and `app/deployment/hedera-testnet.json` will cite that tag. The HIP-991 probe has run; its entities are not deployment entities and appear only in their own section._
+The eleven rows, their readbacks and their predicates are §8 above; the acceptance test is §9 and the pins are §10. The record itself is `app/deployment/hedera-testnet.json`, which cites the tag `v0.5.2`. The HIP-991 probe’s entities are not deployment entities and appear only in their own section.

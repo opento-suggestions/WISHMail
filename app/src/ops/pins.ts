@@ -33,6 +33,13 @@ function countNulls(o: unknown): number {
  * Fill `stampToken["hedera:testnet"]`. Refuses to overwrite a different
  * non-null pin: re-creating the token is a decision that also requires
  * re-pinning, and the caller must say so rather than have it inferred.
+ *
+ * The write is a SURGICAL TEXT EDIT of one line, not a re-serialisation.
+ * `JSON.stringify` would reformat the whole file — dropping the blank lines
+ * between blocks and re-wrapping the single-line standards entries — and turn a
+ * two-value change into an eighty-line diff nobody can review. §1.6 is the
+ * appendix of record and this file is its machine-readable form; a reviewer must
+ * be able to see that exactly two values moved.
  */
 export function pinStampToken(repoRoot: string, next: StampTokenPin, repin: boolean): PinOutcome {
   const file = path.join(repoRoot, 'spec', 'pins.json');
@@ -50,11 +57,21 @@ export function pinStampToken(repoRoot: string, next: StampTokenPin, repin: bool
     if (!repin) return { kind: 'conflict', pinned: found, found: next };
   }
 
-  slot.tokenId = next.tokenId;
-  slot.treasury = next.treasury;
-  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
-  fs.writeFileSync(file, JSON.stringify(json, null, 2).split('\n').join(eol) + eol);
-  return { kind: 'written', remainingNulls: countNulls(json) };
+  // Match the one line, whatever it currently holds, and replace only it.
+  const line = /^(\s*)"hedera:testnet": \{ "tokenId": (?:null|"[^"]*"), "treasury": (?:null|"[^"]*") \}(,?)$/m;
+  const m = raw.match(line);
+  if (!m) {
+    throw new Error(
+      'spec/pins.json: the stampToken["hedera:testnet"] line is not in the expected one-line form. ' +
+        'Refusing to rewrite the file, because a re-serialisation would reformat every other pin.',
+    );
+  }
+  const replaced = raw.replace(
+    line,
+    `${m[1]}"hedera:testnet": { "tokenId": "${next.tokenId}", "treasury": "${next.treasury}" }${m[2]}`,
+  );
+  fs.writeFileSync(file, replaced);
+  return { kind: 'written', remainingNulls: countNulls(JSON.parse(replaced)) };
 }
 
 /** Read-only: how many pins are still unfilled, for the report. */

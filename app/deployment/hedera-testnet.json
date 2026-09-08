@@ -49,6 +49,237 @@
         "initialBalanceHbar": 20,
         "warrant": "D-140: the service’s own Correspondent identity; an operational choice, not a spec role"
       }
+    },
+    "postage.token": {
+      "kind": "token",
+      "role": "$POSTAGE",
+      "id": "0.0.10426208",
+      "builtBy": "TokenCreateTransaction",
+      "signedBy": [
+        "operator",
+        "treasury"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788894041.839314449",
+      "consensusTimestamp": "1788894046.551017104",
+      "confirmedFrom": "GET /tokens/0.0.10426208",
+      "confirmedAt": "2026-09-08T19:32:16.346Z",
+      "policy": {
+        "name": "WISHMail Postage",
+        "symbol": "POSTAGE",
+        "decimals": 0,
+        "initialSupply": 0,
+        "supplyType": "INFINITE",
+        "treasury": "0.0.10426205",
+        "supplyKey": "0232144fec2cbf7818e2b1a5ad1c0f00e93398eeeaa643d7fe66828b5ff768a4",
+        "absentKeys": [
+          "admin_key",
+          "freeze_key",
+          "wipe_key",
+          "pause_key",
+          "kyc_key",
+          "fee_schedule_key"
+        ],
+        "warrant": "D-141 (decimals 0, INFINITE, six absent keys) · D-148 (supply key the treasury’s) · D-149 (born at zero)",
+        "adopted": "Adopted, not created by the run that recorded it. The first Step 2 run (2026-09-08) created this entity successfully at consensus and then hung on its mirror-node readback, because fetch carries no default timeout, so the record was never written for an entity that exists. Recovered by: backstop — the unique entity on the ledger this step would have duplicated. See app/OPERATIONS.md, \"Step 2 — the real entities\", §7 \"The readback hang, and the adoption\". The readback below was performed against the mirror node in full, field for field, exactly as for a created entity; adoption is not a shortcut past confirmation."
+      }
+    },
+    "postage.mint": {
+      "kind": "mint",
+      "role": "$POSTAGE float",
+      "id": null,
+      "builtBy": "TokenMintTransaction",
+      "signedBy": [
+        "operator",
+        "treasury"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895929.601780780",
+      "consensusTimestamp": "1788895936.951925104",
+      "confirmedFrom": "GET /tokens/0.0.10426208",
+      "confirmedAt": "2026-09-08T19:32:21.662Z",
+      "policy": {
+        "amount": "10000",
+        "to": "0.0.10426205",
+        "signedByKey": "treasury (supply key)",
+        "warrant": "D-149: a mint is an act with a transaction id a Verifier can replay, not a birth parameter"
+      }
+    },
+    "operator.association": {
+      "kind": "association",
+      "role": "operator ↔ $POSTAGE",
+      "id": null,
+      "builtBy": "TokenAssociateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895938.588230383",
+      "consensusTimestamp": "1788895942.185374170",
+      "confirmedFrom": "GET /accounts/{account}/tokens?token.id=0.0.10426208",
+      "confirmedAt": "2026-09-08T19:32:25.219Z",
+      "policy": {
+        "account": "0.0.8641261",
+        "token": "0.0.10426208",
+        "warrant": "§4.4: the sender transfers a stamp to the Postmaster, which then pays the doorbell fee (D-140)"
+      }
+    },
+    "agent.association": {
+      "kind": "association",
+      "role": "postmaster-agent ↔ $POSTAGE",
+      "id": null,
+      "builtBy": "TokenAssociateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895941.535451737",
+      "consensusTimestamp": "1788895945.713095293",
+      "confirmedFrom": "GET /accounts/{account}/tokens?token.id=0.0.10426208",
+      "confirmedAt": "2026-09-08T19:32:27.195Z",
+      "policy": {
+        "account": "0.0.10426206",
+        "token": "0.0.10426208",
+        "warrant": "the agent buys and affixes postage like any Correspondent"
+      }
+    },
+    "prices.topic": {
+      "kind": "topic",
+      "role": "price topic",
+      "id": "0.0.10426551",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895943.054415671",
+      "consensusTimestamp": "1788895947.743137568",
+      "confirmedFrom": "GET /topics/0.0.10426551",
+      "confirmedAt": "2026-09-08T19:32:34.071Z",
+      "policy": {
+        "memo": "wishmail:prices:1",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-142: the price list is the service speaking, so its keys are the operator’s; §4.6 and T-P17-1 do not reach it (D-146)"
+      }
+    },
+    "prices.first": {
+      "kind": "message",
+      "role": "the first PriceList",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895947.603820976",
+      "consensusTimestamp": "1788895954.743195291",
+      "confirmedFrom": "GET /topics/{priceTopic}/messages?limit=1&order=asc",
+      "confirmedAt": "2026-09-08T19:32:36.156Z",
+      "policy": {
+        "topic": "0.0.10426551",
+        "bytes": "eyJtZXRob2RzIjpbeyJhc3NldCI6IjAuMC40MjkyNzQiLCJidW5kbGVzIjpbeyJjb3VudCI6MTIsInByaWNlIjoiMS4wMCJ9XSwiZmFjaWxpdGF0b3IiOiJodHRwczovL3g0MDIub3JnL2ZhY2lsaXRhdG9yIiwibWV0aG9kIjoieDQwMi11c2RjIiwibmV0d29yayI6ImhlZGVyYTp0ZXN0bmV0IiwicGF5VG8iOiIwLjAuODY0MTI2MSIsInVuaXRQcmljZSI6IjAuMTAifSx7ImFzc2V0IjoiMC4wLjAiLCJidW5kbGVzIjpbeyJjb3VudCI6MTIsInByaWNlIjoiMS4wMCJ9XSwibWV0aG9kIjoiaGJhciIsIm5ldHdvcmsiOiJoZWRlcmE6dGVzdG5ldCIsInBheVRvIjoiMC4wLjg2NDEyNjEiLCJyYXRlIjp7InBhaXIiOiJIQkFSL1VTRCIsInJlZmVyZW5jZSI6eyJhbW91bnQiOiIwLjEwIiwiYXNzZXQiOiJVU0QifSwic291cmNlIjoiaHR0cHM6Ly9hcGkuc2F1Y2Vyc3dhcC5maW5hbmNlL3Rva2VucyJ9fV0sInNwZWMiOiIwLjUuMiIsInN0YW1wVG9rZW4iOnsibGVkZ2VyVGFnIjoiaGVkZXJhOnRlc3RuZXQiLCJ0b2tlbklkIjoiMC4wLjEwNDI2MjA4IiwidHJlYXN1cnkiOiIwLjAuMTA0MjYyMDUifX0=",
+        "sha256": "20aa3b010709d9ffc686ed8b42882e0c8f66366fff79dc5855298646bb0d00b5",
+        "warrant": "D-143 as D-145 leaves it: no validFrom; §14.3 selects by consensus timestamp"
+      }
+    },
+    "agent.doorbell": {
+      "kind": "topic",
+      "role": "doorbell (HCS-10 inbound)",
+      "id": "0.0.10426553",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895951.943923730",
+      "consensusTimestamp": "1788895956.794141742",
+      "confirmedFrom": "GET /topics/0.0.10426553",
+      "confirmedAt": "2026-09-08T19:32:38.176Z",
+      "policy": {
+        "memo": "hcs-10:0:60:0:0.0.10426206",
+        "submitKey": null,
+        "adminKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "feeScheduleKey": null,
+        "fee": {
+          "amount": 1,
+          "collector": "0.0.10426205",
+          "token": "0.0.10426208"
+        },
+        "feeExemptKeys": [
+          "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2"
+        ],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-138/D-147 row 1 · §4.4’s MUST selects HCS-10’s fee-gated inbound option (index.md:113) · D-137’s exemption · no fee schedule key: the fee is immutable at birth"
+      }
+    },
+    "agent.log": {
+      "kind": "topic",
+      "role": "log (HCS-10 outbound)",
+      "id": "0.0.10426554",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788895954.671556678",
+      "consensusTimestamp": "1788895958.763292150",
+      "confirmedFrom": "GET /topics/0.0.10426554",
+      "confirmedAt": "2026-09-08T19:32:44.041Z",
+      "policy": {
+        "memo": "hcs-10:0:60:1",
+        "submitKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "adminKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-138/D-147 row 2 · index.md:114 “Has submit key (only agent can write)”"
+      }
+    },
+    "agent.manifest": {
+      "kind": "topic",
+      "role": "manifest",
+      "id": "0.0.10426591",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788896134.080208852",
+      "consensusTimestamp": "1788896142.676180052",
+      "confirmedFrom": "GET /topics/0.0.10426591",
+      "confirmedAt": "2026-09-08T19:35:49.375Z",
+      "policy": {
+        "memo": "wishmail:manifest:1",
+        "submitKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "adminKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-138/D-147 row 3 · §9.1:1255 a manifest topic MUST have the agent’s key as its sole submit key (T-P17-3)"
+      }
     }
-  }
+  },
+  "residue": [
+    {
+      "kind": "topic",
+      "role": "manifest",
+      "id": "0.0.10426557",
+      "transactionId": "0.0.8641261@1788895957.019813732",
+      "consensusTimestamp": "1788895964.628437284",
+      "supersededBy": "0.0.10426591",
+      "why": "Superseded by the delete-one half of the acceptance test in app/OPERATIONS.md §4: this row was removed from the record and the run created a new instance of that entity type and nothing else, which is what the test asserts. This topic exists on the ledger, carries the agent as its sole submit key and its admin key, and is not the deployment’s manifest topic. It is recorded here so that entities holds exactly one manifest and no reader is left wondering what an orphan topic is. Deletable under its admin key; left in place as the evidence the test ran."
+    }
+  ]
 }

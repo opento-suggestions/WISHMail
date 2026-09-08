@@ -116,6 +116,10 @@ export class Record_ {
   /** Writes immediately: batching to the end of a run manufactures the partial-failure case. */
   put(k: EntityKey, e: EntityRecord): void {
     this.data.entities[k] = e;
+    this.flush();
+  }
+
+  private flush(): void {
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
     const tmp = this.file + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2) + '\n');

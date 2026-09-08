@@ -287,7 +287,10 @@ function signersFor(k: EntityKey): readonly string[] {
 
 function mirrorPathFor(k: EntityKey, id: string | null, ctx: Ctx): string {
   if (k.endsWith('.account')) return `/accounts/${id}`;
-  if (k === 'postage.token' || k === 'postage.mint') return `/tokens/${ctx.tokenId()}`;
+  // The token row is built BEFORE it is in the record, so it must use its own
+  // id; only the mint, which is an act on an already-recorded token, may ask ctx.
+  if (k === 'postage.token') return `/tokens/${id}`;
+  if (k === 'postage.mint') return `/tokens/${ctx.tokenId()}`;
   if (k.endsWith('.association')) return `/accounts/{account}/tokens?token.id=${ctx.tokenId()}`;
   if (k === 'prices.first') return `/topics/{priceTopic}/messages?limit=1&order=asc`;
   return `/topics/${id}`;

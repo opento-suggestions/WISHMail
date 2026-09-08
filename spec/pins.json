@@ -159,7 +159,7 @@
 
   "stampToken": {
     "_note": "§4.1. Filled at the first deployment on a network. T-P9-2 blocks any claim naming a network whose token is unfilled.",
-    "hedera:testnet": { "tokenId": null, "treasury": null },
+    "hedera:testnet": { "tokenId": "0.0.10426208", "treasury": "0.0.10426205" },
     "hedera:mainnet": { "tokenId": null, "treasury": null }
   },
 
