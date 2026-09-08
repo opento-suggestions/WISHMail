@@ -6,7 +6,7 @@ Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor
 
 A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). One schema changes, which a patch permits **only because nothing is registered under HCS-13 yet**; `registeredSchemas` is null throughout (T-P9-9), and after registration the same addition would be 0.6. No test is added, moved or removed: the register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways. Nothing conforms — T-P9-2 blocks every claim while thirty pins are null — which is why this is a patch and not a minor version (D-134's and D-146's reasoning).
 
-**Nothing has been submitted to `hedera:testnet`.** The `hcs14` declaration is still gated and unsigned on ledger §G item 12.
+**Deployment, after this patch landed.** D-153 closed §G item 12 by ruling that WISHMail emits the example's order, and the `hcs14` declaration was then signed on `hedera:testnet` against this tag: profile file `0.0.10428178`, declaration registry `0.0.10428113`, and the account memo of `0.0.10426206` set to `hcs-11:hcs://2/0.0.10428113`. `app/OPERATIONS.md` §Step 3 carries the gate report, the run of record, and §8's account of a first profile file that was wrong and had to be superseded. `spec/pins.json` is untouched — a declaration is not a pin — so thirty remain null and T-P9-2 still blocks every claim.
 
 ### Changed
 

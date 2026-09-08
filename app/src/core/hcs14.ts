@@ -113,16 +113,26 @@ export function base58(bytes: Buffer): string {
 export type KeyOrder = 'normative' | 'example';
 
 /**
- * The order WISHMail EMITS for its own declaration. Unruled: ledger §G item 12.
+ * The order WISHMail EMITS for its own declaration — **the example's**
+ * (D-153, Sonic, 2026-09-08). Ledger §G item 12 is closed.
  *
  * This is not the same question as which orders a rule ACCEPTS. §9.1 settles
- * that (D-152): every rule accepts either, normative first. What is still open
- * is the one order our own profile's `uaid` is written under, and it is open
- * because an HCS-1 file topic has no admin key, so the choice is permanent.
+ * that (D-152, which stands unchanged): every rule accepts either, normative
+ * first. This is the one order our own profile's `uaid` is written under, and
+ * it had to be settled separately because an HCS-1 file topic has no admin key,
+ * so the choice is permanent.
+ *
+ * The warrant is the census in ledger §H: fifteen of fifteen `uaid:aid:`
+ * registrations sampled on the testnet anchor reproduce under this order and
+ * none under the other. An agent that emitted the other would be the only one
+ * on the ledger an incumbent needed D-152's fallback to resolve.
+ *
+ * It is a default, not a lock: every function here still takes an explicit
+ * order, because reading someone else's registration means computing both.
  */
-export const CANONICAL_ORDER: KeyOrder | undefined = undefined;
+export const CANONICAL_ORDER: KeyOrder = 'example';
 
-export function canonicalAgentJson(agent: AgentData, order: KeyOrder): string {
+export function canonicalAgentJson(agent: AgentData, order: KeyOrder = CANONICAL_ORDER): string {
   for (const [field, value] of Object.entries({
     registry: agent.registry,
     name: agent.name,
@@ -161,7 +171,7 @@ export function canonicalAgentJson(agent: AgentData, order: KeyOrder): string {
 }
 
 /** Steps 5–6: the identifier itself, without the `uaid:aid:` prefix. */
-export function agentIdHash(agent: AgentData, order: KeyOrder): string {
+export function agentIdHash(agent: AgentData, order: KeyOrder = CANONICAL_ORDER): string {
   return base58(
     createHash('sha384').update(Buffer.from(canonicalAgentJson(agent, order), 'utf8')).digest(),
   );
@@ -182,7 +192,7 @@ export interface UaidParameters {
  * hashed, so the identifier and the `nativeId` §9.2 compares cannot disagree
  * with each other.
  */
-export function uaid(agent: AgentData, parameters: UaidParameters, order: KeyOrder): string {
+export function uaid(agent: AgentData, parameters: UaidParameters = {}, order: KeyOrder = CANONICAL_ORDER): string {
   const params: string[] = [];
   if (parameters.uid !== undefined) params.push(`uid=${parameters.uid}`);
   params.push(`registry=${agent.registry.toLowerCase().trim()}`);

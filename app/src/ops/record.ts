@@ -16,9 +16,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const SPEC_TAG = 'v0.5.2';
+/**
+ * The specification tag entities are provisioned against from here on. It is
+ * per-ENTITY and not per-record: the eleven of Step 2 were provisioned against
+ * `v0.5.2`, and the declaration against `v0.5.4`, so a single top-level field
+ * would be false about one of them the moment the second landed. The record's
+ * own `specTag` is the tag it was opened under and stays what it was.
+ */
+export const SPEC_TAG = 'v0.5.4';
 
-export type EntityKind = 'account' | 'token' | 'mint' | 'association' | 'topic' | 'message';
+export type EntityKind = 'account' | 'token' | 'mint' | 'association' | 'topic' | 'message' | 'account-update';
 
 export type EntityKey =
   | 'treasury.account'
@@ -31,7 +38,13 @@ export type EntityKey =
   | 'prices.first'
   | 'agent.doorbell'
   | 'agent.log'
-  | 'agent.manifest';
+  | 'agent.manifest'
+  // Step 3, the hcs14 declaration (D-147 rows 3-5, D-150 row 6, D-153).
+  | 'agent.profileFile'
+  | 'agent.profileChunks'
+  | 'agent.declRegistry'
+  | 'agent.registryEntry'
+  | 'agent.accountMemo';
 
 export interface EntityRecord {
   readonly kind: EntityKind;
@@ -47,6 +60,8 @@ export interface EntityRecord {
   readonly confirmedAt: string;
   /** The declared policy, verbatim — T-P17-1's "the policy is recorded at creation". */
   readonly policy: Readonly<Record<string, unknown>>;
+  /** The specification tag this entity was provisioned against. Per entity: see SPEC_TAG. */
+  readonly specTag: string;
 }
 
 export interface OpsRecord {

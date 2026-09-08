@@ -29,7 +29,8 @@
         "publicKey": "0232144fec2cbf7818e2b1a5ad1c0f00e93398eeeaa643d7fe66828b5ff768a4",
         "initialBalanceHbar": 20,
         "warrant": "D-140: holds the unissued $POSTAGE supply; its key is hot because §14.2’s purchase is atomic"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "agent.account": {
       "kind": "account",
@@ -48,7 +49,8 @@
         "publicKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
         "initialBalanceHbar": 20,
         "warrant": "D-140: the service’s own Correspondent identity; an operational choice, not a spec role"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "postage.token": {
       "kind": "token",
@@ -82,7 +84,8 @@
         ],
         "warrant": "D-141 (decimals 0, INFINITE, six absent keys) · D-148 (supply key the treasury’s) · D-149 (born at zero)",
         "adopted": "Adopted, not created by the run that recorded it. The first Step 2 run (2026-09-08) created this entity successfully at consensus and then hung on its mirror-node readback, because fetch carries no default timeout, so the record was never written for an entity that exists. Recovered by: backstop — the unique entity on the ledger this step would have duplicated. See app/OPERATIONS.md, \"Step 2 — the real entities\", §7 \"The readback hang, and the adoption\". The readback below was performed against the mirror node in full, field for field, exactly as for a created entity; adoption is not a shortcut past confirmation."
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "postage.mint": {
       "kind": "mint",
@@ -103,7 +106,8 @@
         "to": "0.0.10426205",
         "signedByKey": "treasury (supply key)",
         "warrant": "D-149: a mint is an act with a transaction id a Verifier can replay, not a birth parameter"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "operator.association": {
       "kind": "association",
@@ -122,7 +126,8 @@
         "account": "0.0.8641261",
         "token": "0.0.10426208",
         "warrant": "§4.4: the sender transfers a stamp to the Postmaster, which then pays the doorbell fee (D-140)"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "agent.association": {
       "kind": "association",
@@ -142,7 +147,8 @@
         "account": "0.0.10426206",
         "token": "0.0.10426208",
         "warrant": "the agent buys and affixes postage like any Correspondent"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "prices.topic": {
       "kind": "topic",
@@ -167,7 +173,8 @@
         "feeExemptKeys": [],
         "autoRenewAccount": "0.0.8641261",
         "warrant": "D-142: the price list is the service speaking, so its keys are the operator’s; §4.6 and T-P17-1 do not reach it (D-146)"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "prices.first": {
       "kind": "message",
@@ -187,7 +194,8 @@
         "bytes": "eyJtZXRob2RzIjpbeyJhc3NldCI6IjAuMC40MjkyNzQiLCJidW5kbGVzIjpbeyJjb3VudCI6MTIsInByaWNlIjoiMS4wMCJ9XSwiZmFjaWxpdGF0b3IiOiJodHRwczovL3g0MDIub3JnL2ZhY2lsaXRhdG9yIiwibWV0aG9kIjoieDQwMi11c2RjIiwibmV0d29yayI6ImhlZGVyYTp0ZXN0bmV0IiwicGF5VG8iOiIwLjAuODY0MTI2MSIsInVuaXRQcmljZSI6IjAuMTAifSx7ImFzc2V0IjoiMC4wLjAiLCJidW5kbGVzIjpbeyJjb3VudCI6MTIsInByaWNlIjoiMS4wMCJ9XSwibWV0aG9kIjoiaGJhciIsIm5ldHdvcmsiOiJoZWRlcmE6dGVzdG5ldCIsInBheVRvIjoiMC4wLjg2NDEyNjEiLCJyYXRlIjp7InBhaXIiOiJIQkFSL1VTRCIsInJlZmVyZW5jZSI6eyJhbW91bnQiOiIwLjEwIiwiYXNzZXQiOiJVU0QifSwic291cmNlIjoiaHR0cHM6Ly9hcGkuc2F1Y2Vyc3dhcC5maW5hbmNlL3Rva2VucyJ9fV0sInNwZWMiOiIwLjUuMiIsInN0YW1wVG9rZW4iOnsibGVkZ2VyVGFnIjoiaGVkZXJhOnRlc3RuZXQiLCJ0b2tlbklkIjoiMC4wLjEwNDI2MjA4IiwidHJlYXN1cnkiOiIwLjAuMTA0MjYyMDUifX0=",
         "sha256": "20aa3b010709d9ffc686ed8b42882e0c8f66366fff79dc5855298646bb0d00b5",
         "warrant": "D-143 as D-145 leaves it: no validFrom; §14.3 selects by consensus timestamp"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "agent.doorbell": {
       "kind": "topic",
@@ -218,7 +226,8 @@
         ],
         "autoRenewAccount": "0.0.8641261",
         "warrant": "D-138/D-147 row 1 · §4.4’s MUST selects HCS-10’s fee-gated inbound option (index.md:113) · D-137’s exemption · no fee schedule key: the fee is immutable at birth"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "agent.log": {
       "kind": "topic",
@@ -243,7 +252,8 @@
         "feeExemptKeys": [],
         "autoRenewAccount": "0.0.8641261",
         "warrant": "D-138/D-147 row 2 · index.md:114 “Has submit key (only agent can write)”"
-      }
+      },
+      "specTag": "v0.5.2"
     },
     "agent.manifest": {
       "kind": "topic",
@@ -268,7 +278,132 @@
         "feeExemptKeys": [],
         "autoRenewAccount": "0.0.8641261",
         "warrant": "D-138/D-147 row 3 · §9.1:1255 a manifest topic MUST have the agent’s key as its sole submit key (T-P17-3)"
-      }
+      },
+      "specTag": "v0.5.2"
+    },
+    "agent.declRegistry": {
+      "kind": "topic",
+      "role": "declaration registry (HCS-2)",
+      "id": "0.0.10428113",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788904726.585140041",
+      "consensusTimestamp": "1788904733.468374809",
+      "confirmedFrom": "GET /topics/0.0.10428113",
+      "confirmedAt": "2026-09-08T21:59:01.557Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "adminKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-147 row 5 · indexed 0 so prior entries stay readable at their consensus timestamps (T-P8-3)"
+      },
+      "specTag": "v0.5.4"
+    },
+    "agent.accountMemo": {
+      "kind": "account-update",
+      "role": "the account memo (§9.2’s first link)",
+      "id": "0.0.10426206",
+      "builtBy": "AccountUpdateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788904740.064455035",
+      "consensusTimestamp": "1788904745.896532620",
+      "confirmedFrom": "GET /accounts/0.0.10426206",
+      "confirmedAt": "2026-09-08T21:59:08.017Z",
+      "policy": {
+        "account": "0.0.10426206",
+        "registry": "0.0.10428113",
+        "memo": "hcs-11:hcs://2/0.0.10428113",
+        "warrant": "§9.2:1284 — an agent declaring under hcs14 MUST set its account memo to hcs-11:hcs://2/<registryTopic>"
+      },
+      "specTag": "v0.5.4"
+    },
+    "agent.profileFile": {
+      "kind": "topic",
+      "role": "HCS-11 profile file (HCS-1)",
+      "id": "0.0.10428178",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788905026.804503619",
+      "consensusTimestamp": "1788905032.794109845",
+      "confirmedFrom": "GET /topics/0.0.10428178",
+      "confirmedAt": "2026-09-08T22:03:58.862Z",
+      "policy": {
+        "memo": "0cc6a7aa1b4fc4eb3e8aa9b575e484728cb111262e8ede647e75887ac64e015e:brotli:base64",
+        "submitKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "adminKey": null,
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "D-150 row 6 · hcs-1.md:48-49 — a file topic with an admin key is marked invalid and ignored, so it has none and the submit key is the agent’s"
+      },
+      "specTag": "v0.5.4"
+    },
+    "agent.profileChunks": {
+      "kind": "message",
+      "role": "the HCS-11 profile, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788905032.108893115",
+      "consensusTimestamp": "1788905039.655962104",
+      "confirmedFrom": "GET /topics/{profileFile}/messages?limit=25&order=asc",
+      "confirmedAt": "2026-09-08T22:04:01.873Z",
+      "policy": {
+        "topic": "0.0.10428178",
+        "memoDigest": "0cc6a7aa1b4fc4eb3e8aa9b575e484728cb111262e8ede647e75887ac64e015e",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/json;base64,G6gCABwHdjtOY7G0MHpS+lSKxOxN6jWtvcwFX3L0qlwsOj9/Lt1wNDD+742iivI6BCMNj+iAzjbba8N9Kw67pS4Ia5U1vA/qqM6xaMFYCtAuBAFviQxXUyDdiFOAMzIvAe5ferdx4En0j+UMgvAeVK+fVgQyeuCkNK/7f6apWze12H/nc4io5qhDEYUvZi4X7r9Uf+3BF7TuPJZ7py9wkS/IX2ayi+xr64XLqLfK3BvjfLcBzYY9sVftxURaWh1rtMzZ4w2dbMhw3ztAZazt1PrW1AwtoESVSNGlr7LIi7wkqnJG05TahkoWM8UxQw/L9pOLD13fKJOnzUliMcLU/qshRb7gfi9/6BR01AD6dy7MR+P7HTjaIcFcqbtOodUDmyfgBoB1wbMi/w2QzFrdsZygEwF8ATUfU4MRBGL+DKkLXx0TOZ13gkyPK5OXfhXImiblZ+4DNHez+DrvyU2nsewFh8zk8fjPXvqvrymZeeuBB/LD/+lec95RZeEDw7ahP0nJS9MU"
+          }
+        ],
+        "warrant": "hcs-1.md:92-95 — chunks {o, c}, o=0 carries the data prefix; reassembly is by o, not sequence"
+      },
+      "specTag": "v0.5.4"
+    },
+    "agent.registryEntry": {
+      "kind": "message",
+      "role": "the HCS-2 register entry",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator",
+        "agent"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788905034.296999583",
+      "consensusTimestamp": "1788905042.708481996",
+      "confirmedFrom": "GET /topics/{declRegistry}/messages?limit=1&order=desc",
+      "confirmedAt": "2026-09-08T22:04:05.553Z",
+      "policy": {
+        "topic": "0.0.10428113",
+        "fileTopic": "0.0.10428178",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQyODE3OCJ9",
+        "txMemo": "hcs-2:op:register:0",
+        "warrant": "D-70 · §9.2:1284 “register each profile version there” · §H:359 register is {p, op, t_id}"
+      },
+      "specTag": "v0.5.4"
     }
   },
   "residue": [
@@ -280,6 +415,15 @@
       "consensusTimestamp": "1788895964.628437284",
       "supersededBy": "0.0.10426591",
       "why": "Superseded by the delete-one half of the acceptance test in app/OPERATIONS.md §4: this row was removed from the record and the run created a new instance of that entity type and nothing else, which is what the test asserts. This topic exists on the ledger, carries the agent as its sole submit key and its admin key, and is not the deployment’s manifest topic. It is recorded here so that entities holds exactly one manifest and no reader is left wondering what an orphan topic is. Deletable under its admin key; left in place as the evidence the test ran."
+    },
+    {
+      "key": "agent.profileFile",
+      "id": "0.0.10428112",
+      "transactionId": "0.0.8641261@1788904712.502365530",
+      "consensusTimestamp": "1788904719.469460957",
+      "specTag": "v0.5.4",
+      "supersededBy": "the second profile file, registered as the registry’s next entry",
+      "why": "The first declaration hashed the agent under version \"1.0.0\" while the HCS-11 profile carried version \"1.0\". An HCS-11 profile has exactly one version field, and §9.5 recomputes an agent identifier \"from the profile's name, version, and skills\", so the published uaid was not recomputable from the profile that carried it — found by resolving our own address and failing. §9.2:1284 provides the remedy: \"Rotation is a new profile file registered as a new entry; prior entries stay on the registry topic.\" An HCS-1 file topic has no admin key (D-150), so this one is permanent and is recorded here rather than deleted. It is not the deployment's profile file; the registry's current entry names the second."
     }
   ]
 }

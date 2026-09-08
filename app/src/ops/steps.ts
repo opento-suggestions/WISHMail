@@ -20,6 +20,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import {
   AccountCreateTransaction,
+  AccountUpdateTransaction,
   CustomFixedFee,
   Hbar,
   TokenAssociateTransaction,
@@ -37,6 +38,15 @@ import { publicHex, type Signer } from './identity.js';
 import { submit } from './hedera.js';
 import { named, Checks, type BackstopResult, type Ctx, type Discrepancy, type Step } from './step.js';
 import { fromMirrorTxId } from './mirror.js';
+import {
+  HCS2_REGISTER_TX_MEMO,
+  accountMemoFor,
+  profileBytes,
+  readProfile,
+  registerOperation,
+  registryMemo,
+  type ProfileBytes,
+} from './declaration.js';
 import type { Submitted } from './hedera.js';
 
 /** A step with its Want existentially hidden, so the ordered array is one type. */
@@ -63,7 +73,7 @@ export { canonicalBytes, sha256hex };
 
 /* --- shapes the mirror node returns ------------------------------------- */
 
-interface MAccount { account: string; deleted: boolean; key: { _type: string; key: string } | null; balance: { balance: number } }
+interface MAccount { account: string; deleted: boolean; memo?: string; key: { _type: string; key: string } | null; balance: { balance: number } }
 interface MToken {
   token_id: string; decimals: unknown; initial_supply: unknown; total_supply: unknown;
   supply_type: string; treasury_account_id: string; type: string;
@@ -269,7 +279,7 @@ const assocStep = (
 interface TopicWant {
   readonly memo: string;
   readonly submitKey: string | null;
-  readonly adminKey: string;
+  readonly adminKey: string | null;
   readonly feeScheduleKey: null;
   readonly fee: { readonly amount: number; readonly collector: string; readonly token: string } | null;
   readonly feeExemptKeys: readonly string[];
@@ -278,7 +288,7 @@ interface TopicWant {
 }
 
 const topicStep = (
-  key: 'prices.topic' | 'agent.doorbell' | 'agent.log' | 'agent.manifest',
+  key: 'prices.topic' | 'agent.doorbell' | 'agent.log' | 'agent.manifest' | 'agent.profileFile' | 'agent.declRegistry',
   role: string,
   needs: readonly ('postage.token' | 'agent.account' | 'treasury.account')[],
   build: (ctx: Ctx) => TopicWant,
@@ -287,7 +297,7 @@ const topicStep = (
   key, kind: 'topic', role, builtBy: 'TopicCreateTransaction', needs,
   want: build,
   detail: (w) =>
-    `${w.memo} · submit ${w.submitKey ? w.submitKey.slice(0, 8) + '…' : 'NONE'} · admin ${w.adminKey.slice(0, 8)}…` +
+    `${w.memo} · submit ${w.submitKey ? w.submitKey.slice(0, 8) + '…' : 'NONE'} · admin ${w.adminKey ? w.adminKey.slice(0, 8) + '…' : 'NONE'}` +
     (w.fee ? ` · fee ${w.fee.amount} ${w.fee.token} → ${w.fee.collector}` : ' · no fee') +
     (w.feeExemptKeys.length ? ` · exempt ${w.feeExemptKeys.length}` : ''),
   async confirm(ctx, id, want) {
@@ -299,7 +309,8 @@ const topicStep = (
     c.eq('memo', t.memo, want.memo);
     if (want.submitKey === null) c.isNull('submit_key', t.submit_key);
     else c.keyIs('submit_key', t.submit_key, want.submitKey);
-    c.keyIs('admin_key', t.admin_key, want.adminKey);
+    if (want.adminKey === null) c.isNull('admin_key', t.admin_key);
+    else c.keyIs('admin_key', t.admin_key, want.adminKey);
     c.isNull('fee_schedule_key', t.fee_schedule_key);
     c.eq('auto_renew_account', t.auto_renew_account, want.autoRenewAccount);
     const fees = t.custom_fees?.fixed_fees ?? [];
@@ -321,11 +332,14 @@ const topicStep = (
     const build2 = (): TopicCreateTransaction => {
       const tx = new TopicCreateTransaction()
         .setTopicMemo(want.memo)
-        .setAdminKey(owner.publicKey)
         .setAutoRenewAccountId(want.autoRenewAccount)
         .setMaxTransactionFee(new Hbar(
           want.fee ? ctx.env.constants.feeCaps.feeGatedTopicCreate : ctx.env.constants.feeCaps.plainTopicCreate,
         ));
+      // HCS-1 marks a file topic that HAS an admin key invalid and ignores it
+      // (hcs-1.md:48-49, D-150), so the absence is declared and asserted rather
+      // than merely omitted.
+      if (want.adminKey !== null) tx.setAdminKey(owner.publicKey);
       if (want.submitKey !== null) tx.setSubmitKey(owner.publicKey);
       if (want.fee) {
         tx.setCustomFees([new CustomFixedFee()
@@ -464,6 +478,205 @@ const priceListStep: Step<PriceWant> = {
 };
 
 
+/* --- Step 3: the hcs14 declaration (D-147 rows 3-5, D-150 row 6, D-153) --- */
+
+/**
+ * The profile, resolved from the record and the seal identity. Pure: `want` may
+ * not touch the network, and everything this needs is already local.
+ */
+function profileFor(ctx: Ctx): ProfileBytes {
+  return profileBytes(ctx.env.repoRoot, {
+    ledgerTag: ctx.env.constants.ledgerTag,
+    network: ctx.env.network,
+    account: ctx.agentId(),
+    doorbell: ctx.record.get('agent.doorbell')?.id ?? '0.0.PENDING',
+    log: ctx.record.get('agent.log')?.id ?? '0.0.PENDING',
+    wishmail: {
+      manifestTopic: ctx.record.get('agent.manifest')?.id ?? '0.0.PENDING',
+      x25519Pub: ctx.seal.x25519Pub,
+      keyEpoch: ctx.seal.keyEpoch,
+    },
+  });
+}
+
+interface ChunkWant {
+  readonly topic: string;
+  readonly memoDigest: string;
+  readonly chunks: readonly { readonly o: number; readonly c: string }[];
+  readonly warrant: string;
+}
+
+/**
+ * The HCS-1 file's chunks, and the readback that matters: the bytes on
+ * consensus decompress to a profile whose SHA-256 equals the topic memo's
+ * digest. That is the whole integrity claim of an HCS-1 file, and it is checked
+ * here rather than assumed.
+ */
+const profileChunksStep: Step<ChunkWant> = {
+  key: 'agent.profileChunks',
+  kind: 'message',
+  role: 'the HCS-11 profile, as an HCS-1 file',
+  builtBy: 'TopicMessageSubmitTransaction',
+  needs: ['agent.profileFile'],
+  want: (ctx) => {
+    const p = profileFor(ctx);
+    return {
+      topic: ctx.record.get('agent.profileFile')?.id ?? '0.0.PENDING',
+      memoDigest: p.digest,
+      chunks: p.chunks,
+      warrant: 'hcs-1.md:92-95 — chunks {o, c}, o=0 carries the data prefix; reassembly is by o, not sequence',
+    };
+  },
+  detail: (w) =>
+    `${w.chunks.length} chunk${w.chunks.length === 1 ? '' : 's'} on ${w.topic} · sha256 ${w.memoDigest.slice(0, 12)}…`,
+  async confirm(ctx, _id, want) {
+    const p = named<MMessages>(
+      'every chunk of the profile is on the file topic',
+      (m) => (m.messages ?? []).length >= want.chunks.length,
+    );
+    const m = await ctx.mirror.poll<MMessages>(`/topics/${want.topic}/messages?limit=25&order=asc`, p.test);
+    if (!m || !p.test(m)) return 'absent';
+    const c = new Checks();
+    const got = (m.messages ?? []).map((x) => JSON.parse(Buffer.from(x.message, 'base64').toString('utf8')) as { o: number; c: string });
+    c.num('chunk count', got.length, want.chunks.length);
+    // The file reassembles, decompresses, and hashes to the memo — read back
+    // through the mirror exactly as §9.2's rule will read it.
+    const topic = await ctx.mirror.poll<MTopic>(`/topics/${want.topic}`, (t) => t.topic_id === want.topic);
+    const read = readProfile(topic?.memo ?? '', got);
+    c.eq('the profile digest equals the topic memo digest', read.digest, read.memoDigest);
+    c.eq('and equals what was submitted', read.digest, want.memoDigest);
+    return c.result;
+  },
+  async create(ctx, want) {
+    let last: Submitted | undefined;
+    for (const chunk of want.chunks) {
+      last = await submit(
+        ctx.client,
+        ctx.env.operatorId,
+        new TopicMessageSubmitTransaction()
+          .setTopicId(want.topic)
+          .setMessage(Buffer.from(JSON.stringify(chunk), 'utf8')),
+        [ctx.agent],
+      );
+      if (!last.ok) break;
+    }
+    if (last === undefined) throw new Error('the profile produced no chunks');
+    return { ...last, signedBy: ['operator', 'agent'] };
+  },
+};
+
+interface RegisterWant {
+  readonly topic: string;
+  readonly fileTopic: string;
+  readonly bytes: string;
+  readonly txMemo: string;
+  readonly warrant: string;
+}
+
+/** The HCS-2 `register` entry: the registry's current entry names the file. */
+const registryEntryStep: Step<RegisterWant> = {
+  key: 'agent.registryEntry',
+  kind: 'message',
+  role: 'the HCS-2 register entry',
+  builtBy: 'TopicMessageSubmitTransaction',
+  needs: ['agent.declRegistry', 'agent.profileFile'],
+  want: (ctx) => {
+    const fileTopic = ctx.record.get('agent.profileFile')?.id ?? '0.0.PENDING';
+    return {
+      topic: ctx.record.get('agent.declRegistry')?.id ?? '0.0.PENDING',
+      fileTopic,
+      bytes: Buffer.from(JSON.stringify(registerOperation(fileTopic)), 'utf8').toString('base64'),
+      txMemo: HCS2_REGISTER_TX_MEMO,
+      warrant: 'D-70 · §9.2:1284 “register each profile version there” · §H:359 register is {p, op, t_id}',
+    };
+  },
+  detail: (w) => `current entry on ${w.topic} → t_id ${w.fileTopic} · memo ${w.txMemo}`,
+  async confirm(ctx, _id, want) {
+    // The CURRENT entry, not the first. §9.2's rule reads "the registry's
+    // current entry", and §9.2:1284 has rotation add "a new profile file
+    // registered as a new entry" while "prior entries stay on the registry
+    // topic" — so a registry that has ever been rotated has an older entry at
+    // sequence 1, and asserting on that would call a correct registry wrong.
+    const p = named<MMessages>('the current entry on the declaration registry names this profile file', (m) =>
+      (m.messages ?? []).some((x) => x.message === want.bytes),
+    );
+    const m = await ctx.mirror.poll<MMessages>(`/topics/${want.topic}/messages?limit=1&order=desc`, p.test);
+    if (!m || !p.test(m)) return 'absent';
+    const c = new Checks();
+    const current = m.messages?.[0];
+    c.eq('payer_account_id', current?.payer_account_id, ctx.env.operatorId);
+    c.eq('message (base64, byte-for-byte)', current?.message, want.bytes);
+    const body = JSON.parse(Buffer.from(current?.message ?? '', 'base64').toString('utf8')) as Record<string, unknown>;
+    c.eq('p', body['p'], 'hcs-2');
+    c.eq('op', body['op'], 'register');
+    c.eq('t_id names the profile file', body['t_id'], want.fileTopic);
+    return c.result;
+  },
+  async create(ctx, want) {
+    const r = await submit(
+      ctx.client,
+      ctx.env.operatorId,
+      new TopicMessageSubmitTransaction()
+        .setTopicId(want.topic)
+        .setMessage(Buffer.from(want.bytes, 'base64'))
+        .setTransactionMemo(want.txMemo),
+      [ctx.agent],
+    );
+    return { ...r, signedBy: ['operator', 'agent'] };
+  },
+};
+
+interface MemoWant {
+  readonly account: string;
+  readonly memo: string;
+  readonly registry: string;
+  readonly warrant: string;
+}
+
+/**
+ * The account memo — §9.2's MUST, and the last act.
+ *
+ * It is last because it is the only reversible one: until it is set, the
+ * registry and the file are inert, since §9.2's rule starts here. Signed by the
+ * agent, because it is the agent's account (P-13: the Postmaster pays and does
+ * not own).
+ */
+const accountMemoStep: Step<MemoWant> = {
+  key: 'agent.accountMemo',
+  kind: 'account-update',
+  role: 'the account memo (§9.2’s first link)',
+  builtBy: 'AccountUpdateTransaction',
+  needs: ['agent.declRegistry'],
+  want: (ctx) => {
+    const registry = ctx.record.get('agent.declRegistry')?.id ?? '0.0.PENDING';
+    return {
+      account: ctx.agentId(),
+      registry,
+      memo: accountMemoFor(registry),
+      warrant: '§9.2:1284 — an agent declaring under hcs14 MUST set its account memo to hcs-11:hcs://2/<registryTopic>',
+    };
+  },
+  detail: (w) => `${w.account} memo → ${w.memo}`,
+  async confirm(ctx, _id, want) {
+    const p = named<MAccount>('the account memo names the declaration registry', (a) => a.memo === want.memo);
+    const a = await ctx.mirror.poll<MAccount>(`/accounts/${want.account}`, p.test);
+    if (!a) return 'absent';
+    const c = new Checks();
+    c.eq('memo', a.memo, want.memo);
+    c.eq('deleted', a.deleted, false);
+    return c.result;
+  },
+  async create(ctx, want) {
+    const r = await submit(
+      ctx.client,
+      ctx.env.operatorId,
+      new AccountUpdateTransaction().setAccountId(want.account).setAccountMemo(want.memo),
+      [ctx.agent],
+    );
+    return { ...r, signedBy: ['operator', 'agent'] };
+  },
+};
+
 /* --- the ordered set ----------------------------------------------------- */
 
 export const STEPS: readonly AnyStep[] = [
@@ -504,6 +717,24 @@ export const STEPS: readonly AnyStep[] = [
     fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
     warrant: 'D-138/D-147 row 3 · §9.1:1255 a manifest topic MUST have the agent’s key as its sole submit key (T-P17-3)',
   }), (c) => c.agent)),
+  // Step 3 — the hcs14 declaration. The order is forced: the file topic's memo
+  // carries the SHA-256 of the profile plaintext, the registry entry names the
+  // file topic, and the account memo names the registry topic.
+  anon(topicStep('agent.profileFile', 'HCS-11 profile file (HCS-1)', ['agent.account'], (ctx) => ({
+    memo: profileFor(ctx).memo,
+    submitKey: publicHex(ctx.agent), adminKey: null, feeScheduleKey: null,
+    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
+    warrant: 'D-150 row 6 · hcs-1.md:48-49 — a file topic with an admin key is marked invalid and ignored, so it has none and the submit key is the agent’s',
+  }), (c) => c.agent)),
+  anon(profileChunksStep),
+  anon(topicStep('agent.declRegistry', 'declaration registry (HCS-2)', ['agent.account'], (ctx) => ({
+    memo: registryMemo(HCS10_TTL),
+    submitKey: publicHex(ctx.agent), adminKey: publicHex(ctx.agent), feeScheduleKey: null,
+    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
+    warrant: 'D-147 row 5 · indexed 0 so prior entries stay readable at their consensus timestamps (T-P8-3)',
+  }), (c) => c.agent)),
+  anon(registryEntryStep),
+  anon(accountMemoStep),
 ];
 
 export type { Discrepancy };

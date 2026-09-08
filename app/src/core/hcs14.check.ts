@@ -83,7 +83,8 @@ is(
   canonicalAgentJson(BOB, 'normative'),
   '{"name":"Bob","nativeId":"hedera:testnet:0.0.7124407","protocol":"hcs-10","registry":"hol","skills":[0,4],"version":"1.0"}',
 );
-is('CANONICAL_ORDER is not yet ruled', CANONICAL_ORDER, undefined);
+is('CANONICAL_ORDER is the example order (D-153)', CANONICAL_ORDER, 'example');
+is('and it is what a caller with no explicit order gets', agentIdHash(BOB), ON_CHAIN);
 
 // --- A second live agent, and the newest on the anchor. ---------------------
 //
@@ -193,6 +194,6 @@ if (failures.length > 0) {
 console.log(
   `check:hcs14 PASS — ${checked} assertions. Two live testnet agents, twenty-five days apart and of ` +
     'different protocol, registry and skills, both reproduce under the EXAMPLE order and neither under ' +
-    'the NORMATIVE one. matchAgentId accepts either, normative first (§9.1, D-152). CANONICAL_ORDER — ' +
-    'the order we emit for our own declaration — is unruled, so nothing emits a UAID yet.',
+    'the NORMATIVE one. matchAgentId accepts either, normative first (§9.1, D-152); we emit the ' +
+    'EXAMPLE order (D-153), which is what a caller with no explicit argument gets.',
 );

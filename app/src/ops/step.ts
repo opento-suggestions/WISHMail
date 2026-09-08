@@ -15,7 +15,7 @@
  */
 import type { Client } from '@hashgraph/sdk';
 import type { Env } from './env.js';
-import type { Signer } from './identity.js';
+import type { SealIdentity, Signer } from './identity.js';
 import type { Mirror } from './mirror.js';
 import type { EntityKey, EntityKind, Record_ } from './record.js';
 import type { Submitted } from './hedera.js';
@@ -91,6 +91,12 @@ export interface Ctx {
   readonly operator: Signer;
   readonly treasury: Signer;
   readonly agent: Signer;
+  /**
+   * The agent's ENCRYPTION identity (§7.3), whose public half the declaration
+   * publishes as `properties.wishmail.x25519Pub`. Like every `Signer` here it
+   * is a public half and a closure; no step holds the private key (P-13).
+   */
+  readonly seal: SealIdentity;
   readonly treasuryId: () => string;
   readonly agentId: () => string;
   readonly tokenId: () => string;

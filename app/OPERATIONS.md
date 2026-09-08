@@ -379,7 +379,7 @@ That one-line diff is the point, and it took a second attempt. The first writer 
 
 ## Step 3 — the declaration: gate report, written before any signature
 
-**Status: NOT RUN. Nothing in this section has been submitted.** It stops at §6 on an unresolved defect in HCS-14 (ledger §G item 12), which is raised rather than coded around (CLAUDE.md §5). Everything above §6 is settled and is written here first, on the rule Step 2 followed: the gate report is committed before the first transaction, not after it.
+**Status: RUN 2026-09-08. All five entities stand on `hedera:testnet`; §§7–9 carry what happened.** §§1–6 were written and committed **before** the first transaction of Step 3, on the rule the probe and Step 2 followed, and are left as they were written — including §6, which was the stop, and which §G item 12's closure by D-152 and D-153 lifted.
 
 Provisioned against **`v0.5.3`**, the tag the ops record will cite. `v0.5.3` is D-150's patch, and it exists *because* of this step: §4.6's `Conformance:` note required every provisioned topic to carry the agent's admin key, and HCS-1 marks a file topic that has one invalid and ignores it — so as landed no HCS-11 profile file could be provisioned conformantly and the whole `hcs14` declare surface was unreachable.
 
@@ -433,11 +433,69 @@ HCS-14 contradicts itself about the canonical key order of the six fields an age
 
 It blocks because HCS-11 requires the `uaid` in the profile, the profile's SHA-256 is the file topic's memo — a value that cannot be changed once the topic exists — and §9.2 compares a UAID address against the profile's identifier. An identifier no other implementation computes is one no incumbent can address us by, and it would be baked into an undeletable topic.
 
-`CANONICAL_ORDER` in `app/src/core/hcs14.ts` is deliberately `undefined` and every caller must name an order, so nothing can emit a UAID until this is ruled. The candidates and the lean are in ledger §G item 12. **Sonic rules; the signatures wait.**
+`CANONICAL_ORDER` in `app/src/core/hcs14.ts` was deliberately `undefined` and every caller had to name an order, so nothing could emit a UAID until it was ruled. The candidates and the lean were in ledger §G item 12. **Sonic ruled on 2026-09-08 and the stop lifted:** D-152 has every rule accept either order, the normative one first, reporting which matched as an observation; **D-153 emits the example's order**, on the census and on the upstream proposal at §G.5(b) that asks for that order to be made normative. `CANONICAL_ORDER` is `'example'` and is the default, so no caller names an order any more.
 
 **Narrowed 2026-09-08, and the half that could be settled has been.** Sonic asked for a census before ruling, and it is unanimous: of the fourteen newest `uaid:aid:` registrations on the anchor plus `0.0.7124407`'s, **15 of 15** reproduce under the example order and **none** under the normative one — the newest at 2025-11-18T22:05:58Z (`proto=a2a`, `registry=hashgraph-online`) beside `0.0.7124407`'s at 2025-10-24T22:10:46Z (`proto=hcs-10`, `registry=hol`), twenty-five days and two protocols apart. §H carries it.
 
 **D-152 then settled what does not have to wait**: every rule *accepts* either order, the normative one tried first, and reports which matched under `observations.agentIdOrder`. So an incumbent registered under either is resolvable by us whatever is decided here, and this stop is now narrower than it was — it is one choice, about one field, in one profile file. It stays a stop because an HCS-1 file topic has no admin key: what we write is what stands.
+
+### 7. What was created — the run of record, 2026-09-08
+
+Provisioned against **`v0.5.4`**, the tag each row cites in its own `specTag`. Every row below was written from a mirror-node REST read, never an SDK receipt.
+
+| Entity | ID | Built by | Signed by | Creation transaction | Consensus timestamp | Confirmed from |
+|---|---|---|---|---|---|---|
+| `agent.declRegistry` | `0.0.10428113` | TopicCreateTransaction | operator + agent | `0.0.8641261@1788904726.585140041` | `1788904733.468374809` | `/topics/0.0.10428113` |
+| `agent.accountMemo` | `0.0.10426206` | AccountUpdateTransaction | operator + agent | `0.0.8641261@1788904740.064455035` | `1788904745.896532620` | `/accounts/0.0.10426206` |
+| `agent.profileFile` | `0.0.10428178` | TopicCreateTransaction | operator + agent | `0.0.8641261@1788905026.804503619` | `1788905032.794109845` | `/topics/0.0.10428178` |
+| `agent.profileChunks` | — (one message) | TopicMessageSubmitTransaction | operator + agent | `0.0.8641261@1788905032.108893115` | `1788905039.655962104` | `/topics/0.0.10428178/messages?limit=25&order=asc` |
+| `agent.registryEntry` | — (the current entry) | TopicMessageSubmitTransaction | operator + agent | `0.0.8641261@1788905034.296999583` | `1788905042.708481996` | `/topics/0.0.10428113/messages?limit=1&order=desc` |
+
+The registry topic and the account memo carry the earlier timestamps because they are from the first run; §8 explains why the profile file and its registry entry are from a second.
+
+**Every readback, with the predicate it waited on and its result.** All PASS.
+
+| Step | Named predicate | Asserted | Result |
+|---|---|---|---|
+| `agent.profileFile` | `topic exists and is not deleted` | memo `0cc6a7aa…:brotli:base64`; `submit_key` the agent's; **`admin_key` null**; `fee_schedule_key` null; no custom fee | PASS |
+| `agent.profileChunks` | `every chunk of the profile is on the file topic` | one chunk; reassembled by `o`, base64-decoded, brotli-decompressed, and its SHA-256 equal to the topic memo's digest **and** to what was submitted | PASS |
+| `agent.declRegistry` | `topic exists and is not deleted` | memo `hcs-2:0:60`; submit and admin the agent's; `fee_schedule_key` null; no fee | PASS |
+| `agent.registryEntry` | `the current entry on the declaration registry names this profile file` | `payer_account_id` the operator; message byte-for-byte; `p` `hcs-2`; `op` `register`; `t_id` = `0.0.10428178` | PASS |
+| `agent.accountMemo` | `the account memo names the declaration registry` | `memo` = `hcs-11:hcs://2/0.0.10428113`; `deleted` false | PASS |
+
+**§9's acceptance test.** A second run created nothing, exited 0, and printed sixteen rows every one `existing`. `spec/pins.json` reported `already`; thirty pins remain unfilled and T-P9-2 still blocks every claim, which is correct — a declaration is not a pin.
+
+### 8. The first profile file, and why there are two
+
+**The first declaration was wrong, and our own resolver is what found it.** The agent identifier was hashed under `version: "1.0.0"` while the HCS-11 profile it travelled in carried `version: "1.0"`. An HCS-11 profile has exactly **one** `version` field, and §9.5 recomputes an agent identifier "from the profile's name, version, and skills together with the address's `registry`, `proto`, and `nativeId` parameters" — so the published `uaid` was not recomputable from the profile carrying it. Resolving `0.0.10426206` by its own UAID returned `RESOLVE_NOT_FOUND — the profile's uaid identifier recomputes under neither canonical order`, which is exactly what a third party would have got.
+
+Nothing about it was visible before the file was on consensus: the declaration validated against its schema, the digest matched its memo, and the identifier was internally consistent with itself. What it was not consistent with was the only `version` a reader can see. The first resolution of a WISHMail agent by a WISHMail resolver failed, and that is the strongest argument for having written the resolver in the same step as the declaration rather than after it.
+
+**The remedy is the one §9.2 provides**, at `:1284`: "Rotation is a new profile file registered as a new entry; prior entries stay on the registry topic." So a second profile file, `0.0.10428178`, was created and registered as the registry's next entry; the registry topic and the account memo did not change, because neither was wrong. §9.2's rule reads "the registry's current entry", so a reader reaches the second and the first is history.
+
+**`0.0.10428112` is permanent and is recorded in the ops record's `residue`.** An HCS-1 file topic has no admin key by D-150 and by `hcs-1.md:48-49` — "This ensures that data cannot be deleted" — so it cannot be withdrawn, only superseded. Its row says what it was, why it was replaced, and that it is not the deployment's profile file.
+
+**Two things changed so it cannot recur.** `PROFILE_VERSION` is now one constant used for both the HCS-11 `version` and the HCS-14 canonical `version`, and `profileBytes` **refuses to build** a profile whose `version` or `display_name` disagrees with the agent it hashed — before the digest is taken, so before a topic could be created for it. And `agent.registryEntry`'s readback now asserts on the registry's **current** entry rather than on sequence 1: a registry that has ever rotated has an older entry at sequence 1, and asserting on that would call a correct registry wrong.
+
+### 9. `resolve`, and what the chain returns
+
+The declaration is only worth anything if the rule finds it, so the rule was run. `npm run resolve -- <address>` implements §9.2 and reads a mirror node's REST API and nothing else: **no key, no stamp, no account, no broker** (P-4, §6.2's "`resolve` reads and pays nothing").
+
+Walked as §9.2 walks it: account memo → the registry's current entry → the HCS-1 file → the profile → `properties.wishmail`.
+
+```
+account 0.0.10426206
+  memo            hcs-11:hcs://2/0.0.10428113
+  registry        0.0.10428113, current entry -> t_id 0.0.10428178
+  file            0.0.10428178, memo digest == SHA-256 of the decompressed profile
+  properties.wishmail  {manifestTopic 0.0.10426591, x25519Pub …, keyEpoch 1}
+```
+
+By account, the coordinates validate against `spec/schemas/mail-coordinates.schema.json` and carry **`trustClass: math` and `endorsements: []`** — no `blurred`, which is T-P6-3's "an HCS-2 memo resolves without `blurred`", demonstrated on consensus rather than on a fixture. `resolutionProof.uri` is `null`, because §6.2 leaves it empty until `send` publishes the manifest.
+
+By UAID, the same coordinates, and the identifier comparison of §9.1 runs: the profile's `uaid` agrees with the address in identifier and `nativeId`, the AID recomputes from the profile's own name, version and skills, and `observations.agentIdOrder` reports `example` — the order D-153 emits, reported as an observation that bears on no standing (§11.6).
+
+Two defects in the coordinates were caught by validating against the schema before printing, which is why the tool validates rather than trusts: `resolutionProof.uri` had been an empty string where §5.2 fixes locators as **structured, not strings**, and `resolvedAt` had been an ISO instant where §5.1 writes a timestamp as `seconds.nanos`.
 
 ## Entities
 

@@ -13,9 +13,10 @@
  */
 import { Client } from '@hashgraph/sdk';
 import { loadEnv } from './env.js';
-import { bornHere, fromEnv, persistentIdentity, type Signer } from './identity.js';
+
+import { fromEnv, persistentIdentity, sealIdentity, type Signer } from './identity.js';
 import { Mirror, toMirrorTxId } from './mirror.js';
-import { Record_, type EntityKey, type EntityRecord } from './record.js';
+import { SPEC_TAG, Record_, type EntityKey, type EntityRecord } from './record.js';
 import { pinStampToken, unfilledPins } from './pins.js';
 import * as journal from './journal.js';
 import { STEPS, buildPriceList, canonicalBytes, sha256hex, validatePriceList } from './steps.js';
@@ -34,11 +35,15 @@ const flags = {
  * an existing key owns.
  */
 function identity(label: string, prefix: 'TREASURY' | 'AGENT'): Signer {
-  // A dry run writes nothing at all, so it uses an ephemeral identity whose key
-  // dies with the process; a real run persists through identity.ts, which is the
-  // only module that ever sees the DER form.
-  if (flags.dryRun) return bornHere(label);
-  return persistentIdentity(label, prefix).signer;
+  // identity.ts is the only module that names a key, so the flag says what this
+  // run IS and lets that module decide what it means (P-13).
+  //
+  // A dry run that invented a key could not confirm an existing deployment:
+  // every recorded entity would diverge on its key and the plan would stop at
+  // the first one. So an existing key is recovered even on a dry run — nothing
+  // is signed either way — and only a key that does not exist is invented, and
+  // then never written down.
+  return persistentIdentity(label, prefix, { persist: !flags.dryRun }).signer;
 }
 
 async function main(): Promise<number> {
@@ -50,6 +55,12 @@ async function main(): Promise<number> {
   const treasury = identity('treasury', 'TREASURY');
   const agent = identity('agent', 'AGENT');
 
+  // The agent's encryption key (§7.3). On a dry run an existing key is
+  // recovered and a missing one is born and discarded: §7.6 requires an agent
+  // to retain the private key of every epoch it has PUBLISHED, and a plan
+  // publishes nothing.
+  const seal = sealIdentity('agent-seal', 'AGENT', { persist: !flags.dryRun }).identity;
+
   const client = Client.forName(env.network);
   client.setOperatorWith(env.operatorId, operator.publicKey, operator.sign);
 
@@ -60,7 +71,7 @@ async function main(): Promise<number> {
   };
 
   const ctx: Ctx = {
-    env, client, mirror, record, operator, treasury, agent,
+    env, client, mirror, record, operator, treasury, agent, seal,
     treasuryId: () => (flags.dryRun && !record.has('treasury.account') ? '0.0.PENDING' : idOf('treasury.account')),
     agentId: () => (flags.dryRun && !record.has('agent.account') ? '0.0.PENDING' : idOf('agent.account')),
     tokenId: () => (flags.dryRun && !record.has('postage.token') ? '0.0.PENDING' : idOf('postage.token')),
@@ -181,6 +192,7 @@ async function main(): Promise<number> {
         confirmedFrom: `GET ${mirrorPathFor(step.key, adopted.entityId, ctx)}`,
         confirmedAt: new Date().toISOString(),
         policy: { ...(want as Record<string, unknown>), adopted: adoptionNote(adopted.how) },
+        specTag: SPEC_TAG,
       });
       journal.disarm();
       rows.push({ n, key: step.key, id: adopted.entityId, outcome: 'adopted', detail });
@@ -203,6 +215,7 @@ async function main(): Promise<number> {
       confirmedFrom: `GET ${mirrorPathFor(step.key, r.entityId ?? null, ctx)}`,
       confirmedAt: new Date().toISOString(),
       policy: want as Record<string, unknown>,
+      specTag: SPEC_TAG,
     };
     record.put(step.key, entry);
     journal.disarm();
@@ -282,6 +295,11 @@ function adoptionNote(how: string): string {
 function signersFor(k: EntityKey): readonly string[] {
   if (k === 'postage.token') return ['operator', 'treasury'];
   if (k === 'agent.association' || k.endsWith('.account')) return ['operator'];
+  // Step 3: the declaration is the agent's, so the agent signs every act of it.
+  // The Postmaster pays and owns nothing here (§3.5, P-13).
+  if (k === 'agent.profileChunks' || k === 'agent.registryEntry' || k === 'agent.accountMemo') {
+    return ['operator', 'agent'];
+  }
   return ['operator'];
 }
 
@@ -293,6 +311,9 @@ function mirrorPathFor(k: EntityKey, id: string | null, ctx: Ctx): string {
   if (k === 'postage.mint') return `/tokens/${ctx.tokenId()}`;
   if (k.endsWith('.association')) return `/accounts/{account}/tokens?token.id=${ctx.tokenId()}`;
   if (k === 'prices.first') return `/topics/{priceTopic}/messages?limit=1&order=asc`;
+  if (k === 'agent.profileChunks') return `/topics/{profileFile}/messages?limit=25&order=asc`;
+  if (k === 'agent.registryEntry') return `/topics/{declRegistry}/messages?limit=1&order=desc`;
+  if (k === 'agent.accountMemo') return `/accounts/${ctx.agentId()}`;
   return `/topics/${id}`;
 }
 
@@ -305,7 +326,7 @@ function report(op: string, mirrorUrl: string, recordPath: string, rows: readonl
   console.log(`  operator  ${op}`);
   console.log(`  mirror    ${mirrorUrl}`);
   console.log(`  record    ${recordPath}`);
-  console.log(`  spec      v0.5.2 · every transaction @hashgraph/sdk, every read mirror-node REST`);
+  console.log(`  spec      ${SPEC_TAG} · every transaction @hashgraph/sdk, every read mirror-node REST`);
   console.log(`  pre-flight ${preflightNote}\n`);
   console.log('  #   ENTITY                 ID              STATUS    DETAIL');
   for (const r of rows) {
