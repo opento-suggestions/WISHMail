@@ -2,7 +2,7 @@
 
 The suite. One test per `T-<P-ID>-<n>`, keyed to the invariant in its `P-ID` (§12), serving the requirement whose `Conformance:` note names it.
 
-Nothing here exists yet. This file records what goes where and under what rules, so that the first test written lands in the right place.
+**All 83 files exist; none is expanded.** Every one fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim. A test that is not written must not report that it passed.
 
 ## The register
 
@@ -22,7 +22,15 @@ P-13 x4   P-14 x1   P-15 x5   P-16 x2   P-17 x3          = 83
 
 ```
 conformance/
-  <T-P*-n>/        one directory per test, named by its identifier
+  register.mjs     §A, read as rows — the one parser. scripts/extract-and-diff.mjs
+                   uses it too, so the check and the suite cannot disagree about
+                   what the register says
+  scaffold.mjs     writes a stub for any test in §A that has no file; never
+                   touches one that exists. `--check` reports without writing
+  runner.mjs       the register against the specification, then the files against
+                   the register, then the tests, then T-P9-2, then the report
+  report.mjs       the artifact a claim names (§5.10)
+  tests/           one file per test, `<T-P*-n>.test.ts`
   fixtures/        recorded testnet data and synthesized mirror responses — files, not
                    a network. The VERIFIER suite reads them with nothing configured.
   corpus/          the §8.5 exception corpus (T-P3-2): an orphan, a partial envelope, an
@@ -33,6 +41,10 @@ conformance/
   reports/         one report per class; a conformance claim names the report's digest
                    (§5.10 ConformanceClaim.suite.reportDigest)
 ```
+
+**One file per test, not one directory.** This paragraph first said a directory per test. Eighty-three directories holding one file each buys nothing until a test carries fixtures of its own, and most never will: shared fixtures belong in `fixtures/` and the exception corpus in `corpus/`, which is where the tests that need them look. A test that does grow its own material gets a directory beside its file, named the same way. Nothing normative turns on this — §18.5 says "one test per `T-<P-ID>-<n>`" and is silent on the layout — and the change is recorded rather than made quietly because the earlier sentence was written down.
+
+**The runner is the only thing that decides a test ran.** It reads §A, checks it against the specification both ways, checks that every registered test has a file and that no file is unregistered, runs them, and only then reaches T-P9-2. `npm run conformance` prints the counts; `--class VERIFIER` and `--filter T-P1` narrow it.
 
 ## The rules that govern a test here
 
@@ -47,5 +59,19 @@ conformance/
 **Determinism is the point of most of it.** Two Verifiers on the same scope and window produce evidence with the same digest, byte for byte, from any mirror node, at any time (P-3; T-P3-1, T-P4-3). `observations` is excluded from that digest because two Verifiers at two clocks cannot agree on it (§11.6, D-82).
 
 **No report while a pin is unfilled.** The suite reads `spec/pins.json` and refuses to produce a report while any pin there is null (T-P9-2). **Thirty are**, since the `hedera:testnet` stamp token filled on 2026-09-08: the twenty-eight `registeredSchemas` entries, which wait on HCS-13 registration, and the `$POSTAGE` token and treasury on `hedera:mainnet`, which wait on a network §15.5 leaves undeployed. There is no flag that produces a report anyway; a way past T-P9-2 would be a way past the invariant.
+
+Because of that, nothing in an ordinary run reaches `report.mjs`, so the report is exercised on its own: `npm run check:report` calls it with a synthetic, fully-pinned input in a scratch directory and holds it to §5.1's hashing rule — the digest recomputes from the file, `generated` is outside it so two runs at two clocks agree, and a failed or unrun test stops `passedInFull`, which is what T-P15-3 reads to refuse a claim.
+
+**What a run prints today:**
+
+```
+  register        83 tests (78 core + 5 extension), §A
+  files           83 present, 0 missing, 0 unregistered
+  selected        83
+  passed          0
+  failed          83
+
+  NO REPORT — 30 unfilled pins in spec/pins.json (T-P9-2).
+```
 
 **No key of a provisioned agent, anywhere here** (P-13; T-P13-1, T-P13-2). P-13 forbids the private key "of any **agent** — decryption, topic, or account" (§12.2), and that is the rule: no key any agent this deployment provisioned appears in a fixture, in the corpus, or in a report. It is **not** a rule against key material as such, and it cannot be: T-P1-5 requires an independent implementation to *open* what the reference sealed, so `spec/vectors/seal.json` carries the recipient's private key exactly as RFC 9180 publishes `skRm` beside its own vectors. Those keys are born for the vector, bound to no account, topic or epoch, and the generator refuses any key that appears in `app/deployment/hedera-testnet.json`. See D-151.

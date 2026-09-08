@@ -20,6 +20,10 @@
     "check:schemas": "npm run check:schemas --workspace app",
     "check:vectors": "npm run check:vectors --workspace app",
     "check:store": "npm run check:store --workspace app",
-    "check:mcp": "npm run check:mcp --workspace app"
+    "check:mcp": "npm run check:mcp --workspace app",
+    "conformance": "node conformance/runner.mjs",
+    "conformance:scaffold": "node conformance/scaffold.mjs",
+    "check:suite": "node conformance/scaffold.mjs --check",
+    "check:report": "node conformance/report.check.mjs"
   }
 }
