@@ -91,6 +91,15 @@ export class Record_ {
           'D-138: a deployment fact, not specification. The modal — in fact unanimous — value recon ' +
           'observed on live HCS-10 inbound and outbound topics (testnet 0.0.7124410 and 0.0.7124409, ' +
           'mainnet 0.0.10058322). WISHMail reads no TTL and §9.5 makes the memo bind nothing.',
+        autoRenewAccount: 'operator',
+        autoRenewAccountNote:
+          'Every topic sets autoRenewAccountId to the operator explicitly rather than inheriting the ' +
+          'SDK default, so the record shows a choice. This is a PAYER role and not a key: §4.6 and D-47 ' +
+          'have the Postmaster pay, and paying a topic’s renewal is the same kind of act as paying for ' +
+          'its creation. D-47’s rule about operator keys is therefore untouched — an auto-renew account ' +
+          'is not an admin, submit or fee-schedule key, it signs nothing, and it authorises nothing on ' +
+          'the topic. On an agent-owned topic the agent holds the admin key and can change it at will ' +
+          '(T-P17-1, §4.6:583), so naming the operator here takes nothing away from the agent’s ownership.',
       },
       entities: {},
     });

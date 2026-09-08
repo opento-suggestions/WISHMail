@@ -66,6 +66,30 @@ async function main(): Promise<number> {
     flags: { dryRun: flags.dryRun, repin: flags.repin },
   };
 
+  let preflight = 'no USDC asset declared for this network';
+
+  // ---- pre-flight -------------------------------------------------------
+  // Row 8 publishes the operator as payTo for the x402-usdc method, and a payTo
+  // that cannot receive the asset is a false publication: §14.3 has the price
+  // list say where the money goes, and §14.2's PAYMENT-REQUIRED carries that
+  // address to the buyer. On Hedera an account must be associated with an HTS
+  // token to receive it, so this is asserted before anything is signed rather
+  // than discovered by a buyer.
+  const usdc = env.constants.usdc;
+  if (usdc) {
+    const held = await mirror.get<{ tokens?: { token_id: string; automatic_association?: boolean }[] }>(
+      `/accounts/${env.operatorId}/tokens?token.id=${usdc.assetId}`,
+    );
+    const assoc = (held?.tokens ?? []).find((t) => t.token_id === usdc.assetId);
+    if (!assoc) {
+      console.error(`\nSTOP — PRE-FLIGHT: the operator ${env.operatorId} is not associated with ${usdc.assetId}, the USDC asset app/src/ops/networks.ts names for ${env.network}.`);
+      console.error('The first PriceList publishes that account as payTo for the x402-usdc method, and a payTo that cannot receive the asset is a false publication (§14.2, §14.3).');
+      console.error('Associate it, or correct the asset in networks.ts, and re-run. Nothing was signed.');
+      return 1;
+    }
+    preflight = `operator associated with USDC ${usdc.assetId} (${assoc.automatic_association ? 'automatic' : 'explicit'})`;
+  }
+
   const rows: Row[] = [];
   let created = 0;
   let n = 0;
@@ -134,7 +158,7 @@ async function main(): Promise<number> {
     pinNote = `${unfilledPins(env.repoRoot)} pins unfilled`;
   }
 
-  report(env.operatorId, env.mirrorNodeUrl, record.path, rows, created, pinNote);
+  report(env.operatorId, env.mirrorNodeUrl, record.path, rows, created, pinNote, preflight);
 
   if (flags.dryRun && !flags.json) priceListGate(ctx);
   client.close();
@@ -183,7 +207,7 @@ function mirrorPathFor(k: EntityKey, id: string | null, ctx: Ctx): string {
   return `/topics/${id}`;
 }
 
-function report(op: string, mirrorUrl: string, recordPath: string, rows: readonly Row[], created: number, pinNote: string): void {
+function report(op: string, mirrorUrl: string, recordPath: string, rows: readonly Row[], created: number, pinNote: string, preflightNote: string): void {
   if (flags.json) {
     console.log(JSON.stringify({ rows, summary: { created, pins: pinNote } }, null, 2));
     return;
@@ -192,7 +216,8 @@ function report(op: string, mirrorUrl: string, recordPath: string, rows: readonl
   console.log(`  operator  ${op}`);
   console.log(`  mirror    ${mirrorUrl}`);
   console.log(`  record    ${recordPath}`);
-  console.log(`  spec      v0.5.2 · every transaction @hashgraph/sdk, every read mirror-node REST\n`);
+  console.log(`  spec      v0.5.2 · every transaction @hashgraph/sdk, every read mirror-node REST`);
+  console.log(`  pre-flight ${preflightNote}\n`);
   console.log('  #   ENTITY                 ID              STATUS    DETAIL');
   for (const r of rows) {
     console.log(
