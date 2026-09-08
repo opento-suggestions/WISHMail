@@ -63,6 +63,13 @@ export class Mirror {
   }
 }
 
+/** `0.0.8641261-1757280000-123456789` → `0.0.8641261@1757280000.123456789`. */
+export function fromMirrorTxId(id: string): string {
+  const m = id.match(/^(\d+\.\d+\.\d+)-(\d+)-(\d+)$/);
+  if (!m) throw new Error(`unrecognised mirror transaction id: ${id}`);
+  return `${m[1]}@${m[2]}.${m[3]}`;
+}
+
 /** `0.0.8641261@1757280000.123456789` → `0.0.8641261-1757280000-123456789`. */
 export function toMirrorTxId(id: string): string {
   const m = id.match(/^(\d+\.\d+\.\d+)@(\d+)\.(\d+)$/);

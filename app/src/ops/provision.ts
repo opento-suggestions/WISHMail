@@ -17,6 +17,7 @@ import { bornHere, fromEnv, persistentIdentity, type Signer } from './identity.j
 import { Mirror, toMirrorTxId } from './mirror.js';
 import { Record_, type EntityKey, type EntityRecord } from './record.js';
 import { pinStampToken, unfilledPins } from './pins.js';
+import * as journal from './journal.js';
 import { STEPS, buildPriceList, canonicalBytes, sha256hex, validatePriceList } from './steps.js';
 import type { Ctx, Discrepancy, Outcome, Row } from './step.js';
 
@@ -90,6 +91,27 @@ async function main(): Promise<number> {
     preflight = `operator associated with USDC ${usdc.assetId} (${assoc.automatic_association ? 'automatic' : 'explicit'})`;
   }
 
+  journal.open(env.repoRoot);
+
+  // ---- ABSENT-BUT-ON-LEDGER, first resolver: the intent journal -----------
+  // A pinned transaction id survives a run that died between consensus and the
+  // record write. It is exact, so it is tried before any search.
+  const orphan = await journal.resolve(mirror);
+  let adoptions: Partial<Record<EntityKey, { entityId: string | null; transactionId: string; consensusTimestamp: string; how: string }>> = {};
+  if (orphan.kind === 'adopt') {
+    adoptions[orphan.stepKey] = {
+      entityId: orphan.entityId,
+      transactionId: orphan.transactionId,
+      consensusTimestamp: orphan.consensusTimestamp,
+      how: 'journal — the pinned transaction id from the interrupted run',
+    };
+    console.log(`  recovered  ${orphan.stepKey} = ${orphan.entityId ?? '(act)'} from the intent journal`);
+  } else if (orphan.kind === 'failed') {
+    console.log(`  journal    ${orphan.stepKey}'s pinned transaction failed at consensus (${orphan.status}); it will be created normally`);
+  } else if (orphan.kind === 'expired') {
+    console.log(`  journal    ${orphan.stepKey}'s pinned transaction never reached consensus and can no longer; it will be created normally`);
+  }
+
   const rows: Row[] = [];
   let created = 0;
   let n = 0;
@@ -123,6 +145,49 @@ async function main(): Promise<number> {
       continue;
     }
 
+    // ---- ABSENT-BUT-ON-LEDGER, second resolver: the step's own backstop ----
+    // Only reached when no journal entry named this step. A backstop searches
+    // for an entity this step would otherwise duplicate; it may not choose
+    // between candidates, because choosing wrongly strands one forever.
+    let adopted = adoptions[step.key];
+    if (!adopted && step.backstop) {
+      const b = await step.backstop(ctx, want);
+      if (b.kind === 'ambiguous') {
+        return stop(step.key, `ABSENT-BUT-ON-LEDGER — this step is not in the record, and its backstop found ${b.found.length} candidates on the ledger (${b.found.join(', ')}) rather than one. It will not choose between them: for a token with no admin key, the loser can never be deleted. Resolve by hand, record the survivor, and re-run.`);
+      }
+      if (b.kind === 'found') {
+        adopted = {
+          entityId: b.entityId,
+          transactionId: b.transactionId,
+          consensusTimestamp: b.consensusTimestamp,
+          how: 'backstop — the unique entity on the ledger this step would have duplicated',
+        };
+        console.log(`  recovered  ${step.key} = ${b.entityId} by backstop`);
+      }
+    }
+
+    if (adopted) {
+      // Adoption is not a shortcut past confirm(): an adopted entity is checked
+      // field for field like any created one, and a mismatch is CREATED-WRONG.
+      const d = await step.confirm(ctx, adopted.entityId, want);
+      if (d === 'absent' || d.length) {
+        return stop(step.key, 'ABSENT-BUT-ON-LEDGER — an entity was recovered but does not match the declared shape. It is NOT recorded.', d === 'absent' ? [] : d);
+      }
+      record.put(step.key, {
+        kind: step.kind, role: step.role, id: adopted.entityId,
+        builtBy: step.builtBy, signedBy: signersFor(step.key), payer: env.operatorId,
+        transactionId: adopted.transactionId,
+        consensusTimestamp: adopted.consensusTimestamp,
+        confirmedFrom: `GET ${mirrorPathFor(step.key, adopted.entityId, ctx)}`,
+        confirmedAt: new Date().toISOString(),
+        policy: { ...(want as Record<string, unknown>), adopted: adoptionNote(adopted.how) },
+      });
+      journal.disarm();
+      rows.push({ n, key: step.key, id: adopted.entityId, outcome: 'adopted', detail });
+      continue;
+    }
+
+    journal.arm(step.key, step.builtBy);
     const r = await step.create(ctx, want);
     if (!r.ok) return stop(step.key, `create failed with ${r.status}`);
     const d = await step.confirm(ctx, r.entityId ?? null, want);
@@ -140,6 +205,7 @@ async function main(): Promise<number> {
       policy: want as Record<string, unknown>,
     };
     record.put(step.key, entry);
+    journal.disarm();
     rows.push({ n, key: step.key, id: r.entityId ?? null, outcome: 'created', detail });
     created += 1;
   }
@@ -197,6 +263,26 @@ function priceListGate(ctx: Ctx): void {
   console.log(`    NEGATIVE  with validFrom: ${neg.length ? 'rejected — ' + neg.join('; ') : 'ACCEPTED, which is wrong (D-145)'}`);
   console.log(`    canonical ${bytes.length} bytes (RFC 8785), sha256 ${sha256hex(bytes)}`);
   console.log(`    fits one HCS message: ${bytes.length <= 1000 ? 'yes' : 'NO — exceeds CHUNK_WIRE_MAX 1000'}`);
+}
+
+/** What the record says about a row that was adopted rather than created. */
+function adoptionNote(how: string): string {
+  return (
+    'Adopted, not created by the run that recorded it. The first Step 2 run (2026-09-08) created this ' +
+    'entity successfully at consensus and then hung on its mirror-node readback, because fetch carries ' +
+    'no default timeout, so the record was never written for an entity that exists. Recovered by: ' +
+    how +
+    '. See app/OPERATIONS.md, "Step 2 — the real entities", §7 "The readback hang, and the adoption". ' +
+    'The readback below was performed against the mirror node in full, field for field, exactly as for a ' +
+    'created entity; adoption is not a shortcut past confirmation.'
+  );
+}
+
+/** Role names for an adopted row, which has no live submit to report. */
+function signersFor(k: EntityKey): readonly string[] {
+  if (k === 'postage.token') return ['operator', 'treasury'];
+  if (k === 'agent.association' || k.endsWith('.account')) return ['operator'];
+  return ['operator'];
 }
 
 function mirrorPathFor(k: EntityKey, id: string | null, ctx: Ctx): string {

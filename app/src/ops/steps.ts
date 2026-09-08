@@ -41,7 +41,8 @@ const addFormats = ((addFormatsImport as unknown as { default?: (a: unknown) => 
   ?? (addFormatsImport as unknown as (a: unknown) => void));
 import { publicHex, type Signer } from './identity.js';
 import { submit } from './hedera.js';
-import { named, Checks, type Ctx, type Discrepancy, type Step } from './step.js';
+import { named, Checks, type BackstopResult, type Ctx, type Discrepancy, type Step } from './step.js';
+import { fromMirrorTxId } from './mirror.js';
 import type { Submitted } from './hedera.js';
 
 /** A step with its Want existentially hidden, so the ordered array is one type. */
@@ -55,6 +56,7 @@ export interface AnyStep {
   confirm(ctx: Ctx, id: string | null, want: unknown): Promise<Discrepancy[] | 'absent'>;
   create(ctx: Ctx, want: unknown): Promise<Submitted & { readonly signedBy: readonly string[] }>;
   detail(want: unknown): string;
+  backstop?(ctx: Ctx, want: unknown): Promise<BackstopResult>;
 }
 
 /** The one cast in the file, in one place, rather than eleven at the call sites. */
@@ -161,6 +163,43 @@ const tokenStep: Step<TokenWant> = {
     c.isNull('wipe_key', t.wipe_key); c.isNull('pause_key', t.pause_key);
     c.isNull('kyc_key', t.kyc_key); c.isNull('fee_schedule_key', t.fee_schedule_key);
     return c.result;
+  },
+  /**
+   * ABSENT-BUT-ON-LEDGER, resolver of last resort for the token.
+   *
+   * A token has no memo we control and no queryable creator, but it does name
+   * its treasury — and our treasury is an account this run created moments
+   * earlier and that holds nothing else. So "the token whose treasury_account_id
+   * is ours" is exact. It must be EXACTLY ONE: two would mean a duplicate
+   * already exists, and choosing between them would strand one forever, because
+   * D-141's posture gives the token no admin key and TokenDelete requires one.
+   */
+  async backstop(ctx): Promise<BackstopResult> {
+    const treasury = ctx.treasuryId();
+    const held = await ctx.mirror.get<MTokens>(`/accounts/${treasury}/tokens`);
+    const candidates: string[] = [];
+    for (const t of held?.tokens ?? []) {
+      const tok = await ctx.mirror.get<MToken>(`/tokens/${t.token_id}`);
+      if (tok?.treasury_account_id === treasury) candidates.push(t.token_id);
+    }
+    if (candidates.length === 0) return { kind: 'none' };
+    if (candidates.length > 1) return { kind: 'ambiguous', found: candidates };
+
+    const id = candidates[0]!;
+    const tok = await ctx.mirror.get<MToken & { created_timestamp?: string }>(`/tokens/${id}`);
+    const createdAt = tok?.created_timestamp;
+    if (!createdAt) return { kind: 'ambiguous', found: candidates };
+    const tx = await ctx.mirror.get<{ transactions?: { transaction_id: string; consensus_timestamp: string; result: string }[] }>(
+      `/transactions?timestamp=${createdAt}`,
+    );
+    const first = tx?.transactions?.[0];
+    if (!first || first.result !== 'SUCCESS') return { kind: 'ambiguous', found: candidates };
+    return {
+      kind: 'found',
+      entityId: id,
+      transactionId: fromMirrorTxId(first.transaction_id),
+      consensusTimestamp: first.consensus_timestamp,
+    };
   },
   async create(ctx, want) {
     const r = await submit(ctx.client, ctx.env.operatorId, new TokenCreateTransaction()

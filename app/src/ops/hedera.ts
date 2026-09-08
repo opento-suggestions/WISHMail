@@ -6,7 +6,8 @@
  * A client is driven by a `Signer`, through `setOperatorWith`, so that not even
  * the payer's private key is held outside `identity.ts`.
  */
-import { Client, type Transaction, Status } from '@hashgraph/sdk';
+import { Client, TransactionId, type Transaction, Status } from '@hashgraph/sdk';
+import * as journal from './journal.js';
 import type { Env } from './env.js';
 import type { Signer } from './identity.js';
 
@@ -37,10 +38,18 @@ export async function submit(
   tx: Transaction,
   signers: readonly Signer[] = [],
 ): Promise<Submitted> {
+  // Pin the id before submitting, so a run that dies between consensus and the
+  // record write leaves behind the one handle that can find what it made.
+  // setRegenerateTransactionId(false) keeps that handle single-valued.
+  if (!tx.transactionId) tx.setTransactionId(TransactionId.generate(payerId));
+  tx.setRegenerateTransactionId(false);
+
   const frozen = await tx.freezeWith(client);
   for (const s of signers) await frozen.signWith(s.publicKey, s.sign);
 
   let transactionId = frozen.transactionId?.toString() ?? '(unassigned)';
+  const validStart = frozen.transactionId?.validStart;
+  journal.pin(transactionId, validStart ? Number(validStart.seconds) : Math.floor(Date.now() / 1000));
   try {
     const resp = await frozen.execute(client);
     transactionId = resp.transactionId.toString();

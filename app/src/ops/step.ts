@@ -97,7 +97,7 @@ export interface Ctx {
   readonly flags: { readonly dryRun: boolean; readonly repin: boolean };
 }
 
-export type Outcome = 'created' | 'existing' | 'planned' | 'diverged' | 'absent' | 'stopped';
+export type Outcome = 'created' | 'adopted' | 'existing' | 'planned' | 'diverged' | 'absent' | 'stopped';
 
 export interface Step<Want> {
   readonly key: EntityKey;
@@ -112,7 +112,20 @@ export interface Step<Want> {
   create(ctx: Ctx, want: Want): Promise<Submitted & { readonly signedBy: readonly string[] }>;
   /** One line for the table, rendering the declared policy. */
   detail(want: Want): string;
+  /**
+   * ABSENT-BUT-ON-LEDGER, second resolver. The journal is the first: it holds a
+   * pinned transaction id and is exact. Where no journal entry survives, a step
+   * MAY offer a deterministic search for an entity it would otherwise duplicate.
+   * It must return 'ambiguous' rather than choose, because choosing wrongly here
+   * strands an entity that in the token's case can never be deleted.
+   */
+  backstop?(ctx: Ctx, want: Want): Promise<BackstopResult>;
 }
+
+export type BackstopResult =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'ambiguous'; readonly found: readonly string[] }
+  | { readonly kind: 'found'; readonly entityId: string; readonly transactionId: string; readonly consensusTimestamp: string };
 
 export interface Row {
   readonly n: number;

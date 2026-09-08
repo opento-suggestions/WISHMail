@@ -34,6 +34,9 @@ replay_pid*
 .env*
 !.env.example
 
+# The intent journal: transient, per-machine, and meaningless to anyone else.
+app/deployment/*.pending.json
+
 # TypeScript / Node (app/, conformance/)
 node_modules/
 dist/
