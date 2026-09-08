@@ -2,6 +2,33 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.3] — 2026-09-08
+
+A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). **No schema changes.** No test is added, moved or removed: the register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways. It is a patch and not a minor version on D-134's and D-146's reasoning — nothing conforms, because T-P9-2 blocks every claim while thirty pins in `spec/pins.json` are null.
+
+This patch lands **before the declaration is signed**, on the same rule 0.5.2 followed: the text is right before anything is built against it. Both findings were raised while planning Step 3 and ruled by Sonic the same day.
+
+### Changed
+
+- **§4.6's `Conformance:` note excepts the standard that forbids an admin key** (D-150). §4.6:578 has the Postmaster provision "the declaration registry and **profile file**", and D-146's note required every provisioned topic to carry the agent's key as its **admin** key — while HCS-1 at the pin says a file topic with an admin key "will automatically be marked as invalid files, and will be ignored" (`hcs-1.md:48-49`, blob `0d8cca5…`, FETCHED 2026-09-06, ledger §H:360). As landed, no HCS-11 profile file could be provisioned conformantly, so §9.2:1284's declare surface — the whole native profile — was unreachable. The fact had been in the ledger since the recon; the collision had not been noticed. **[CC]** found, **[S]** ruled.
+
+  ```diff
+  -`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin key set to the agent's key and its remaining keys set at creation per the declared policy for that topic type, and the policy is recorded at creation.
+  +`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin key set to the agent's key, except where the standard the topic serves forbids an admin key, in which case it carries none and the key that standard requires is the agent's; its remaining keys are set at creation per the declared policy for that topic type; and the policy is recorded at creation.
+  ```
+
+  The exception turns on the pinned standard's text and not on a declared policy, so D-146's own reason — that a policy free to name a non-agent admin key would otherwise still pass — is not reopened. §A's T-P17-1 row is amended to the same words. D-147's provisioning template gains a **sixth** row, the HCS-1 profile file topic: sole submit key the agent's, no admin key, no fee, no exempt list; D-147's five rows are unchanged and D-146's and D-147's files gain reciprocal pointers.
+
+- **The vectors' key material is no agent's key** (D-151). No specification sentence changes. `conformance/README.md` had written P-13's rule as "No private-key material in any fixture," which is wider than P-13's own text — "no private key of any **agent** — decryption, topic, or account" (§12.2) — and, read that way, made T-P1-5 unsatisfiable, since an independent implementation cannot *open* what the reference sealed without the recipient's key. `spec/vectors/seal.json` carries `skRm` exactly as RFC 9180 publishes it, declares in the file what that key is and is not, and the generator refuses any key that appears in `app/deployment/hedera-testnet.json`. **[CC]** raised, **[S]** ruled.
+
+- **The P-13 gate is widened** (D-151, same change). `scripts/p13-check.mjs` watched `/(AGENT|TREASURY)_DER_KEY/`, which `AGENT_X25519_DER_KEY` — the encryption key §9.2's declaration needs — walks straight past. It now watches `/(AGENT|TREASURY)[A-Z0-9_]*_KEY/`, still not matching `OPERATOR_DER_KEY`, the Postmaster's own payer under D-47. A hole that existed independently of the ruling, closed with it.
+
+### Added
+
+- `scripts/extract-and-diff.mjs` and `npm run check:register` — the check CLAUDE.md §9 and CONTRIBUTING.md require, as a script rather than a shell pipeline. It reads §A **as rows**, because §A's own footer names the dropped `T-P5-4` and a naive grep of the ledger therefore finds 84 identifiers where the register holds 83. It asserts the total and the extension count as well as the two-way correspondence.
+
+One `CHANGED` marker gains a decision: `D-146, D-150` on §4.6. §18.2's index marker becomes `D-135, D-136, D-145, D-146, D-150` and the index gains a D-150 row.
+
 ## [0.5.2] — 2026-09-08
 
 A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). One schema changes, which a patch permits **only because nothing is registered under HCS-13 yet**; `registeredSchemas` is null throughout (T-P9-9), and after registration the same correction would be 0.6. The register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways.

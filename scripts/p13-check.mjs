@@ -26,8 +26,14 @@ import { execFileSync } from 'node:child_process';
  * pays"), not an agent, so an entrypoint naming it is exactly what P-13
  * permits — and it names it only to hand it to `fromEnv`, which is in
  * identity.ts, so no key material leaves that module either way.
+ *
+ * The pattern is deliberately wider than the two names that exist today.
+ * It read `/(AGENT|TREASURY)_DER_KEY/`, and `AGENT_X25519_DER_KEY` — the
+ * encryption key §9.2's declaration needs, and the first key here that is not
+ * a Hedera key — walked straight past it. A gate that has to be edited every
+ * time a key is added is a gate that will one day not be (D-151).
  */
-const SECRET_NAMES = /(AGENT|TREASURY)_DER_KEY/;
+const SECRET_NAMES = /(AGENT|TREASURY)[A-Z0-9_]*_KEY/;
 
 /** The only two modules permitted to name them. See the module comment. */
 const ALLOWED = new Set(['app/src/ops/env.ts', 'app/src/ops/identity.ts']);

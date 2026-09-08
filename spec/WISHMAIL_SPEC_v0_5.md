@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.2
+# WISHMail — Specification v0.5.3
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -580,9 +580,9 @@ An agent that has never touched Hedera is provisioned: it generates its keys in 
 Where a registry anchor admits submissions from any account (§9.5), provisioning MAY prepare the agent's registration for the agent to submit under its own key, as payer, and MAY fund that fee; the agent resolves under `hol` without `blurred` because the account that paid for the registration is the account it names. The registration is the agent's, not the Postmaster's: the Postmaster never signs or submits it.
 `Conformance:` T-P13-4 — a fixture provisioned with registration has a `register` operation on the anchor whose payer and `account_id` are both the agent's account, and resolves under `hol` without `blurred`; no registration in the suite is paid by the Postmaster.
 
-<!-- CHANGED: D-146 -->
+<!-- CHANGED: D-146, D-150 -->
 A provisioned account, topic, or profile MUST be owned by keys the agent generated. The Postmaster MUST NOT retain any key to it.
-`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin key set to the agent's key and its remaining keys set at creation per the declared policy for that topic type, and the policy is recorded at creation.
+`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin key set to the agent's key, except where the standard the topic serves forbids an admin key, in which case it carries none and the key that standard requires is the agent's; its remaining keys are set at creation per the declared policy for that topic type; and the policy is recorded at creation.
 
 A first-time CORRESPONDENT needs no funded Hedera account to buy stamps (P-16). A stamp transfer to the agent's public-key alias creates the account that holds them, owned by the agent's key, paid by the Postmaster.
 `Conformance:` T-P16-1 — `buy_stamp` succeeds for a buyer with no pre-existing Hedera account; the resulting account is owned by the buyer's key.
@@ -2055,7 +2055,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136, D-145, D-146 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146, D-150 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2151,6 +2151,7 @@ D-135  HIP-991 and HIP-423 pinned                                     §1.6
 D-136  Rate-priced methods; prices are decimal strings                §5.4, §14.3
 D-145  validFrom dropped from the price list                          §14.3
 D-146  Provisioned topics: the admin key is the agent's               §4.6
+D-150  Except where the standard forbids an admin key                 §4.6
 ```
 
 ### 18.3 Concordance of identifiers (informative)
