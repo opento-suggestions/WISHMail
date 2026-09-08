@@ -7,7 +7,7 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.1 |
+| Specification | 0.5.2 |
 | Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
@@ -68,7 +68,7 @@ A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a ma
 
 **This release defers the POSTMASTER claim on T-P16-1, and says why.** Both methods it offers are on `hedera:testnet`, and §14.2 states that on a Hedera network "the buyer signs a Hedera transfer of USDC and so has an account already." So neither method requires no pre-funded Hedera account, and §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" (`Conformance:` T-P16-1) — is unmet here. The reference deployment covers pre-funded Hedera accounts only at this version; it does not add a non-Hedera method to make the claim true, and it does not claim POSTMASTER until the suite passes in full (§1.5, T-P15-3).
 
-That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1.
+That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1 or 0.5.2.
 
 ## L-12 — A stamp is fungible
 

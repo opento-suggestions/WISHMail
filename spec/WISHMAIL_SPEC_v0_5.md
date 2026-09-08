@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.1
+# WISHMail — Specification v0.5.2
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -580,8 +580,9 @@ An agent that has never touched Hedera is provisioned: it generates its keys in 
 Where a registry anchor admits submissions from any account (§9.5), provisioning MAY prepare the agent's registration for the agent to submit under its own key, as payer, and MAY fund that fee; the agent resolves under `hol` without `blurred` because the account that paid for the registration is the account it names. The registration is the agent's, not the Postmaster's: the Postmaster never signs or submits it.
 `Conformance:` T-P13-4 — a fixture provisioned with registration has a `register` operation on the anchor whose payer and `account_id` are both the agent's account, and resolves under `hol` without `blurred`; no registration in the suite is paid by the Postmaster.
 
+<!-- CHANGED: D-146 -->
 A provisioned account, topic, or profile MUST be owned by keys the agent generated. The Postmaster MUST NOT retain any key to it.
-`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin and submit keys set to the agent's keys per the declared policy, and the policy is recorded at creation.
+`Conformance:` T-P13-1; T-P17-1 — every topic the suite provisions has its admin key set to the agent's key and its remaining keys set at creation per the declared policy for that topic type, and the policy is recorded at creation.
 
 A first-time CORRESPONDENT needs no funded Hedera account to buy stamps (P-16). A stamp transfer to the agent's public-key alias creates the account that holds them, owned by the agent's key, paid by the Postmaster.
 `Conformance:` T-P16-1 — `buy_stamp` succeeds for a buyer with no pre-existing Hedera account; the resulting account is owned by the buyer's key.
@@ -1793,7 +1794,7 @@ A payment reference MUST settle at most one purchase: a replayed `PAYMENT-SIGNAT
 
 The Postmaster publishes what it charges on consensus. The price list is a message on the Postmaster's price topic — an HCS topic whose sole submit key is the Postmaster's and whose memo is `wishmail:prices:1` — and the conformance claim names the topic as `prices` (§5.10). The price current at a purchase is the latest price message with a consensus timestamp before the purchase's; the Postmaster reads it from a mirror node at every purchase, and a Verifier reads the same message to check what was charged.
 
-<!-- CHANGED: D-136 -->
+<!-- CHANGED: D-136, D-145 -->
 ```
 PriceList
   spec           string          the specification version
@@ -1802,7 +1803,6 @@ PriceList
                    unitPrice? | rate? {source, pair, reference {amount, asset}},
                    bundles? [{count, price}]}]
   provisioning?  {method, unitPrice}         the provisioned path (§4.6), if offered
-  validFrom      timestamp
 ```
 
 `unitPrice` is the price of one stamp in the method's asset, written as a decimal string in that asset's natural unit — not in atomic units, which bake a network's decimals into a document a Verifier reads, and not as a JSON number, because the message is canonical JSON (§5.1) and a float is a hazard. A bundle is a price for a count, offered to everyone alike. A method priced by reference to another asset carries `rate` in place of `unitPrice`: `reference` is the price of one stamp in the reference asset, and `source` and `pair` name what the Postmaster reads at purchase to convert it into the amount it quotes. A method carries `unitPrice` or `rate`, never both. A bundle's price follows its method's pricing basis — the method's own asset where the method is fixed-priced, the reference asset where it is rate-priced — so that the rate converts a bundle at purchase exactly as it converts `reference`. A method names where the money goes: `payTo`, the Postmaster's receiving address, and `facilitator` where one settles the leg (§14.2); at least one is present. An `x402-usdc` method carries both, because the requirements it issues name the receiving address (§14.2). The buyer signs that amount and no other, the quote stands for the transaction's valid duration, and the receipt records the rate used and when (§5.4). Every number is the Postmaster's; this document fixes that there is one schedule, that it is on consensus before it is charged, and that it is the same for everyone (§4.5).
@@ -2055,7 +2055,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2149,6 +2149,8 @@ D-130  Postage is spent at affix and consumed at settlement           §15.3
 D-131  CHANGED markers begin at this commit                           §1
 D-135  HIP-991 and HIP-423 pinned                                     §1.6
 D-136  Rate-priced methods; prices are decimal strings                §5.4, §14.3
+D-145  validFrom dropped from the price list                          §14.3
+D-146  Provisioned topics: the admin key is the agent's               §4.6
 ```
 
 ### 18.3 Concordance of identifiers (informative)

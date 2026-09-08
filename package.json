@@ -1,6 +1,6 @@
 {
   "name": "wishmail",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "WISHMail — certified mail for agents on Hedera. Monorepo root; the specification in spec/ is the normative document.",
   "license": "Apache-2.0",

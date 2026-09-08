@@ -184,18 +184,12 @@
       ],
       "additionalProperties": false,
       "description": "The provisioned path (§4.6), if offered. Provisioning is never required (§4.6, D-57)."
-    },
-    "validFrom": {
-      "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+$",
-      "description": "Consensus timestamp, seconds.nanos (§5.1)."
     }
   },
   "required": [
     "spec",
     "stampToken",
-    "methods",
-    "validFrom"
+    "methods"
   ],
   "additionalProperties": false
 }

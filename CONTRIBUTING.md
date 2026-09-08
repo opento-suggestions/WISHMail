@@ -24,7 +24,7 @@ Never the reverse. Two rules follow:
 
 ## Changing the specification
 
-The specification was frozen at 0.5.0 (2026-09-07) and is at 0.5.1. It can still be wrong. When implementation shows a sentence is wrong, incomplete, or untestable:
+The specification was frozen at 0.5.0 (2026-09-07) and is at 0.5.2. It can still be wrong. When implementation shows a sentence is wrong, incomplete, or untestable:
 
 1. Stop. Do not code around it.
 2. Write the finding as a decision candidate: what the text says, what reality says, what you propose, marked MINE.

@@ -4,8 +4,8 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 ## 1. The documents, and their order
 
-1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.1 — frozen at 0.5.0 on 2026-09-07 and patched the same day (D-135 – D-138); wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
-2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-131 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.2 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138) and to 0.5.2 on 2026-09-08 (D-145 – D-148); wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-148 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
 3. `recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
 4. `provenance/` — `WISHMAIL SPEC v0 3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.
 5. `STATUS.md` — the build set as Sonic ranks it, and the demo shape. The one file where "what we build first" is an ordering.
@@ -69,7 +69,7 @@ The spec is frozen. It can still be wrong. When implementation shows a sentence 
 
 1. Stop. Do not code around it.
 2. Write the finding as a decision candidate: what the text says, what reality says, what you propose, marked MINE.
-3. Sonic rules. A ruling becomes `D-nnn` in ledger section B (next number after D-131), dated.
+3. Sonic rules. A ruling becomes `D-nnn` in ledger section B (next number after the last row there), dated.
 4. The spec text changes, with `<!-- CHANGED: D-nnn -->` on the line before the amended paragraph, and a CHANGELOG entry.
 5. If a MUST is added, its `Conformance:` note names a test, and that test is registered in ledger section A the same change.
 6. A change to a wire string or a registered schema is a new minor version (0.6), never a patch.
