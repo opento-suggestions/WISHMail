@@ -1,0 +1,57 @@
+{
+  "_readme": [
+    "The first PriceList (D-143, as D-145 leaves it), as it will be submitted to the price topic.",
+    "The script submits THIS FILE. It fills exactly three fields and changes nothing else:",
+    "  stampToken.tokenId   from app/deployment/<network>.json, once the token exists",
+    "  stampToken.treasury  likewise",
+    "  methods[].payTo      from OPERATOR_ID",
+    "They are null here because they do not exist yet, and null is the honest form of",
+    "'not known at commit time'. The schema requires the account-id pattern, so a fill",
+    "that did not happen is caught by validation rather than published.",
+    "",
+    "asset, facilitator and rate.source are per-network constants and their source of",
+    "truth is app/src/ops/networks.ts; the script asserts this file agrees with it before",
+    "submitting, so the two cannot drift.",
+    "",
+    "The numbers are RECORD (Sonic 2026-09-06 and 2026-09-07, ledger §E Q-6) and live in a",
+    "committed file rather than in code so that what the Postmaster charges is reviewable",
+    "as a document. §14.3: there is one schedule, it is on consensus before it is charged,",
+    "and it is the same for everyone (§4.5).",
+    "",
+    "No validFrom: D-145 dropped it. §14.3:1794 selects the current price by the message's",
+    "own consensus timestamp, and a second notion of when a schedule begins would compete",
+    "with the one a Verifier actually uses. This key is absent, not null — the schema sets",
+    "additionalProperties: false and will reject it.",
+    "",
+    "provisioning is omitted (§4.6, D-57). _readme is stripped before canonicalization."
+  ],
+  "spec": "0.5.2",
+  "stampToken": {
+    "ledgerTag": "hedera:testnet",
+    "tokenId": null,
+    "treasury": null
+  },
+  "methods": [
+    {
+      "method": "x402-usdc",
+      "network": "hedera:testnet",
+      "asset": "0.0.429274",
+      "payTo": null,
+      "facilitator": "https://x402.org/facilitator",
+      "unitPrice": "0.10",
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    },
+    {
+      "method": "hbar",
+      "network": "hedera:testnet",
+      "asset": "0.0.0",
+      "payTo": null,
+      "rate": {
+        "source": "https://api.saucerswap.finance/tokens",
+        "pair": "HBAR/USD",
+        "reference": { "amount": "0.10", "asset": "USD" }
+      },
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    }
+  ]
+}

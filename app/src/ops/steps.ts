@@ -90,7 +90,8 @@ export const HCS10_TTL = 60;                       // D-138: a deployment fact
 export const PRICE_TOPIC_MEMO = 'wishmail:prices:1';   // §14.3
 export const MANIFEST_MEMO = 'wishmail:manifest:1';    // §9.1
 export const FLOAT = 10_000n;                      // D-149
-export const FEE_GATED_CAP = new Hbar(100);        // probe 2026-09-08
+// Fee caps live in app/src/ops/networks.ts with their citation, keyed by
+// HEDERA_NETWORK, because they are facts about a network and not about us.
 
 /* --- accounts (D-140) ---------------------------------------------------- */
 
@@ -169,7 +170,7 @@ const tokenStep: Step<TokenWant> = {
       .setSupplyType(TokenSupplyType.Infinite)
       .setTreasuryAccountId(want.treasury)
       .setSupplyKey(ctx.treasury.publicKey)
-      .setMaxTransactionFee(new Hbar(40)), [ctx.treasury]);
+      .setMaxTransactionFee(new Hbar(ctx.env.constants.feeCaps.tokenCreate)), [ctx.treasury]);
     return { ...r, signedBy: ['operator', 'treasury'] };
   },
 };
@@ -288,7 +289,9 @@ const topicStep = (
         .setTopicMemo(want.memo)
         .setAdminKey(owner.publicKey)
         .setAutoRenewAccountId(want.autoRenewAccount)
-        .setMaxTransactionFee(want.fee ? FEE_GATED_CAP : new Hbar(20));
+        .setMaxTransactionFee(new Hbar(
+          want.fee ? ctx.env.constants.feeCaps.feeGatedTopicCreate : ctx.env.constants.feeCaps.plainTopicCreate,
+        ));
       if (want.submitKey !== null) tx.setSubmitKey(owner.publicKey);
       if (want.fee) {
         tx.setCustomFees([new CustomFixedFee()
@@ -317,27 +320,59 @@ const topicStep = (
 
 /* --- the first PriceList (D-143 as D-145 leaves it) ---------------------- */
 
+/**
+ * The first PriceList is a COMMITTED FILE the script submits, not a literal in
+ * code (Sonic, 2026-09-08). What the Postmaster charges should be reviewable as
+ * a document: §14.3 fixes that there is one schedule, that it is on consensus
+ * before it is charged, and that it is the same for everyone (§4.5).
+ *
+ * Exactly three fields are filled here, because they cannot be known at commit
+ * time: the token and treasury ids, from the ops record, and payTo, from
+ * OPERATOR_ID. They are null in the file, and the schema's account-id pattern
+ * means a fill that did not happen is caught by validation rather than published.
+ *
+ * Everything else is asserted to agree with app/src/ops/networks.ts, which is
+ * the source of truth for per-network constants, so the file and the table
+ * cannot drift apart unnoticed.
+ */
+export function priceListPath(ctx: Ctx): string {
+  return path.join(ctx.env.repoRoot, 'app', `price-list.${ctx.env.constants.ledgerTag.replace(':', '-')}.json`);
+}
+
+interface PLMethod { method: string; asset: string; payTo: string | null; facilitator?: string; rate?: { source: string; pair: string } }
+
 export function buildPriceList(ctx: Ctx): Record<string, unknown> {
-  return {
-    spec: '0.5.2',
-    stampToken: { ledgerTag: 'hedera:testnet', tokenId: ctx.tokenId(), treasury: ctx.treasuryId() },
-    methods: [
-      {
-        method: 'x402-usdc', network: 'hedera:testnet', asset: '0.0.429274',
-        payTo: ctx.env.operatorId, facilitator: 'https://x402.org/facilitator',
-        unitPrice: '0.10', bundles: [{ count: 12, price: '1.00' }],
-      },
-      {
-        method: 'hbar', network: 'hedera:testnet', asset: '0.0.0',
-        payTo: ctx.env.operatorId,
-        rate: {
-          source: 'https://api.saucerswap.finance/tokens', pair: 'HBAR/USD',
-          reference: { amount: '0.10', asset: 'USD' },
-        },
-        bundles: [{ count: 12, price: '1.00' }],
-      },
-    ],
-  };
+  const raw = JSON.parse(fs.readFileSync(priceListPath(ctx), 'utf8')) as Record<string, unknown>;
+  delete raw['_readme'];
+
+  const stampToken = raw['stampToken'] as { ledgerTag: string; tokenId: string | null; treasury: string | null };
+  if (stampToken.ledgerTag !== ctx.env.constants.ledgerTag) {
+    throw new Error(`price list is for ${stampToken.ledgerTag}, but HEDERA_NETWORK selects ${ctx.env.constants.ledgerTag}`);
+  }
+  stampToken.tokenId = ctx.tokenId();
+  stampToken.treasury = ctx.treasuryId();
+
+  const k = ctx.env.constants;
+  for (const m of raw['methods'] as PLMethod[]) {
+    m.payTo = ctx.env.operatorId;
+    if (m.method === 'x402-usdc') {
+      if (k.usdc && m.asset !== k.usdc.assetId) {
+        throw new Error(`price list asset ${m.asset} disagrees with networks.ts USDC ${k.usdc.assetId}`);
+      }
+      if (k.facilitator && m.facilitator !== k.facilitator.url) {
+        throw new Error(`price list facilitator ${m.facilitator} disagrees with networks.ts ${k.facilitator.url}`);
+      }
+    }
+    if (m.rate && k.rateSource) {
+      if (m.rate.source !== k.rateSource.url || m.rate.pair !== k.rateSource.pair) {
+        throw new Error(`price list rate ${m.rate.source} ${m.rate.pair} disagrees with networks.ts`);
+      }
+      if (m.asset !== k.rateSource.hbarId) {
+        throw new Error(`price list hbar asset ${m.asset} disagrees with networks.ts ${k.rateSource.hbarId}`);
+      }
+    }
+  }
+  return raw;
 }
 
 export function validatePriceList(repoRoot: string, msg: unknown): string[] {

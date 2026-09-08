@@ -10,11 +10,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
+import { networkConstants, type NetworkConstants } from './networks.js';
 
+/**
+ * What `.env` is allowed to hold (Sonic, 2026-09-08): secrets, the network
+ * selector, and runtime locations. Never a copy of a value whose home is
+ * `app/src/ops/networks.ts`, `spec/pins.json`, or the ops record — so there is
+ * no entity id in this interface, and none in `.env`.
+ */
 export interface Env {
+  /** An input to provisioning, not a product of it: the one account we did not create (D-140). */
   readonly operatorId: string;
-  readonly network: 'testnet';
+  readonly network: string;
+  readonly constants: NetworkConstants;
   readonly mirrorNodeUrl: string;
+  /** The §14.2 durable record. D-109, T-P11-5, T-P11-6: the 402 state survives a restart. */
+  readonly stateDir: string;
+  readonly mcpBind: string;
+  readonly mcpPort: number | null;
   readonly repoRoot: string;
 }
 
@@ -49,16 +62,21 @@ function required(name: string): string {
 
 export function loadEnv(): Env {
   const root = ensureLoaded();
-  const network = (process.env.HEDERA_NETWORK?.trim() || 'testnet') as Env['network'];
-  if (network !== 'testnet') {
-    // §15.5: hedera:mainnet is defined and undeployed at this version.
-    throw new Error(`HEDERA_NETWORK is "${network}"; this version deploys on testnet only (§15.5)`);
-  }
+  const network = process.env.HEDERA_NETWORK?.trim() || 'testnet';
+  // networkConstants refuses a network §15.5 leaves undeployed, rather than
+  // half-provisioning it.
+  const constants = networkConstants(network);
+  const port = process.env.MCP_PORT?.trim();
   return {
     operatorId: required('OPERATOR_ID'),
     network,
-    mirrorNodeUrl:
-      process.env.MIRROR_NODE_URL?.trim() || 'https://testnet.mirrornode.hedera.com/api/v1',
+    constants,
+    // The table is the default; the variable is an override for pointing at a
+    // different mirror node, which is a read interface and never a broker (P-4).
+    mirrorNodeUrl: process.env.MIRROR_NODE_URL?.trim() || constants.mirrorNodeUrl,
+    stateDir: process.env.WISHMAIL_STATE_DIR?.trim() || path.join(root, '.wishmail-state'),
+    mcpBind: process.env.MCP_BIND?.trim() || '127.0.0.1',
+    mcpPort: port ? Number(port) : null,
     repoRoot: root,
   };
 }
