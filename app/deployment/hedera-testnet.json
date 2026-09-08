@@ -1,0 +1,54 @@
+{
+  "_readme": "The provisioning script’s idempotency ledger and the result of app/OPERATIONS.md’s method. Every field below was written from a mirror-node REST read, never from an SDK receipt (D-144). specTag names the specification text these entities were provisioned against — a tag, not a commit hash, because a conformance claim names a version (§1.7, §5.10). No private-key material appears here or ever will (P-13); signedBy and payer are role names.",
+  "ledgerTag": "hedera:testnet",
+  "network": "testnet",
+  "specTag": "v0.5.2",
+  "mirrorNodeUrl": "https://testnet.mirrornode.hedera.com/api/v1",
+  "provisionerVersion": 1,
+  "constants": {
+    "hcs10MemoTtl": 60,
+    "hcs10MemoTtlSource": "D-138: a deployment fact, not specification. The modal — in fact unanimous — value recon observed on live HCS-10 inbound and outbound topics (testnet 0.0.7124410 and 0.0.7124409, mainnet 0.0.10058322). WISHMail reads no TTL and §9.5 makes the memo bind nothing.",
+    "autoRenewAccount": "operator",
+    "autoRenewAccountNote": "Every topic sets autoRenewAccountId to the operator explicitly rather than inheriting the SDK default, so the record shows a choice. This is a PAYER role and not a key: §4.6 and D-47 have the Postmaster pay, and paying a topic’s renewal is the same kind of act as paying for its creation. D-47’s rule about operator keys is therefore untouched — an auto-renew account is not an admin, submit or fee-schedule key, it signs nothing, and it authorises nothing on the topic. On an agent-owned topic the agent holds the admin key and can change it at will (T-P17-1, §4.6:583), so naming the operator here takes nothing away from the agent’s ownership."
+  },
+  "entities": {
+    "treasury.account": {
+      "kind": "account",
+      "role": "treasury",
+      "id": "0.0.10426205",
+      "builtBy": "AccountCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788894030.895915675",
+      "consensusTimestamp": "1788894038.750186104",
+      "confirmedFrom": "GET /accounts/0.0.10426205",
+      "confirmedAt": "2026-09-08T19:00:42.277Z",
+      "policy": {
+        "publicKey": "0232144fec2cbf7818e2b1a5ad1c0f00e93398eeeaa643d7fe66828b5ff768a4",
+        "initialBalanceHbar": 20,
+        "warrant": "D-140: holds the unissued $POSTAGE supply; its key is hot because §14.2’s purchase is atomic"
+      }
+    },
+    "agent.account": {
+      "kind": "account",
+      "role": "postmaster-agent",
+      "id": "0.0.10426206",
+      "builtBy": "AccountCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788894037.389411178",
+      "consensusTimestamp": "1788894042.916078489",
+      "confirmedFrom": "GET /accounts/0.0.10426206",
+      "confirmedAt": "2026-09-08T19:00:46.012Z",
+      "policy": {
+        "publicKey": "7e4da5da9602913c64be91be193e0764c976845346b70275d97a861c261310d2",
+        "initialBalanceHbar": 20,
+        "warrant": "D-140: the service’s own Correspondent identity; an operational choice, not a spec role"
+      }
+    }
+  }
+}
