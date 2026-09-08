@@ -57,6 +57,7 @@ conformance/    the suite: one test per T-<P-ID>-<n>, keyed to the invariant it 
 app/            the reference implementation: MCP server, WebMCP page, SDK, CLI, resolvers
 recon/          dated fetches of the standards, and the pins drafted from them
 provenance/     where the design came from. Binds nothing; the specification governs
+plans/          the plans this build was directed by. Binds nothing; artifacts, not rules
 ```
 
 **Start here:** `spec/WISHMAIL_SPEC_v0_5.md`. Read §1 (scope, classes, pins), §2 (vocabulary — the names in code are these names), then §5 through §12.
@@ -85,7 +86,26 @@ Seventeen invariants (P-1 – P-17), eighty-three conformance tests, and no MUST
 
 ## Status
 
-The specification is frozen and the build is beginning. No conformance claim is valid yet: the `$POSTAGE` token and treasury are unpinned and the schemas are unregistered, and the suite refuses to produce a report while any pin in `spec/pins.json` is unfilled.
+The specification is frozen and the Postmaster's entities stand on `hedera:testnet`: the `$POSTAGE` token and its treasury, the price topic carrying its first `PriceList`, and the reference agent's doorbell, log and manifest. **No conformance claim is valid yet** — the schemas are unregistered, so thirty pins in `spec/pins.json` remain unfilled and the suite refuses to produce a report while any is. Standing up the entities did not make a claim possible; it made one eventually possible.
+
+Where the build stands, and what is not built: `STATUS.md` §6. What was provisioned, with each entity's creation transaction and the mirror-node read that confirmed it: `app/deployment/hedera-testnet.json`. The method, and every departure from a tool's default path: `app/OPERATIONS.md`.
+
+## How this was built
+
+Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
+
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and forty-nine decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+
+**Where to look, four places.**
+
+- `CLAUDE.md` — the standing instruction, at the root, read at the start of every session. It is the prompt.
+- `plans/` — the per-window plans, verbatim as approved, with a README mapping each to the commits that executed it.
+- `CHANGELOG.md` — attribution per entry, under the key at the top of the file: **[S]** Sonic, **[C]** Claude in chat, **[CC]** Claude Code.
+- The git history — every commit carries `Signed-off-by:` under the DCO and `Co-Authored-By:` the model that assisted it, and the history is incremental by construction.
+
+**Nothing is reused.** All work here began after ETHOnline 2026 opened. No code was imported, ported, or paraphrased from any earlier WISHMail or related repository; the prior thinking that guided the design is in `provenance/`, labelled as provenance and binding nothing. Third-party code is declared in the two `package.json` files: `@hashgraph/sdk` for every transaction, `ajv` and `ajv-formats` for JSON Schema, and `canonicalize` for RFC 8785 — the canonicalizer is a library rather than a hand-rolled one because `spec/vectors/aad.json` is the court and one implementation must serve both the price list and the envelope.
+
+**No key material anywhere.** Keys are born in the agent's process and never leave it; `.gitignore` matches `.env*` with `!.env.example` negated back in, and `npm run p13:check` is the grep that keeps it that way (P-13).
 
 ## License
 
