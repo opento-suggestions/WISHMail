@@ -74,11 +74,11 @@ HCS-10 offers a fee-gated inbound topic at `index.md:113` — "Public (No Key), 
 
 ## The HIP-991 probe — gate report, before any signature
 
-**Status: not yet run. Nothing has been signed.** This section is written before the first transaction this build submits to consensus, so that the record shows what was intended before it was done rather than after. Ruled 2026-09-08 (D-149). It fills with observations when the probe runs; until then every line below is a statement of intent.
+**Status: approved to sign 2026-09-08; not yet run.** This section was written and committed before the first transaction this build submits to consensus, so that the record shows what was intended before it was done rather than after. Ruled 2026-09-08 (D-149), amended the same day to fix the payer of the exempt case. It fills with observations when the probe runs; until then every line below is a statement of intent.
 
-The probe exists to settle what HIP-991 at the pin does not state and the SDK does not document: whether a fee collector must be associated with the denominating token (ledger §H records this as MINE, "confirm when §14 lands", and §14 has landed); whether a fee-exempt list amended under the admin key takes effect; and which account `hip-991.md:101` actually debits when the payer and the signer differ.
+The probe exists to settle what HIP-991 at the pin does not state and the SDK does not document: whether a fee collector must be associated with the denominating token (ledger §H records this as MINE, "confirm when §14 lands", and §14 has landed); whether a fee-exempt list amended under the admin key takes effect; and **which account `hip-991.md:101` actually debits when the payer and the signer differ** — the question the doorbell depends on.
 
-It is **wholly disposable**: it creates its own treasury, its own token, its own topic and its own stranger, and the real `$POSTAGE`, the real treasury and the Postmaster-agent's topics are not created, touched or named by it. It **mirrors the real shape exactly**, because a probe that proves something about a different shape proves nothing about the template.
+It is **wholly disposable**: it creates its own treasury, its own token, its own topic, its own stranger and its own owner, and the real `$POSTAGE`, the real treasury and the Postmaster-agent's topics are not created, touched or named by it. It **mirrors the real shape exactly**, because a probe that proves something about a different shape proves nothing about the template.
 
 ### 1. What it creates
 
@@ -87,24 +87,34 @@ It is **wholly disposable**: it creates its own treasury, its own token, its own
 | 1 | probe treasury account | ED25519 key generated in-process, minimally funded by the operator | mirrors D-140's treasury role |
 | 2 | probe token | `decimals: 0`, **`initialSupply: 0`**, `supplyType: INFINITE`, supply key the probe treasury's, and **no admin, freeze, wipe, pause, KYC or fee-schedule key** | D-141's posture with D-148's supply key, born at zero per D-149 |
 | 3 | the mint | 10,000 units to the probe treasury, signed by the probe treasury's supply key, as **its own transaction** | D-149: a mint is an act with a transaction ID, not a birth parameter |
-| 4 | probe topic | **no submit key**; admin key held by the probe; a HIP-991 `CustomFixedFee` of **one unit** of the probe token collected by the **probe treasury**; **no fee schedule key**; a fee-exempt list carrying one throwaway key | D-138's doorbell row exactly |
-| 5 | stranger account | ED25519 throwaway, funded with HBAR to pay for itself, associated with the probe token, holding one unit transferred from the probe treasury | the unexempted caller, as its own payer |
-| 6 | operator association | the operator is associated with the probe token and holds one unit, so that §4.4's own shape can be submitted | D-140: the operator is the momentary bearer of the first-contact stamp |
-| 7 | two throwaway keys | one on the exempt list at creation, one to replace it | D-137's outcome, and `hip-991.md:110-113` |
+| 4 | probe topic | **no submit key**; admin key held by the probe; a HIP-991 `CustomFixedFee` of **one unit** of the probe token collected by the **probe treasury**; **no fee schedule key**; a fee-exempt list carrying the owner's key | D-138's doorbell row exactly |
+| 5 | owner account | ED25519 throwaway standing for the agent that owns the doorbell. Its key is the one on the exempt list at creation. Minimally funded in HBAR so it can be a payer for the control, and given one unit so that a failed exemption reads as a charge rather than as an inability to pay | §3.5, D-139: the agent signs its own submissions |
+| 6 | stranger account | ED25519 throwaway, funded in HBAR to pay for itself, associated with the probe token, holding one unit | the unexempted caller of §4.4 |
+| 7 | owner₂ key | a second throwaway key, no account: it only ever signs under the operator's payment | the replacement exempt list, `hip-991.md:110-113` |
+| 8 | operator association | the operator is associated with the probe token and holds **three** units, so that §4.4's own shape can be submitted and so that a failed exemption debits rather than errors | D-140: the operator is the momentary bearer of the first-contact stamp |
 
-Row 6 is the only thing the probe does to an account the deployment keeps. It is an association and a single unit, both reversible: the unit is spent by the submission that tests it, and the operator is dissociated afterwards. Whether the dissociation succeeds is itself recorded.
+Row 8 is the only thing the probe does to an account the deployment keeps. It is an association and three units, all reversible: the units are spent or returned, and the operator is dissociated afterwards, with the result of the dissociation itself recorded.
 
-The **operator pays the network fees** for everything except the one submission where the stranger is deliberately its own payer (D-47, and §5 below). Every private key here is born in the running process and none is written to `spec/pins.json`, to `app/deployment/hedera-testnet.json`, to a log line, or to a commit; the throwaway keys are not written anywhere at all, since nothing outlives the probe that would need them.
+Every private key here is born in the running process and none is written to `spec/pins.json`, to `app/deployment/hedera-testnet.json`, to a log line, or to a commit; the throwaway keys are not written anywhere at all, since nothing outlives the probe that would need them.
 
-### 2. What it asserts
+### 2. What it asserts, and the six submissions
 
-- **The token was born as D-141 and D-149 say.** At creation: `decimals == 0`, `initial_supply == 0`, `total_supply == 0`, `supply_type == INFINITE`, `treasury_account_id` the probe treasury, `supply_key` the probe treasury's raw hex, and `admin_key`, `freeze_key`, `wipe_key`, `pause_key`, `kyc_key`, `fee_schedule_key` all six null.
-- **The mint is an act.** After it: `total_supply == 10000` and the probe treasury's balance in that token is 10,000, with the mint's own transaction ID and consensus timestamp recorded. This is the first exercise of a supply key in this project.
-- **The topic was built as D-138 says.** `submit_key` null, `admin_key` set, `fee_schedule_key` null, one fixed custom fee of amount 1 whose `denominating_token_id` is the probe token and whose `collector_account_id` is the probe treasury, and a fee-exempt list carrying the first throwaway key.
-- **The charged path, under both payers** (§5). Each submission is assessed **one unit** to the probe treasury — the T-P7-4 read — and **which account was debited is recorded verbatim** rather than assumed.
-- **The exempted path.** A submission carrying the exempt key's signature is assessed **zero** — D-137's outcome, which is the sentence §4.4 makes when it says a recipient "owes nothing to answer".
-- **The exempt list is amendable under the admin key.** After a `TopicUpdateTransaction` signed by the admin key replaces the list with the second throwaway key, the first key is charged and the second is not. This is `hip-991.md:110-113` **observed rather than read**, and it is the warrant for D-138's doorbell carrying no fee schedule key.
-- **The collector association question.** The probe treasury is the token's own treasury and so is associated by construction. Whether that is *required* is what §H holds open; the probe answers it by succeeding, and by recording that the collector was a treasury when it did.
+**The entities.** At the token's creation: `decimals == 0`, `initial_supply == 0`, `total_supply == 0`, `supply_type == INFINITE`, `treasury_account_id` the probe treasury, `supply_key` the probe treasury's raw hex, and `admin_key`, `freeze_key`, `wipe_key`, `pause_key`, `kyc_key`, `fee_schedule_key` all six null. After the mint: `total_supply == 10000` and the probe treasury holding 10,000 — the first exercise of a supply key in this project, with its own transaction ID. The topic: `submit_key` null, `admin_key` set, `fee_schedule_key` null, one fixed custom fee of amount 1 whose `denominating_token_id` is the probe token and whose `collector_account_id` is the probe treasury, and a fee-exempt list carrying the owner's key.
+
+**The submissions.** Every one of the six is read back at `GET /api/v1/transactions/{id}`, and for every one the **payer, the signers, `assessed_custom_fees` and the account actually debited** are recorded. Nothing below is assumed from `:101`; all of it is observed.
+
+| # | Submission | Payer | Signers | Exempt list carries | Expected | Why it is run |
+|---|---|---|---|---|---|---|
+| S1 | charged | stranger | stranger | owner | one unit to the probe treasury | the fee mechanism at its simplest |
+| S2 | charged, §4.4's shape | **operator** | operator + stranger | owner | one unit to the probe treasury | §4.4 has the sender transfer a stamp to the Postmaster, which then pays (D-140) |
+| S3 | **exempt, production shape** | **operator** | operator + **owner** | owner | **zero assessed** | D-137 and D-139: the owner answers its own doorbell, the Postmaster pays, and HIP-991 waives **by signature** (`:110-113`). **An exemption that holds only when the owner pays for itself is one the Postmaster cannot use.** This is the read the doorbell depends on |
+| S4 | exempt, owner pays — control | owner | owner | owner | zero assessed | the weaker read, kept beside S3 so the pair distinguishes "waived by signature" from "waived because the exempt account paid" |
+| S5 | charged after the swap | operator | operator + owner | **owner₂** | one unit — the owner is no longer exempt | that a `TopicUpdateTransaction` under the admin key actually removes an exemption |
+| S6 | exempt after the swap | operator | operator + owner₂ | owner₂ | zero assessed | that the same update actually grants one |
+
+S3 against S4 is the pair that matters. If S3 is charged and S4 is not, then HIP-991 waives by *payer* and not by signature, D-137's exemption does not work in the shape §4.4 describes, and the doorbell's design has a hole that must be reported before the real one is created. S5 against S6 is `hip-991.md:110-113` observed rather than read, and is the warrant for D-138's doorbell carrying no fee schedule key.
+
+**The collector association question.** The probe treasury is the token's own treasury and so is associated by construction. Whether that is *required* is what §H holds open; the probe answers it by succeeding, and by recording that the collector was a treasury when it did.
 
 ### 3. What it reads back
 
@@ -112,9 +122,8 @@ Every assertion above is checked against a **mirror-node REST read**, never an S
 
 - `GET /api/v1/tokens/{probeToken}` — twice, before and after the mint, for the twelve fields of §2.
 - `GET /api/v1/accounts/{probeTreasury}/tokens` — the minted balance.
-- `GET /api/v1/topics/{probeTopic}` — memo, `submit_key`, `admin_key`, `fee_schedule_key`, `custom_fees`, and **the fee-exempt list under whatever name and shape the mirror node actually gives it**. No recon in this repository has ever read a topic that had one; `fee_exempt_key_list` is an inference from the protobuf field name and is recorded as such until this read.
-- `GET /api/v1/transactions/{id}` for every submission — `result`, `assessed_custom_fees` with its amount, `token_id` and collector, **the paying account**, and `charged_tx_fee`. Also whether the response carries `entity_id`, which the provisioning journal would like to use and which ledger §H does not list.
-- `GET /api/v1/topics/{probeTopic}` again after the update, to see the amended list.
+- `GET /api/v1/topics/{probeTopic}` — memo, `submit_key`, `admin_key`, `fee_schedule_key`, `custom_fees`, and **the fee-exempt list under whatever name and shape the mirror node actually gives it**. No recon in this repository has ever read a topic that had one; `fee_exempt_key_list` is an inference from the protobuf field name and is recorded as such until this read. Read again after the update, for the amended list.
+- `GET /api/v1/transactions/{id}` — once per submission, six times: `result`, `assessed_custom_fees` with its amount, `token_id` and collector, **the paying account**, and `charged_tx_fee`. Also whether the response carries `entity_id`, which the provisioning journal would like to use and which ledger §H does not list.
 
 Each observation is filed here with its entity ID, transaction ID, consensus timestamp and the exact request path that produced it, and the corresponding ledger §H rows move from MINE to FETCHED with the date.
 
@@ -125,21 +134,18 @@ Stated plainly, because "disposable" is true of the record and only partly true 
 - **The probe topic is deleted**, under its admin key, in a `finally`, on every path including the stop path.
 - **The probe token cannot be deleted.** It carries no admin key, by the posture under test, and `TokenDelete` requires one. Building it any other way would mean the probe did not mirror the template, which is the one thing it must do. It remains on `hedera:testnet` permanently, with 10,000 minted units.
 - **The probe treasury account cannot be deleted** while that token exists, because a token's treasury cannot be removed. It remains, holding the float.
-- **The stranger account** can be emptied, dissociated and deleted; whether it is, is tidiness rather than correctness, and the probe records what it did.
-- **The operator is dissociated** from the probe token once its unit is spent, so the account the deployment keeps carries nothing of this afterwards.
+- **The owner and stranger accounts** can be emptied, dissociated and deleted; whether they are is tidiness rather than correctness, and the probe records what it did.
+- **The operator is dissociated** from the probe token once its units are spent or returned, so the account the deployment keeps carries nothing of this afterwards.
 
 So the probe leaves an inert token and its treasury on testnet forever. That is the price of mirroring the key posture honestly, it is paid on a test network, and it is written down here rather than discovered later by someone reading a mirror node and wondering what the second `$POSTAGE`-shaped token is. **Neither entity is written to `app/deployment/hedera-testnet.json` or to `spec/pins.json`** — those are the ledgers of what the deployment *keeps*, and the deployment keeps none of this. This file is the whole record of the probe.
 
-### 5. The payer, observed rather than read
+### 5. Stop conditions
 
-HIP-991 charges the fee to the account submitting the message (ledger §H, `hip-991.md:101`), and a Hedera transaction has one payer — so D-47's "the Postmaster pays" and "a funded stranger is charged one unit" cannot both hold of the same submission. §4.4 describes the sender transferring a stamp *to the Postmaster*, which then pays the doorbell fee; that is why D-140 makes the operator the momentary bearer of the first-contact stamp and why the operator must be associated with `$POSTAGE` at all.
+- **The fee configuration is rejected at creation**, for any reason. Stop, report, no HBAR substitute — §4.4 admits no approximation. The exact status name and the request as built are printed; `tx.toString()` carries no key material.
+- **S3 is charged.** The exemption does not survive the Postmaster paying, so §4.4's arithmetic and D-137's ruling do not hold in the production shape. Stop and report before the real doorbell is created; this is a finding about the design, not about the probe.
+- **The mint fails**, or the token is born with anything other than the twelve asserted fields. Stop; the template is wrong and the real token would be wrong the same way, permanently, since it has no admin key.
 
-Rather than choose a reading, the probe submits **twice** on the charged path and records which account was actually debited each time (D-149):
-
-1. **The stranger as payer** of its own submission, holding the unit. Tests the fee mechanism at its simplest.
-2. **The operator as payer**, carrying the stranger's unexempted signature — §4.4's own shape, and the one D-137's exemption is built on, since HIP-991 waives by signature even when the Postmaster pays.
-
-One extra transaction settles §4.4's routing question and the fee mechanism in the same run. If the two disagree about who is debited, that disagreement is the finding, and it goes to ledger §H and to Sonic before the real doorbell is created.
+On every path the scratch topic is deleted under its admin key in a `finally`, and whatever was observed before the stop is written here.
 
 ## Entities
 
