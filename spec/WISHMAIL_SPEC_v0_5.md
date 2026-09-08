@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.3
+# WISHMail — Specification v0.5.4
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -782,6 +782,7 @@ AttemptedDeliverySlip
 
 ### 5.10 EvidenceBundle, Narrative, ConformanceClaim
 
+<!-- CHANGED: D-152 -->
 ```
 EvidenceBundle                                Narrative
   spec           string                         bundleDigest   sha256
@@ -805,7 +806,8 @@ EvidenceBundle                                Narrative
   }]
   orphans        [Settlement]
   observations   {appraisedAt, mirror, drift[],   not digested; never bears
-                  disagreement[], integrity?}     on state or standing (§11.6)
+                  disagreement[], agentIdOrder[], on state or standing (§11.6)
+                  integrity?}
   digest         sha256   over the bundle with `digest` and `observations` absent
 ```
 
@@ -1256,6 +1258,12 @@ The native profile takes `account`, `doorbell`, and `log` from the HCS-11 profil
 A manifest topic MUST have the agent's key as its sole submit key, and a manifest MUST be one HCS message on the sender's manifest topic; where a snapshot would not fit, the manifest carries the snapshot's digest and the coordinates read, and the proof is replayable only while its source stands.
 `Conformance:` T-P17-3 — every fixture manifest topic has the agent's key as its sole submit key and the memo `wishmail:manifest:1`; T-P9-8 — every fixture manifest is one HCS message at or under `CHUNK_WIRE_MAX` bytes on the sender's manifest topic, with a consensus timestamp earlier than chunk 0's.
 
+<!-- CHANGED: D-152 -->
+**Agent identifiers, and the two canonical orders.** Where a profile recomputes an HCS-14 agent identifier — the Base58 of a SHA-384 over the canonical JSON of the agent's six canonical fields — the pinned revision fixes the key order of that JSON twice and differently: its normative step sorts the keys lexicographically, and its worked example places `skills` first. The two produce different identifiers for the same agent, and only the second is found on the ledger.
+
+A rule that recomputes an agent identifier MUST compute it under the lexicographic order first and, where that does not equal the identifier compared against, under the example's order; MUST treat a match under either as agreement; and MUST NOT treat a match under one as weaker than a match under the other. A Verifier MUST report which order matched, under `observations` (§11.6).
+`Conformance:` T-P6-3, T-P6-5 — each profile's fixtures include one agent whose identifier matches only under the example's order; it resolves, its endorsements are those the profile's rule assigns and no others, and `observations.agentIdOrder` names the order that matched.
+
 **TTL.** Coordinates carry `resolvedAt`; each profile fixes a TTL. `send` re-resolves coordinates older than their TTL and proceeds under the fresh proof; the proof bound into the envelope is always the one current at assembly.
 `Conformance:` T-P12-3 — `send` with expired coordinates produces an envelope whose resolution proof is newer than the coordinates supplied, and no failure.
 
@@ -1272,7 +1280,7 @@ a2a            (extension, §16)                  —                     —   
 
 **Addresses.** An HCS-14 universal agent ID — `uaid:aid:<id>;<parameters>` or `uaid:did:<id>;<parameters>` — whose `nativeId` parameter is a Hedera account in CAIP-10 form, `hedera:<network>:0.0.N`; or a Hedera account, `0.0.N` or CAIP-10 `hedera:<network>:0.0.N`. HCS-14 orders the parameters `uid`, `registry`, `proto`, `nativeId`, `domain`, and sets `uid` to the account's HCS-10 `operator_id`, `inboundTopicId@accountId`, when the account has one.
 
-**Rule.** Parse the address to an account: a UAID's `nativeId`, or the account itself. Read the account's memo; it MUST be an HCS-11 memo of one of two forms. `hcs-11:hcs://2/<registryTopic>` names an HCS-2 registry of profile versions: read the registry's current entry; it points at an HCS-1 file. `hcs-11:hcs://1/<fileTopic>` names an HCS-1 file directly. In either form, read the file; it is the HCS-11 profile. Take `account`, `inboundTopicId` as the doorbell, `outboundTopicId` as the log, and `properties.wishmail.{manifestTopic, x25519Pub, keyEpoch}`. If the profile carries a `uaid`, its identifier and `nativeId` MUST agree with the address when the address was a UAID; parameters outside the identifier are routing hints and are not compared. Under the second form the file is on consensus and immutable, but the binding of the account to that file at the time of resolution is a memo, and a memo's past values are not re-obtainable; the rule assigns `blurred` and carries the memo it read as a snapshot.
+**Rule.** Parse the address to an account: a UAID's `nativeId`, or the account itself. Read the account's memo; it MUST be an HCS-11 memo of one of two forms. `hcs-11:hcs://2/<registryTopic>` names an HCS-2 registry of profile versions: read the registry's current entry; it points at an HCS-1 file. `hcs-11:hcs://1/<fileTopic>` names an HCS-1 file directly. In either form, read the file; it is the HCS-11 profile. Take `account`, `inboundTopicId` as the doorbell, `outboundTopicId` as the log, and `properties.wishmail.{manifestTopic, x25519Pub, keyEpoch}`. If the profile carries a `uaid`, its identifier and `nativeId` MUST agree with the address when the address was a UAID; parameters outside the identifier are routing hints and are not compared, and an identifier is compared under both canonical orders (§9.1). Under the second form the file is on consensus and immutable, but the binding of the account to that file at the time of resolution is a memo, and a memo's past values are not re-obtainable; the rule assigns `blurred` and carries the memo it read as a snapshot.
 `Conformance:` T-P6-3 — a fixture whose memo is neither form, whose registry has no current entry, whose profile carries no `properties.wishmail`, or whose `uaid` identifier or `nativeId` disagrees with a UAID address resolves to `RESOLVE_NOT_FOUND`; a fixture whose memo names an HCS-1 file directly resolves with `blurred` and a memo snapshot; a fixture whose memo names an HCS-2 registry resolves to the coordinates its current entry's profile declares without `blurred`; each manifest recomputes from its locator (T-P6-2).
 
 **Inputs and locator.** `{ledgerTag, account, memo, registryTopic?, registrySequence?, profileTopic, consensusTimestamp}` — under the first form, the registry entry current at the resolution's consensus timestamp and the file it names, every element on consensus and re-obtainable from any mirror node at any later time, unchanged, with no snapshot; under the second form, the file, on consensus and immutable, and the memo as read, carried as the snapshot.
@@ -1336,7 +1344,7 @@ An agent that wants its NANDA name to reach a mailbox a Verifier can check after
 
 **Addresses.** A UAID as HCS-14 forms it whose `registry` parameter is `hol` or `hashgraph-online`, the two registry names whose anchors are on Hedera. The broker is a directory (§9.1): it is where such an agent is found, and nothing it returns is an input to resolution. A `registry` parameter is a routing hint outside the identifier; a broker that relabels an agent's registry does not change what the ledger recorded, and the rule below matches on the identifier and `nativeId`, never on the label. An address labelled `openconvai` names no anchor and is resolved by its `nativeId` under `hcs14`.
 
-**Rule.** Locate the registration: a `register` operation on one of the registry's anchor topics (below) that names the agent — by a `uaid` whose identifier and `nativeId` are the address's, or by an `account_id` equal to the address's `nativeId` account. Read the anchor in full; the broker's record may name a sequence number, which the rule then reads on consensus. A registration that carries `t_id` names an HCS-2 topic: read its current entry; it names an HCS-1 file; read the file; it is the HCS-11 profile. A registration that carries `account_id` and no `t_id` names the agent's account: resolve the profile from the account's memo as §9.2 does, and carry that rule's endorsements. In either case the profile's `uaid`, if present, MUST agree with the address in identifier and `nativeId`; for a `uaid:aid` address the AID recomputed from the profile's name, version, and skills together with the address's `registry`, `proto`, and `nativeId` parameters MUST equal the address's identifier; and `properties.wishmail` MUST be a declaration (§9.1). Where the registration's payer is not the address's account, the rule assigns `blurred`: the registration is on consensus, and under a key that is not the agent's. Where no registration on any anchor names the address, the rule fails; the broker's own copy of an agent is not a source, and an agent the broker lists but the ledger does not is not resolvable under this profile.
+**Rule.** Locate the registration: a `register` operation on one of the registry's anchor topics (below) that names the agent — by a `uaid` whose identifier and `nativeId` are the address's, or by an `account_id` equal to the address's `nativeId` account. Read the anchor in full; the broker's record may name a sequence number, which the rule then reads on consensus. A registration that carries `t_id` names an HCS-2 topic: read its current entry; it names an HCS-1 file; read the file; it is the HCS-11 profile. A registration that carries `account_id` and no `t_id` names the agent's account: resolve the profile from the account's memo as §9.2 does, and carry that rule's endorsements. In either case the profile's `uaid`, if present, MUST agree with the address in identifier and `nativeId`; for a `uaid:aid` address the AID recomputed from the profile's name, version, and skills together with the address's `registry`, `proto`, and `nativeId` parameters MUST equal the address's identifier under one of the two canonical orders (§9.1); and `properties.wishmail` MUST be a declaration (§9.1). Where the registration's payer is not the address's account, the rule assigns `blurred`: the registration is on consensus, and under a key that is not the agent's. Where no registration on any anchor names the address, the rule fails; the broker's own copy of an agent is not a source, and an agent the broker lists but the ledger does not is not resolvable under this profile.
 `Conformance:` T-P6-5 — a fixture whose anchors carry no registration for the address, whose profile `uaid` disagrees with the address in identifier or `nativeId`, whose recomputed AID differs from a `uaid:aid` address's identifier, or whose profile lacks `properties.wishmail` resolves to `RESOLVE_NOT_FOUND`; a fixture registered by `uaid` and `t_id` under a key other than its own account's resolves with `blurred`; one registered by `account_id` resolves through §9.2 and carries that rule's endorsements beside `blurred`; one registered under its own account's key resolves without `blurred`; a fixture whose broker label differs from its anchored `registry` parameter resolves identically.
 
 **Inputs, locator, snapshot.** The registration message and, by its shape, either the HCS-2 entry and HCS-1 file or the account memo and HCS-1 file — on consensus; the locator is `{ledgerTag, anchorTopic, sequenceNumber}` and, for the account-memo shape, §9.2's locator beside it; a snapshot only where §9.2's second form carries one.
@@ -1599,6 +1607,9 @@ A Verifier MUST NOT change an envelope's standing, or any proof's standing, on t
 
 A Verifier MUST appraise a resolution proof against the declaration its inputs locate or snapshot, and MUST NOT lower a proof's standing because the recipient's declaration changed after `resolvedAt`.
 `Conformance:` T-P8-4 — a fixture recipient rotates its epoch and re-declares after an envelope is SETTLED; the envelope's resolution appraises verified, its `ke` matches the coordinates it was sealed with, and the later declaration appears only under `observations`.
+
+<!-- CHANGED: D-152 -->
+**Which canonical order matched (§9.1).** An agent identifier is compared under both of HCS-14's canonical key orders, the lexicographic one first. Which of them matched is a fact about the registration a Verifier read and not about the correspondence, and it changes nothing: a match under either is agreement, and neither is weaker. It is reported under `observations.agentIdOrder`, one entry per address compared, each naming the address and the order that matched.
 
 **The mirror's integrity.** A Verifier MAY check the mirror node it read through: that the sequence numbers of a topic are contiguous over the window, and that each message's running hash follows from the one before it under the ledger's construction. What it finds is reported under `observations.integrity`. This version does not require the check and does not fix the construction; a Verifier that performs it is checking its mirror, not the correspondence, and a mirror that fails it is read again through another (§11.1).
 
@@ -2055,7 +2066,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136, D-145, D-146, D-150 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2152,6 +2163,7 @@ D-136  Rate-priced methods; prices are decimal strings                §5.4, §1
 D-145  validFrom dropped from the price list                          §14.3
 D-146  Provisioned topics: the admin key is the agent's               §4.6
 D-150  Except where the standard forbids an admin key                 §4.6
+D-152  Agent identifiers compared under both canonical orders         §9.1, §9.2, §9.5, §5.10, §11.6
 ```
 
 ### 18.3 Concordance of identifiers (informative)

@@ -29,6 +29,7 @@ import { b64u, sha256hex } from '../core/canonical.js';
 import { WISHMAIL_SUITE, rawPrivate, rawPublic } from '../core/hpke.js';
 import { SEAL_INFO, generateRecipientKey, open, seal, weightOf } from '../core/seal.js';
 import { repoRoot } from '../ops/env.js';
+import { RELEASE } from '../release.js';
 
 const root = repoRoot();
 const vectorsDir = path.join(root, 'spec', 'vectors');
@@ -175,7 +176,7 @@ function build(): { aad: unknown; seal: unknown } {
   return {
     aad: {
       _readme: AAD_README,
-      spec: '0.5.3',
+      spec: RELEASE.spec,
       wireVersion: AAD_VERSION,
       section: '§7.2, with §5.6’s rebuild',
       conformance: ['T-P1-4'],
@@ -184,7 +185,7 @@ function build(): { aad: unknown; seal: unknown } {
     },
     seal: {
       _readme: SEAL_README,
-      spec: '0.5.3',
+      spec: RELEASE.spec,
       section: '§7.3',
       conformance: ['T-P1-5'],
       generated: new Date().toISOString().slice(0, 10),

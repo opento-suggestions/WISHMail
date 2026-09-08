@@ -120,7 +120,7 @@ for (const name of TOOL_NAMES) {
 // --- The claim and the scaffold agree. --------------------------------------
 is('the release claims no class', [...RELEASE.classes], []);
 is('and no extension', [...RELEASE.extensions], []);
-is('and declares the specification version', RELEASE.spec, '0.5.3');
+is('and declares the specification version', RELEASE.spec, '0.5.4');
 is('and the wire minor version', RELEASE.minorVersion, '0.5');
 checked += 1;
 try {

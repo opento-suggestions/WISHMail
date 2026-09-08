@@ -2,6 +2,38 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.4] — 2026-09-08
+
+A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). One schema changes, which a patch permits **only because nothing is registered under HCS-13 yet**; `registeredSchemas` is null throughout (T-P9-9), and after registration the same addition would be 0.6. No test is added, moved or removed: the register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways. Nothing conforms — T-P9-2 blocks every claim while thirty pins are null — which is why this is a patch and not a minor version (D-134's and D-146's reasoning).
+
+**Nothing has been submitted to `hedera:testnet`.** The `hcs14` declaration is still gated and unsigned on ledger §G item 12.
+
+### Changed
+
+- **An agent identifier is compared under both of HCS-14's canonical key orders, the lexicographic one first, and a match under either is agreement** (D-152). The pinned revision fixes the key order of the canonical JSON twice and differently — the step it marks normative sorts keys lexicographically and its reference code does that (`index.md:541`, `:585`), while its own worked example places `skills` first (`:697-706`) — and the two are different bytes, so different identifiers for the same agent. Its test vectors publish the expected value as the literal placeholder `uaid:aid:{base58hash}`, so the document courts neither reading and the contradiction is invisible from the text.
+
+  **The ledger is unanimous, and the census is the evidence.** FETCHED 2026-09-08, mirror-node REST only: of the fourteen newest `uaid:aid:` registrations on the testnet anchor `0.0.6913983` plus the agent at `0.0.7124407` — **15 of 15 reproduce under the example order, 0 under the normative one**, across two protocols, two registry labels and three skill sets. The newest is sequence 380, 2025-11-18T22:05:58Z, `proto=a2a`, `registry=hashgraph-online`; `0.0.7124407` is sequence 153, 2025-10-24T22:10:46Z, `proto=hcs-10`, `registry=hol`. Both are now vectors in `npm run check:hcs14`. **[CC]** found and surveyed, **[S]** ruled.
+
+  §9.1 gains the rule and its `Conformance:` note naming T-P6-3 and T-P6-5; §9.2's and §9.5's identifier comparisons point at it. Trying the normative order **first** is the substance: it makes the second a fallback rather than a preference, so an upstream fix would simply stop the fallback firing.
+
+- **§5.10's `observations` gains `agentIdOrder[]`, and §11.6 the paragraph that says what it is** (D-152). One entry per address compared, naming the address and the order that matched. It is an observation and only an observation: excluded from the evidence digest, bearing on no state or standing, so two Verifiers agree byte for byte whatever they report (P-3) and no appraisal moves (P-12). It is deliberately **not** an endorsement — §5.3's endorsements are a fixed enum and they move standings.
+
+- **`spec/schemas/evidence-bundle.schema.json`** gains `observations.agentIdOrder`. The object was already open — it carries no `additionalProperties: false` — so the schema did not forbid the field; what needed the change was §5.10's shape block, which enumerates what a reader looks for.
+
+- **§A's T-P6-3 and T-P6-5 sketches gain one legacy-order fixture agent each** (D-152). An expansion of a test's scope, which CLAUDE.md §4 makes a decision rather than an edit. Each must resolve, carry the endorsements its rule assigns **and no others** — a legacy-order match is not a reason for `blurred` — and produce an `observations.agentIdOrder` entry.
+
+- **`LIMITATIONS.md` L-7** gains the paragraph a reader of this release needs: that a Draft standard can contradict itself in a way that changes an identifier, that this one does, that it was found by reading the ledger rather than the text, and that the general case has no remedy we can supply.
+
+### Added
+
+- **Ledger §G.5 gains item (b): the HCS-14 defect, drafted for upstream submission.** The proposal is to amend step 3 and the reference function to the example's order, since changing the deployed order would orphan every existing identifier, and to replace `{base58hash}` in both test vectors with the computed value so the next implementer finds the answer in the document rather than on the ledger. A second, smaller inconsistency travels with it: the reference function's DID parameter order disagrees with Test Vector 1's.
+
+- **`matchAgentId`** in `app/src/core/hcs14.ts` — the rule, normative order first, returning which matched or `null` for neither.
+
+One `CHANGED` marker gains a decision and two are new: §9.1, §5.10 and §11.6 carry `D-152`, and §18.2's index marker becomes `D-135, D-136, D-145, D-146, D-150, D-152`.
+
+**Still open, and unchanged by this patch:** which order WISHMail emits for its **own** declaration (§G item 12). `CANONICAL_ORDER` stays `undefined` and every caller names an order, because an HCS-1 file topic has no admin key and that choice is permanent.
+
 ## [0.5.3] — 2026-09-08
 
 A patch: text and tests within minor version `0.5`. **No wire string changes** — the AAD's `v`, the HPKE `info`, the schemas' `$id`s and `spec/pins.json`'s `wireStrings` all stay at `0.5` (§1.7). **No schema changes.** No test is added, moved or removed: the register stays at 83 (78 core + 5 extension) and the extract-and-diff passes both ways. It is a patch and not a minor version on D-134's and D-146's reasoning — nothing conforms, because T-P9-2 blocks every claim while thirty pins in `spec/pins.json` are null.

@@ -272,6 +272,31 @@
         "disagreement": {
           "type": "array"
         },
+        "agentIdOrder": {
+          "type": "array",
+          "description": "Which of HCS-14’s two canonical key orders matched when an agent identifier was recomputed (§9.1, §11.6). One entry per address compared. An observation: it bears on no state or standing, and a match under either order is agreement.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "address": {
+                "type": "string"
+              },
+              "order": {
+                "type": "string",
+                "enum": [
+                  "normative",
+                  "example"
+                ]
+              }
+            },
+            "required": [
+              "address",
+              "order"
+            ],
+            "additionalProperties": false
+          },
+          "$comment": "D-152. T-P6-3, T-P6-5."
+        },
         "integrity": {}
       },
       "required": [

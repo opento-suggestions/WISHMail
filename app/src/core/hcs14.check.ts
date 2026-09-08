@@ -18,6 +18,7 @@ import {
   agentIdHash,
   base58,
   canonicalAgentJson,
+  matchAgentId,
   parseUaid,
   uaid,
 } from './hcs14.js';
@@ -64,47 +65,92 @@ is('base58 of 0x3a carries into two digits', base58(Buffer.from([0x3a])), '21');
 
 // --- The live agent, both ways. --------------------------------------------
 is(
-  'the deployed order reproduces the on-chain identifier',
-  agentIdHash(BOB, 'deployed'),
+  'the example order reproduces the on-chain identifier',
+  agentIdHash(BOB, 'example'),
   ON_CHAIN,
 );
 ok(
-  'the lexicographic order does not',
-  agentIdHash(BOB, 'lexicographic') !== ON_CHAIN,
+  'the normative order does not',
+  agentIdHash(BOB, 'normative') !== ON_CHAIN,
 );
 is(
-  'the deployed canonical JSON is skills-first',
-  canonicalAgentJson(BOB, 'deployed'),
+  'the example canonical JSON is skills-first',
+  canonicalAgentJson(BOB, 'example'),
   '{"skills":[0,4],"name":"Bob","nativeId":"hedera:testnet:0.0.7124407","protocol":"hcs-10","registry":"hol","version":"1.0"}',
 );
 is(
-  'the lexicographic canonical JSON is what the reference code emits',
-  canonicalAgentJson(BOB, 'lexicographic'),
+  'the normative canonical JSON is what the reference code emits',
+  canonicalAgentJson(BOB, 'normative'),
   '{"name":"Bob","nativeId":"hedera:testnet:0.0.7124407","protocol":"hcs-10","registry":"hol","skills":[0,4],"version":"1.0"}',
 );
 is('CANONICAL_ORDER is not yet ruled', CANONICAL_ORDER, undefined);
 
+// --- A second live agent, and the newest on the anchor. ---------------------
+//
+// One live value proves an algorithm can reproduce one value. Two, of different
+// protocol, registry, skills and name shape, twenty-five days apart, is what
+// makes the finding about the standard rather than about one agent.
+//
+// Sequence 380 on the HOL testnet anchor 0.0.6913983, consensus
+// 1763503558.796733702 (2025-11-18T22:05:58Z) — the newest registration the
+// anchor carries. Its profile was read through the register's `t_id` to an
+// HCS-2 registry to an HCS-1 file whose memo digest matched the decompressed
+// bytes, from a mirror node.
+const NEWEST = {
+  registry: 'hashgraph-online',
+  name: 'AgentVerse Local Bridge (sdk-agentverse-demo-1763503536585)',
+  version: '1.0',
+  protocol: 'a2a',
+  nativeId: '127.0.0.1',
+  skills: [0],
+} as const;
+const NEWEST_ON_CHAIN = '7wC7Cm3h2TGrCa4YA7uSQKp7Fht756tRtCJniaUdbAa4DNrj6fqsUxxKm2AysYkTwy';
+
+is(
+  'the newest anchor registration reproduces under the example order',
+  agentIdHash(NEWEST, 'example'),
+  NEWEST_ON_CHAIN,
+);
+ok(
+  'and not under the normative one',
+  agentIdHash(NEWEST, 'normative') !== NEWEST_ON_CHAIN,
+);
+
+// --- §9.1's dual-order match (D-152). --------------------------------------
+is('matchAgentId finds the example order for the older agent', matchAgentId(BOB, ON_CHAIN), 'example');
+is('matchAgentId finds it for the newest too', matchAgentId(NEWEST, NEWEST_ON_CHAIN), 'example');
+is(
+  'matchAgentId returns null when neither order matches',
+  matchAgentId(BOB, 'z'.repeat(60)),
+  null,
+);
+is(
+  'a normative-order identifier is accepted, and named as such',
+  matchAgentId(BOB, agentIdHash(BOB, 'normative')),
+  'normative',
+);
+
 // --- Normalization (index.md:355-359). --------------------------------------
 is(
   'registry and protocol are lowercased and strings trimmed',
-  agentIdHash({ ...BOB, registry: '  HOL ', protocol: 'HCS-10' }, 'deployed'),
+  agentIdHash({ ...BOB, registry: '  HOL ', protocol: 'HCS-10' }, 'example'),
   ON_CHAIN,
 );
 is(
   'skills are sorted numerically, not lexically',
-  agentIdHash({ ...BOB, skills: [4, 0] }, 'deployed'),
+  agentIdHash({ ...BOB, skills: [4, 0] }, 'example'),
   ON_CHAIN,
 );
 ok(
   'a changed nativeId is a changed identifier',
-  agentIdHash({ ...BOB, nativeId: 'hedera:testnet:0.0.7124408' }, 'deployed') !== ON_CHAIN,
+  agentIdHash({ ...BOB, nativeId: 'hedera:testnet:0.0.7124408' }, 'example') !== ON_CHAIN,
 );
 
 // --- Required fields are required. -----------------------------------------
 for (const field of ['registry', 'name', 'version', 'protocol', 'nativeId'] as const) {
   checked += 1;
   try {
-    agentIdHash({ ...BOB, [field]: '' }, 'deployed');
+    agentIdHash({ ...BOB, [field]: '' }, 'example');
     failures.push(`an empty ${field} was accepted, and must not have been`);
   } catch {
     /* refusing is the pass */
@@ -113,7 +159,7 @@ for (const field of ['registry', 'name', 'version', 'protocol', 'nativeId'] as c
 
 // --- The full UAID, and §9.2's comparison. ---------------------------------
 {
-  const full = uaid(BOB, { uid: '0.0.7124410@0.0.7124407' }, 'deployed');
+  const full = uaid(BOB, { uid: '0.0.7124410@0.0.7124407' }, 'example');
   const parsed = parseUaid(full);
   is('the identifier is the hash', parsed.identifier, ON_CHAIN);
   is('nativeId is carried as a parameter', parsed.parameters['nativeId'], BOB.nativeId);
@@ -145,7 +191,8 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `check:hcs14 PASS — ${checked} assertions. The deployed key order reproduces a live testnet agent's ` +
-    'on-chain UAID; the order the standard calls normative does not. CANONICAL_ORDER is unruled, so ' +
-    'nothing emits a UAID yet.',
+  `check:hcs14 PASS — ${checked} assertions. Two live testnet agents, twenty-five days apart and of ` +
+    'different protocol, registry and skills, both reproduce under the EXAMPLE order and neither under ' +
+    'the NORMATIVE one. matchAgentId accepts either, normative first (§9.1, D-152). CANONICAL_ORDER — ' +
+    'the order we emit for our own declaration — is unruled, so nothing emits a UAID yet.',
 );

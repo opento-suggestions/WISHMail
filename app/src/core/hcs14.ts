@@ -94,14 +94,14 @@ export function base58(bytes: Buffer): string {
 /**
  * Which key order the canonical JSON uses — the open question of this module.
  *
- * `lexicographic` is what the standard's normative step 3 says ("sort ...
+ * `normative` is what the standard's normative step 3 says ("sort ...
  * object keys lexicographically") and what its reference code does
  * (`Object.keys(canonical).sort()`, `index.md:585`).
  *
- * `deployed` puts `skills` first and the rest alphabetically, which is what the
+ * `example` puts `skills` first and the rest alphabetically, which is what the
  * standard's OWN "Canonical JSON" example shows (`index.md:697-706`) and what
  * every agent on the ledger actually has: it reproduces the live testnet
- * agent's on-chain identifier exactly, and `lexicographic` does not
+ * agent's on-chain identifier exactly, and `normative` does not
  * (`hcs14.check.ts`).
  *
  * The two produce different identifiers for the same agent. Which one WISHMail
@@ -110,9 +110,16 @@ export function base58(bytes: Buffer): string {
  * ruling lands, at which point it becomes the one answer and the callers stop
  * naming it.
  */
-export type KeyOrder = 'lexicographic' | 'deployed';
+export type KeyOrder = 'normative' | 'example';
 
-/** Unruled. See `KeyOrder`. */
+/**
+ * The order WISHMail EMITS for its own declaration. Unruled: ledger §G item 12.
+ *
+ * This is not the same question as which orders a rule ACCEPTS. §9.1 settles
+ * that (D-152): every rule accepts either, normative first. What is still open
+ * is the one order our own profile's `uaid` is written under, and it is open
+ * because an HCS-1 file topic has no admin key, so the choice is permanent.
+ */
 export const CANONICAL_ORDER: KeyOrder | undefined = undefined;
 
 export function canonicalAgentJson(agent: AgentData, order: KeyOrder): string {
@@ -137,7 +144,7 @@ export function canonicalAgentJson(agent: AgentData, order: KeyOrder): string {
     skills: [...(agent.skills ?? [])].sort((a, b) => a - b),
   };
 
-  if (order === 'lexicographic') {
+  if (order === 'normative') {
     // The reference code's form: a replacer ARRAY, which both filters the keys
     // and fixes their order. Not RFC 8785; for these six fields they agree.
     return JSON.stringify(canonical, Object.keys(canonical).sort() as never);
@@ -183,6 +190,29 @@ export function uaid(agent: AgentData, parameters: UaidParameters, order: KeyOrd
   params.push(`nativeId=${agent.nativeId.trim()}`);
   if (parameters.domain !== undefined) params.push(`domain=${parameters.domain}`);
   return `uaid:aid:${agentIdHash(agent, order)};${params.join(';')}`;
+}
+
+/**
+ * §9.1's dual-order match: recompute the identifier under the **normative**
+ * order first and, if that does not match, under the **example** order; accept
+ * a match under either; report which matched.
+ *
+ * The normative order is tried first because it is the one the standard marks
+ * normative, and trying it first is what makes the fallback a fallback rather
+ * than a preference. `null` is "matches under neither", which is a mismatch and
+ * not a third order.
+ *
+ * A Verifier reports the answer under `observations.agentIdOrder` (§11.6): it
+ * is a fact about how the rule found its match and it bears on no standing,
+ * which is exactly what an observation is.
+ *
+ * Conformance: T-P6-3, T-P6-5.
+ */
+export function matchAgentId(agent: AgentData, identifier: string): KeyOrder | null {
+  for (const order of ['normative', 'example'] as const) {
+    if (agentIdHash(agent, order) === identifier) return order;
+  }
+  return null;
 }
 
 /**
