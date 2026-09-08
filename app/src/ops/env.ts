@@ -71,3 +71,36 @@ export function readSecret(name: string): string {
   ensureLoaded();
   return required(name);
 }
+
+/**
+ * Write a value into the git-ignored root `.env`, preserving comments and order.
+ * The only writer of key material anywhere in this project (D-149's successor
+ * rule: nothing prints a key; generated keys go straight to `.env`).
+ *
+ * Refuses to overwrite a non-blank value: a provisioning re-run must never
+ * silently replace the key that owns an entity already on consensus.
+ */
+export function upsertEnvValue(name: string, value: string): 'written' | 'kept' {
+  const file = path.join(ensureLoaded(), '.env');
+  const raw = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+  const lines = raw.split(/\r?\n/);
+  const i = lines.findIndex((l) => l.startsWith(`${name}=`));
+  if (i >= 0) {
+    const existing = lines[i]!.slice(name.length + 1).trim();
+    if (existing) return 'kept';
+    lines[i] = `${name}=${value}`;
+  } else {
+    if (lines.length && lines[lines.length - 1] === '') lines.pop();
+    lines.push(`${name}=${value}`, '');
+  }
+  fs.writeFileSync(file, lines.join(eol));
+  process.env[name] = value;
+  return 'written';
+}
+
+/** True when `.env` carries a non-blank value for `name`. */
+export function envHas(name: string): boolean {
+  ensureLoaded();
+  return Boolean(process.env[name]?.trim());
+}

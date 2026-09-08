@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "provision": "tsx src/ops/provision.ts",
-    "probe": "tsx src/ops/probe.ts"
+    "probe": "tsx src/ops/probe.ts",
+    "provision:plan": "tsx src/ops/provision.ts --dry-run"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

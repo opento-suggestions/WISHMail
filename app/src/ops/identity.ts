@@ -13,7 +13,7 @@
  * no caller changes.
  */
 import { PrivateKey, type PublicKey } from '@hashgraph/sdk';
-import { readSecret } from './env.js';
+import { envHas, readSecret, upsertEnvValue } from './env.js';
 
 export interface Signer {
   /** A role name for the record. Never a key. */
@@ -47,4 +47,24 @@ export function bornHere(label: string): Signer {
 /** The raw hex of a signer's public half — safe to record, and what the mirror node returns. */
 export function publicHex(s: Signer): string {
   return s.publicKey.toStringRaw();
+}
+
+/**
+ * Recover the identity behind `<PREFIX>_DER_KEY`, or generate one and persist
+ * it, and return only a Signer either way.
+ *
+ * The DER string is produced and handed to `upsertEnvValue` **inside this
+ * module**: it is never returned to a caller, never printed, and never passed
+ * through provisioning code. `upsertEnvValue` refuses to overwrite a non-blank
+ * value, so a re-run can never orphan an entity whose key already exists.
+ */
+export function persistentIdentity(
+  label: string,
+  prefix: 'TREASURY' | 'AGENT',
+): { readonly signer: Signer; readonly origin: 'recovered' | 'generated' } {
+  const varName = `${prefix}_DER_KEY`;
+  if (envHas(varName)) return { signer: fromEnv(label, varName), origin: 'recovered' };
+  const key = PrivateKey.generateED25519();
+  upsertEnvValue(varName, key.toStringDer());
+  return { signer: wrap(label, key), origin: 'generated' };
 }
