@@ -16,6 +16,7 @@
     "check:vectors": "tsx src/vectors/vectors.check.ts",
     "check:store": "tsx src/state/store.check.ts",
     "check:mcp": "tsx src/mcp/server.check.ts",
+    "check:hcs14": "tsx src/core/hcs14.check.ts",
     "mcp": "tsx src/mcp/server.ts"
   },
   "dependencies": {
