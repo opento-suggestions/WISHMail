@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:tool:ack:input",
+  "title": "ack input",
+  "description": "§6.6 — ack(envelopeId) -> ReturnReceipt. The sender funded it; the recipient pays nothing (P-16).",
+  "type": "object",
+  "properties": {
+    "envelopeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The AAD hash of §7.2, lowercase hex."
+    }
+  },
+  "required": ["envelopeId"],
+  "additionalProperties": false
+}

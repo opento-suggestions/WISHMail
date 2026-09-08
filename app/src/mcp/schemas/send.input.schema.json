@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:tool:send:input",
+  "title": "send input",
+  "description": "§6.4 — send(coordinates, payload, returnReceipt = false, window?) -> Postmark | AttemptedDeliverySlip.",
+  "type": "object",
+  "properties": {
+    "coordinates": {
+      "$ref": "urn:wishmail:0.5:mail-coordinates",
+      "description": "Must carry a resolution proof, or SEND_UNRESOLVED (§6.4)."
+    },
+    "payload": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "§6.4: 'payload is bytes'. Carried base64 because a tool input is JSON. One AEAD operation covers the whole of it (§7.3); what does not fit in an envelope is referenced from inside one (§7.5)."
+    },
+    "returnReceipt": {
+      "type": "boolean",
+      "default": false,
+      "description": "§7.7. When true, postage includes the receipt fee and chunk 0's header requests it."
+    },
+    "window": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Seconds to wait at first contact for the recipient to answer the doorbell. When it closes, send returns an AttemptedDeliverySlip and stops - a result, not a failure (F-6, P-14)."
+    }
+  },
+  "required": ["coordinates", "payload"],
+  "additionalProperties": false
+}

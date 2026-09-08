@@ -18,6 +18,8 @@
     "check:register": "node scripts/extract-and-diff.mjs",
     "check:seal": "npm run check:seal --workspace app",
     "check:schemas": "npm run check:schemas --workspace app",
-    "check:vectors": "npm run check:vectors --workspace app"
+    "check:vectors": "npm run check:vectors --workspace app",
+    "check:store": "npm run check:store --workspace app",
+    "check:mcp": "npm run check:mcp --workspace app"
   }
 }

@@ -13,10 +13,14 @@
     "check:seal": "tsx src/core/seal.check.ts",
     "check:schemas": "tsx src/schema/loader.check.ts",
     "vectors": "tsx src/vectors/generate.ts",
-    "check:vectors": "tsx src/vectors/vectors.check.ts"
+    "check:vectors": "tsx src/vectors/vectors.check.ts",
+    "check:store": "tsx src/state/store.check.ts",
+    "check:mcp": "tsx src/mcp/server.check.ts",
+    "mcp": "tsx src/mcp/server.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "canonicalize": "^4.0.0",

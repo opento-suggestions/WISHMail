@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:delivery",
+  "title": "Delivery",
+  "description": "§6.5's Delivery — {envelope, opened: bool, payload?, reason?, returnReceipt?}. It lives here and not in spec/schemas/ because §18.5 fixes the fourteen files there by name and Delivery is not among them: §6.5 defines it in prose, as the shape inbox returns, and adding a fifteenth file would be a specification change (§1.7). Reported as a divergence with the Step 3 record.",
+  "type": "object",
+  "properties": {
+    "envelope": { "$ref": "urn:wishmail:0.5:envelope" },
+    "opened": { "type": "boolean" },
+    "payload": { "type": "string", "contentEncoding": "base64", "description": "Present exactly when opened is true." },
+    "reason": {
+      "type": "string",
+      "enum": ["INBOX_INCOMPLETE", "INBOX_UNBOUND", "INBOX_UNSTAMPED", "INBOX_EPOCH_UNKNOWN", "INBOX_SCHEMA_UNRESOLVED"],
+      "description": "§6.5's reasons on an unopened delivery. None of these is a failure of the tool (P-12)."
+    },
+    "returnReceipt": { "$ref": "urn:wishmail:0.5:return-receipt" }
+  },
+  "required": ["envelope", "opened"],
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:tool:resolve:input",
+  "title": "resolve input",
+  "description": "§6.2 — resolve(address, profile?) -> MailCoordinates. A release artifact, not a specification schema: §18.5 fixes the fourteen files in spec/schemas/ and the tools' inputs are not among them. T-P15-4 is what binds it — the tool schemas served by every transport in the release are identical after canonicalization.",
+  "type": "object",
+  "properties": {
+    "address": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The typed address. Well-formed for at least one profile the implementation supports, or RESOLVE_UNSUPPORTED_ADDRESS."
+    },
+    "profile": {
+      "type": "string",
+      "enum": ["hcs14", "dns", "nanda", "hol"],
+      "description": "§9's profile identifier. Optional; when given, the address must be of that profile's kind, or RESOLVE_PROFILE_MISMATCH."
+    }
+  },
+  "required": ["address"],
+  "additionalProperties": false
+}

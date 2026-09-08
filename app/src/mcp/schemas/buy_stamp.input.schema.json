@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:tool:buy_stamp:input",
+  "title": "buy_stamp input",
+  "description": "§6.3 — buy_stamp(count, payment, holder) -> StampReceipt. P-13: no field here carries private-key material, and none ever will; the buyer signs in its own process (§14.2).",
+  "type": "object",
+  "properties": {
+    "count": { "type": "integer", "minimum": 1, "description": "Stamps to buy. §6.3: count >= 1." },
+    "payment": {
+      "description": "§14.2's two legs. The method must be one the Postmaster publishes on its price topic, or STAMP_METHOD_UNSUPPORTED.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "method": { "const": "x402-usdc" },
+            "network": { "type": "string", "description": "CAIP-2, as the price list names it." }
+          },
+          "required": ["method"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "method": { "const": "hbar" },
+            "signedTransaction": {
+              "type": "string",
+              "description": "The buyer's signature over the purchase body, base64. The Postmaster MUST NOT submit a purchase transaction without it (§14.2, T-P13-3)."
+            }
+          },
+          "required": ["method"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "holder": {
+      "description": "§6.3: {account} | {publicKey}. A public key with no account is the leg P-16 names - the transfer creates the account that holds the stamps (§4.6).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "account": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" } },
+          "required": ["account"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": { "publicKey": { "type": "string", "minLength": 1, "description": "The buyer's PUBLIC half. Never a private key (P-13)." } },
+          "required": ["publicKey"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": ["count", "payment", "holder"],
+  "additionalProperties": false
+}

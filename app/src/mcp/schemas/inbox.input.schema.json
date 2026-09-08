@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:tool:inbox:input",
+  "title": "inbox input",
+  "description": "§6.5 — inbox(since?, lane?) -> [Delivery]. inbox writes nothing; reading a lane leaves no mark on it (D-29).",
+  "type": "object",
+  "properties": {
+    "since": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "A Hedera consensus timestamp, seconds.nanos (§5.1)."
+    },
+    "lane": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "One lane. Absent means every lane of the caller's."
+    }
+  },
+  "additionalProperties": false
+}
