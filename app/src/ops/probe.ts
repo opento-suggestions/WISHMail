@@ -114,9 +114,9 @@ async function main(): Promise<void> {
       return r.entityId!;
     };
 
-    treasuryId = await mkAccount(treasury, 12);
-    const ownerId = await mkAccount(owner, 8);
-    const strangerId = await mkAccount(stranger, 8);
+    treasuryId = await mkAccount(treasury, 5);
+    const ownerId = await mkAccount(owner, 3);
+    const strangerId = await mkAccount(stranger, 3);
 
     // ---- 2. the token, born at zero (D-149) ------------------------------
     const tokenCreate = must(
@@ -228,17 +228,24 @@ async function main(): Promise<void> {
         .setAutoRenewAccountId(env.operatorId)
         .setCustomFees([fee])
         .setFeeExemptKeys([owner.publicKey])
-        .setMaxTransactionFee(new Hbar(20));
+        .setMaxTransactionFee(new Hbar(100));
 
     // First without the collector's signature, to learn whether one is required.
     let topicCreate = await submit(client, env.operatorId, buildTopic());
-    let collectorSignatureRequired = false;
+    let collectorSignatureRequired: boolean | 'unknown' = false;
     if (!topicCreate.ok) {
-      record('topic:create-attempt-1', 'without the fee collector signing — failed, retrying with it', {
+      record('topic:create-attempt-1', 'attempted WITHOUT the fee collector signing', {
         status: topicCreate.status,
       });
-      collectorSignatureRequired = true;
-      topicCreate = await submit(client, env.operatorId, buildTopic(), [treasury]);
+      if (topicCreate.status === 'INVALID_SIGNATURE') {
+        // The only status that answers "must the collector sign?". Anything else
+        // is a different question, and inferring from it would put a false
+        // FETCHED into ledger §H.
+        collectorSignatureRequired = true;
+        topicCreate = await submit(client, env.operatorId, buildTopic(), [treasury]);
+      } else {
+        collectorSignatureRequired = 'unknown';
+      }
     }
     must(topicCreate, 'create the probe topic');
     topicId = topicCreate.entityId!;
@@ -320,9 +327,13 @@ async function main(): Promise<void> {
       newExemptKey: publicHex(owner2),
     });
 
-    const topicAfter = await mirror.poll<Record<string, unknown>>(
+    // The predicate must be the CHANGE, not "any answer": a mirror node that has
+    // not yet ingested the update answers with the pre-update list and a poll of
+    // () => true accepts it. Run 1 of this probe recorded exactly that stale read.
+    const owner2Hex = publicHex(owner2);
+    const topicAfter = await mirror.poll<{ fee_exempt_key_list?: { key: string }[] }>(
       `/topics/${topicId}`,
-      () => true,
+      (t) => (t.fee_exempt_key_list ?? []).some((k) => k.key === owner2Hex),
     );
     record('topic:readback-after-update', 'RAW mirror-node JSON', topicAfter);
 
