@@ -88,6 +88,48 @@ maxSupply, decimals, treasuryAccountId, isSupplyKey
 
 HCS-10 offers a fee-gated inbound topic at `index.md:113` — "Public (No Key), Submit Key, or Fee-gated (HIP-991)" — and HIP-991 has supported topic fees denominated in a fungible HTS token since release 0.59.5. The gap is in the tooling, not in the standards, and naming it precisely is part of supporting the incumbent rather than working around it. Recorded in the working ledger's §H as a dated finding.
 
+## DIVERGENCE — an envelope chunk is frozen through the base class, not through `TopicMessageSubmitTransaction`
+
+**Status:** scoped to one operation — the HCS-10 `message` operation carrying an envelope chunk. **Date:** 2026-09-08. **Requirement that forces it:** §7.4, and T-P9-7.
+
+§7.4 is unambiguous: every chunk "MUST be submitted as one HCS message with no transport-layer chunking", and T-P9-7 checks that every fixture message "carries no `chunkInfo`". `@hashgraph/sdk`'s `TopicMessageSubmitTransaction` cannot express that. Its `freezeWith` sets `_chunkInfo` inside the chunk loop that builds the signed transactions, so **every** message it produces carries the field — including a single-chunk one, where it says `{total: 1, number: 1}`.
+
+**The evidence that it is real is on consensus, not in the source.** Our own price-list message at `0.0.10426551` sequence 1 carries `chunk_info {"initial_transaction_id":…,"number":1,"total":1}` on the mirror node. That message is a §14.3 price list and not an envelope, so §7.4 does not reach it; it stands here as proof that the default path does what the source says it does, in a message we have already published and cannot alter.
+
+**The divergence.** `app/src/ops/hcs10.ts` defines `UnchunkedTopicMessageSubmitTransaction`, which overrides `freezeWith` to call `Transaction.prototype.freezeWith` and overrides nothing else. `_makeTransactionData()` omits the field entirely when `_chunkInfo` is null, and the base class never sets it, so the field is absent rather than empty.
+
+**The evidence that the override is exact.** Both bodies were built with the same topic, message, memo and transaction id, and **decoded from their own protobuf bytes locally** — nothing was submitted, because a chunk carrying `chunkInfo` fails T-P9-7 permanently and a consensus message cannot be withdrawn:
+
+```
+--- ordinary TopicMessageSubmitTransaction
+  memo:      "hcs-10:op:6:3"
+  topicID:   0.0.7000001
+  message:   109 bytes, sha256 dfc2e1d591698d208370dfb9e5342ed336064fff0d69a68b71e81ae6964d00f8
+  chunkInfo: {"initialTransactionID":{"transactionValidStart":{"seconds":1788894030,"nanos":895915675},
+              "accountID":{"shardNum":0,"realmNum":0,"accountNum":8641261},"scheduled":false},
+              "total":1,"number":1}
+
+--- UnchunkedTopicMessageSubmitTransaction
+  memo:      "hcs-10:op:6:3"
+  topicID:   0.0.7000001
+  message:   109 bytes, sha256 dfc2e1d591698d208370dfb9e5342ed336064fff0d69a68b71e81ae6964d00f8
+  chunkInfo: null
+```
+
+The memo, the topic and the message bytes are identical across the two; `chunkInfo` is the only field that differs. `npm run check:hcs10` reruns that comparison, **including its negative half** — it asserts that the ordinary path *does* carry the field — so the override is demonstrated on every run rather than asserted once here. If a later SDK release stops attaching it, that assertion fails and this section is what gets read.
+
+### What follows
+
+The override is used for envelope chunks and for nothing that is not one. Every other operation this implementation submits — the price list, the profile chunk, the schema files, the registry entries, the connection operations — is built by the SDK unmodified, because none of them is subject to §7.4.
+
+### This is where "HCS-10 by hand vs SDK" is settled
+
+STATUS §6 held that open, and the evidence settles it narrowly: the SDK's transaction classes, with one override, scoped to the one operation whose wire form the specification constrains. Not a hand-rolled protobuf, and not the SDK unmodified. The confirmation is the first chunk on consensus: if the mirror shows `chunk_info` on it, the step stops there.
+
+### Not a complaint
+
+`chunkInfo` is correct behaviour for the API it belongs to — it is how a caller sends a message larger than one HCS transaction, and HCS-10 delegates anything past one kilobyte to HCS-1 for that reason. WISHMail stays under the line and does not delegate (§7.4), which is a choice this specification makes and not a gap in the SDK. The divergence is recorded because a reader of the wire needs to know why our chunks look unlike every other SDK-built message on the network.
+
 ## The HIP-991 probe — gate report, before any signature
 
 **Status: RUN 2026-09-08. Every assertion below held, and §6 carries what was observed.** This section was written and committed before the first transaction this build submits to consensus, so that the record shows what was intended before it was done rather than after. Ruled 2026-09-08 (D-149), amended the same day to fix the payer of the exempt case. §§1–5 are the intent as it stood before the first signature and are left unedited; §6 is what happened.
