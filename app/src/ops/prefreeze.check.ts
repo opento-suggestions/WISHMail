@@ -35,14 +35,28 @@ import {
   sha256hex,
 } from '../core/canonical.js';
 import { proofInputs, proofLocation, type Endorsement } from '../core/proof.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { budget, profileBudgets, CHUNK_WIRE_MAX } from './budget.js';
 import { repoRoot } from './env.js';
 import { schemas, type SchemaName } from '../schema/loader.js';
 
 const registry = schemas(repoRoot());
 
+// Read the bound out of the registered schema rather than restating it, so the
+// specification's N, the schema's maxLength and this check cannot drift apart.
+const SCHEMA_STATEMENT_MAX = (() => {
+  const raw = JSON.parse(
+    readFileSync(join(repoRoot(), 'spec', 'schemas', 'proof.schema.json'), 'utf8'),
+  ) as { properties: { meaning: { properties: { statement: { maxLength?: number } } } } };
+  return raw.properties.meaning.properties.statement.maxLength ?? -1;
+})();
+
 let assertions = 0;
 let failures = 0;
 const openFindings: string[] = [];
+/** Shapes that exceed §9.1's budget and fall to its fallback sentence. */
+const overBudget: string[] = [];
 function ok(what: string, held: boolean, detail = ''): void {
   assertions += 1;
   if (!held) failures += 1;
@@ -80,10 +94,11 @@ const X25519 = 'Qu7g_QH2CtBSHxZ6NbbnPdomI536QDbgJ2bwmovCQF4';
 const REAL_UAID =
   'uaid:aid:7wC7Cm3h2TGrCa4YA7uSQKp7Fht756tRtCJniaUdbAa4DNrj6fqsUxxKm2AysYkTwy;uid=sdk-agentverse-demo-1763503536585;registry=hashgraph-online;proto=a2a;nativeId=127.0.0.1';
 
-// The statement the resolver actually writes today, at its actual length. A
-// short placeholder here would measure a manifest nobody produces.
-const REAL_STATEMENT =
-  'The account named by this address declares these coordinates under HCS-11, through the HCS-2 registry its memo names, in an HCS-1 file whose topic memo is the digest of the profile it holds.';
+// The statement the resolver actually writes, at its actual length — 68 bytes,
+// inside §9.1's budget of N = 70 (D-167). A short placeholder here would measure
+// a manifest nobody produces; a long one would measure a manifest the schema now
+// refuses.
+const REAL_STATEMENT = 'Declared under HCS-11 via the HCS-2 registry the account memo names.';
 
 /** §9.1: a manifest is one HCS message, whose body is {p, t, ...proof}. */
 const wireBytes = (proof: Record<string, unknown>): number =>
@@ -171,6 +186,20 @@ ok(
 console.log('');
 console.log('  3. One manifest per profile — §9, each with its own locator and snapshot rule');
 console.log('');
+{
+  const b = budget();
+  console.log("     §9.1's budget (D-167), computed per profile at each profile's own worst case:");
+  for (const pb of profileBudgets()) {
+    console.log(`       ${pb.id.padEnd(6)} fixed ${String(pb.fixed).padStart(4)}  leaves ${String(pb.left).padStart(4)}   ${pb.why}`);
+  }
+  console.log(`     smallest remainder: ${b.worst.id} at ${b.exact} -> N = ${b.N} bytes for meaning.statement plus any snapshot`);
+  ok(
+    `the registered schema bounds meaning.statement at N = ${b.N}`,
+    SCHEMA_STATEMENT_MAX === b.N,
+    `schema says ${SCHEMA_STATEMENT_MAX}`,
+  );
+  console.log('');
+}
 
 interface ProfileCase {
   readonly id: string;
@@ -180,6 +209,10 @@ interface ProfileCase {
   readonly snapshot?: unknown;
   readonly endorsements: readonly Endorsement[];
   readonly why: string;
+  /** The address form this profile accepts, at its short realistic length. */
+  readonly address: string;
+  /** The same profile at its LONGEST realistic address (§9's own grammar). */
+  readonly wideAddress: string;
 }
 
 const output = {
@@ -198,6 +231,8 @@ const profiles: readonly ProfileCase[] = [
   {
     // §9.2, first form. §9.1's table: inputs on consensus, math, no snapshot.
     id: 'hcs14',
+    address: FX.recipientAccount,
+    wideAddress: REAL_UAID,
     trustClass: 'math',
     locator: {
       ledgerTag: LEDGER,
@@ -216,6 +251,9 @@ const profiles: readonly ProfileCase[] = [
     // only where §9.2's second form carries one — which this shape does not.
     // `blurred` because the registration's payer is not the address's account.
     id: 'hol',
+    // §9.5 accepts a UAID and nothing else, so its short form IS a UAID.
+    address: REAL_UAID,
+    wideAddress: REAL_UAID,
     trustClass: 'math',
     locator: { ledgerTag: LEDGER, anchorTopic: FX.anchor, sequenceNumber: 380 },
     read: {
@@ -230,6 +268,9 @@ const profiles: readonly ProfileCase[] = [
     // §9.3: "the locator is {name, type: TXT, resolver, queryTime}; the snapshot
     // is the RRset bytes and RRSIGs". NOTE: no ledgerTag in this locator at all.
     id: 'dns',
+    // §9.3: `dns:<fqdn>`, never a UAID.
+    address: 'dns:example.test',
+    wideAddress: 'dns:a-fairly-long-agent-name.example.test',
     trustClass: 'social-committee',
     locator: { name: '_wishmail.example.test', type: 'TXT', resolver: '9.9.9.9', queryTime: '1757400000.000000000' },
     read: { rrset: ['v=wm1; l=hedera:testnet; a=0.0.7000301; d=0.0.7000302; m=0.0.7000304; k=' + X25519 + '; e=1'] },
@@ -245,6 +286,10 @@ const profiles: readonly ProfileCase[] = [
     // §9.4: "the locator is {indexHost, urn, fetchTime}; the snapshot is the
     // whole index_record". `blurred` always.
     id: 'nanda',
+    // §9.4: `nanda:<urn>@<index-host>`, never a UAID.
+    address: 'nanda:urn:ai:domain:example.test@index.example.test',
+    wideAddress:
+      'nanda:urn:ai:domain:a-fairly-long-agent-name.example.test:agent:correspondent-b@index.example.test',
     trustClass: 'social-committee',
     locator: { indexHost: 'index.example.test', urn: 'urn:ai:domain:example.test', fetchTime: '1757400000.000000000' },
     read: { index_record: { status: 'active', metadata: { 'org.wishmail': { v: 1 } } } },
@@ -272,10 +317,14 @@ const profiles: readonly ProfileCase[] = [
 
 const manifests: Record<string, Record<string, unknown>> = {};
 for (const p of profiles) {
+  const resolved = { ...output, address: p.address, profile: p.id };
   const parts = {
     rule: { id: p.id, revision: '0.5' },
-    inputs: proofInputs(p.locator, p.read, p.snapshot),
-    output: { ...output, profile: p.id },
+    // D-167: the locator carries `address` — the rule's own first input, and
+    // what a Verifier needs in order to re-run the rule at all.
+    inputs: proofInputs({ ...p.locator, address: p.address }, p.read, p.snapshot),
+    // D-167: {digest}, never the value. §5.2 already admitted the form.
+    output: { digest: sha256hex(canonicalBytes(resolved)) },
     meaning: {
       statement: REAL_STATEMENT,
       // Every profile's manifest is published on the SENDER's manifest topic,
@@ -311,14 +360,32 @@ for (const p of profiles) {
   // `output.address` is "the typed address, as resolved" and a UAID is 168
   // characters where an account id is 12.
   const short = wireBytes(manifest);
-  const wideOutput = { ...(manifest['output'] as Record<string, unknown>), address: REAL_UAID };
-  const wideParts = { rule: manifest['rule'], inputs: manifest['inputs'], output: wideOutput, meaning: manifest['meaning'] };
+  // The same manifest at this profile's LONGEST realistic address. D-167 moved
+  // the address out of `output` and into `inputs.locator`, so this is where a
+  // long address is now felt.
+  const wideResolved = { ...resolved, address: p.wideAddress };
+  const wideParts = {
+    rule: manifest['rule'],
+    inputs: proofInputs({ ...p.locator, address: p.wideAddress }, p.read, p.snapshot),
+    output: { digest: sha256hex(canonicalBytes(wideResolved)) },
+    meaning: manifest['meaning'],
+  };
   const wide = wireBytes({ ...wideParts, hash: canonicalDigest(wideParts as Record<string, unknown>) });
-  console.log(`       ${p.id.padEnd(6)} wire bytes: ${String(short).padStart(5)} at an account address, ${String(wide).padStart(5)} at a real UAID  (limit 1000)`);
-  if (short > 1000 || wide > 1000) {
-    openFindings.push(
-      `the ${p.id} manifest is ${short} bytes at an account address and ${wide} at a real UAID; §9.1's limit is 1000`,
+  const verdict = short <= CHUNK_WIRE_MAX && wide <= CHUNK_WIRE_MAX ? 'fits ' : 'OVER ';
+  console.log(
+    `       ${verdict} ${p.id.padEnd(6)} ${String(short).padStart(4)} short / ${String(wide).padStart(4)} at its longest address   (limit ${CHUNK_WIRE_MAX})`,
+  );
+  ok(`the ${p.id} manifest is one HCS message at its short address (T-P9-8)`, short <= CHUNK_WIRE_MAX, `${short} bytes`);
+  if (wide > CHUNK_WIRE_MAX) {
+    // §9.1's fallback, kept for exactly this: "where a snapshot would not fit,
+    // the manifest carries the snapshot's digest and the coordinates read, and
+    // the proof is replayable only while its source stands." Reported rather
+    // than trimmed, and the report says how far over and what carries it.
+    overBudget.push(
+      `${p.id} at its longest address is ${wide} bytes, ${wide - CHUNK_WIRE_MAX} over; §9.1's snapshot-to-digest fallback is what carries it`,
     );
+  } else {
+    ok(`the ${p.id} manifest is one HCS message at its longest address (T-P9-8)`, true);
   }
 }
 
@@ -546,28 +613,29 @@ if (failures > 0) {
 }
 
 if (openFindings.length > 0) {
-  console.log('  OPEN — ledger §G-17, raised and unruled:');
-  for (const f of openFindings) console.log(`    ${f}`);
-  console.log('');
-  console.log("    §9.1: 'a manifest MUST be one HCS message at or under CHUNK_WIRE_MAX bytes'");
-  console.log("    (T-P9-8), and CHUNK_WIRE_MAX is 1000 (§7.4, D-96). §5.2 requires a");
-  console.log("    meaning.statement and bounds its length nowhere. The two have no agreed");
-  console.log('    budget between them, and today the statement spends it.');
-  console.log('');
-  console.log('    Measured against the LIVE declaration on hedera:testnet, wire form:');
-  console.log('      hcs14, account address, first form            997   fits, by 3 bytes');
-  console.log('      hcs14, real UAID address                     1153   OVER by 153');
-  console.log('      hcs14, account address, second form          1056   OVER by 56  (D-107, T-P6-3)');
-  console.log('      hol,   real UAID address                     1056   OVER by 56');
-  console.log('      with the 190-character statement emptied      963   fits, by 37');
-  console.log('');
-  console.log('    So the only shape that fits is the one our own demo uses, and it fits by');
-  console.log('    three bytes. NOT a schema question as it stands, so it does NOT block the');
-  console.log('    freeze — unless the ruling is to bound the statement field in the schema, which');
-  console.log('    would have to land before Step 4. Ledger §G-17 states both candidates.');
-  console.log('');
+  console.error('  OPEN, unruled:');
+  for (const f of openFindings) console.error(`    ${f}`);
   process.exit(2);
 }
+
+if (overBudget.length > 0) {
+  // NOT a failure, and not hidden either. §9.1 keeps its fallback sentence for
+  // exactly this case, and D-167 kept it deliberately: "where a snapshot would
+  // not fit, the manifest carries the snapshot's digest and the coordinates
+  // read, and the proof is replayable only while its source stands."
+  console.log("  §9.1's fallback carries these, and the report says so rather than trimming them:");
+  for (const f of overBudget) console.log(`    ${f}`);
+  console.log('');
+  console.log('    What that costs, said plainly: a manifest that carries its snapshot as a');
+  console.log('    digest is replayable only while its source stands, and §9.4 says a nanda');
+  console.log("    answer's source never stands — 'a past answer cannot be re-obtained by");
+  console.log("    anyone'. So a nanda resolution at a long address is witnessed rather than");
+  console.log('    replayable, which is what its permanent blurred already declares (§9.4)');
+  console.log('    and what §11.4 appraises as unverified. No schema moves for it, and');
+  console.log('    nanda is not on the letter path this window (CLAUDE.md §11).');
+  console.log('');
+}
+
 console.log(
-  `check:prefreeze PASS — ${assertions} assertions: a rate-priced StampReceipt on the hbar leg, MailCoordinates carrying the recipient's manifest topic, one resolution manifest per profile with §9's own locator and snapshot rule for each, and an EvidenceBundle carrying a receipt in all four of §5.10's states with a hol resolution's observations. Nothing was signed and nothing was submitted.`,
+  `check:prefreeze PASS — ${assertions} assertions: a rate-priced StampReceipt on the hbar leg, MailCoordinates carrying the recipient's manifest topic, one resolution manifest per profile at both a short and its longest address with §9's own locator and snapshot rule for each and §9.1's budget re-derived from the profiles themselves, and an EvidenceBundle carrying a receipt in all four of §5.10's states with a hol resolution's observations. Nothing was signed and nothing was submitted.`,
 );

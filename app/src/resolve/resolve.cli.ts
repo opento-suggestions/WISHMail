@@ -21,7 +21,7 @@
 import { loadEnv } from '../ops/env.js';
 import { Mirror } from '../ops/mirror.js';
 import { schemas } from '../schema/loader.js';
-import { resolveHcs14 } from './hcs14.js';
+import { mirrorSource, resolveHcs14 } from './hcs14.js';
 
 const address = process.argv[2];
 if (address === undefined || address === '') {
@@ -55,7 +55,7 @@ console.log(`  mirror  ${env.mirrorNodeUrl}`);
 console.log(`  manifest ${manifestTopic}  (the caller's own; the proof's canonical location, §5.2)`);
 console.log('  keys, stamps, accounts, brokers configured: none (P-4)\n');
 
-const result = await resolveHcs14(mirror, env.constants.ledgerTag, address, manifestTopic);
+const result = await resolveHcs14(mirrorSource(mirror), env.constants.ledgerTag, address, manifestTopic);
 
 if ('failure' in result) {
   console.error(`  ${result.failure} — ${result.detail}`);

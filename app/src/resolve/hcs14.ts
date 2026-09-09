@@ -16,17 +16,51 @@
  * not re-obtainable, so the rule assigns `blurred` and carries the memo as a
  * snapshot (D-107).
  *
- * P-4: this reads a mirror node's REST API directly. A mirror node is a read
+ * P-4: this reads consensus data and nothing else. A mirror node is a read
  * interface, not a broker, and nothing here is configured, keyed, or paid for.
+ *
+ * ONE RULE, TWO READERS (D-167). The rule below runs over a `ProfileSource` —
+ * three reads, all of public data — rather than over a mirror-node client, so
+ * that `resolve` and a Verifier's REPLAY are the same code and cannot drift.
+ * They had drifted: §11.4 says a Verifier replays a resolution by running "the
+ * profile's rule under the profile the manifest names", and `verify`'s replay
+ * stopped at the registry entry because it had no way to read the profile file
+ * through its own port. It said so in a comment and appraised on a partial
+ * replay. D-167 makes the value recoverable only BY replay, so a partial replay
+ * is no longer a shortcut — it is an inability to appraise. Hence the port.
  *
  * Conformance: T-P6-1, T-P6-2, T-P6-3, T-P8-3, T-P12-1.
  */
-import { canonicalDigest } from '../core/canonical.js';
+import { canonicalBytes, canonicalDigest, sha256hex } from '../core/canonical.js';
 import { matchAgentId, parseUaid, type AgentData, type KeyOrder } from '../core/hcs14.js';
 import type { ProofLocation } from '../core/locator.js';
 import { proofInputs, proofLocation, type ProofInputs } from '../core/proof.js';
 import { readProfile } from '../ops/declaration.js';
 import type { Mirror } from '../ops/mirror.js';
+
+/**
+ * The fields the resolution proof's `output` digest covers (D-167).
+ *
+ * §5.3's MailCoordinates minus the three groups that are not the rule's output:
+ * `resolutionProof`, which is the proof's own reference and would hash the proof
+ * into itself; `trustClass` and `endorsements`, which live in `meaning`; and
+ * `resolvedAt`, which is the query's clock rather than the registry's answer and
+ * so is not reproducible by any later replay.
+ *
+ * ONE definition, because a writer and a reader both need it and a second
+ * spelling would produce a digest that matches itself and nothing else
+ * (CLAUDE.md §9). Canonical JSON sorts keys (RFC 8785), so only the SET of
+ * fields matters, not the order they are written in.
+ */
+export function resolvedFieldsOf(coordinates: MailCoordinates): Record<string, unknown> {
+  const { resolutionProof: _p, trustClass: _t, endorsements: _e, resolvedAt: _r, ...resolved } = coordinates;
+  return resolved as unknown as Record<string, unknown>;
+}
+
+/** The digest a resolution manifest carries as its `output` (§10.2, D-167). */
+export function outputDigestOf(coordinates: MailCoordinates): string {
+  return sha256hex(canonicalBytes(resolvedFieldsOf(coordinates)));
+}
 
 /** §6.2's failure codes, and no others. */
 export type ResolveFailure = 'RESOLVE_UNSUPPORTED_ADDRESS' | 'RESOLVE_NOT_FOUND' | 'RESOLVE_REGISTRY_UNREACHABLE';
@@ -70,7 +104,11 @@ export interface ResolutionProof {
   readonly rule: { readonly id: string; readonly revision: string };
   /** §5.2: {digest, locator, snapshot?} and nothing else — core/proof.ts. */
   readonly inputs: ProofInputs;
-  /** §5.2: "{digest} | value". For a resolution it is the coordinates themselves (§11.2, §11.4). */
+  /**
+   * §5.2: "{digest} | value". For a resolution it is the DIGEST (D-167): the
+   * SHA-256 of the canonical JSON of the resolved fields, which a Verifier
+   * recomputes by replay and compares (§10.2, §11.4). The value is not carried.
+   */
   readonly output: Record<string, unknown>;
   readonly meaning: {
     readonly statement: string;
@@ -114,6 +152,29 @@ export function parseAddress(address: string): { readonly account: string; reado
   return null;
 }
 
+/** One message on a topic, as §9.2's rule needs it: its place, and its body. */
+export interface SourceMessage {
+  readonly sequenceNumber: number;
+  readonly consensusTimestamp: string;
+  /** The body parsed as JSON, or null where it is not JSON. */
+  readonly body: unknown;
+}
+
+/**
+ * What §9.2's rule reads, and the whole of it: an account's memo, a topic's
+ * memo, and a topic's messages in consensus order. Three reads of public data,
+ * with nothing to configure and no key anywhere (P-4).
+ *
+ * A mirror-node client satisfies it (`mirrorSource` below) and so does a
+ * Verifier's `Reader` (`tools/verify.ts`), which is the point: the rule that
+ * resolves and the rule that replays are one function.
+ */
+export interface ProfileSource {
+  accountMemo(account: string): Promise<string | null>;
+  topicMemo(topicId: string): Promise<string | null>;
+  topicMessages(topicId: string): Promise<readonly SourceMessage[] | null>;
+}
+
 interface MirrorAccount {
   readonly account: string;
   readonly memo?: string;
@@ -134,6 +195,34 @@ const decode = (m: { message: string }): unknown => {
     return null;
   }
 };
+
+/**
+ * A `ProfileSource` over a mirror node's REST API — what `resolve` uses.
+ *
+ * `null` from a read is "the mirror does not hold this", which the rule turns
+ * into RESOLVE_NOT_FOUND or RESOLVE_REGISTRY_UNREACHABLE as §9.2 fixes.
+ */
+export function mirrorSource(mirror: Mirror): ProfileSource {
+  return {
+    async accountMemo(account) {
+      const a = await mirror.get<MirrorAccount>(`/accounts/${account}`);
+      return a === null ? null : (a.memo ?? '');
+    },
+    async topicMemo(topicId) {
+      const t = await mirror.get<MirrorTopic>(`/topics/${topicId}`);
+      return t === null ? null : (t.memo ?? '');
+    },
+    async topicMessages(topicId) {
+      const r = await mirror.get<MirrorMessages>(`/topics/${topicId}/messages?limit=100&order=asc`);
+      if (r === null) return null;
+      return (r.messages ?? []).map((m) => ({
+        sequenceNumber: m.sequence_number,
+        consensusTimestamp: m.consensus_timestamp,
+        body: decode(m),
+      }));
+    },
+  };
+}
 
 /**
  * Resolve an address under `hcs14`.
@@ -172,8 +261,12 @@ export function resolutionProofFor(
     // doorbell the lane had to be born from (CLAUDE.md §9).
     output,
     meaning: {
-      statement:
-        'The account named by this address declares these coordinates under HCS-11, through the HCS-2 registry its memo names, in an HCS-1 file whose topic memo is the digest of the profile it holds.',
+      // §9.1's budget, D-167: a statement is at most N = 70 bytes, because the
+      // manifest must be one HCS message and the locator at a UAID address
+      // spends most of what there is. The long form this used to carry is in
+      // §9.2, which is where a reader should look for what the rule does; a
+      // manifest's statement is a label, not an explanation.
+      statement: 'Declared under HCS-11 via the HCS-2 registry the account memo names.',
       // §5.2's canonical location, as D-163 rules it: the topic THIS manifest
       // is published on — the resolving agent's own manifest topic — and not the
       // evidence the proof stands on, which is already in `inputs.locator`, and
@@ -198,7 +291,7 @@ export function resolutionProofFor(
  * than rebuilding one, so it never reaches this argument (§11.4).
  */
 export async function resolveHcs14(
-  mirror: Mirror,
+  source: ProfileSource,
   ledgerTag: string,
   address: string,
   manifestTopic: string,
@@ -208,20 +301,29 @@ export async function resolveHcs14(
     return { failure: 'RESOLVE_UNSUPPORTED_ADDRESS', detail: `not an hcs14 address: ${address}` };
   }
 
-  const account = await mirror.get<MirrorAccount>(`/accounts/${parsed.account}`);
-  if (account === null) {
+  const memo = await source.accountMemo(parsed.account);
+  if (memo === null) {
     return { failure: 'RESOLVE_NOT_FOUND', detail: `no such account: ${parsed.account}` };
   }
-  const memo = account.memo ?? '';
 
   const endorsements: Endorsement[] = [];
   // §5.2: the LOCATOR is where a Verifier re-obtains the inputs; the DIGEST is
   // over what was read there; a SNAPSHOT is carried only where an input is not
   // re-obtainable. §9.2 gives this profile's locator as its "Inputs and
   // locator" object.
+  //
+  // D-167 adds `address` to it. §9.2's list did not name the address, and until
+  // the output travelled by digest that was harmless: a Verifier read the
+  // address out of the output. Now it must RECOMPUTE the output, and the
+  // address is the rule's own first input — "parse the address to an account" —
+  // so a locator that cannot re-obtain it cannot re-obtain the inputs, which is
+  // what §5.2 says a locator is for. `memo` is added because §9.2's list names
+  // it and this code had left it out.
   const locator: Record<string, unknown> = {
     ledgerTag,
+    address,
     account: parsed.account,
+    memo,
   };
   let snapshot: unknown;
   let readMaterial: Record<string, unknown> = {};
@@ -233,11 +335,11 @@ export async function resolveHcs14(
 
   if (viaRegistry) {
     const registryTopic = viaRegistry[1] as string;
-    const entries = await mirror.get<MirrorMessages>(`/topics/${registryTopic}/messages?limit=100&order=asc`);
+    const entries = await source.topicMessages(registryTopic);
     if (entries === null) return { failure: 'RESOLVE_REGISTRY_UNREACHABLE', detail: registryTopic };
     // "read the registry's current entry" — the latest `register` (D-70).
-    const registrations = (entries.messages ?? [])
-      .map((m) => ({ m, body: decode(m) as { p?: string; op?: string; t_id?: string } | null }))
+    const registrations = entries
+      .map((m) => ({ m, body: m.body as { p?: string; op?: string; t_id?: string } | null }))
       .filter((e) => e.body !== null && e.body.op === 'register' && typeof e.body.t_id === 'string');
     const current = registrations[registrations.length - 1];
     if (current === undefined) {
@@ -245,8 +347,8 @@ export async function resolveHcs14(
     }
     fileTopic = current.body?.t_id as string;
     locator['registryTopic'] = registryTopic;
-    locator['registrySequence'] = current.m.sequence_number;
-    locator['consensusTimestamp'] = current.m.consensus_timestamp;
+    locator['registrySequence'] = current.m.sequenceNumber;
+    locator['consensusTimestamp'] = current.m.consensusTimestamp;
     // §9.2's first form: "every element on consensus and re-obtainable from any
     // mirror node at any later time, unchanged, with no snapshot". What was read
     // is the registry entry and the file it names; the memo is how the rule got
@@ -267,19 +369,19 @@ export async function resolveHcs14(
   }
   locator['profileTopic'] = fileTopic;
 
-  const topic = await mirror.get<MirrorTopic>(`/topics/${fileTopic}`);
-  if (topic === null) return { failure: 'RESOLVE_NOT_FOUND', detail: `no such file topic: ${fileTopic}` };
-  const chunkMessages = await mirror.get<MirrorMessages>(`/topics/${fileTopic}/messages?limit=100&order=asc`);
+  const topicMemo = await source.topicMemo(fileTopic);
+  if (topicMemo === null) return { failure: 'RESOLVE_NOT_FOUND', detail: `no such file topic: ${fileTopic}` };
+  const chunkMessages = await source.topicMessages(fileTopic);
   if (chunkMessages === null) return { failure: 'RESOLVE_REGISTRY_UNREACHABLE', detail: fileTopic };
 
-  const chunks = (chunkMessages.messages ?? [])
-    .map((m) => decode(m) as { o: number; c: string } | null)
+  const chunks = chunkMessages
+    .map((m) => m.body as { o: number; c: string } | null)
     .filter((c): c is { o: number; c: string } => c !== null && typeof c.o === 'number' && typeof c.c === 'string');
   if (chunks.length === 0) return { failure: 'RESOLVE_NOT_FOUND', detail: `file topic ${fileTopic} holds no chunks` };
 
   let read;
   try {
-    read = readProfile(topic.memo ?? '', chunks);
+    read = readProfile(topicMemo, chunks);
   } catch (e) {
     return { failure: 'RESOLVE_NOT_FOUND', detail: `the file did not decode: ${e instanceof Error ? e.message : String(e)}` };
   }
@@ -355,7 +457,13 @@ export async function resolveHcs14(
   // timestamp takes, because it is compared against a profile's TTL beside them.
   const now = Date.now();
   const resolvedAt = `${Math.floor(now / 1000)}.${String((now % 1000) * 1_000_000).padStart(9, '0')}`;
-  const output = {
+  // THE RESOLVED FIELDS: what §9.2's rule produced, and what a Verifier
+  // recomputes by running the same rule at the same locator (§11.4). These are
+  // §5.3's MailCoordinates minus the three groups that are not the rule's
+  // output: `resolutionProof` (the proof's own reference — including it would
+  // hash the proof into itself), `trustClass` and `endorsements` (which live in
+  // `meaning`), and `resolvedAt` (the query's clock, not the registry's answer).
+  const resolved = {
     address,
     profile: 'hcs14',
     ledgerTag,
@@ -374,15 +482,21 @@ export async function resolveHcs14(
   // manifest topic — known before anything is resolved (D-163). The COORDINATES'
   // `resolutionProof.uri` is a reference and stays empty until `send` publishes
   // the manifest and learns its sequence number (§6.2, §6.4 step 2).
+  // D-167: the output travels as `{digest}` — §5.2 already gives the shape as
+  // "{digest} | value" and this proof takes the first. The value is what a
+  // Verifier recomputes by replay and compares (§10.2, §11.4). What is hashed is
+  // `resolved` above and nothing else, so the digest is non-circular: the
+  // proof's own hash is computed over this output, and a digest over the whole
+  // of §5.3 would have had to contain it.
   const manifest = resolutionProofFor(
     proofInputs(locator, readMaterial, snapshot),
-    output,
+    { digest: sha256hex(canonicalBytes(resolved)) },
     proofLocation(ledgerTag, manifestTopic),
     endorsements,
   );
 
   const coordinates: MailCoordinates = {
-    ...output,
+    ...resolved,
     resolutionProof: { hash: manifest.hash, uri: null },
     trustClass: 'math',
     endorsements: [...endorsements],

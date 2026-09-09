@@ -44,6 +44,12 @@ import { manifestAmong } from '../core/proof.js';
 import { accountOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
 import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
+import {
+  outputDigestOf,
+  resolveHcs14,
+  type MailCoordinates,
+  type ProfileSource,
+} from '../resolve/hcs14.js';
 import { lanesFromDoorbell, closedBy } from './send.js';
 import {
   before,
@@ -240,51 +246,94 @@ async function foundAtItsLocation(
 async function replayHcs14(
   reader: Reader,
   manifest: Record<string, unknown>,
-): Promise<{ readonly replayed: boolean; readonly detail: string }> {
+): Promise<{ readonly replayed: boolean; readonly detail: string; readonly coordinates?: MailCoordinates }> {
   const inputs = manifest['inputs'] as Record<string, unknown> | undefined;
-  const output = manifest['output'];
-  if (inputs === undefined || typeof output !== 'object' || output === null) {
-    return { replayed: false, detail: 'the manifest carries no inputs or no output value' };
+  const output = manifest['output'] as Record<string, unknown> | undefined;
+  if (inputs === undefined || output === undefined) {
+    return { replayed: false, detail: 'the manifest carries no inputs or no output' };
   }
-  // §5.2: what a proof carries is `{digest, locator, snapshot?}`, so the
-  // coordinates a replay re-obtains from are under `locator` and the bytes a
-  // non-re-obtainable input was read as are under `snapshot` (core/proof.ts).
+  const declared = output['digest'];
+  if (typeof declared !== 'string') {
+    // D-167: this proof's output is {digest} and no longer a value. A manifest
+    // carrying the value form is from before 0.5.8 and is not replayable here.
+    return { replayed: false, detail: "the manifest's output carries no digest (§10.2, D-167)" };
+  }
+
+  // §5.2: the locator is where a Verifier re-obtains the inputs. §9.2's list,
+  // with `address` as D-167 adds it: the rule's own first input.
   const locator = inputs['locator'] as Record<string, unknown> | undefined;
   if (locator === undefined) return { replayed: false, detail: 'the manifest carries no input locator (§5.2)' };
-  const account = locator['account'];
-  if (typeof account !== 'string') return { replayed: false, detail: 'the manifest names no account' };
+  const address = locator['address'];
+  if (typeof address !== 'string') {
+    return { replayed: false, detail: 'the locator names no address, so the rule cannot be re-run (§9.2, D-167)' };
+  }
 
-  const memo = await reader.accountMemo(account);
-  if (memo === null) return { replayed: false, detail: `no account ${account} on this ledger` };
-  // Under §9.2's second form the account memo IS an input, and it is not
-  // re-obtainable, so the proof carries it as a snapshot and the replay compares
-  // against that. Under the first form the memo is how the rule reached the
-  // registry and not what the proof stands on — which is why that form assigns
-  // no `blurred` — so a memo that has since changed is not a failed replay.
+  // The manifest's own canonical location is the sender's manifest topic, which
+  // is what `resolve` needs to rebuild `meaning.uri`. Taking it from the
+  // manifest keeps the replay a function of the proof and consensus alone.
+  const meaning = manifest['meaning'] as Record<string, unknown> | undefined;
+  const uri = meaning?.['uri'] as Record<string, unknown> | undefined;
+  const manifestTopic = typeof uri?.['topicId'] === 'string' ? (uri['topicId'] as string) : '0.0.0';
+
+  // §11.4: "A Verifier replays it under the profile the manifest names ... from
+  // the locator for a profile whose inputs are on consensus". The same rule the
+  // sender ran, over this Verifier's own port (D-167). Until 0.5.8 this stopped
+  // at the registry entry, because the rule was written against a mirror-node
+  // client and this port could not reach the profile file; the module said so
+  // and appraised on a partial replay anyway. It no longer can: the value is
+  // recoverable only by running the rule to the end.
+  const replayed = await resolveHcs14(readerSource(reader), reader.ledgerTag, address, manifestTopic);
+  if ('failure' in replayed) {
+    return { replayed: false, detail: `the rule no longer resolves this address: ${replayed.failure} — ${replayed.detail}` };
+  }
+
+  // Under §9.2's second form the account memo is an input that is not
+  // re-obtainable, so the proof carries it as a snapshot; a memo that has since
+  // changed makes the replay disagree, and `blurred` is why that form warns.
   const snapshot = inputs['snapshot'] as Record<string, unknown> | undefined;
-  if (snapshot !== undefined && memo !== snapshot['memo']) {
-    return { replayed: false, detail: `the account memo now reads ${JSON.stringify(memo)} and the proof snapshotted ${JSON.stringify(snapshot['memo'])}` };
+  if (snapshot !== undefined && locator['memo'] !== snapshot['memo']) {
+    return { replayed: false, detail: 'the proof snapshotted a memo its own locator does not name' };
   }
 
-  // §9.2's rule reaches the coordinates through the declaration; recomputing it
-  // in full needs the profile file's bytes, which `resolve/hcs14.ts` reads
-  // through a mirror-node client rather than through this port. What is
-  // recomputed here is the part this port can reach — that the memo still names
-  // the registry the proof read, and that the registry's entry the proof named
-  // is still the entry there. The rest is the resolution's own lookup below.
-  const registryTopic = locator['registryTopic'];
-  if (typeof registryTopic === 'string') {
-    const entries = await reader.messages(registryTopic);
-    const sequence = locator['registrySequence'];
-    const entry = entries.find((m) => m.sequenceNumber === sequence);
-    if (entry === undefined) return { replayed: false, detail: `no entry ${String(sequence)} on registry ${registryTopic}` };
-    const body = operationOf(entry);
-    if (body === null || body['op'] !== 'register' || body['t_id'] !== locator['profileTopic']) {
-      return { replayed: false, detail: 'the registry entry the proof named does not register the profile topic it named' };
-    }
+  const recomputed = outputDigestOf(replayed.coordinates);
+  if (recomputed !== declared) {
+    // D-167: the failure a value mismatch was, for the same reason and at the
+    // same standing. The coordinates the rule yields now are not the ones the
+    // sender bound.
+    return {
+      replayed: false,
+      detail: `the replayed coordinates digest to ${recomputed} and the proof declares ${declared}`,
+    };
   }
+  return {
+    replayed: true,
+    detail: 'the rule re-run at the proof\'s locator yields coordinates whose digest is the one the proof declares',
+    coordinates: replayed.coordinates,
+  };
+}
 
-  return { replayed: true, detail: 'the inputs the proof named are on consensus and unchanged' };
+/**
+ * A `ProfileSource` over a Verifier's `Reader` (D-167).
+ *
+ * Three reads of public data, which is all §9.2's rule needs and all a Verifier
+ * has (P-4). This is what lets `verify` run the SAME rule `resolve` runs rather
+ * than an approximation of it.
+ */
+export function readerSource(reader: Reader): ProfileSource {
+  return {
+    accountMemo: (account) => reader.accountMemo(account),
+    async topicMemo(topicId) {
+      const t = await reader.topic(topicId);
+      return t === null ? null : t.memo;
+    },
+    async topicMessages(topicId) {
+      return (await reader.messages(topicId)).map((m) => ({
+        sequenceNumber: m.sequenceNumber,
+        consensusTimestamp: m.consensusTimestamp,
+        body: operationOf(m),
+      }));
+    },
+  };
 }
 
 /**
@@ -468,9 +517,12 @@ export async function verify(
           const replay = await replayHcs14(reader, read.manifest);
           if (!replay.replayed) resolutionReasons.push('T-P6-1');
 
-          // The coordinates the manifest carries, which §11.2 reads the
-          // recipient's account and doorbell from.
-          const output = read.manifest['output'] as Record<string, unknown> | undefined;
+          // The coordinates the replay RECOMPUTED, which §11.2 reads the
+          // recipient's account and doorbell from. D-167: the manifest carries
+          // its output by digest, so these come from running the rule rather
+          // than from reading a value — which is the same thing §11.4 always
+          // required a Verifier to be able to do, now that it must.
+          const output = replay.coordinates as Record<string, unknown> | undefined;
           const doorbell = output?.['doorbell'];
           const account = output?.['account'];
           if (typeof doorbell === 'string' && typeof account === 'string') {

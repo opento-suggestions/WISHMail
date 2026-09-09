@@ -47,14 +47,18 @@
       "additionalProperties": false
     },
     "output": {
-      "description": "What the rule produced: {digest} or a value (§5.2)."
+      "description": "What the rule produced: {digest} or a value (§5.2). The RESOLUTION proof carries {digest} and never the value (§10.2, D-167): the SHA-256 of the canonical JSON of the resolved fields, which a Verifier recomputes by replay and compares (§11.4).",
+      "$comment": "T-P6-1, T-P6-2. Left open here because §10 fixes a different output for each of the four kinds of proof — the AAD for the proof of posting, `opened` for a receipt, `unanswered` for a slip — and the schema follows §5, not §10."
     },
     "meaning": {
       "type": "object",
       "description": "The reasoner’s statement of what the output means; the canonical location; what its verification rests on; what it could not see.",
       "properties": {
         "statement": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 70,
+          "description": "The reasoner's statement of what the output means (§5.2). At most 70 bytes — §9.1's manifest budget (D-167): a manifest is one HCS message at or under CHUNK_WIRE_MAX, and the largest locator §9 admits (hol at a UAID with §9.2's beside it) leaves 72. A statement is a label, not an explanation; what a rule does is in §9.",
+          "$comment": "T-P9-8 is the court: a manifest over CHUNK_WIRE_MAX fails it whatever the statement’s length. This bound is what keeps a conforming writer from discovering that at submission time."
         },
         "uri": {
           "type": "object",

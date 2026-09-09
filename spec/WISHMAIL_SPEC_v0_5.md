@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.7
+# WISHMail — Specification v0.5.8
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -661,6 +661,9 @@ locator    {ledgerTag, topicId, sequenceNumber}   one message
            {ledgerTag, txRef}                      one transaction
 ```
 
+<!-- CHANGED: D-167 -->
+`output` is `{digest}` or a value, and which one is fixed per kind of proof by §10, not here. The **resolution proof** carries its output as `{digest}` and never as a value (§10.2): the SHA-256 of the canonical JSON of the coordinates the rule resolved. A Verifier recovers the value by replay — the same replay §11.4 already required of it — and compares the digest (§11.4). Nothing is dropped: the whole of the coordinates is committed, by its hash. What is lost is that a manifest read off its topic is no longer a document a person can read; that is the cost of §9.1's budget, and §9.1 states it.
+
 A **location** names where a manifest is found, not which message it is: the manifest at a location is the message on that topic whose body recomputes to the proof's hash, and the read is content-addressed. A proof's `meaning.uri` is a location, because a proof's hash covers its meaning and its manifest is published after the hash is fixed — no proof can name the message it is about to become (§6.4). A **locator** names one thing on consensus and is what a reference to a proof carries — `rp.u` in the AAD (§7.2), `resolutionProof.uri` in coordinates (§5.3), the executed submission for a receipt (§10.4) — and what a proof's `inputs.locator` carries. A reference is a shortcut through the lookup and never a substitute for it: what a reference reaches is the manifest only if it recomputes to the proof's hash and lies on the topic the proof's own location names (§11.1). The HRL grammar of HCS-1 (`hcs://<standard>/<topicId>`) names files, not messages, and is used only where a standard uses it.
 
 ### 5.3 MailCoordinates
@@ -1311,7 +1314,22 @@ The native profile takes `account`, `doorbell`, and `log` from the HCS-11 profil
 <!-- CHANGED: D-163 -->
 **The manifest topic.** Every agent has a manifest topic: an HCS topic of its own, created at provisioning, whose memo is `wishmail:manifest:1` and whose sole submit key is the agent's. A sender publishes the resolution proof's manifest there before assembly, as a message whose body is the manifest, `{p: "wishmail", t: "manifest", ...proof}`; the manifest topic `{ledgerTag, topicId}` is the proof's canonical location, and the message's `{ledgerTag, topicId, sequenceNumber}` is the locator a reference to the proof carries (§5.2). Nothing but manifests goes on a manifest topic, and no HCS-10 topic carries a manifest. A Verifier need not attribute a manifest: its hash is bound into the AAD, and a manifest that recomputes to that hash is the one the envelope meant, whoever published it. That sentence is the lookup rule and not a remark beside it: an agent knows its own manifest topic before it resolves anything, and knows the sequence number of nothing it has not yet submitted.
 
-A manifest topic MUST have the agent's key as its sole submit key, and a manifest MUST be one HCS message on the sender's manifest topic; where a snapshot would not fit, the manifest carries the snapshot's digest and the coordinates read, and the proof is replayable only while its source stands.
+<!-- CHANGED: D-167 -->
+**The budget.** A manifest is one HCS message, so what it may contain is bounded, and the bound is written here rather than discovered at submission. Everything but the statement and the snapshot is fixed by §5.2 and by the profile:
+
+```
+   budget = CHUNK_WIRE_MAX                                        1000
+          - the wire fields {p, t} and the proof's fixed keys
+          - rule {id, revision}
+          - inputs.digest and output.digest  (two SHA-256 hex)
+          - the largest inputs.locator form the profile admits
+          - meaning.uri, trustClass, and the endorsements the rule can assign
+          = N bytes for meaning.statement plus an optional snapshot
+```
+
+Computed per profile at each profile's own worst case — the largest address its grammar admits, and only the endorsements its own rule assigns — the remainders are `hcs14` 131, `hol` 72, `dns` 267, `nanda` 205. **N is the smallest of them: 70 bytes**, and `meaning.statement` MUST NOT exceed it. The binding case is `hol` at a UAID address with §9.2's locator beside its own (§9.5), which is the largest locator this document defines. A statement is a label and not an explanation; what a rule does is §9's to say.
+
+A manifest topic MUST have the agent's key as its sole submit key, and a manifest MUST be one HCS message on the sender's manifest topic; where a snapshot would not fit, the manifest carries the snapshot's digest and the coordinates read, and the proof is replayable only while its source stands. That fallback is the honest floor and not a hiding place: a `nanda` answer at a long address exceeds the budget even so, and a proof that carries its snapshot by digest under a profile whose source can never be re-obtained (§9.4) is witnessed rather than replayable, which its permanent `blurred` already declares and which §11.4 appraises as unverified.
 `Conformance:` T-P17-3 — every fixture manifest topic has the agent's key as its sole submit key and the memo `wishmail:manifest:1`; T-P9-8 — every fixture manifest is one HCS message at or under `CHUNK_WIRE_MAX` bytes on the sender's manifest topic, with a consensus timestamp earlier than chunk 0's.
 
 <!-- CHANGED: D-152 -->
@@ -1446,8 +1464,10 @@ Consumption is by hash: a proof's inputs name the prior proof's hash, so forging
 
 ### 10.2 The resolution proof
 
-<!-- CHANGED: D-163 -->
-Its parts are fixed by its profile (§9): the rule is the profile at its pin; the inputs are what the registry answered, located or snapshotted; the output is the coordinates; the meaning names the profile, its trust class, its endorsements, and the sender's manifest topic, which is the proof's canonical location (§5.2). It is the only proof in the chain whose manifest is published before the envelope exists, because the AAD needs its hash.
+<!-- CHANGED: D-163, D-167 -->
+Its parts are fixed by its profile (§9): the rule is the profile at its pin; the inputs are what the registry answered, located or snapshotted; the output is the coordinates, **carried as the digest of their canonical JSON** and not as a value; the meaning names the profile, its trust class, its endorsements, and the sender's manifest topic, which is the proof's canonical location (§5.2).
+
+A Verifier recomputes the coordinates by replaying the rule at the proof's own `inputs.locator` and compares their digest to `output.digest` (§11.4). The address the rule was given is part of that locator, because a rule that cannot be re-given its own first input cannot be re-run. The coordinates are therefore recoverable by anyone, from consensus, forever — which is what a `math` trust class means — and the manifest costs the bytes of a hash instead of the bytes of an object (§9.1). It is the only proof in the chain whose manifest is published before the envelope exists, because the AAD needs its hash.
 
 ### 10.3 The proof of posting and the postmark
 
@@ -1621,8 +1641,8 @@ The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's re
 
 **The postage.** The settlement is read by `hdr.st` and counted by §8.5: it exists, its memo is `wishmail:<id>`, its `to` is the treasury, its consensus timestamp precedes chunk 0's, and it is in the stamp token; its amount covers the envelope's postage — weight plus one when `hdr.rr` is true; and no envelope with an earlier canonical chunk 0 names the same settlement. Any of these failing: the envelope is unstamped. A settlement that counts for no envelope in scope is an orphan and is reported under `orphans` (F-3).
 
-<!-- CHANGED: D-163 -->
-**The resolution proof.** A Verifier looks it up: dereferences `hdr.rp.u` on the sender's manifest topic, reads the message there as a manifest, and compares the manifest's hash to `hdr.rp.h`; the manifest's postmark must precede chunk 0's. It then performs the lookup §11.1 fixes against the manifest's own canonical location: the topic `meaning.uri` names is read for a message whose body recomputes to that hash, and a proof whose location holds no such message is unverified (T-P6-7). The reference took the Verifier to a message; the location is what the proof itself said, and only the second is inside the hash. A Verifier replays it under the profile the manifest names, if that profile is one the Verifier claims (§9.6): from the locator for a profile whose inputs are on consensus, from the snapshot for one whose inputs are not; the recomputed output must be the coordinates the manifest carries and the recomputed hash must be `hdr.rp.h`. Where the profile is not claimed, or the snapshot is absent and the input cannot be re-obtained, or the chunk's `schemaRef` does not resolve, the resolution is appraised unverified.
+<!-- CHANGED: D-163, D-167 -->
+**The resolution proof.** A Verifier looks it up: dereferences `hdr.rp.u` on the sender's manifest topic, reads the message there as a manifest, and compares the manifest's hash to `hdr.rp.h`; the manifest's postmark must precede chunk 0's. It then performs the lookup §11.1 fixes against the manifest's own canonical location: the topic `meaning.uri` names is read for a message whose body recomputes to that hash, and a proof whose location holds no such message is unverified (T-P6-7). The reference took the Verifier to a message; the location is what the proof itself said, and only the second is inside the hash. A Verifier replays it under the profile the manifest names, if that profile is one the Verifier claims (§9.6): from the locator for a profile whose inputs are on consensus, from the snapshot for one whose inputs are not; **the recomputed coordinates' digest must equal the manifest's `output.digest`**, and the recomputed hash must be `hdr.rp.h`. A digest that does not match is the failure a mismatched value was, for the same reason and at the same standing: the coordinates the rule yields at the proof's own locator are not the coordinates the sender bound. Where the profile is not claimed, or the snapshot is absent and the input cannot be re-obtained, or the chunk's `schemaRef` does not resolve, the resolution is appraised unverified.
 
 The manifest's meaning carries what the sender declared: the profile, its trust class, and its endorsements. A Verifier reports these as declared and adds its own standing beside them. It does not raise a trust class, and it does not remove an endorsement: a `social-committee` proof that replays perfectly is a verified `social-committee` proof, and a `withheld` input that the Verifier happens to be able to see was still withheld from the proof (P-12).
 
@@ -2251,6 +2271,7 @@ D-160  Orphans are read from the treasury, filtered to senders in scope §11.2
 D-161  buy_stamp takes provision; the receipt records it              §5.4, §6.3
 D-163  A proof's location is a topic; lookup is content-addressed      §2.2, §5.2, §9.1, §10.2, §10.4, §10.5, §11.1, §11.4, §11.5
 D-166  MailCoordinates carries the recipient's manifest topic          §5.3
+D-167  The resolution output is a digest; §9.1 allocates the budget    §5.2, §9.1, §10.2, §11.4
 ```
 
 ### 18.3 Concordance of identifiers (informative)

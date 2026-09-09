@@ -290,8 +290,11 @@ function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string, manifestTo
     ),
     output: { value: 'unanswered' },
     meaning: {
-      statement:
-        'First contact was attempted and no lane had answered when the window closed. Expiry is not silence, and nothing is claimed about the recipient.',
+      // §10.5 fixes what this must SAY — "the statement that expiry is not
+      // silence and that nothing is claimed about the recipient" — and §9.1's
+      // budget fixes how long it may be (N = 70, D-167). Both hold at once:
+      // §10.5's own words are 66 bytes.
+      statement: 'Expiry is not silence, and nothing is claimed about the recipient.',
       // §5.2's canonical location (D-163): the topic this slip's manifest is
       // published on — the sender's own manifest topic, which §10.5 requires the
       // slip's manifest to be on before `send` returns a slip. It is NOT the log

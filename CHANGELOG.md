@@ -2,6 +2,30 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.8] — 2026-09-09
+
+A patch: text and tests within minor version `0.5`. **No wire string changes.** **One schema changes** — `proof` — which a patch permits only because `registeredSchemas` is null (§1.7, D-161). **No test is added**: T-P9-8 is the court for the budget, and T-P6-1 and T-P6-2 are the court for the digest, all three unchanged. The register stays at **86 (81 core + 5 extension)**.
+
+Ledger §G-17 is closed by D-167, and by neither of the two candidates the pre-Step-4 sweep offered.
+
+**Nothing was signed for this patch.**
+
+### Changed
+
+- **The resolution proof carries its output by digest** (D-167). §9.1 requires a manifest to be one HCS message at or under `CHUNK_WIRE_MAX`; §5.2 requires a `meaning.statement` and bounded it nowhere; at a real 168-character UAID the manifest did not fit. What was spending the budget was the coordinates **value** inside `output` — and §5.2 already gave the shape as `{digest} | value`. The resolution proof now carries `{digest}`, the SHA-256 of the canonical JSON of the resolved fields, and never the value. §10.4's and §10.5's outputs are untouched. **The court is unchanged**: §11.4 already required a Verifier to replay the rule and produce coordinates; it now hashes them and compares to `output.digest`, and a mismatch is the failure a value mismatch was, at the same standing. `CHANGED: D-167` on §5.2, §10.2 and §11.4.
+- **§9.1 writes the manifest's byte budget down** (D-167). Computed per profile at each profile's own worst case — the largest address its grammar admits, only the endorsements its own rule assigns — the remainders are `hcs14` 131, `hol` 72, `dns` 267, `nanda` 205. **N = 70 bytes** for `meaning.statement` plus any snapshot, and `proof.schema.json` bounds it there. The binding case is `hol` at a UAID with §9.2's locator beside its own, the largest locator this document defines. §9.1's snapshot-to-digest fallback sentence is kept, and what it costs is now stated beside it rather than left to be discovered.
+- **§9.2's locator gains `address`** (D-167). Its list did not name the rule's own first input. Harmless while a Verifier could read the address out of the output; fatal once the output is a digest, because a rule that cannot be re-given its input cannot be re-run. It also moves a UAID's 168 bytes from `output` into `inputs.locator`, so the net saving is about 110 bytes rather than 290.
+- **`verify`'s replay became real** (D-167). It had stopped at the registry entry — the rule was written against a mirror-node client and a Verifier's `Reader` could not reach the profile file — and it said so in a comment and appraised on a partial replay anyway. Under this ruling the value is recoverable **only** by running the rule to the end, so §9.2's rule now runs over a `ProfileSource`: three reads of public data that both a mirror node and a `Reader` satisfy. One rule, two readers, and they cannot drift.
+- **The letter fixture stands up a real HCS-1 profile file.** It had created the file topic and never written a profile into it, because nothing read that far. The reader is what says whether the writer wrote anything (CLAUDE.md §9).
+- **Statements shorten.** The resolver's is 68 bytes, the slip's 66 — §10.5's own required words, "expiry is not silence, and nothing is claimed about the recipient", fit with four to spare — and the receipt's 57.
+
+### Added
+
+- **`npm run check:prefreeze` re-measured under the new form**, 35 assertions, exit 0. It now derives §9.1's budget from the profiles themselves and asserts the registered schema's `maxLength` equals it, so the specification's N, the schema's bound and the check cannot drift apart. Wire form, short address / longest address: `hcs14` 725 / 882, `hol` 790 / 790, `dns` 841 / 866, `nanda` 995 / **1042**. Every shape fits but `nanda` at its longest address, 42 over, which §9.1's fallback carries — reported, not trimmed.
+- **`app/src/ops/budget.ts`** — §9.1's arithmetic as code, so one calculation feeds the specification's sentence, the schema's bound and the check.
+- **ADR D-167.** Ledger §H gains the message-size fetch: `@hashgraph/sdk` 2.81.0 sets `CHUNK_SIZE = 1024` and `getRequiredChunks()` returns 1 at 1024 bytes and 2 at 1025 — observed, not only read — so a §9.1 ceiling above `CHUNK_WIRE_MAX` buys 24 bytes before it must admit `chunkInfo`.
+- **The second `PriceList`'s numbers, RECORD (Sonic):** `provisioning {method: "hbar", unitPrice: "2", registrationFee: "0.05"}` — two ℏ flat for the mailbox purchase, the fee funded out of it. Every cost the Postmaster incurs for provisioning is denominated in ℏ, so a flat ℏ price is stable against the rate in a way a USDC-referenced one is not. The schema admits it unchanged: `provisioning` is its own object with its own method, so a flat price sits beside a rate-priced `hbar` method without contradiction. Prepared and **unsigned**.
+
 ## [0.5.7] — 2026-09-09
 
 A patch: text and tests within minor version `0.5`. **No wire string changes.** **One schema changes** — `mail-coordinates` — which a patch permits only because `registeredSchemas` is null (§1.7, D-161). **No test is added and no MUST is added**: T-P1-8 already states the requirement the new field makes checkable, which is D-161's shape exactly. The register stays at **86 (81 core + 5 extension)**.

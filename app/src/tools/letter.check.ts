@@ -29,7 +29,9 @@ import { isToolFailure } from '../core/failure.js';
 import { TRANSACTION_MEMO, connectionCreatedBody, operatorId as operatorIdOf } from '../ops/hcs10.js';
 import { proofInputs } from '../core/proof.js';
 import { proofLocation } from '../core/proof.js';
-import { resolutionProofFor } from '../resolve/hcs14.js';
+import { hcs1File } from '../ops/hcs1.js';
+import { resolveHcs14 } from '../resolve/hcs14.js';
+import { readerSource } from './verify.js';
 import { inbox, type Delivery } from './inbox.js';
 import { MemoryLedger } from './memory.js';
 import { send, type Coordinates, type SenderContext } from './send.js';
@@ -101,7 +103,7 @@ interface World {
   readonly ctx: SenderContext;
 }
 
-function stand(): World {
+async function stand(): Promise<World> {
   const ledger = new MemoryLedger();
   const recipientEncryption = generateRecipientKey();
 
@@ -117,7 +119,31 @@ function stand(): World {
   });
   const recipientLog = ledger.createTopic({ memo: 'hcs-10:0:60:2', submitKeys: [RECIPIENT_KEY] });
   const recipientManifests = ledger.createTopic({ submitKeys: [RECIPIENT_KEY] });
-  const profileFile = ledger.createTopic({ submitKeys: [RECIPIENT_KEY], adminKey: null });
+
+  // The HCS-11 profile, written into a real HCS-1 file (D-167). Until 0.5.8 this
+  // fixture created the file TOPIC and never put a profile in it, because
+  // `verify`'s replay stopped at the registry entry and nothing read further. It
+  // reads further now — §11.4's replay runs §9.2's rule to the end, and the
+  // coordinates it yields are what the output digest is compared against — so a
+  // fixture with an empty file topic is a fixture the rule cannot resolve. This
+  // is CLAUDE.md §9 once more: the reader is what says whether the writer wrote
+  // anything.
+  const profileDoc = {
+    version: '1.0',
+    display_name: 'Correspondent B',
+    inboundTopicId: recipientDoorbell,
+    outboundTopicId: recipientLog,
+    properties: {
+      wishmail: {
+        manifestTopic: recipientManifests,
+        x25519Pub: recipientEncryption.x25519Pub,
+        keyEpoch: 1,
+      },
+    },
+  };
+  const file = hcs1File(Buffer.from(JSON.stringify(profileDoc), 'utf8'), 'application/json');
+  const profileFile = ledger.createTopic({ memo: file.memo, submitKeys: [RECIPIENT_KEY], adminKey: null });
+  for (const chunk of file.chunks) ledger.submit(recipientAccount, profileFile, JSON.stringify(chunk));
   const registry = ledger.createTopic({ memo: 'hcs-2:0:60', submitKeys: [RECIPIENT_KEY], adminKey: RECIPIENT_KEY });
   const registryEntry = ledger.submit(recipientAccount, registry, JSON.stringify({ p: 'hcs-2', op: 'register', t_id: profileFile }));
   const accountMemo = `hcs-11:hcs://2/${registry}`;
@@ -129,44 +155,24 @@ function stand(): World {
   const senderLog = ledger.createTopic({ memo: 'hcs-10:0:60:2', submitKeys: [SENDER_KEY] });
   const senderManifests = ledger.createTopic({ submitKeys: [SENDER_KEY] });
 
-  // The resolution, in the shape §9.2's rule produces (and through the same
-  // builder the resolver publishes, so the manifest hashes as one).
-  const output = {
-    address: recipientAccount,
-    profile: 'hcs14',
-    ledgerTag: ledger.ledgerTag,
-    account: recipientAccount,
-    doorbell: recipientDoorbell,
-    log: recipientLog,
-    manifestTopic: recipientManifests,
-    x25519Pub: recipientEncryption.x25519Pub,
-    keyEpoch: 1,
-  };
-  // §5.2's inputs, through the one builder the resolver uses: the locator is
-  // §9.2's "Inputs and locator" object, the digest is over what was read at it,
-  // and this form carries no snapshot because every element is on consensus.
-  const inputs = proofInputs(
-    {
-      ledgerTag: ledger.ledgerTag,
-      account: recipientAccount,
-      registryTopic: registry,
-      registrySequence: registryEntry.sequenceNumber,
-      consensusTimestamp: registryEntry.consensusTimestamp,
-      profileTopic: profileFile,
-    },
-    {
-      registryEntry: { p: 'hcs-2', op: 'register', t_id: profileFile },
-      profileDigest: sha256hex(canonicalBytes(output)),
-    },
+  // THE RESOLUTION, RUN RATHER THAN RESTATED (D-167). This fixture used to build
+  // the manifest by hand — a second spelling of §9.2's rule, beside the
+  // resolver's — and the two could only be trusted to agree by inspection. Now
+  // that the output travels by digest, a hand-built manifest is a manifest no
+  // Verifier can replay: the digest would be over fields nobody re-derives. So
+  // the fixture calls the same rule over the same port the Verifier will use,
+  // and the manifest under test is the one `resolve` produces.
+  const resolution = await resolveHcs14(
+    readerSource(ledger.as(senderAccount)),
+    ledger.ledgerTag,
+    recipientAccount,
+    senderManifests,
   );
-  // D-163: the canonical location is the SENDER's manifest topic — the topic
-  // this manifest is published on — and not the profile file the proof read.
-  const manifest = resolutionProofFor(inputs, output, proofLocation(ledger.ledgerTag, senderManifests), []);
-
-  const coordinates: Coordinates = {
-    ...output,
-    resolutionProof: { hash: manifest.hash, uri: null },
-  };
+  if ('failure' in resolution) {
+    throw new Error(`the fixture's own declaration does not resolve: ${resolution.failure} — ${resolution.detail}`);
+  }
+  const manifest = resolution.manifest as unknown as Record<string, unknown>;
+  const coordinates: Coordinates = resolution.coordinates as unknown as Coordinates;
 
   const ctx: SenderContext = {
     consensus: ledger.as(senderAccount),
@@ -233,7 +239,7 @@ const PAYLOAD = Buffer.from(
 
 async function main(): Promise<void> {
   // === The letter =========================================================
-  const w = stand();
+  const w = await stand();
   const before = w.ledger.balance(w.sender.account);
 
   // First contact and the letter, with the recipient answering inside the
@@ -354,7 +360,7 @@ async function main(): Promise<void> {
 
   // === The slip: a door nobody answers (F-6, T-P12-5) =====================
   {
-    const s = stand();
+    const s = await stand();
     const slipped = await send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, windowSeconds: 1 });
     is('an unanswered door yields a slip, not a failure (F-6)', slipped.kind, 'slip');
     if (slipped.kind === 'slip') {
@@ -379,7 +385,7 @@ async function main(): Promise<void> {
 
   // === What `send` refuses ================================================
   {
-    const s = stand();
+    const s = await stand();
     let refused = '';
     try {
       await send(s.ctx, {
@@ -394,7 +400,7 @@ async function main(): Promise<void> {
     is('coordinates with no proof are SEND_UNRESOLVED (§6.4)', refused, 'SEND_UNRESOLVED');
   }
   {
-    const s = stand();
+    const s = await stand();
     let message = '';
     try {
       await send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, returnReceipt: true, windowSeconds: 1 });
@@ -500,7 +506,7 @@ async function refusals(): Promise<void> {
   ];
 
   for (const c of cases) {
-    const w = stand();
+    const w = await stand();
     const flight = send(w.ctx, { coordinates: w.coordinates, manifest: w.manifest, payload: PAYLOAD, windowSeconds: 10 });
     await new Promise((r) => setTimeout(r, 50));
     const lane = answerTheDoor(w);
@@ -539,7 +545,7 @@ async function refusals(): Promise<void> {
 
   // The settlement's memo, which is not on the lane at all.
   {
-    const w = stand();
+    const w = await stand();
     const flight = send(w.ctx, { coordinates: w.coordinates, manifest: w.manifest, payload: PAYLOAD, windowSeconds: 10 });
     await new Promise((r) => setTimeout(r, 50));
     const lane = answerTheDoor(w);
@@ -573,7 +579,7 @@ async function refusals(): Promise<void> {
 
   // The lane: the same chunks, read off a topic the AAD does not name.
   {
-    const w = stand();
+    const w = await stand();
     const flight = send(w.ctx, { coordinates: w.coordinates, manifest: w.manifest, payload: PAYLOAD, windowSeconds: 10 });
     await new Promise((r) => setTimeout(r, 50));
     const lane = answerTheDoor(w);

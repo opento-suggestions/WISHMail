@@ -10,7 +10,7 @@ It sells two claims, separately.
 
 **Story.** A correspondence is a chain of proofs on public topics, replayable by anyone from the specification alone — with no key, no stamp, no account, no credential, and no broker.
 
-ETHOnline 2026 submission. Specification 0.5.7; frozen at 0.5.0 on 2026-09-07 and patched seven times since — 0.5.1 the same day (D-135 – D-138), then 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163) and 0.5.7 (D-166) on 2026-09-09. Wire strings carry `0.5`, because a patch changes none. Deployed on `hedera:testnet` and no other ledger.
+ETHOnline 2026 submission. Specification 0.5.8; frozen at 0.5.0 on 2026-09-07 and patched eight times since — 0.5.1 the same day (D-135 – D-138), then 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166) and 0.5.8 (D-167) on 2026-09-09. Wire strings carry `0.5`, because a patch changes none. Deployed on `hedera:testnet` and no other ledger.
 
 ## What it is not
 
@@ -94,7 +94,7 @@ Where the build stands, and what is not built: `STATUS.md` §6. What was provisi
 
 Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
 
-**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-six decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-seven decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
 
 **Where to look, four places.**
 

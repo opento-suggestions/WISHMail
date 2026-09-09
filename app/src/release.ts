@@ -37,7 +37,7 @@ export interface Release {
 }
 
 export const RELEASE: Release = {
-  spec: '0.5.7',
+  spec: '0.5.8',
   minorVersion: '0.5',
   classes: [],
   profiles: {},

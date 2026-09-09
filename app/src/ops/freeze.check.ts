@@ -179,8 +179,9 @@ const receiptManifestParts = {
   ),
   output: { value: 'opened' },
   meaning: {
-    statement:
-      'The recipient opened this envelope with its AAD verified, under the key of the epoch its header names. The signature is the recipient testimony; what recomputes is that this key signed for this envelope after this postmark.',
+    // §9.1's budget (N = 70, D-167). What a receipt proves and what it states
+    // is §10.6's paragraph, not this field's.
+    statement: 'The recipient opened this envelope with its AAD verified.',
     // D-163: a LOCATION — the topic this manifest lands on when the recipient
     // signs. Honest at ScheduleCreate for the first time: the sender already
     // targets this topic in the inner submission below, and there is nothing
