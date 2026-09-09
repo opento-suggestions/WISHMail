@@ -23,6 +23,7 @@
  */
 import { canonicalDigest } from '../core/canonical.js';
 import { matchAgentId, parseUaid, type AgentData, type KeyOrder } from '../core/hcs14.js';
+import { proofInputs, type ProofInputs } from '../core/proof.js';
 import { readProfile } from '../ops/declaration.js';
 import type { Mirror } from '../ops/mirror.js';
 
@@ -59,7 +60,8 @@ export interface MailCoordinates {
 /** §5.2's Proof, as this rule fills it. */
 export interface ResolutionProof {
   readonly rule: { readonly id: string; readonly revision: string };
-  readonly inputs: Record<string, unknown>;
+  /** §5.2: {digest, locator, snapshot?} and nothing else — core/proof.ts. */
+  readonly inputs: ProofInputs;
   /** §5.2: "{digest} | value". For a resolution it is the coordinates themselves (§11.2, §11.4). */
   readonly output: Record<string, unknown>;
   readonly meaning: {
@@ -140,13 +142,17 @@ const decode = (m: { message: string }): unknown => {
  * itself and to nothing else (CLAUDE.md §9).
  */
 export function resolutionProofFor(
-  inputs: Record<string, unknown>,
+  inputs: ProofInputs,
   output: Record<string, unknown>,
   meaningUri: Record<string, unknown>,
   endorsements: readonly Endorsement[],
 ): ResolutionProof {
   const proofBody = {
     rule: { id: 'hcs14', revision: '0.5' },
+    // §5.2's `inputs` is `{digest, locator, snapshot?}` and the registered Proof
+    // schema requires exactly that, closed. `core/proof.ts` says what this rule
+    // puts in each and why; the material itself is hashed into `digest` and
+    // re-obtained through `locator`.
     inputs,
     // §5.2 gives the output as "{digest} | value", and for a resolution it is
     // the VALUE. §11.2's ingestion table reaches the recipient's account and
@@ -184,11 +190,16 @@ export async function resolveHcs14(
   const memo = account.memo ?? '';
 
   const endorsements: Endorsement[] = [];
-  const inputs: Record<string, unknown> = {
+  // §5.2: the LOCATOR is where a Verifier re-obtains the inputs; the DIGEST is
+  // over what was read there; a SNAPSHOT is carried only where an input is not
+  // re-obtainable. §9.2 gives this profile's locator as its "Inputs and
+  // locator" object.
+  const locator: Record<string, unknown> = {
     ledgerTag,
     account: parsed.account,
-    memo,
   };
+  let snapshot: unknown;
+  let readMaterial: Record<string, unknown> = {};
 
   // The two forms of §9.2, and nothing else is an HCS-11 memo.
   let fileTopic: string;
@@ -208,9 +219,15 @@ export async function resolveHcs14(
       return { failure: 'RESOLVE_NOT_FOUND', detail: `no current entry on registry ${registryTopic}` };
     }
     fileTopic = current.body?.t_id as string;
-    inputs['registryTopic'] = registryTopic;
-    inputs['registrySequence'] = current.m.sequence_number;
-    inputs['consensusTimestamp'] = current.m.consensus_timestamp;
+    locator['registryTopic'] = registryTopic;
+    locator['registrySequence'] = current.m.sequence_number;
+    locator['consensusTimestamp'] = current.m.consensus_timestamp;
+    // §9.2's first form: "every element on consensus and re-obtainable from any
+    // mirror node at any later time, unchanged, with no snapshot". What was read
+    // is the registry entry and the file it names; the memo is how the rule got
+    // there and is not what the proof stands on, which is why this form assigns
+    // no `blurred`.
+    readMaterial['registryEntry'] = current.body;
   } else if (viaFile) {
     fileTopic = viaFile[1] as string;
     // D-107: the file is on consensus and immutable, but the binding of the
@@ -218,11 +235,12 @@ export async function resolveHcs14(
     // not re-obtainable. So: `blurred`, for the binding and not for the file,
     // and the memo travels as the snapshot.
     endorsements.push('blurred');
-    inputs['snapshot'] = { memo };
+    snapshot = { memo };
+    readMaterial['memo'] = memo;
   } else {
     return { failure: 'RESOLVE_NOT_FOUND', detail: `account memo is not an HCS-11 memo of either form: ${JSON.stringify(memo)}` };
   }
-  inputs['profileTopic'] = fileTopic;
+  locator['profileTopic'] = fileTopic;
 
   const topic = await mirror.get<MirrorTopic>(`/topics/${fileTopic}`);
   if (topic === null) return { failure: 'RESOLVE_NOT_FOUND', detail: `no such file topic: ${fileTopic}` };
@@ -246,7 +264,8 @@ export async function resolveHcs14(
       detail: `the file's digest ${read.digest} does not equal its topic memo's ${read.memoDigest}`,
     };
   }
-  inputs['profileDigest'] = read.digest;
+  // The profile's own bytes, as the file topic's memo commits them (§9.2).
+  readMaterial['profileDigest'] = read.digest;
 
   const profile = read.profile as {
     inboundTopicId?: string;
@@ -312,7 +331,12 @@ export async function resolveHcs14(
   };
 
   // §5.2's Proof. The `uri` is empty until `send` publishes the manifest (§6.2).
-  const manifest = resolutionProofFor(inputs, output, { ledgerTag, topicId: fileTopic }, endorsements);
+  const manifest = resolutionProofFor(
+    proofInputs(locator, readMaterial, snapshot),
+    output,
+    { ledgerTag, topicId: fileTopic },
+    endorsements,
+  );
 
   const coordinates: MailCoordinates = {
     ...output,

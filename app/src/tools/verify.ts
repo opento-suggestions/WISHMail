@@ -215,13 +215,24 @@ async function replayHcs14(
   if (inputs === undefined || typeof output !== 'object' || output === null) {
     return { replayed: false, detail: 'the manifest carries no inputs or no output value' };
   }
-  const account = inputs['account'];
+  // §5.2: what a proof carries is `{digest, locator, snapshot?}`, so the
+  // coordinates a replay re-obtains from are under `locator` and the bytes a
+  // non-re-obtainable input was read as are under `snapshot` (core/proof.ts).
+  const locator = inputs['locator'] as Record<string, unknown> | undefined;
+  if (locator === undefined) return { replayed: false, detail: 'the manifest carries no input locator (§5.2)' };
+  const account = locator['account'];
   if (typeof account !== 'string') return { replayed: false, detail: 'the manifest names no account' };
 
   const memo = await reader.accountMemo(account);
   if (memo === null) return { replayed: false, detail: `no account ${account} on this ledger` };
-  if (memo !== inputs['memo']) {
-    return { replayed: false, detail: `the account memo now reads ${JSON.stringify(memo)} and the proof read ${JSON.stringify(inputs['memo'])}` };
+  // Under §9.2's second form the account memo IS an input, and it is not
+  // re-obtainable, so the proof carries it as a snapshot and the replay compares
+  // against that. Under the first form the memo is how the rule reached the
+  // registry and not what the proof stands on — which is why that form assigns
+  // no `blurred` — so a memo that has since changed is not a failed replay.
+  const snapshot = inputs['snapshot'] as Record<string, unknown> | undefined;
+  if (snapshot !== undefined && memo !== snapshot['memo']) {
+    return { replayed: false, detail: `the account memo now reads ${JSON.stringify(memo)} and the proof snapshotted ${JSON.stringify(snapshot['memo'])}` };
   }
 
   // §9.2's rule reaches the coordinates through the declaration; recomputing it
@@ -230,14 +241,14 @@ async function replayHcs14(
   // recomputed here is the part this port can reach — that the memo still names
   // the registry the proof read, and that the registry's entry the proof named
   // is still the entry there. The rest is the resolution's own lookup below.
-  const registryTopic = inputs['registryTopic'];
+  const registryTopic = locator['registryTopic'];
   if (typeof registryTopic === 'string') {
     const entries = await reader.messages(registryTopic);
-    const sequence = inputs['registrySequence'];
+    const sequence = locator['registrySequence'];
     const entry = entries.find((m) => m.sequenceNumber === sequence);
     if (entry === undefined) return { replayed: false, detail: `no entry ${String(sequence)} on registry ${registryTopic}` };
     const body = operationOf(entry);
-    if (body === null || body['op'] !== 'register' || body['t_id'] !== inputs['profileTopic']) {
+    if (body === null || body['op'] !== 'register' || body['t_id'] !== locator['profileTopic']) {
       return { replayed: false, detail: 'the registry entry the proof named does not register the profile topic it named' };
     }
   }

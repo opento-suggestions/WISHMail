@@ -23,7 +23,8 @@
     "check:hcs10": "tsx src/ops/hcs10.check.ts",
     "resolve": "tsx src/resolve/resolve.cli.ts",
     "mcp": "tsx src/mcp/server.ts",
-    "check:letter": "tsx src/tools/letter.check.ts"
+    "check:letter": "tsx src/tools/letter.check.ts",
+    "check:freeze": "tsx src/ops/freeze.check.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

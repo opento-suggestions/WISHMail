@@ -31,6 +31,7 @@
  * T-P9-11, T-P10-1, T-P10-2, T-P11-3, T-P12-5, T-P14-1, T-P17-2.
  */
 import { canonicalDigest } from '../core/canonical.js';
+import { proofInputs } from '../core/proof.js';
 import { repoRoot } from '../ops/env.js';
 import { schemas } from '../schema/loader.js';
 import { affix, sealEnvelope, type AssembledEnvelope, type Envelope } from '../core/envelope.js';
@@ -262,13 +263,24 @@ async function firstContact(
 function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string): Record<string, unknown> {
   const parts = {
     rule: { id: 'wishmail:slip', revision: '0.5' },
-    inputs: {
-      resolutionProofHash: slip.resolutionProof.hash,
-      doorbell: slip.doorbell,
-      request: { ledgerTag, topicId: slip.doorbell, sequenceNumber: slip.connectionRequestSeq },
-      log: { ledgerTag, topicId: slip.log, sequenceNumber: slip.logSeq },
-      window: slip.window,
-    },
+    // §5.2's inputs: the locator is where a Verifier re-obtains them — the
+    // request on the doorbell and its record on the sender's log, both on
+    // consensus, so no snapshot is owed. The digest is over what the rule fired
+    // on: the resolution proof's hash, the request's consensus timestamp, and
+    // the window, which §5.9 calls the slip's one authored field.
+    inputs: proofInputs(
+      {
+        ledgerTag,
+        doorbell: slip.doorbell,
+        request: { ledgerTag, topicId: slip.doorbell, sequenceNumber: slip.connectionRequestSeq },
+        log: { ledgerTag, topicId: slip.log, sequenceNumber: slip.logSeq },
+      },
+      {
+        resolutionProofHash: slip.resolutionProof.hash,
+        requestConsensusTimestamp: slip.consensusTimestamp,
+        window: slip.window,
+      },
+    ),
     output: { value: 'unanswered' },
     meaning: {
       statement:

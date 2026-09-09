@@ -27,6 +27,7 @@ import { generateRecipientKey } from '../core/seal.js';
 import { settlementMemo } from '../core/envelope.js';
 import { isToolFailure } from '../core/failure.js';
 import { TRANSACTION_MEMO, connectionCreatedBody, operatorId as operatorIdOf } from '../ops/hcs10.js';
+import { proofInputs } from '../core/proof.js';
 import { resolutionProofFor } from '../resolve/hcs14.js';
 import { inbox, type Delivery } from './inbox.js';
 import { MemoryLedger } from './memory.js';
@@ -49,6 +50,36 @@ function is(name: string, got: unknown, want: unknown): void {
 function ok(name: string, condition: boolean): void {
   checked += 1;
   if (!condition) failures.push(name);
+}
+
+/** Raised, unruled, and not coded around (CLAUDE.md §5). Printed, never counted. */
+const openFindings: string[] = [];
+
+/**
+ * A manifest is a §5.2 Proof, and `spec/schemas/proof.schema.json` is what Step 4
+ * would freeze. Nothing had ever run that schema against a manifest this
+ * implementation produces; running it found two things, and they are not the
+ * same kind of thing.
+ *
+ * FIXED: `inputs` is `{digest, locator, snapshot?}` and every writer had been
+ * putting the input material there directly. `core/proof.ts` is the one builder
+ * now.
+ *
+ * OPEN, ledger §G-16, NOT coded around: the schema requires `meaning.uri` to be
+ * `{ledgerTag, topicId, sequenceNumber}`, all three, because §2.2 defines a
+ * canonical location as "the structured locator, recorded in a proof's meaning,
+ * at which the proof's MANIFEST is found". A manifest cannot carry its own
+ * publication locator: §5.1 hashes `meaning` into the proof, §6.2 computes that
+ * hash at `resolve` time, and §6.4 step 2 publishes the manifest afterwards. So
+ * this one error is expected until Sonic rules, and any OTHER error is a
+ * failure.
+ */
+function manifestAgainstProofSchema(label: string, manifest: unknown): void {
+  const errors = registry.validate('proof', manifest);
+  const open = errors.filter((e) => e.startsWith('/meaning/uri'));
+  const rest = errors.filter((e) => !e.startsWith('/meaning/uri'));
+  ok(`${label} validates against the registered Proof schema: ${rest.join('; ')}`, rest.length === 0);
+  if (open.length > 0) openFindings.push(`${label}: ${open.join('; ')}`);
 }
 
 const SENDER_KEY = 'sender-ed25519';
@@ -113,16 +144,23 @@ function stand(): World {
     x25519Pub: recipientEncryption.x25519Pub,
     keyEpoch: 1,
   };
-  const inputs = {
-    ledgerTag: ledger.ledgerTag,
-    account: recipientAccount,
-    memo: accountMemo,
-    registryTopic: registry,
-    registrySequence: registryEntry.sequenceNumber,
-    consensusTimestamp: registryEntry.consensusTimestamp,
-    profileTopic: profileFile,
-    profileDigest: sha256hex(canonicalBytes(output)),
-  };
+  // §5.2's inputs, through the one builder the resolver uses: the locator is
+  // §9.2's "Inputs and locator" object, the digest is over what was read at it,
+  // and this form carries no snapshot because every element is on consensus.
+  const inputs = proofInputs(
+    {
+      ledgerTag: ledger.ledgerTag,
+      account: recipientAccount,
+      registryTopic: registry,
+      registrySequence: registryEntry.sequenceNumber,
+      consensusTimestamp: registryEntry.consensusTimestamp,
+      profileTopic: profileFile,
+    },
+    {
+      registryEntry: { p: 'hcs-2', op: 'register', t_id: profileFile },
+      profileDigest: sha256hex(canonicalBytes(output)),
+    },
+  );
   const manifest = resolutionProofFor(inputs, output, { ledgerTag: ledger.ledgerTag, topicId: profileFile }, []);
 
   const coordinates: Coordinates = {
@@ -229,6 +267,10 @@ async function main(): Promise<void> {
     before - 1 - result.settlement.amount,
   );
   is('the resolution manifest is on the sender’s manifest topic (T-P9-8)', result.manifestLocator.topicId, w.sender.manifestTopic);
+  // The reader on the writer's output: a manifest is a §5.2 Proof, and
+  // spec/schemas/proof.schema.json is what Step 4 would freeze. Nothing had
+  // ever run it against a manifest this implementation produces.
+  manifestAgainstProofSchema('the resolution manifest', w.manifest as unknown);
 
   // === `inbox`, on exactly what `send` produced ============================
   const keys = new Map<number, KeyObject>([[1, w.recipient.key]]);
@@ -321,6 +363,16 @@ async function main(): Promise<void> {
       ok('it names the request’s postmark', slipped.slip.connectionRequestSeq >= 1);
       ok('and its own record on the sender’s log (§5.9)', slipped.slip.logSeq >= 1);
       is('its manifest is on the sender’s manifest topic (T-P12-5)', slipped.manifestLocator.topicId, s.sender.manifestTopic);
+      const published = (await s.ctx.consensus.messages(slipped.manifestLocator.topicId)).find(
+        (m) => m.sequenceNumber === slipped.manifestLocator.sequenceNumber,
+      );
+      ok('the slip manifest is on the topic its locator names', published !== undefined);
+      if (published !== undefined) {
+        manifestAgainstProofSchema(
+          'the slip manifest',
+          JSON.parse(Buffer.from(published.contents).toString('utf8')) as unknown,
+        );
+      }
       is('one stamp was consumed at the doorbell and no postage', s.ledger.balance(s.sender.account), 9);
     }
   }
@@ -551,6 +603,19 @@ async function refusals(): Promise<void> {
 }
 
 function report(): void {
+  if (openFindings.length > 0) {
+    console.log('');
+    console.log('  OPEN — raised, unruled, not coded around (ledger §G-16):');
+    for (const f of openFindings) console.log(`    ${f}`);
+    console.log(
+      "    §2.2 makes a canonical location the locator at which the proof's own manifest is found,",
+    );
+    console.log(
+      '    and §5.1 hashes the meaning into the proof before §6.4 step 2 publishes it. A manifest',
+    );
+    console.log('    cannot carry its own publication sequence number. Sonic rules; Step 4 waits.');
+    console.log('');
+  }
   if (failures.length > 0) {
     console.error(`check:letter FAILED — ${failures.length} of ${checked} assertions:`);
     for (const f of failures) console.error(`  ${f}`);

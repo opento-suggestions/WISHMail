@@ -29,6 +29,7 @@
     "check:chunk": "npm run check:chunk --workspace app",
     "check:envelope": "npm run check:envelope --workspace app",
     "check:letter": "npm run check:letter --workspace app",
-    "check:hcs10": "npm run check:hcs10 --workspace app"
+    "check:hcs10": "npm run check:hcs10 --workspace app",
+    "check:freeze": "npm run check:freeze --workspace app"
   }
 }
