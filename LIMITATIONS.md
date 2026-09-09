@@ -4,12 +4,14 @@ This document is required of every release that claims conformance (spec §1.5, 
 
 Fields marked `[fill at deployment]` are filled when the testnet artifacts exist and before any conformance claim is made (T-P9-2).
 
+**What this release covers, and whose decision that is.** The build for the ETHOnline window covers **pre-funded operator paths only**. Deferred by our own scoping, not by anything Hedera or the specification does: the `x402-usdc` purchase leg; Postmaster-paid carry for an agent's own submissions, so **T-P4-2 is untested**; the WebMCP send side; `dns` and `nanda` in the letter path; HCS-25; and key rotation. Each is named below in the section it belongs to, and each says the same thing: the specification describes the full product and this deployment ships less of it, so it defers the claim rather than widening the specification to fit or inventing a deployment artifact to make a claim true (STATUS §1; CLAUDE.md §11).
+
 **The entities exist as of 2026-09-08.** Sixteen entities stand on `hedera:testnet`. Eleven were provisioned against the text tagged `v0.5.2`: the stamp token and treasury below, the price topic below, and the reference Postmaster-agent's account `0.0.10426206` with its doorbell `0.0.10426553`, log `0.0.10426554` and manifest `0.0.10426591`. Five more were provisioned against `v0.5.4` — the `hcs14` declaration: the HCS-2 declaration registry `0.0.10428113`, the HCS-1 profile file `0.0.10428178`, its chunk, the registry's current entry naming the file, and the account memo `hcs-11:hcs://2/0.0.10428113`. The full record, with each entity's creation transaction and consensus timestamp and the mirror-node read that confirmed it, is `app/deployment/hedera-testnet.json`; the method is `app/OPERATIONS.md`. **This does not make a claim possible**: `spec/pins.json` carries twenty-eight unfilled pins — the `registeredSchemas` entries, two per schema for fourteen — and T-P9-2 refuses a report while any pin is unfilled. An undeployed ledger tag has no pin, so `hedera:mainnet` carries no entry and its absence is not an unfilled one (D-154). Fields marked `[fill at claim]` remain unfilled for that reason.
 
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.4 |
+| Specification | 0.5.5 |
 | Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
@@ -36,9 +38,11 @@ Confidentiality ends at each operating estate (§15.1). Whoever runs a sender's 
 
 A lane's threshold key names the two agents' account keys literally (§7.1, F-8). An agent that rotates its Hedera account key can read but no longer sign on lanes created before the rotation; new mail needs a new lane born from the doorbell. This release does not migrate lanes and does not attempt to; it reports the condition through `SEND_LANE_INVALID` and re-rings.
 
-## L-5 — The Postmaster's liveness is required for purchase and for first contact
+## L-5 — The Postmaster's liveness is required for purchase, and for a first contact whose payer the sender borrows from it
 
-Required to sell stamps and to provision; required at a first-contact `send`, where it pays the doorbell's fee and submits the connection request (F-7). Bound on loss: one stamp per abandoned first contact. Bound on wait: the sender's `window`. For every other submission the Postmaster is an optional payer; a sender that can pay its own network fees is never stranded. Delivery (`inbox`) and verification (`verify`) never involve it. This release runs one Postmaster instance on testnet with no availability guarantee.
+Required to sell stamps and to provision. Required at a first-contact `send` **only where the sender borrows it as payer**, in which case it pays the doorbell's fee and submits the request the sender signed (F-7, D-157). Bound on loss: one stamp per abandoned first contact. Bound on wait: the sender's `window`. For every submission — the connection request included — the Postmaster is a payer the sender may use or not; a sender that can pay its own network fees is never stranded. Delivery (`inbox`) and verification (`verify`) never involve it. This release runs one Postmaster instance on testnet with no availability guarantee.
+
+**Carry exists in this release only inside `buy_stamp`, and that is our scoping.** §6.1 defines the Postmaster's service side of `send` as **carry** — accepting bodies the agent signed whose transaction identifier names the Postmaster as payer, checking them against a published policy, adding the payer signature and submitting. This release implements it only where §14.2's HBAR leg already requires it: inside the purchase. Every other submission an agent makes is paid by that agent's own operator, from that operator's own configuration, through the payer seam D-157 requires (`agent signs, payer signs`, the payer injected). **The consequence is that T-P4-2 — "a Correspondent configured with nothing but stamps and its own keys completes `send` through the reference Postmaster" — is untested at this release, and the POSTMASTER suite therefore does not pass in full.** Nothing in the specification is at fault and nothing in Hedera prevents it: the seam is built so that the same code path takes a remote signature, and only the remote half is unbuilt in this window.
 
 ## L-6 — Refusal leaves no mark
 
@@ -72,7 +76,9 @@ A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a ma
 
 **This release defers the POSTMASTER claim on T-P16-1, and says why.** Both methods it offers are on `hedera:testnet`, and §14.2 states that on a Hedera network "the buyer signs a Hedera transfer of USDC and so has an account already." So neither method requires no pre-funded Hedera account, and §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" (`Conformance:` T-P16-1) — is unmet here. The reference deployment covers pre-funded Hedera accounts only at this version; it does not add a non-Hedera method to make the claim true, and it does not claim POSTMASTER until the suite passes in full (§1.5, T-P15-3).
 
-That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1, 0.5.2, 0.5.3 or 0.5.4.
+**The `x402-usdc` leg is deferred in this window, and that is our scoping.** The facilitator, the network, the asset and the fee payer above are all established and dated (D-132); what is not built is this release's side of the exchange — the `402` with its `PAYMENT-REQUIRED` requirements, the `PAYMENT-SIGNATURE` retry, and the durable record that recognises requirements it issued across a restart (T-P11-5, T-P11-6). The MVP ships the `hbar` leg only. This is a scope decision of ours inside a five-day window; it is not a limitation of x402, of the facilitator, or of the specification, each of which is ready for it.
+
+That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1, 0.5.2, 0.5.3, 0.5.4 or 0.5.5.
 
 ## L-12 — A stamp is fungible
 

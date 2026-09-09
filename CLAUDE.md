@@ -4,8 +4,8 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 ## 1. The documents, and their order
 
-1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.4 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), and to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08; wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
-2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (83 tests: 78 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-155 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.5 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and to 0.5.5 on 2026-09-09 (D-157, D-159, D-160, D-161); wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (85 tests: 80 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-162 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
 3. `recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
 4. `provenance/` — `WISHMAIL SPEC v0 3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.
 5. `STATUS.md` — the build set as Sonic ranks it, and the demo shape. The one file where "what we build first" is an ordering.
@@ -59,7 +59,7 @@ CONTRIBUTING.md · DCO · .githooks/commit-msg (git config core.hooksPath .githo
 
 **No MUST without a test.** If you find yourself needing a requirement the spec doesn't state, that is a spec change (§5 below), not a line of code.
 
-**Every named test exists.** Section A of the ledger lists 83. Each becomes one test file, keyed by its ID, serving the invariant in its P-ID. Tests are not expanded in scope beyond their sketch without a decision. Extension tests (T-P2-3, T-P5-5, T-P6-6, T-P11-7, T-P12-7) bind only a release that claims the extension; build them last or not at all.
+**Every named test exists.** Section A of the ledger lists 85. Each becomes one test file, keyed by its ID, serving the invariant in its P-ID. Tests are not expanded in scope beyond their sketch without a decision. Extension tests (T-P2-3, T-P5-5, T-P6-6, T-P11-7, T-P12-7) bind only a release that claims the extension; build them last or not at all.
 
 **Vocabulary.** Names in code follow §2.2 and the field names of §5. A lane is a lane, a doorbell is a doorbell, an envelope is an envelope; the tools are `resolve`, `buy_stamp`, `send`, `inbox`, `ack`, `verify`; failure codes are `TOOL_REASON` as §6 fixes them. Do not introduce synonyms.
 
@@ -105,3 +105,21 @@ The case is in `app/OPERATIONS.md`, Step 3 section 8. The first `hcs14` declarat
 ## 10. Things that are not open
 
 Do not reopen: broadcast; a broker dependency; Solidity; a Postmaster that attests; a score computed off consensus that touches a standing; a token other than `$POSTAGE`; HCS-1 for envelope content; a non-blocking `send` (D-30, held); WebMCP as a normative dependency (D-124: unpinned and unsurveyed by choice, decided by the release that ships the page). Each has a record in §18.2 and ledger B. What *is* open is §19, and only §19.
+
+## 11. The MVP build, and the line between us and an operator
+
+This section is the 2026-09-09 rulings (D-156 – D-162). It governs `app/` for this window. Where it and the spec appear to differ, the spec is what binds and this is what we ship.
+
+**Roles, and the vocabulary.** Three human roles: **OPERATOR** — us, running the Postmaster: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, the counter. **C1OPERATOR** and **C2OPERATOR** — the two Correspondents' operators, each bringing a funded testnet wallet. Beside them, **Correspondent A** and **B**, the agents. *The agent signs; the operator pays.* Use these words consistently in ADRs, STATUS, README, LIMITATIONS, plans, and commit messages.
+
+**Config boundary.** Every private key, every payer wallet, and every operator-specific value the Correspondent MCP reads comes from that operator's own configuration file or environment — never from code. `OPERATOR`, `C1OPERATOR`, `C2OPERATOR` are **demo labels, not identifiers**: they must not appear in `app/` as a value, constant, default, enum member, or filename. A third party plugs in its own keys and its own payer from its own configuration. The repository ships a config **template** for a Correspondent; a filled config is gitignored, and `npm run p13:check` is what keeps it that way. `app/deployment/<network>.json` is the Postmaster's ops record only — no Correspondent entity ID goes in it.
+
+**The payer seam.** Every consensus submission an agent makes is constructed *agent signs, payer signs*, with the payer an injected signer. Local key now — the operator's, from config. Remote signature through the Postmaster's `carry` later. Nothing above the seam may know which. Build it as a seam and not as a shortcut: it is what makes the same code path work for a self-paying sender, a borrowed operator, and a Postmaster (§4.4, §6.1, D-157).
+
+**Provisioning order** (D-159), per agent: boot the keys in the agent's own process → `buy_stamp` with `holder` the agent's **public key**, so the transfer creates the account (the account is *bought*, not funded) → `generate_mailbox` → fund exactly one registration fee and no more → `register_agent`, the agent as its own payer and signer → `resolve` its own address under `hcs14` and `hol`. `generate_mailbox` and `register_agent` live on the Correspondent MCP and are **not** among §6.1's six; they are §4.6 affordances and no class is tested against them.
+
+**One template, three readers** (D-162). The lines `send` logs as consensus facts land, the text block `send` returns beside its structured `Postmark`, and `narrate()`'s sentences over a bundle come from one template file. Same sentence, three readers. **None of the three may imply receipt or delivery** — §2.3 reserves *delivery* for the lane, and §11.8 forbids turning silence into refusal. goose renders tool-call cards and final payloads and does *not* render `notifications/progress`, so the Correspondent's own log is the live surface and the result's text block is the retrospective one.
+
+**MVP scoping, and who is named for it.** This window covers pre-funded operator paths only. Deferred: the `x402-usdc` purchase leg; Postmaster-pays carry for an agent's own submissions, so **T-P4-2 is untested**; carry exists only inside `buy_stamp`; the WebMCP send side; `dns` and `nanda` in the letter path; HCS-25; rotation. **LIMITATIONS names our scoping as the reason for each — never Hedera, never the spec.** A deferred claim is honest; a widened specification or an invented deployment artifact is not.
+
+**Probes are disposable.** Throwaway keys; the inert 2026-09-08 probe token and its treasury where reusable; never the real `$POSTAGE` and never the real doorbell. Each probe gets its own small gate report before anything signs.

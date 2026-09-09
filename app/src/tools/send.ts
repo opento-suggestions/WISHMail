@@ -16,21 +16,23 @@
  * artefact that is wrong on consensus and cannot be withdrawn. §10.4's schedule
  * lands with `ack` (T-P1-8, T-P1-9), and the refusal is what holds the place.
  *
- * WHO SUBMITS THE FIRST-CONTACT REQUEST is a seam, and it is parameterised
- * rather than decided here. §6.4 step 1 reads "one stamp passes to the
- * Postmaster, the Postmaster submits the HCS-10 connection request paying that
- * stamp as the doorbell's fee"; §4.4 fixes only that the doorbell carries a fee
- * of exactly one stamp collected by the treasury. A Correspondent that submits
- * its own request pays the same one stamp to the same treasury with one hop
- * fewer and no stamp passing through anyone's hands. Both are built:
- * `doorbell` in the context, when supplied, is the Postmaster's writer and
- * submits; when it is absent the sender submits its own. MINE, 2026-09-08,
- * raised rather than settled.
+ * WHO SUBMITS THE FIRST-CONTACT REQUEST is settled, and the seam stays.
+ * D-157 (2026-09-09): the sender always signs the request, and who pays for
+ * it is the sender's choice, as it is for every other submission it makes
+ * (§3.5, §4.4, §6.4 step 1). A sender that pays for itself rings in one hop;
+ * a sender that borrows a payer transfers one stamp to it first and rings in
+ * two. The ring costs the sender one stamp either way. So `ringer` in the
+ * context is no longer a competing reading of §6.4 — it is the payer,
+ * injected: where it is supplied that account pays and submits the request
+ * the sender signed, and where it is absent the sender does both itself.
+ * Nothing above this seam knows which.
  *
  * Conformance: T-P7-1, T-P7-2, T-P7-3, T-P9-5, T-P9-6, T-P9-7, T-P9-8,
  * T-P9-11, T-P10-1, T-P10-2, T-P11-3, T-P12-5, T-P14-1, T-P17-2.
  */
 import { canonicalDigest } from '../core/canonical.js';
+import { repoRoot } from '../ops/env.js';
+import { schemas } from '../schema/loader.js';
 import { affix, sealEnvelope, type AssembledEnvelope, type Envelope } from '../core/envelope.js';
 import { refuse } from '../core/failure.js';
 import type { MessageLocator } from '../core/locator.js';
@@ -330,6 +332,19 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
         window: windowSeconds,
         endorsement: 'timed-out',
       };
+      // The reader is run on the writer's output before that output leaves the
+      // tool (CLAUDE.md §9). A slip is an AUTHORED object of §5.9, and
+      // spec/schemas/attempted-delivery-slip.schema.json is what a Verifier
+      // reading one validates it against, so `send` validates it here rather
+      // than discovering at replay that it never could. The envelope and its
+      // chunks are validated this way at assembly; this closes the one
+      // authored object of §6.4 that was not.
+      const slipErrors = schemas(repoRoot()).validate('attempted-delivery-slip', slip);
+      if (slipErrors.length > 0) {
+        throw new Error(
+          `send: the slip does not validate against its own registered schema (§5.9): ${slipErrors.join('; ')}`,
+        );
+      }
       // §10.5: "send MUST publish the slip's manifest on the sender's manifest
       // topic before returning a slip" (T-P12-5).
       const manifestLocator = await publishManifest(ctx, slipManifest(slip, ctx.ledgerTag));

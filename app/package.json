@@ -1,6 +1,6 @@
 {
   "name": "@wishmail/app",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "private": true,
   "type": "module",
   "description": "The reference implementation. Provisioning scripts under src/ops/ stand up the Postmaster's entities on hedera:testnet.",

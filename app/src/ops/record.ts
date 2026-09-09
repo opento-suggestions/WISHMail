@@ -19,11 +19,12 @@ import path from 'node:path';
 /**
  * The specification tag entities are provisioned against from here on. It is
  * per-ENTITY and not per-record: the eleven of Step 2 were provisioned against
- * `v0.5.2`, and the declaration against `v0.5.4`, so a single top-level field
+ * `v0.5.2`, and the declaration against `v0.5.4`, and Step 4 onward against
+ * `v0.5.5`, so a single top-level field
  * would be false about one of them the moment the second landed. The record's
  * own `specTag` is the tag it was opened under and stays what it was.
  */
-export const SPEC_TAG = 'v0.5.4';
+export const SPEC_TAG = 'v0.5.5';
 
 export type EntityKind = 'account' | 'token' | 'mint' | 'association' | 'topic' | 'message' | 'account-update';
 

@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.4
+# WISHMail — Specification v0.5.5
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -560,7 +560,8 @@ An agent's doorbell is not a public forum (P-7). It charges one stamp to ring.
 A doorbell MUST carry a HIP-991 custom fee of exactly one stamp, in the stamp token, collected by the treasury. An agent MAY exempt keys from its doorbell's fee.
 `Conformance:` T-P7-4 — every fixture doorbell's custom fee is one unit of the pinned stamp token with the treasury as its collector; a connection request submitted without the fee is rejected at the network; a doorbell whose fee names another collector fails provisioning and is not a doorbell any fixture resolves to.
 
-The fee is charged to the transaction payer. Under D-47 the payer is the Postmaster, so a first-contact `send` first transfers one stamp from the sender to the Postmaster — bearer custody in transit, not key custody — and the Postmaster's connection request pays the doorbell's fee to the treasury, where the stamp is consumed (§14.4). The recipient is paid nothing to be knocked on and owes nothing to answer; what it receives is the request. First contact therefore costs one stamp to ring and, once the lane exists, the envelope's weight to send, and every one of those stamps is consumed.
+<!-- CHANGED: D-157 -->
+The fee is charged to the transaction payer. The sender signs the connection request; who pays for it is the sender's choice, as it is for every other submission the sender makes (§3.5). A sender that pays for itself rings in one hop, and the fee is taken from the stamps it already holds. A sender that borrows a payer — the Postmaster by default, or any other account it names — first transfers one stamp to that payer, bearer custody in transit and not key custody, and the payer's submission of the request the sender signed pays the doorbell's fee to the treasury, where the stamp is consumed (§14.4). The ring costs the sender one stamp either way. The recipient is paid nothing to be knocked on and owes nothing to answer; what it receives is the request. First contact therefore costs one stamp to ring and, once the lane exists, the envelope's weight to send, and every one of those stamps is consumed.
 
 ### 4.5 Uniform postage
 
@@ -579,6 +580,12 @@ An agent that has never touched Hedera is provisioned: it generates its keys in 
 
 Where a registry anchor admits submissions from any account (§9.5), provisioning MAY prepare the agent's registration for the agent to submit under its own key, as payer, and MAY fund that fee; the agent resolves under `hol` without `blurred` because the account that paid for the registration is the account it names. The registration is the agent's, not the Postmaster's: the Postmaster never signs or submits it.
 `Conformance:` T-P13-4 — a fixture provisioned with registration has a `register` operation on the anchor whose payer and `account_id` are both the agent's account, and resolves under `hol` without `blurred`; no registration in the suite is paid by the Postmaster.
+
+<!-- CHANGED: D-159 -->
+**The order, and two affordances.** The acts above have one order, and it is HCS-10's rather than this document's: the topics, then the profile, then the account memo, then the registration. A `register` operation names an account, and a reader that follows an anchor reaches the agent through that account's memo (§9.5); a registration submitted before the topics exist lists a box that is not there. An implementation MAY offer the self-provisioned path as affordances of its own beside the six tools — the reference implementation offers `generate_mailbox`, which creates the doorbell, the log, the manifest topic and, under the native profile, the declaration registry and the profile file, and sets the account memo; and `register_agent`, which submits the agent's own `register` operation on an anchor that admits it. Neither is a verb of §6.1 and neither is on the conformance surface: §6.1 fixes six verbs on one noun, and T-P15-4 requires those six to be identical across a release's transports, not that a release offer only those six.
+
+An agent that registers itself pays for that one submission from its own account, so that the registration's payer and its `account_id` are the same account and `hol` resolves it without `blurred` (§9.5). Where the agent holds no balance of its own, whoever pays for its provisioning MAY fund exactly that one fee and no more; funding is a payment and not a party (§3.9).
+`Conformance:` T-P13-4.
 
 <!-- CHANGED: D-146, D-150 -->
 A provisioned account, topic, or profile MUST be owned by keys the agent generated. The Postmaster MUST NOT retain any key to it.
@@ -674,9 +681,17 @@ StampReceipt                            Settlement (observed)
   holder        string    account or
                           public-key
                           alias
+  provisioning? {price, account,
+                 doorbell, log?,
+                 manifestTopic,
+                 declRegistry?,
+                 profileFile?}
 ```
 
 `rate` is present exactly when the method that bought these stamps is priced by reference to another asset (§14.3): `value` is the rate the Postmaster read and `at` is when it read it.
+
+<!-- CHANGED: D-161 -->
+`provisioning` is present exactly when the purchase also bought the provisioned path (§4.6, §6.3). `price` is what that path cost, under the `provisioning` entry of the price list current at the purchase (§14.3); the fields after it are the entities the Postmaster created for the holder, which is what the agent receives — coordinates, and no secret (P-13). `declRegistry` and `profileFile` are present exactly where the native profile was provisioned.
 
 ### 5.5 Envelope
 
@@ -844,6 +859,14 @@ ack          RECIPIENT | POSTMASTER         yes               yes (HCS)         
 verify       VERIFIER                       yes               no                 nobody
 ```
 
+<!-- CHANGED: D-157 -->
+**The Postmaster's own surface.** A POSTMASTER implements the service side of three of these verbs and one act that is not one of them. It exposes `buy_stamp`, `verify`, and `resolve` with the schemas of this section and no others (T-P15-4). The service side of `send` is **carry**: the Postmaster accepts transaction bodies an agent has signed, whose transaction identifier names the Postmaster's account as payer; checks each against a policy it publishes; adds the payer's signature; submits; and returns the consensus reference. Carry is §14.2's HBAR-leg mechanism made general — what the Postmaster sees is a signed body, never a plaintext, and it holds no key of the agent that signed (P-13). It is not a seventh verb of this surface: it acts on transactions rather than on envelopes, no class is tested against it, and a release that offers it claims nothing by doing so.
+
+A Postmaster MUST NOT submit a connection request that the requesting agent did not sign.
+`Conformance:` T-P2-4 — a fixture connection request bearing only the Postmaster's signature is refused at carry and reaches no doorbell.
+
+What a Postmaster will carry is its own policy, published where its prices are (§14.3); this document fixes none of it. The reference Postmaster carries an HCS-10 operation bearing the memo T-P9-5 requires, on a doorbell, lane, log, or manifest topic, within a published fee ceiling; a stamp transfer to the treasury under a `wishmail:` memo; a topic creation, profile write, or account-memo update under a provisioning purchase; a `ScheduleCreate` for a receipt (§10.4); and a connection request only after one stamp has arrived from that sender for it (§4.4). It refuses everything else, and a refusal leaves no mark (§3.5).
+
 A release that exposes the tool surface over more than one transport MUST expose the same tool schema on each.
 `Conformance:` T-P15-4 — the tool schemas served by every transport in the release are identical after canonicalization.
 
@@ -874,17 +897,21 @@ Failures: `RESOLVE_UNSUPPORTED_ADDRESS` (no supported profile accepts the addres
 
 Buy stamps from the Postmaster.
 
+<!-- CHANGED: D-161 -->
 ```
-buy_stamp(count, payment, holder) -> StampReceipt
+buy_stamp(count, payment, holder, provision = false) -> StampReceipt
   payment   {method: "x402-usdc" | "hbar", ...}
   holder    {account} | {publicKey}
+  provision boolean   also provision the holder under §4.6
 ```
 
-Preconditions: `count` ≥ 1; `payment.method` is one the Postmaster publishes (§14).
+Preconditions: `count` ≥ 1; `payment.method` is one the Postmaster publishes (§14); `provision` is false unless the Postmaster publishes a provisioning price (§14.3).
 
 Behavior: the payment leg settles; the Postmaster transfers `count` stamps to `holder`. Where `holder` is a public key with no account, the transfer creates the account owned by that key (§4.6). `buy_stamp` blocks until the transfer has a consensus timestamp.
 
-Postconditions: `count` stamps in the holder's account; a `StampReceipt` whose `txRef` is the transfer.
+Where `provision` is true, the Postmaster also provisions the holder under §4.6, before or after the transfer, and the receipt's `provisioning` line names what it created and what that cost. Provisioning is never required (§4.6): a holder that brings its own topics leaves `provision` false and the receipt carries no such line.
+
+Postconditions: `count` stamps in the holder's account; a `StampReceipt` whose `txRef` is the transfer, carrying a `provisioning` line exactly when `provision` was true.
 
 Failures: `STAMP_PAYMENT_FAILED`; `STAMP_PAYMENT_UNSETTLED` (paid, transfer not yet witnessed within the tool's wait; the receipt is recoverable by the payment reference); `STAMP_HOLDER_INVALID`; `STAMP_METHOD_UNSUPPORTED`.
 
@@ -902,7 +929,8 @@ Preconditions: `coordinates` carry a resolution proof; the sender holds at least
 
 Behavior, in this order:
 
-1. **Lane.** If no lane exists between sender and recipient, `send` rings the doorbell: one stamp passes to the Postmaster, the Postmaster submits the HCS-10 connection request paying that stamp as the doorbell's fee, and `send` waits up to `window` for the recipient to answer. If the lane is created, `send` continues. If the window closes, `send` returns an `AttemptedDeliverySlip` and stops; the slip is a result, not a failure (F-6).
+<!-- CHANGED: D-157 -->
+1. **Lane.** If no lane exists between sender and recipient, `send` rings the doorbell: the sender signs the HCS-10 connection request and its payer submits it — the sender itself, or a payer it borrows, to whom one stamp passes first (§4.4) — that stamp pays the doorbell's fee, and `send` waits up to `window` for the recipient to answer. If the lane is created, `send` continues. If the window closes, `send` returns an `AttemptedDeliverySlip` and stops; the slip is a result, not a failure (F-6).
 2. **Manifest.** The sender publishes the resolution proof's manifest on its manifest topic; the message's locator becomes the proof's `uri`.
 3. **Assembly.** The Assembler chooses a nonce, builds the AAD, seals the payload against it, and chunks the ciphertext (§7). The envelope's weight and postage are computed.
 4. **Affix.** The sender transfers the envelope's postage in stamps to the treasury under the memo `wishmail:` + `aadHash`, signing as the stamps' owner; the transfer's `txRef` is the settlement reference (§4.3).
@@ -1505,9 +1533,17 @@ the settlement                          hdr.st (§4.3)                      post
 the schedule and its record             the lane's transaction op (§10.4)  the receipt's signature and
                                                                            execution
 the recipient's manifest topic          the executed submission's topic    receipt manifests
+the treasury's inbound transfers        the stamp token's treasury         settlements that count for no
+in the stamp token, over the window     (§1.6 pin; §14.3 PriceList)        envelope: reported under orphans
 ```
 
-Nothing on that list is chosen by the Verifier or supplied to it. Each is named by something already read, beginning from the lane; a scope of topics is expanded the same way for each lane found among them.
+<!-- CHANGED: D-160 -->
+Nothing on that list is chosen by the Verifier or supplied to it. Every row but the last is named by something already read, beginning from the lane; a scope of topics is expanded the same way for each lane found among them. The last row is named by the stamp token instead, and it has to be: a settlement is not on a topic, so it is not reached by following a chunk, and the settlement of an envelope that was never posted is named by nothing at all (F-3). Its treasury is the one §1.6 pins and the price list carries (§14.3), and, having no topic, it is in the window by its own consensus timestamp.
+
+A settlement read by that row is reported only where its sender is in scope — an account that is party to a lane in scope, or that appears as `settlement.from` among the envelopes reconciled. A stranger's orphan is not this correspondence's business, and the sender's own retry already sees it.
+
+A Verifier MUST report under `orphans` every settlement in the window, from a sender in scope, that no canonical chunk in scope names.
+`Conformance:` T-P3-6 — a fixture in which a sender in scope affixes postage under a `wishmail:` memo and posts no chunk against it carries that settlement under `orphans`, with every reconciled envelope's state and standing unchanged; a settlement in the same window from an account not in scope is not reported.
 
 The window bounds what is reconciled, not what is read. A settlement affixed before `from`, a `connection_created` older than the window, a manifest published a day earlier: each is read and included in the evidence of the envelope that names it.
 
@@ -1733,7 +1769,7 @@ A failure mode is a way the world can go wrong around an envelope. This section 
 
 **F-6 — First contact and silence.** A stranger's doorbell is rung and no lane is opened in the sender's window. Silence is not refusal and not non-delivery: it is the absence of an answer, and WISHMail records exactly that. The request is on the doorbell under a postmark; the sender's log records it; the slip binds the two and endorses itself `timed-out` (§4.4, §5.9, §10.5). A lane that opens after the window is OPEN, and the slip stands as a true statement about the window it names (§8.2). The same rule governs a receipt that was requested and never signed: `unclaimed`, and nothing more (§11.4).
 
-**F-7 — Liveness of the Postmaster.** The Postmaster's availability is required for two things and bounded in both. It is required to sell stamps and to provision (§4.6), where its absence delays a purchase. It is required at a first-contact `send`, where it pays the doorbell's fee and submits the connection request (§6.4); a Postmaster that accepts the sender's stamp and never submits the request costs the sender that stamp and nothing else — the bound on loss is one stamp per attempted first contact, and the wait is bounded by the sender's `window`. For every other submission the Postmaster is a payer the sender may use or not (§3.5); a sender whose account can pay its own fees is never stranded. Delivery is a reading of a lane and verification a reading of consensus; neither involves the Postmaster at all (§6.5, §11.1). Its compromise can delay and cannot forge (P-2).
+**F-7 — Liveness of the Postmaster.** The Postmaster's availability is required for two things and bounded in both. It is required to sell stamps and to provision (§4.6), where its absence delays a purchase. It is required at a first-contact `send` where the sender borrows it as payer, in which case it pays the doorbell's fee and submits the request the sender signed (§6.4); a Postmaster that accepts the sender's stamp and never submits the request costs the sender that stamp and nothing else — the bound on loss is one stamp per attempted first contact, and the wait is bounded by the sender's `window`. For every submission, the connection request included, the Postmaster is a payer the sender may use or not (§3.5); a sender whose account can pay its own fees is never stranded. Delivery is a reading of a lane and verification a reading of consensus; neither involves the Postmaster at all (§6.5, §11.1). Its compromise can delay and cannot forge (P-2).
 
 **F-8 — Key rotation.** An agent rotates. Its encryption keys rotate by epoch: every declared key is retained, every envelope sealed under a retired epoch opens, and a resolution made under the old declaration is appraised against that declaration, not the new one (§7.6, §9.2, §11.6). Its Hedera account key is another matter: a lane's submit key names the account keys of its two agents literally, so an agent that rotates its account key can no longer sign on any lane created before the rotation. Nothing on those lanes is lost — every envelope on them remains readable and reconcilable forever — but new mail between the same two agents needs a new lane, born again from the doorbell. A Verifier reports a later declaration as an observation and never lowers a standing for it.
 
@@ -1887,7 +1923,7 @@ The limitations below are part of WISHMail. Each is numbered so that a release's
 
 **L-4 — Account-key rotation strands lanes.** A lane's threshold key names account keys literally; a rotated account needs new lanes (F-8).
 
-**L-5 — The Postmaster's liveness is required for purchase and for first contact.** The bound on loss is one stamp per abandoned first contact; the wait is bounded by the sender's window (F-7).
+**L-5 — The Postmaster's liveness is required for purchase, and for a first contact whose payer the sender borrows from it.** The bound on loss is one stamp per abandoned first contact; the wait is bounded by the sender's window (F-7).
 
 **L-6 — Refusal leaves no mark.** A Postmaster that will not sell, a doorbell that does not answer, a registry that delists, a recipient that does not sign: none of these is on consensus as a refusal. WISHMail records what happened and never what was intended.
 
@@ -2066,7 +2102,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152, D-157, D-159, D-160, D-161 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2164,6 +2200,10 @@ D-145  validFrom dropped from the price list                          §14.3
 D-146  Provisioned topics: the admin key is the agent's               §4.6
 D-150  Except where the standard forbids an admin key                 §4.6
 D-152  Agent identifiers compared under both canonical orders         §9.1, §9.2, §9.5, §5.10, §11.6
+D-157  The sender signs the ring; the payer is the sender's choice     §4.4, §6.1, §6.4, §13.2, §15.3
+D-159  Provisioning has one order; two affordances, not two verbs      §4.6
+D-160  Orphans are read from the treasury, filtered to senders in scope §11.2
+D-161  buy_stamp takes provision; the receipt records it              §5.4, §6.3
 ```
 
 ### 18.3 Concordance of identifiers (informative)

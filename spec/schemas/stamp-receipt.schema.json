@@ -3,7 +3,7 @@
   "$id": "urn:wishmail:0.5:stamp-receipt",
   "title": "StampReceipt",
   "description": "StampReceipt — WISHMAIL_SPEC_v0_5.md §5.4.",
-  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it. NOT EXPRESSIBLE HERE, HELD BY TEST: `rate` is present exactly when the method that bought these stamps is priced by reference (§5.4, §14.3), which this schema cannot check because the method is not carried on the receipt; T-P11-4 is the court. D-136 (0.5.1) added `rate` and closed the gap this comment previously raised.",
+  "$comment": "AUTHORED object (§5.1): produced by an actor and validated against this schema. STUB. Tracks §5 of WISHMAIL_SPEC_v0_5.md field for field. Not yet registered under HCS-13: spec/pins.json registeredSchemas is null for this object (T-P9-4, T-P9-9). The specification leads, the schema follows, the tests are the court: where a constraint below is not expressible in JSON Schema, the named test is what holds it. NOT EXPRESSIBLE HERE, HELD BY TEST: `rate` is present exactly when the method that bought these stamps is priced by reference (§5.4, §14.3), which this schema cannot check because the method is not carried on the receipt; T-P11-4 is the court. D-136 (0.5.1) added `rate` and closed the gap this comment previously raised. D-161 (0.5.5) added `provisioning`, whose presence is likewise held by a test and not by this schema, because the receipt does not carry the request that asked for it.",
   "type": "object",
   "properties": {
     "ledgerTag": {
@@ -80,6 +80,67 @@
     "holder": {
       "type": "string",
       "description": "Account, or public-key alias where the transfer creates the account (§4.6, T-P16-1)."
+    },
+    "provisioning": {
+      "type": "object",
+      "description": "Present exactly when the purchase also bought the provisioned path (§4.6, §6.3, D-161). What the agent receives is coordinates, and no secret (P-13).",
+      "$comment": "T-P13-1, T-P16-1, T-P17-1. Presence is held by the tool, not by this schema: the receipt does not carry the request that asked for it, as it does not carry the method that priced it. T-P11-4 is the court for the price, under the price list's provisioning entry (§14.3).",
+      "properties": {
+        "price": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false,
+          "description": "What the provisioned path cost, under the price list current at the purchase (§14.3)."
+        },
+        "account": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The account created for the holder, owned by the holder's key (§4.6, T-P16-1)."
+        },
+        "doorbell": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The HCS-10 inbound topic, carrying §4.4's one-stamp fee to the treasury (T-P7-4)."
+        },
+        "log": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The HCS-10 outbound topic. Optional in the declaration (§9.1) and so optional here."
+        },
+        "manifestTopic": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The agent's manifest topic, memo wishmail:manifest:1, sole submit key the agent's (§9.1, T-P17-3)."
+        },
+        "declRegistry": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The HCS-2 declaration registry, under the native profile only (§9.2, D-70)."
+        },
+        "profileFile": {
+          "type": "string",
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+          "description": "The HCS-1 profile file, under the native profile only; no admin key (D-150)."
+        }
+      },
+      "required": [
+        "price",
+        "account",
+        "doorbell",
+        "manifestTopic"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

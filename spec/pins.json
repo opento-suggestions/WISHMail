@@ -1,6 +1,6 @@
 {
   "_readme": "Machine-readable form of WISHMAIL_SPEC_v0_5.md §1.6 (see also §18.4). A value of null is an UNFILLED pin: the conformance suite refuses to produce a report while any pin here is null (T-P9-2). Standards digests are FETCHED 2026-09-06 by the recon reports in this repository; each sha256 is over the RAW GIT BLOB BYTES (git cat-file blob <blobSha> | sha256sum), never over a working-tree checkout — core.autocrlf corrupts working-tree digests. Nothing in this file is normative; §1.6 is.",
-  "spec": "0.5.4",
+  "spec": "0.5.5",
   "minorVersion": "0.5",
 
   "standards": {
