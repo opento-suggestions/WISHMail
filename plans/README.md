@@ -41,6 +41,7 @@ about the canonicalizer.
 | `2026-09-08-0.5.2-then-the-entities.md` | 2026-09-08 | Phase A′ — the 0.5.2 patch (D-145 – D-148); the HIP-991 probe; Phase B Step 2 — the entities on `hedera:testnet`; Steps 3 and 4 | `21cb3c2` through `22108a9` |
 | `2026-09-08-0.5.3-the-wiring.md` | 2026-09-08 | Phase A″ — the 0.5.3 patch (D-150, D-151); Phase B — the primitives and their vectors, the schema registry, the durable store, the MCP surface, and the conformance harness with its 83 stubs; Phase D — the `hcs14` declaration, the only signatures in the step | `1b6f243` through `ca9d45c` |
 | `2026-09-09-0.5.5-the-mvp-build.md` | 2026-09-09 | The MVP scope line; seven rulings (D-156 – D-162); the 0.5.5 patch — the ring and the payer seam, `carry`, the orphans row, the provisioning order, the `provisioning` line; two read-only checks; the Step 4 freeze gate. **Nothing signed** | `54c8a15` onward |
+| `2026-09-09-0.5.6-the-gate-and-the-probe.md` | 2026-09-09 | The second window of the same day: §G-16 ruled (D-163), D-159 amended in place, the register op's shape (D-164) and the persistence rules (D-165); the 0.5.6 patch and three schema changes; the HIP-542 probe **signed and run**; the Step 4 freeze re-confirmed and **not signed** | `8b8d272` through `bab4a44` |
 
 Each plan opens by naming what the one before it left standing, so they read in order.
 

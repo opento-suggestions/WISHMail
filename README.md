@@ -82,7 +82,7 @@ Four classes, on one floor.
 
 VERIFIER conformance is achievable with no private broker, API key, credit, Hedera account, stamp, or recipient key configured. That is not a courtesy; it is the point. A mirror node is a read interface, not a broker, and evidence never depends on which one you read.
 
-Seventeen invariants (P-1 – P-17), eighty-five conformance tests, and no MUST without a test. A conformance claim names the classes, profiles, and pins it was measured against; silence claims nothing.
+Seventeen invariants (P-1 – P-17), eighty-six conformance tests, and no MUST without a test. A conformance claim names the classes, profiles, and pins it was measured against; silence claims nothing.
 
 ## Status
 
@@ -94,7 +94,7 @@ Where the build stands, and what is not built: `STATUS.md` §6. What was provisi
 
 Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
 
-**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-two decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-five decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
 
 **Where to look, four places.**
 
