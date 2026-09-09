@@ -740,6 +740,88 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 **What the step still owes before the gate is re-confirmed and anything signs:** the Streamable HTTP transport; the second-process fixture under `app/sdk/`, with its own working directory, its own `.env` and keys born in that process; the fixture's provisioning under §4.6 and its funding, recorded as fixture funding and not as a sale; the letter itself on `hedera:testnet`; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
 
+## The HIP-542 probe — gate report, written before any signature. NOTHING IS SIGNED.
+
+**Status at the time of writing: prepared, not run.** No transaction has been built, signed, or submitted for this probe. It waits on Sonic's approval, which is what CLAUDE.md §11's disposable-probe rule asks for.
+
+**Why it exists.** D-159 puts the whole provisioning order on one mechanism that this repository has read about and never watched: a token transfer to a public-key alias that has no account creates the account under that key. §4.6 states it, T-P16-1 tests it, ledger §H carries it from `docs.hedera.com` and HIP-542 — and every word of that is second-hand. The 2026-09-08 HIP-991 probe is the precedent: four things about doorbell fees that had been inferred from our own ADRs turned out to be observable in one afternoon, and one of them (the fee is debited from the payer, not the submitter) is the reason D-157 exists at all.
+
+Two questions, and the second is the one D-159 actually rests on.
+
+1. **Does the alias transfer create the account, with the token associated and the balance credited?** If it does not, "the account is bought, not funded" is false and step 2 of D-159's order needs a funded account before it, which changes the demo.
+2. **Can that new account, holding zero ℏ, sign a token transfer *out* with someone else as payer?** This is the affix shape under D-157's seam — the agent signs as the stamps' owner (§4.3), the operator pays — and every submission after step 2 depends on it. If a zero-ℏ account cannot be a non-payer signer, the seam does not work and the agents need ℏ, which contradicts D-156.
+
+**What it creates.** Nothing that survives. Throwaway keypairs generated in the probe's own process; the inert probe token and its throwaway treasury from 2026-09-08, reused as CLAUDE.md §11 permits; the operator as payer throughout.
+
+| # | Act | Body, exactly | Signed by | Paid by |
+|---|---|---|---|---|
+| 1 | generate | a fresh ED25519 keypair, in-process, never written to disk | — | — |
+| 2 | `TransferTransaction` | probe token `<probeToken>`: `-1` from the probe treasury, `+1` to the **public-key alias** of the new key (`AccountId.fromEvmAddress` is NOT used; the alias is the public key, per §H — an EVM-address alias makes a hollow account with no key) | probe treasury | operator |
+| 3 | read | `GET /accounts/<alias>` and `GET /accounts/<alias>/tokens` on the mirror node | — | — |
+| 4 | `TransferTransaction` | probe token: `-1` from the new account, `+1` back to the probe treasury | **the new account's key** | operator |
+| 5 | read | `GET /transactions/<txRef>` — `token_transfers`, and the `transfers` list showing which account paid | — | — |
+
+**What it asserts, by named predicate, each read from the mirror node and never from an SDK receipt.**
+
+- After act 2: an account exists at the alias; its `key` is the generated public key; its `balance.balance` in ℏ is **0**; its token balance for the probe token is **1**; the account-creation fee appears in act 2's `transfers` against the **operator**, not against the new account (§H, HIP-32/HIP-542).
+- After act 4: the transfer succeeded; `token_transfers` shows `-1` from the new account and `+1` to the treasury; the `transfers` list shows the fee paid by the **operator**; the new account's ℏ balance is still **0**.
+
+**What it writes, and where.** Nothing in `app/deployment/hedera-testnet.json` — a probe is not an entity of record. The raw mirror JSON for each read goes into this file under the probe's own heading, as the HIP-991 probe's did, so a reader can check the claim without re-running it. The keys are discarded when the process exits and are named in no file.
+
+**Every way it stops.**
+
+- The probe token or its treasury is not the 2026-09-08 one → stop. It must not touch `$POSTAGE` `0.0.10426208` or the treasury `0.0.10426205`, and the runner refuses if it sees either.
+- Act 2's receipt is not `SUCCESS` → stop, report the status, sign nothing further.
+- The alias account exists before act 2 → stop; the probe is meaningless if it did not create the account.
+- Act 4 fails with `INSUFFICIENT_PAYER_BALANCE` against the **new** account → that is the finding, not a failure: it means a zero-ℏ account cannot sign as a non-payer, and D-159 step 4's "fund one fee" becomes "fund every submission", which is a scope change and goes to Sonic before anything else is built.
+- Anything unexpected in the mirror JSON → record it verbatim and stop. The probe exists to be surprised.
+
+**Cost.** Two transactions and two mirror reads, all on the operator's account. No stamp is spent, because no stamp is involved.
+
+---
+
+## The `hol` resolver — a design note, written before it is built (7b)
+
+Not code, and nothing here is normative. This is what §9.5 and the pinned HCS-10 text say the resolver must read, so that the build after the gate has one shape to follow.
+
+**The read path, each step named by the one before it.**
+
+```
+   address (uaid, registry=hol|hashgraph-online)
+        |  §9.5: "Locate the registration"
+        v
+   anchor topic 0.0.6913983 (testnet), read IN FULL, every page
+        |  a `register` op naming the address, by either route:
+        |    (a) a uaid whose identifier AND nativeId are the address's
+        |    (b) an account_id equal to the address's nativeId account
+        v
+   the registration message           <- the proof's locator lives here
+        |
+        +-- carries t_id ---> HCS-2 topic -> current entry -> HCS-1 file -> HCS-11 profile
+        |
+        '-- carries account_id and no t_id ---> the account's memo, then §9.2's rule,
+                                                 carrying §9.2's endorsements
+        v
+   properties.wishmail = the declaration (§9.1)
+        |
+        v
+   MailCoordinates + the resolution proof
+```
+
+**Where `blurred` attaches, and where it does not.** §9.5: "Where the registration's payer is not the address's account, the rule assigns `blurred`: the registration is on consensus, and under a key that is not the agent's." The payer is `payer_account_id` on the mirror's topic-message object — the same field the 09-08 census read. Every one of the anchor's 380 messages was paid by `0.0.2659396`, so **every agent currently on that anchor resolves with `blurred`**, and our own will not, because D-159 step 5 has the agent pay for its own registration. That is the whole point of funding one fee, and T-P13-4 is the test that holds it.
+
+`blurred` is the *only* endorsement this rule assigns on its own, beside `vague` where more than one registration names the address (the latest is taken). Where the registration took route (b), §9.2's endorsements come with it — so a registration by `account_id` whose account memo names an HCS-1 file directly resolves `blurred` twice over, for two different reasons, and both are reported.
+
+**What the proof's `inputs` must carry to satisfy T-P6-1** — "a resolution proof whose inputs are altered after resolution no longer hashes to the proof" — in the shape `core/proof.ts` now fixes for every rule (§5.2, ledger §G-16(a)):
+
+- **`locator`**: `{ledgerTag, anchorTopic, sequenceNumber}` — §9.5's own words — and, for the account-memo shape, §9.2's locator beside it: `{account, registryTopic?, registrySequence?, profileTopic, consensusTimestamp}`. Every element is on consensus and re-obtainable from any mirror node forever, which is why this profile's trust class is `math`.
+- **`digest`**: over the canonical JSON of what was read at that locator — the registration message body, and then either the HCS-2 entry and the profile's digest, or the account memo and the profile's digest. This is what makes T-P6-1 bite: alter any of it and the digest moves, so the proof no longer hashes to itself.
+- **`snapshot`**: **absent**, except where route (b) reaches §9.2's second form, which carries the memo. §9.5 says so directly: "a snapshot only where §9.2's second form carries one." A snapshot on a consensus profile would be a claim that the input is not re-obtainable, which for this profile is false.
+
+**The one thing to get right that is not in §9.5.** The rule matches on the identifier and `nativeId`, **never on the `registry` label** (§9.5, D-108): "a broker that relabels an agent's registry does not change what the ledger recorded." And the identifier comparison runs under both of HCS-14's canonical key orders, normative first, reporting which matched under `observations.agentIdOrder` (§9.1, D-152) — `core/hcs14.ts`'s `matchAgentId` already does exactly this and is what the resolver calls.
+
+**What it must not do.** It must not call the broker. `hol.org/registry/api/v1` is a directory (§9.7), and nothing it returns is an input (P-6). The anchor is read from a mirror node with nothing configured, which is what makes this profile `math` rather than `social-committee`.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.

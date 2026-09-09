@@ -40,11 +40,15 @@ about the canonicalizer.
 | `2026-09-07-0.5.1-then-the-entities.md` | 2026-09-07 | Phase A — the 0.5.1 patch (D-135 – D-138); Phase B Step 0 (the tooling rule and the scaffold) and Step 1 (D-139 – D-144) | `603bb2b`, `9bce012`, `8acaf41` |
 | `2026-09-08-0.5.2-then-the-entities.md` | 2026-09-08 | Phase A′ — the 0.5.2 patch (D-145 – D-148); the HIP-991 probe; Phase B Step 2 — the entities on `hedera:testnet`; Steps 3 and 4 | `21cb3c2` through `22108a9` |
 | `2026-09-08-0.5.3-the-wiring.md` | 2026-09-08 | Phase A″ — the 0.5.3 patch (D-150, D-151); Phase B — the primitives and their vectors, the schema registry, the durable store, the MCP surface, and the conformance harness with its 83 stubs; Phase D — the `hcs14` declaration, the only signatures in the step | `1b6f243` through `ca9d45c` |
+| `2026-09-09-0.5.5-the-mvp-build.md` | 2026-09-09 | The MVP scope line; seven rulings (D-156 – D-162); the 0.5.5 patch — the ring and the payer seam, `carry`, the orphans row, the provisioning order, the `provisioning` line; two read-only checks; the Step 4 freeze gate. **Nothing signed** | `54c8a15` onward |
 
 Each plan opens by naming what the one before it left standing, so they read in order.
 
 **Not every window has a plan file, and the gap is deliberate rather than lost.** Steps 4 and 5 were
-directed by instruction inside the session rather than in plan mode. What stands in for a plan there
+directed by instruction inside the session rather than in plan mode. So was the 09-09 window above,
+whose file is written from the prompt that directed it rather than reconstructed afterwards — the
+rulings it carries are in ledger §B as D-156 – D-162 and the sentences they moved carry `CHANGED`
+markers, so a reader can check the file against the record rather than take its word. What stands in for a plan there
 is the **gate report**, written and committed *before* the step's first signature and in the same
 shape a plan has: what the step creates, what it asserts, what it writes and where, and every way it
 stops. They are `app/OPERATIONS.md` §Step 4 and §Step 5 — the second opening with `send`'s actors,

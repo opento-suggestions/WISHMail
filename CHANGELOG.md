@@ -23,6 +23,10 @@ A patch: text and tests within minor version `0.5`. **No wire string changes** �
 - **`send` validates the attempted-delivery slip against its own registered schema** before publishing the slip's manifest. The slip was the one authored object of §6.4 produced and never read back; the envelope and its chunks were already validated at assembly. CLAUDE.md §9's method rule, applied to the object it had missed.
 - **`CLAUDE.md` §11 — the MVP build, and the line between us and an operator.** The three roles (D-156), the config boundary, the payer seam (D-157), the provisioning order (D-159), one template for three readers (D-162), the MVP scoping line, and the disposable-probe rule. **The role names are demo vocabulary and never identifiers**: `OPERATOR`, `C1OPERATOR`, `C2OPERATOR` may not appear in `app/` as a value, constant, default, enum member or filename, because a third party plugs in its own keys from its own configuration.
 - **ADRs D-156 – D-162**, and the reciprocal `Superseded:` pointer on D-47.
+- **`npm run check:freeze`** — one instance each of StampReceipt, ReturnReceipt and ConformanceClaim, the three schemas Step 4 would close unexercised, plus the measurement §10.4 turns on: the receipt manifest is 693 canonical bytes, one `ConsensusSubmitMessage`, and the whole `ScheduleCreate` freezes to 862 bytes unsigned.
+- **`plans/2026-09-09-0.5.5-the-mvp-build.md`**, and the fourth row in `plans/README.md`.
+- **`app/OPERATIONS.md`** gains the HIP-542 probe gate report — prepared, unsigned — and the `hol` resolver design note.
+- **Ledger §H** gains two dated rows: the HOL testnet anchor read unauthenticated (open-submit, no keys, no fee, still at sequence 380), and HCS-10's `register` field table at the pin.
 
 ### Build decisions with no specification effect
 
