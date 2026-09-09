@@ -4,12 +4,12 @@ This document is required of every release that claims conformance (spec §1.5, 
 
 Fields marked `[fill at deployment]` are filled when the testnet artifacts exist and before any conformance claim is made (T-P9-2).
 
-**The entities exist as of 2026-09-08.** The Postmaster's operational entities stand on `hedera:testnet`, provisioned against the text tagged `v0.5.2`: the stamp token and treasury below, the price topic below, and the reference Postmaster-agent's account `0.0.10426206` with its doorbell `0.0.10426553`, log `0.0.10426554` and manifest `0.0.10426591`. The full record, with each entity's creation transaction and consensus timestamp and the mirror-node read that confirmed it, is `app/deployment/hedera-testnet.json`; the method is `app/OPERATIONS.md`. **This does not make a claim possible**: `spec/pins.json` still carries thirty unfilled pins — the twenty-eight `registeredSchemas` entries and the two `hedera:mainnet` stamp-token fields — and T-P9-2 refuses a report while any pin is unfilled. Fields marked `[fill at claim]` remain unfilled for that reason.
+**The entities exist as of 2026-09-08.** Sixteen entities stand on `hedera:testnet`. Eleven were provisioned against the text tagged `v0.5.2`: the stamp token and treasury below, the price topic below, and the reference Postmaster-agent's account `0.0.10426206` with its doorbell `0.0.10426553`, log `0.0.10426554` and manifest `0.0.10426591`. Five more were provisioned against `v0.5.4` — the `hcs14` declaration: the HCS-2 declaration registry `0.0.10428113`, the HCS-1 profile file `0.0.10428178`, its chunk, the registry's current entry naming the file, and the account memo `hcs-11:hcs://2/0.0.10428113`. The full record, with each entity's creation transaction and consensus timestamp and the mirror-node read that confirmed it, is `app/deployment/hedera-testnet.json`; the method is `app/OPERATIONS.md`. **This does not make a claim possible**: `spec/pins.json` carries twenty-eight unfilled pins — the `registeredSchemas` entries, two per schema for fourteen — and T-P9-2 refuses a report while any pin is unfilled. An undeployed ledger tag has no pin, so `hedera:mainnet` carries no entry and its absence is not an unfilled one (D-154). Fields marked `[fill at claim]` remain unfilled for that reason.
 
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.2 |
+| Specification | 0.5.4 |
 | Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
@@ -72,7 +72,7 @@ A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a ma
 
 **This release defers the POSTMASTER claim on T-P16-1, and says why.** Both methods it offers are on `hedera:testnet`, and §14.2 states that on a Hedera network "the buyer signs a Hedera transfer of USDC and so has an account already." So neither method requires no pre-funded Hedera account, and §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" (`Conformance:` T-P16-1) — is unmet here. The reference deployment covers pre-funded Hedera accounts only at this version; it does not add a non-Hedera method to make the claim true, and it does not claim POSTMASTER until the suite passes in full (§1.5, T-P15-3).
 
-That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1 or 0.5.2.
+That leaves a seam this release records and does not resolve: §14.2's sentence above and this section's own earlier one — "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" — cannot both hold. Logged as an open item in the working ledger's §G for the next specification pass; deliberately not patched at 0.5.1, 0.5.2, 0.5.3 or 0.5.4.
 
 ## L-12 — A stamp is fungible
 

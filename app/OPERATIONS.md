@@ -1,6 +1,6 @@
 # OPERATIONS — how the testnet entities were made
 
-What was created on `hedera:testnet`, in what order, by what means, and every place the means departed from the tool a reader might expect. The entities themselves — IDs, transaction references, consensus timestamps — are in `app/deployment/hedera-testnet.json`, which is also the provisioning script's idempotency record. This file is the method; that file is the result.
+What was created on `hedera:testnet`, in what order, by what means, and every place the means departed from the tool a reader might expect. It also carries the **gate report** for each step, written and committed before that step's first signature — including for steps that have not signed, and in one case for a step whose whole point at the time of writing was that it must not. The entities themselves — IDs, transaction references, consensus timestamps — are in `app/deployment/hedera-testnet.json`, which is also the provisioning script's idempotency record. This file is the method; that file is the result.
 
 `spec/pins.json` carries only what §18.4 fixes: the standards pins, the stamp token and treasury per network, and the minor version's registered schema digests and wire strings. Everything else about a deployment lives in the ops record, per D-132's precedent and D-144.
 
@@ -505,7 +505,7 @@ The registry topic and the account memo carry the earlier timestamps because the
 | `agent.registryEntry` | `the current entry on the declaration registry names this profile file` | `payer_account_id` the operator; message byte-for-byte; `p` `hcs-2`; `op` `register`; `t_id` = `0.0.10428178` | PASS |
 | `agent.accountMemo` | `the account memo names the declaration registry` | `memo` = `hcs-11:hcs://2/0.0.10428113`; `deleted` false | PASS |
 
-**§9's acceptance test.** A second run created nothing, exited 0, and printed sixteen rows every one `existing`. `spec/pins.json` reported `already`; thirty pins remain unfilled and T-P9-2 still blocks every claim, which is correct — a declaration is not a pin.
+**§9's acceptance test.** A second run created nothing, exited 0, and printed sixteen rows every one `existing`. `spec/pins.json` reported `already`; thirty pins remained unfilled at that run — twenty-eight from D-154 later the same day — and T-P9-2 still blocks every claim, which is correct: a declaration is not a pin.
 
 ### 8. The first profile file, and why there are two
 
@@ -543,7 +543,7 @@ Two defects in the coordinates were caught by validating against the schema befo
 
 **Status: BUILT, PLANNED, NOT SIGNED — and deliberately not signable by `npm run provision`.** The plan resolves all 56 steps under `npm run schemas:plan`; nothing has been submitted. This section is written before the first transaction, on the rule the probe, Step 2 and Step 3 followed.
 
-**Why it is held.** §1.7: "A patch revision amends text and tests within a minor version; it changes no wire string, and **once a minor version's schemas are registered it changes no schema**." Registering *is* the freeze of `spec/schemas/` for minor version 0.5. Three of the last four patches changed a schema — 0.5.1 and 0.5.2 each corrected one, and 0.5.4 added `observations.agentIdOrder` — and each was permitted *only because nothing is registered yet*. The six tool bodies still return `NOT_IMPLEMENTED` and no fixture has yet validated a real object against a real schema, so the schemas have not been exercised by the thing they exist for.
+**Why it is held.** §1.7: "A patch revision amends text and tests within a minor version; it changes no wire string, and **once a minor version's schemas are registered it changes no schema**." Registering *is* the freeze of `spec/schemas/` for minor version 0.5. Three of the last four patches changed a schema — 0.5.1 and 0.5.2 each corrected one, and 0.5.4 added `observations.agentIdOrder` — and each was permitted *only because nothing is registered yet*. The six tool bodies on the MCP surface still return `NOT_IMPLEMENTED`, and no fixture has yet validated a real object read off consensus, so the schemas have not been exercised by the thing they exist for. `send`, `inbox` and `verify` now exist as implementations and are exercised against a modelled ledger (§Step 5), where the Chunk, Envelope, EvidenceBundle, Narrative and Settlement schemas do validate what the reference produced — which is the reference checking itself, not a release checked against evidence it did not produce. The freeze is held until the bodies pass their fixtures on a real letter.
 
 **The sentence that governs when this is signed:** *this step is §1.7's freeze, and it is signed only when the six tool bodies pass their fixtures.* Until then `npm run conformance` prints `NO REPORT — 28 unfilled pins (T-P9-2)`, and that is the correct output, not a defect to route around.
 
@@ -714,7 +714,7 @@ base-class freezeWith -> chunkInfo: null
 
 So `app/src/ops/hcs10.ts` carries a `MessageOperation` transaction that overrides `freezeWith` to the base class's and nothing else. It is used for envelope chunks and for nothing that is not one.
 
-**This is also the concrete answer to an open question.** "HCS-10 by hand vs SDK" (STATUS §6) is settled in the narrow way the evidence supports: the SDK's transaction classes are used, with **one** override, scoped to the one operation whose wire form §7.4 constrains — not a hand-rolled protobuf, and not the SDK unmodified. The first chunk on consensus is the confirmation, and if the mirror shows `chunk_info` on it the step stops there.
+**This is also the concrete answer to an open question.** "HCS-10 by hand vs SDK" (STATUS §6) is settled in the narrow way the evidence supports: the SDK's transaction classes are used, with **one** override, scoped to the one operation whose wire form §7.4 constrains — not a hand-rolled protobuf, and not the SDK unmodified. The first chunk on consensus is the confirmation, and if the mirror shows `chunk_info` on it the step stops there. **Recorded in full** as its own scoped divergence above — "an envelope chunk is frozen through the base class" — with both decoded transaction bodies as its evidence, because a reader of the wire needs to know why our chunks look unlike every other SDK-built message on the network.
 
 ### 6. The T-IDs this step answers
 
@@ -727,6 +727,18 @@ Those the step **exercises** are expanded against fixtures captured from the run
 ### 7. What must be true before this is called done
 
 The letter has a postmark; `inbox` returned the payload byte-identical; `verify` produced a bundle from consensus alone with a narrative whose `bundleDigest` matches; every altered copy was refused with the reason §6.5 names; and no chunk on consensus carries `chunk_info`.
+
+### 8. Where Step 5 stands — close of 2026-09-09
+
+**Nothing in this step has been signed.** No connection request, no settlement and no chunk has reached `hedera:testnet`, and the eleven entities §1 lists have not been created. What exists is the whole of the step that can exist without them.
+
+`send`, `inbox` and `verify` are built and run end to end — against `app/src/tools/memory.ts`, a modelled ledger that enforces the four things the network enforces and this step depends on: a topic with a submit key refuses any other key, a topic with a HIP-991 fee assesses it to the collector unless the submitter is exempt, a transfer fails on a short balance, and consensus order is total. `npm run check:letter` is 60 assertions over one letter: resolved, rung through a fee-gated doorbell, answered, stamped, sealed, chunked, posted; opened by `inbox` byte for byte; reconciled by `verify` into a bundle two Verifiers agree on and a narrative carrying its digest; the bundle, the narrative, the envelope and the settlement each validated against their registered schemas; a slip where no door answered; and the seven alterations of §7 refused on consensus rather than in memory.
+
+**The letter appraises `unverified`, with the single reason T-P9-3.** The schema registry is built and unsigned (§Step 4), so no `schemaRef` resolves, and §11.4 appraises a resolution whose `schemaRef` does not resolve as unverified. That is the true statement about this build and it holds until Step 4 is signed. It is worth saying plainly because it is the shape of a Verifier that cannot be talked into a better answer.
+
+**Two things this step refuses rather than skips.** §6.4's step 7, the scheduled return receipt, is not implemented: postage would include the receipt fee and chunk 0's header would request it, so an envelope assembled without §10.4's schedule is one whose sender paid for a receipt nobody was asked for — an artefact that is wrong on consensus and cannot be withdrawn. `send` therefore refuses `returnReceipt` outright. And who submits the first-contact connection request is **parameterised, not decided**: ledger §G-14 states both readings, the code takes the sender-submits one by default, and `SenderContext.ringer` takes §6.4's literal one.
+
+**What the step still owes before the gate is re-confirmed and anything signs:** the Streamable HTTP transport; the second-process fixture under `app/sdk/`, with its own working directory, its own `.env` and keys born in that process; the fixture's provisioning under §4.6 and its funding, recorded as fixture funding and not as a sale; the letter itself on `hedera:testnet`; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
 
 ## Entities
 

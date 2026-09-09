@@ -4,6 +4,8 @@ The suite. One test per `T-<P-ID>-<n>`, keyed to the invariant in its `P-ID` (§
 
 **All 83 files exist; none is expanded.** Every one fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim. A test that is not written must not report that it passed.
 
+**A reference-side check is not a test, and is not counted as one.** `app/` carries a growing set of `npm run check:*` scripts — the seal against RFC 9180's Appendix A.1, the chunker against §11.3's worked example, a whole letter against a modelled ledger — and they hold the reference implementation to the specification as it is written. They are not the suite: they run the reference against itself, where a conformance test runs a *release* against evidence it did not produce. None of them moves a count here.
+
 ## The register
 
 `spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: **83 tests — 78 core and 5 extension.** Every one of them becomes one test file, keyed by its identifier. A test is not expanded in scope beyond its sketch in §A without a decision (`D-nnn`).

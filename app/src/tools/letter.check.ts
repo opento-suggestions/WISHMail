@@ -11,9 +11,11 @@
  *
  * The seven alterations are the ones a reader owes a refusal for: the header,
  * the lane, the resolution proof, the settlement's memo, the `operator_id`, the
- * key epoch, and a broken link in the chain. Each is applied to a copy of what
- * `send` produced, on consensus, in the way an adversary with a lane key could
- * apply it — not to an object in memory before it is submitted.
+ * key epoch, and a broken link in the chain. Each is applied to what `send`
+ * already put on the ledger, never to an object before it is submitted — and
+ * rewriting a message that landed is a HARDER case than the real one, where a
+ * party holding a lane key can only add a competing message and can never alter
+ * one already on consensus. A reader that holds against this holds against that.
  *
  * Conformance (reference side): T-P1-1, T-P1-2, T-P1-6, T-P1-10, T-P1-11,
  * T-P3-1, T-P3-3, T-P3-4, T-P4-1, T-P4-2, T-P7-1, T-P9-5, T-P9-10, T-P10-1,

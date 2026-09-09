@@ -10,7 +10,7 @@ It sells two claims, separately.
 
 **Story.** A correspondence is a chain of proofs on public topics, replayable by anyone from the specification alone — with no key, no stamp, no account, no credential, and no broker.
 
-ETHOnline 2026 submission. Specification 0.5.2; frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138) and to 0.5.2 on 2026-09-08 (D-145 – D-148). Wire strings carry `0.5`. Deployed on `hedera:testnet` and no other ledger.
+ETHOnline 2026 submission. Specification 0.5.4; frozen at 0.5.0 on 2026-09-07 and patched four times since — 0.5.1 the same day (D-135 – D-138), then 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08. Wire strings carry `0.5`, because a patch changes none. Deployed on `hedera:testnet` and no other ledger.
 
 ## What it is not
 
@@ -86,7 +86,7 @@ Seventeen invariants (P-1 – P-17), eighty-three conformance tests, and no MUST
 
 ## Status
 
-The specification is frozen and the Postmaster's entities stand on `hedera:testnet`: the `$POSTAGE` token and its treasury, the price topic carrying its first `PriceList`, and the reference agent's doorbell, log and manifest. **No conformance claim is valid yet** — the schemas are unregistered, so thirty pins in `spec/pins.json` remain unfilled and the suite refuses to produce a report while any is. Standing up the entities did not make a claim possible; it made one eventually possible.
+The specification is frozen and sixteen entities stand on `hedera:testnet`: the `$POSTAGE` token and its treasury, the price topic carrying its first `PriceList`, the reference agent's doorbell, log and manifest, and its `hcs14` declaration — an HCS-2 registry, an HCS-1 profile file, and the account memo that points at them. `resolve` walks that chain back from consensus with nothing configured. **No conformance claim is valid yet** — the schemas are unregistered, so twenty-eight pins in `spec/pins.json` remain unfilled and the suite refuses to produce a report while any is. Standing up the entities did not make a claim possible; it made one eventually possible.
 
 Where the build stands, and what is not built: `STATUS.md` §6. What was provisioned, with each entity's creation transaction and the mirror-node read that confirmed it: `app/deployment/hedera-testnet.json`. The method, and every departure from a tool's default path: `app/OPERATIONS.md`.
 
@@ -94,7 +94,7 @@ Where the build stands, and what is not built: `STATUS.md` §6. What was provisi
 
 Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
 
-**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and forty-nine decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and fifty-five decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
 
 **Where to look, four places.**
 
@@ -103,7 +103,7 @@ Written with Claude Code, under direction. Disclosed here because ETHGlobal's ru
 - `CHANGELOG.md` — attribution per entry, under the key at the top of the file: **[S]** Sonic, **[C]** Claude in chat, **[CC]** Claude Code.
 - The git history — every commit carries `Signed-off-by:` under the DCO and `Co-Authored-By:` the model that assisted it, and the history is incremental by construction.
 
-**Nothing is reused.** All work here began after ETHOnline 2026 opened. No code was imported, ported, or paraphrased from any earlier WISHMail or related repository; the prior thinking that guided the design is in `provenance/`, labelled as provenance and binding nothing. Third-party code is declared in the two `package.json` files: `@hashgraph/sdk` for every transaction, `ajv` and `ajv-formats` for JSON Schema, and `canonicalize` for RFC 8785 — the canonicalizer is a library rather than a hand-rolled one because `spec/vectors/aad.json` is the court and one implementation must serve both the price list and the envelope.
+**Nothing is reused.** All work here began after ETHOnline 2026 opened. No code was imported, ported, or paraphrased from any earlier WISHMail or related repository; the prior thinking that guided the design is in `provenance/`, labelled as provenance and binding nothing. Third-party code is declared in the two `package.json` files: `@hashgraph/sdk` for every transaction, `@modelcontextprotocol/sdk` for the tool surface, `ajv` and `ajv-formats` for JSON Schema, `canonicalize` for RFC 8785, and `dotenv`. The canonicalizer is a library rather than a hand-rolled one because `spec/vectors/aad.json` is the court and one implementation must serve both the price list and the envelope. The seal went the other way: RFC 9180 base mode is composed here on `node:crypto`, because the RFC publishes no vector for §7.3's ciphersuite and Appendix A.1 — which shares its KEM and KDF — can be run through the same code as a court. Both rulings are written out in `app/OPERATIONS.md`, in the same form and with opposite conclusions.
 
 **No key material anywhere.** Keys are born in the agent's process and never leave it; `.gitignore` matches `.env*` with `!.env.example` negated back in, and `npm run p13:check` is the grep that keeps it that way (P-13).
 

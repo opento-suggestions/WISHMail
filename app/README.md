@@ -1,6 +1,10 @@
 # app/
 
-The reference implementation. Nothing here exists yet: this file records what goes here and what each part must declare, so the first module written lands in the right place.
+The reference implementation. This file records what goes here and what each part must declare.
+
+**What exists, at close of 2026-09-09.** `src/core/` — canonical JSON, §7.2's AAD, RFC 9180 base mode composed on `node:crypto`, §7.3's seal, HCS-14 identifiers, §7.4's chunker with §11.3's walk beside it, and §6.4's assembly with §5.5's recovery beside it. `src/ops/` — the provisioning that stood the entities up, and HCS-10's operation layer. `src/resolve/` — the `hcs14` resolver. `src/schema/`, `src/state/`, `src/mcp/` — one ajv registry for §18.5's fourteen, §14.2's durable record, and the six tools over stdio. `src/tools/` — `send`, `inbox` and `verify`, over a consensus port whose read half has no write on it, with a modelled ledger they are exercised against. Each module carries the sections it implements and the tests it answers to.
+
+**What does not exist**: the Streamable HTTP transport, the SDK entry point under `sdk/`, the CLI, the WebMCP page, the `dns`, `nanda` and `hol` resolvers, and the bodies of `buy_stamp` and `ack`. STATUS.md §6 says what each blocks.
 
 Per §18.5 and CLAUDE.md §4, `app/` holds the MCP server, the WebMCP page as its client, the SDK, the command line, and the resolvers — **each declaring the specification version and the classes and profiles it claims.**
 
