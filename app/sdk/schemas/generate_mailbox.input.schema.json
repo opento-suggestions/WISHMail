@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:affordance:generate_mailbox:input",
+  "title": "generate_mailbox input",
+  "description": "§4.6 AFFORDANCE, and NOT one of §6.1's six (D-159). No conformance class is tested against it and it appears in no claim: it is how an agent stands up its own six topics and its own declaration, on the Correspondent's MCP, under the agent's own key. It takes no arguments because it has none to take — everything it needs is the agent's home directory, and everything it decides it decides by reading consensus. It is idempotent against consensus and never against local state: it resolves the agent's own address under hcs14 first and creates nothing if coordinates come back (D-165), so a wiped home cannot cause a second doorbell.",
+  "type": "object",
+  "properties": {
+    "dryRun": {
+      "type": "boolean",
+      "default": false,
+      "description": "Read consensus, report what exists and what would be created, and submit nothing."
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

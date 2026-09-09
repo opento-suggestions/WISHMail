@@ -44,6 +44,7 @@ import { manifestAmong } from '../core/proof.js';
 import { accountOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
 import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
+import { line } from './narration.js';
 import {
   outputDigestOf,
   resolveHcs14,
@@ -331,6 +332,7 @@ export function readerSource(reader: Reader): ProfileSource {
         sequenceNumber: m.sequenceNumber,
         consensusTimestamp: m.consensusTimestamp,
         body: operationOf(m),
+        payer: m.payer,
       }));
     },
   };
@@ -625,60 +627,87 @@ function toMessage(o: ObservedChunk, lane: string): TopicMessage {
 
 /**
  * §11.7's narrative: "produced from the bundle and from nothing else", carrying
- * the bundle's digest (T-P3-4). One sentence per fact, from fixed templates, so
+ * the bundle's digest (T-P3-4). One sentence per fact, from `tools/sentences.json`
+ * — the ONE template three readers share (D-162) — so
  * that "a narrative SHOULD state nothing the bundle does not contain" is
  * demonstrated rather than promised.
  */
 export function narrate(bundle: EvidenceBundle): Narrative {
   const lines: string[] = [];
   lines.push(
-    `This reading covers ${bundle.topics.length} topic${bundle.topics.length === 1 ? '' : 's'} on ${bundle.ledgerTags.join(', ')}, from consensus timestamp ${bundle.window.from} to ${bundle.window.to}, under specification ${bundle.spec}.`,
+    line('narrative.scope', {
+      topics: bundle.topics.length,
+      ledgerTags: bundle.ledgerTags.join(', '),
+      from: bundle.window.from,
+      to: bundle.window.to,
+      spec: bundle.spec,
+    }),
   );
-  if (bundle.correspondence.length === 0) lines.push('No envelope was found in that scope.');
+  if (bundle.correspondence.length === 0) lines.push(line('narrative.empty'));
 
   for (const e of bundle.correspondence) {
     const sender = e.settlement?.from ?? 'an account this reading could not name';
     const zero = e.chunks[0];
     lines.push('');
-    lines.push(`Envelope ${e.envelope.aadHash}.`);
+    lines.push(line('narrative.envelope', { aadHash: e.envelope.aadHash }));
     if (zero !== undefined) {
-      lines.push(
-        `It was posted to lane ${e.envelope.lane} in ${e.chunks.length} chunk${e.chunks.length === 1 ? '' : 's'}, the first postmarked at ${zero.consensusTimestamp} as sequence ${zero.sequenceNumber}.`,
-      );
+      lines.push(line('narrative.posted', {
+        lane: e.envelope.lane,
+        chunks: e.chunks.length,
+        consensusTimestamp: zero.consensusTimestamp,
+        sequenceNumber: zero.sequenceNumber,
+      }));
     }
     if (e.settlement !== undefined) {
-      lines.push(
-        `Its postage was ${e.settlement.amount} stamp${e.settlement.amount === 1 ? '' : 's'} in token ${e.settlement.tokenId}, affixed by ${sender} to ${e.settlement.to} at ${e.settlement.consensusTimestamp} under the memo ${settlementMemo(e.envelope.aadHash)}, which names this envelope and no other.`,
-      );
+      lines.push(line('narrative.postage', {
+        amount: e.settlement.amount,
+        tokenId: e.settlement.tokenId,
+        from: sender,
+        to: e.settlement.to,
+        consensusTimestamp: e.settlement.consensusTimestamp,
+        memo: settlementMemo(e.envelope.aadHash),
+      }));
     } else {
-      lines.push('No settlement was found at the reference its header names.');
+      lines.push(line('narrative.postage.absent'));
     }
-    lines.push(
-      `Its resolution was made under the ${e.envelope.profile} profile, declared at trust class ${e.appraisal.declared.trustClass}${e.appraisal.declared.endorsements.length === 0 ? ' with no endorsements' : ` with the endorsements ${e.appraisal.declared.endorsements.join(', ')}`}, and its manifest is message ${e.envelope.resolutionProof.uri?.sequenceNumber ?? '?'} on topic ${e.envelope.resolutionProof.uri?.topicId ?? '?'}.`,
-    );
-    lines.push(`It was sealed against key epoch ${e.envelope.keyEpoch}, over ${e.envelope.ciphertextBytes} bytes of ciphertext, weighing ${e.envelope.weight} ounce${e.envelope.weight === 1 ? '' : 's'}.`);
-    lines.push(`Its state is ${e.state}.`);
+    lines.push(line('narrative.resolution', {
+      profile: e.envelope.profile,
+      trustClass: e.appraisal.declared.trustClass,
+      endorsements:
+        e.appraisal.declared.endorsements.length === 0
+          ? 'with no endorsements'
+          : `with the endorsements ${e.appraisal.declared.endorsements.join(', ')}`,
+      sequenceNumber: e.envelope.resolutionProof.uri?.sequenceNumber ?? '?',
+      topicId: e.envelope.resolutionProof.uri?.topicId ?? '?',
+    }));
+    lines.push(line('narrative.seal', {
+      keyEpoch: e.envelope.keyEpoch,
+      ciphertextBytes: e.envelope.ciphertextBytes,
+      weight: e.envelope.weight,
+    }));
+    lines.push(line('narrative.state', { state: e.state }));
     if (e.appraisal.appraised.reasons.length === 0) {
-      lines.push('Every check this reading ran held, so its standing is verified.');
+      lines.push(line('narrative.verified'));
     } else {
-      lines.push(
-        `Its standing is ${e.appraisal.appraised.standing}, which is the lowest any check yielded, and the checks that yielded it are ${e.appraisal.appraised.reasons.join(', ')}.`,
-      );
+      lines.push(line('narrative.standing', {
+        standing: e.appraisal.appraised.standing,
+        reasons: e.appraisal.appraised.reasons.join(', '),
+      }));
     }
     lines.push(
       e.appraisal.receipt.status === 'none'
-        ? 'No return receipt was requested for it, and none was found.'
-        : `Its return receipt is ${e.appraisal.receipt.status}.`,
+        ? line('narrative.receipt.none')
+        : line('narrative.receipt', { status: e.appraisal.receipt.status }),
     );
     if (e.offChain.length > 0) {
-      lines.push(`${e.offChain.length} chunk${e.offChain.length === 1 ? '' : 's'} bearing this identifier reached consensus off the chain and were recorded without being used.`);
+      lines.push(line('narrative.offchain', { count: e.offChain.length }));
     }
-    lines.push('This reading says nothing about what the envelope contained; nothing on any topic can.');
+    lines.push(line('narrative.silence'));
   }
 
   if (bundle.orphans.length > 0) {
     lines.push('');
-    lines.push(`${bundle.orphans.length} settlement${bundle.orphans.length === 1 ? '' : 's'} named no envelope in this scope.`);
+    lines.push(line('narrative.orphans', { count: bundle.orphans.length }));
   }
 
   return { bundleDigest: bundle.digest, text: lines.join('\n') };

@@ -40,6 +40,33 @@ export interface WishmailProperties {
   readonly keyEpoch: number;
 }
 
+/**
+ * Who the agent says it is, in the two places it has to agree with itself.
+ *
+ * §9.5 recomputes an agent identifier "from the profile's name, version, and
+ * skills", so `displayName` is BOTH the HCS-11 `display_name` and HCS-14's
+ * canonical `name`, and there is one field for the pair rather than two that
+ * could drift. This is the same defect the 2026-09-08 declaration had between
+ * `version` strings, generalized before it can recur: the fields HCS-14 hashes
+ * and the fields a reader can see are one set of values.
+ *
+ * It is optional, and absent means the Postmaster's own agent — the identity
+ * `PROFILE_DEFAULTS` names, which is the one already on consensus and whose
+ * bytes must not move.
+ */
+export interface ProfileIdentity {
+  readonly displayName: string;
+  readonly alias: string;
+  readonly bio: string;
+}
+
+/** The Postmaster's own Correspondent identity (D-140). On consensus since 2026-09-08. */
+export const PROFILE_DEFAULTS: ProfileIdentity = {
+  displayName: 'WISHMail Postmaster Agent',
+  alias: 'wishmail-postmaster',
+  bio: 'The WISHMail Postmaster’s own Correspondent identity. Certified mail for agents on Hedera.',
+};
+
 export interface ProfileInputs {
   readonly ledgerTag: 'hedera:testnet' | 'hedera:mainnet';
   readonly network: string;
@@ -47,6 +74,8 @@ export interface ProfileInputs {
   readonly doorbell: string;
   readonly log: string;
   readonly wishmail: WishmailProperties;
+  /** Absent: the Postmaster's own agent. Present: a Correspondent's own (D-165). */
+  readonly identity?: ProfileIdentity;
 }
 
 /**
@@ -85,12 +114,12 @@ export interface ProfileInputs {
  * published.
  */
 export const PROFILE_VERSION = '1.0';
-export const AGENT_NAME = 'WISHMail Postmaster Agent';
+export const AGENT_NAME = PROFILE_DEFAULTS.displayName;
 
 export function agentData(inputs: ProfileInputs): AgentData {
   return {
     registry: 'self',
-    name: AGENT_NAME,
+    name: (inputs.identity ?? PROFILE_DEFAULTS).displayName,
     version: PROFILE_VERSION,
     protocol: 'hcs-10',
     nativeId: `hedera:${inputs.network}:${inputs.account}`,
@@ -111,12 +140,13 @@ export function agentData(inputs: ProfileInputs): AgentData {
  */
 export function buildProfile(inputs: ProfileInputs): Record<string, unknown> {
   const agent = agentData(inputs);
+  const identity = inputs.identity ?? PROFILE_DEFAULTS;
   return {
     version: PROFILE_VERSION,
     type: 1,
     display_name: agent.name,
-    alias: 'wishmail-postmaster',
-    bio: 'The WISHMail Postmaster’s own Correspondent identity. Certified mail for agents on Hedera.',
+    alias: identity.alias,
+    bio: identity.bio,
     uaid: uaid(agent, { uid: `${inputs.doorbell}@${inputs.account}` }, CANONICAL_ORDER),
     inboundTopicId: inputs.doorbell,
     outboundTopicId: inputs.log,

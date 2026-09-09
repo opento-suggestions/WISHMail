@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wishmail:app:0.5:affordance:register_agent:input",
+  "title": "register_agent input",
+  "description": "§4.6 AFFORDANCE, and NOT one of §6.1's six (D-159). It submits this agent's own registration on the HOL anchor §9.5 names, with the AGENT as payer and signer — which is the one submission in WISHMail the agent pays for, and the reason its account holds ℏ at all (§3.9: funding is a payment and not a party). It matters who paid: §9.5 assigns `blurred` where the registration's payer is not the address's account, and every agent currently on the testnet anchor carries it. It takes no arguments: the address, the uaid and the registry are the agent's own, read from the declaration it already published. Idempotent against consensus — the anchor is read in full first, and a registration this account already has is left alone, because §9.5 assigns `vague` where more than one names an address and a duplicate cannot be withdrawn (D-165).",
+  "type": "object",
+  "properties": {
+    "dryRun": {
+      "type": "boolean",
+      "default": false,
+      "description": "Read the anchor, report whether a registration exists and what would be submitted, and submit nothing."
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

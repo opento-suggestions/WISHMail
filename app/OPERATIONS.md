@@ -12,7 +12,7 @@ Every entity in the ops record is written from a **mirror-node REST read**, not 
 
 This is not merely a preference. P-3 makes replay a function of public consensus data, and P-4 forbids a broker; together they fix a mirror node as a read interface rather than a broker. The same rule governs `conformance/` and is written down there.
 
-## Libraries, why each is a dependency rather than a few lines here — and the two things that are not
+## Libraries, why each is a dependency rather than a few lines here — and the three things that are not
 
 **`ajv` 8 with `ajv-formats`, imported as `ajv/dist/2020`.** The schemas in `spec/schemas/` declare JSON Schema draft 2020-12, and D-143 requires the first `PriceList` to be validated against `price-list.schema.json` before it is submitted and byte-compared after. A validator that implements some of 2020-12 would make "validated against the schema" mean something narrower than the sentence says.
 
@@ -35,6 +35,8 @@ And the alternative was not neutral. **FETCHED 2026-09-08:** `@hpke/core` carrie
 **The consequence, named rather than discovered.** `node:crypto` is not the browser. §14.2 fixes the WebMCP page as a *client* of the MCP server and never the resource server, so nothing shipping today seals or opens in a browser; D-124 holds that surface unpinned by choice. An SDK that later runs in one ports the same eighty lines onto `crypto.subtle`, which exposes the same three primitives — X25519 `deriveBits`, HKDF, and AES-GCM. What would not port is a library that assumes Node, which is the reverse of the usual argument and is why this is written down rather than assumed.
 
 **The durable store is a few lines here, not a dependency.** §14.2 requires that "the Postmaster keeps its own durable record of settled payment references — retained until the payment it names can no longer land, and surviving restarts," and T-P11-5 and T-P11-6 test exactly the restart: a replayed payload returns the original `StampReceipt` with no second transfer, and requirements issued before a restart are accepted after it. That is a keyed set of tens of rows behind `WISHMAIL_STATE_DIR`, and `journal.ts` already established the discipline it needs — write a temp file, then `renameSync`, so a half-written file is never observed. `better-sqlite3` is a native build on Windows inside a five-day window and `node:sqlite` is experimental on Node 22: a build-toolchain risk taken on for something a directory does. **[CC]**, recorded here per the plan; the alternative considered was `better-sqlite3`, and it lost on the toolchain rather than on the code.
+
+**A mirror node's KEY LIST is decoded here, not by a library.** §7.1 requires a lane's submit key to be "a threshold of the two agents' keys, and MUST NOT include any other key" (T-P17-2), and §11.4 has a Verifier check that from consensus. A mirror node returns a single key as raw hex and a key **list** as `{_type: "ProtobufEncoded", key: "<hex>"}`, so the list has to be decoded before the invariant can be checked at all. The alternatives were both worse. A `TopicInfoQuery` against a consensus node returns the structure already parsed — and it is a **paid query**, so a Verifier would need an account and a balance to check a lane, which is exactly what P-4 forbids. And `@hashgraph/proto`, which ships the generated decoder, is **not in this repository's dependency tree**: it resolves today only from a `node_modules` directory *above* the repository, so importing it would work on this machine and fail on a clean clone — the worst kind of dependency, because it passes here. So it is composed in `app/sdk/protokey.ts`, on the same grounds the seal is: the surface is forty lines, it is a **read** of public data, the wire format is fixed by protobuf itself rather than by a draft, and it cannot fail silently the way a mis-composed cipher can — a wrong parse yields keys that match neither account, which is a loud refusal. `[CC]` **And the first version of it was wrong**, caught by `check:correspondent` before it ever met a lane: protobuf field numbers are per message, not global, so a context-free walker read `ThresholdKey.keys` (field 2) as `Key.ed25519` (also field 2) and handed back the key list's own bytes as though they were a public key. The alternative considered was to skip the decode and check only single-key topics, which would have made T-P17-2 uncheckable for the one topic type it is about.
 
 ## DIVERGENCE — every transaction is `@hashgraph/sdk`, not the Hedera MCP server
 
@@ -619,7 +621,130 @@ npm run conformance      NO REPORT — 28 unfilled pins in spec/pins.json (T-P9-
 
 Both are correct. The suite refuses a report because the schemas are not registered, and the schemas are not registered because the tool bodies have not passed their fixtures. Nothing here is a defect to route around; it is the freeze being held on purpose.
 
-## Step 5 — the first letter: gate report, written before any signature
+## Step 5 — two Correspondents provisioned through the counter: GATE ONE, written before any signature
+
+**Status: GATED, NOT RUN. NOTHING IS SIGNED.** Written and committed before the first transaction, on the rule the probe and Steps 2, 3 and 4 followed. What follows is what it will create, what it will assert from the mirror, what it writes and where, how it is idempotent, and every way it stops.
+
+**One thing in it is blocked, and it is named here rather than discovered on the day.** The purchase cannot produce a `StampReceipt` that validates against the schema Step 4 froze — ledger **§G-19**, and §6 below has it in full. Everything else in this step is built and green. The block is a specification question and it is Sonic's.
+
+### 0. The parties, and which of them is which
+
+Three human roles and two agents (CLAUDE.md §11). **OPERATOR** is us: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, and the counter. **C1OPERATOR** and **C2OPERATOR** are the two Correspondents' operators, each bringing a funded testnet wallet. **Correspondent A** and **Correspondent B** are the agents. *The agent signs; the operator pays* (§3.5).
+
+Those three words are **demo labels, not identifiers**. They appear in `app/` as no value, constant, default, enum member or filename; every operator-specific value a Correspondent reads comes from that operator's own configuration file. The repository ships `app/sdk/config.template.json` and never a filled one; `.gitignore` covers a filled home and `npm run p13:check` is what keeps a key out of `app/` regardless — it now watches the Correspondent's field names as well as the Postmaster's environment names.
+
+**The purchases are real sales at sequence 2's prices, and they are the counter's first.** Nothing in the demo is a fixture funded on the side.
+
+### 1. What it creates, in the forced order
+
+Per agent, and D-159 as amended is what forces the order. Nothing may be reordered: the account must exist before it can own a topic, the profile must be final before the topic whose memo is its digest can be created, and the registration must name a registry that exists.
+
+| # | Act | Declared shape | Who signs / who pays | Warrant |
+|---|---|---|---|---|
+| 0 | **boot** | the agent's ED25519 account key and its epoch-1 X25519 key, born in the agent's own process, into `<home>/keystore.json` | — | D-165: keys are born once; a process that regenerated on boot would make every restart a new agent |
+| 1 | **buy_stamp** at the counter | one atomic `TransferTransaction` with three legs: ℏ from the operator to the Postmaster for the price; 12 `$POSTAGE` from the treasury to the agent's **public-key alias**; 0.05 ℏ from the Postmaster to that same alias | buyer signs its own leg in its own process; **the Postmaster is payer** | §14.2 (it cannot be submitted without the Postmaster) · D-159 addendum · HIP-542, probe-observed 2026-09-09 |
+| 2 | `doorbell` | HCS-10 inbound, memo `hcs-10:0:60:0:<acct>`, **no submit key**, admin the agent's, HIP-991 fee of 1 `$POSTAGE` to the treasury, the agent's own key exempt | agent signs · operator pays | D-147 row 1 · §4.4 · D-137's exemption · T-P7-4 |
+| 3 | `log` | HCS-10 outbound, memo `hcs-10:0:60:1`, submit and admin the agent's | agent · operator | D-147 row 2 |
+| 4 | `manifest` | memo `wishmail:manifest:1`, **sole** submit key the agent's | agent · operator | §9.1 · T-P17-3 |
+| 5 | `declRegistry` | HCS-2, memo `hcs-2:0:60` — **indexed 0** | agent · operator | D-147 row 5 · T-P8-3 |
+| 6 | `profileFile` | HCS-1, memo `<sha256 of the plaintext>:brotli:base64`, submit the agent's, **NO admin key** | agent · operator | D-150 · `hcs-1.md:48-49` |
+| 7 | `profileChunks` | the HCS-11 profile as HCS-1 `{o, c}` chunks, each bounded as a **whole message** at 1024 | agent · operator | `ops/hcs1.ts`, and the Step 4 defect is why |
+| 8 | `registryEntry` | `{p: "hcs-2", op: "register", t_id: <profileFile>}`, transaction memo `hcs-2:op:register:0` | agent · operator | §H:359 |
+| 9 | `accountMemo` | `hcs-11:hcs://2/<declRegistry>` | agent · operator | §9.2:1284's MUST |
+| 10 | `holRegistration` | `{p, op, account_id, uaid, t_id, m}` on the anchor `0.0.6913983`, **no transaction memo** | **agent signs AND pays** | §4.6 · D-164 · T-P13-4 |
+
+Rows 2–9 are one act — `generate_mailbox` — and row 10 is `register_agent`. Both are **§4.6 affordances and not among §6.1's six** (D-159): no conformance class is tested against either, no claim names them, and a Correspondent that brought its own topics would call neither. They live on the Correspondent's MCP because the topics are the agent's and the agent signs each one.
+
+**Row 10 is the one place an agent pays.** "An agent's account never holds ℏ, with one exception" — this is it, and it is why the purchase funds exactly one fee and no more (§3.9: funding is a payment and not a party). The payer seam is deliberately *not* used: the whole value of the act is that the mirror records **this account** as the payer, and a borrowed payer would put `blurred` on every `hol` resolution of this agent forever.
+
+**One act is not in the table because it is not always needed.** `generate_mailbox` associates the OPERATOR's account with `$POSTAGE` on first run if it is not already, paid by the operator. §4.4's doorbell fee is debited from the **payer** of the submission (HIP-991), so when the operator pays for the agent's connection request the stamp leaves the operator's account — which means the operator must be able to hold one (D-157). The agent's own account needs no association: HIP-542 creates it with unlimited auto-associations, which the probe observed, so the stamp transfer associates it as it arrives. The config template says so.
+
+### 2. What it asserts, and what it reads back
+
+Every readback is a mirror-node REST read with a **named predicate**, never an SDK receipt.
+
+**Per topic**, against the shape it was created under: the memo; the submit key, or its absence; the admin key, or its **null**; a null fee-schedule key; the auto-renew account; the custom-fee list — one fixed fee of one unit of the pinned token to the treasury on the doorbell, and **zero fees** on every other row; and the fee-exempt key list. The declared shape and the asserted shape are **one object**, from `src/ops/template.ts`, so a row cannot be created under one description and checked against another.
+
+**The template is now one spelling for both provisioners.** `ops/steps.ts` stands up the Postmaster's own agent with these six rows and `sdk/mailbox.ts` stands up a Correspondent with them, and they read the same functions. That is the `hcs1File` lesson applied before it costs anything: two provisioners that agreed about a doorbell's fee today and disagreed about its exempt list tomorrow would be the same failure with a permanent artefact at the end of it.
+
+**Per purchase**: the transfer reads back SUCCESS from the mirror; the `$POSTAGE` credit names an account; that account is the one the agent's key owns, found by `GET /accounts?account.publickey=…` and refused if two exist under one key; and the receipt validates against the **registered** `StampReceipt` schema before it is returned.
+
+**Per declaration**: the profile file's memo digest equals the SHA-256 of the plaintext the chunks decode to; the register entry is on the registry; the account memo reads back as `hcs-11:hcs://2/<registry>`.
+
+**And then the reader is run on the writer's output, before `generate_mailbox` returns.** §9.2's rule is run from a mirror node with nothing configured, and its answer is compared field by field to what this run created: the doorbell, the log, the manifest topic, the X25519 public half **as this process holds it**, and the key epoch. A disagreement stops the step. This is CLAUDE.md §9's rule and the Step 3 defect is why it is not a formality: a declaration that validated against its schema, whose file digest matched its topic memo, and whose identifier was consistent with itself, was still unresolvable — and an HCS-1 topic has no admin key, so it was permanent.
+
+**Per registration**: the anchor is read in full, every page, and the entry that lands is found there with `payer_account_id` equal to **this agent's account**. If it is not, the step stops and says so, because that is the one fact the funded fee exists to buy and it cannot be withdrawn.
+
+**The acceptance test for the whole step**: both agents resolve under **`hcs14`** and under **`hol`**, and **neither carries `blurred`**. Every agent on the testnet anchor today does — all 380 of its messages were paid by one broker account — and ours must not (§9.5, T-P13-4).
+
+### 3. What it writes, and where
+
+**Each agent's entity IDs go in that agent's own home directory and nowhere else.** `<home>/record.json`, written from mirror-node reads, one entity at a time, so a run that dies mid-way leaves behind exactly what it made. `app/deployment/hedera-testnet.json` is the **Postmaster's ops record** and takes no Correspondent entity id (CLAUDE.md §11); `spec/pins.json` is not touched at all — nothing here is one of §18.4's pins.
+
+The home directory **is** the agent (D-165): `config.json` (the operator's), `keystore.json` (the agent's keys, born once), `store/` (the durable store), `record.json`. A fresh home is a new agent; an existing home is a returning one. Two homes are two agents and there is nothing else that distinguishes them.
+
+The counter writes one thing of its own: §14.2's durable requirement and settled-reference rows, under `WISHMAIL_STATE_DIR`, so the exchange survives a restart (T-P11-6) and a replayed reference returns the receipt it already bought rather than charging twice (T-P11-5).
+
+### 4. Idempotency, and every way it stops
+
+**Every provisioning verb is idempotent against CONSENSUS, never against local state** (D-165). A wiped home cannot cause a second doorbell — and a second doorbell is not merely waste: §9.5 assigns `vague` where more than one registration names an address, and a topic has no second creation. The local record is a **cache of consensus and never an authority over it**.
+
+- `buy_stamp` with `provision` is not attempted where an account already exists under the agent's key; a returning agent buys without it.
+- `generate_mailbox` resolves the agent's own address under `hcs14` **first**. Coordinates come back → it creates nothing and says so.
+- `register_agent` reads the anchor **first**. A registration by this account → nothing.
+- the doorbell watcher derives what is answered by reading the doorbell: every `connection_created` names the `connection_id` of the request it answered, so a restart re-derives it and answers nothing twice.
+
+**It stops, before or instead of signing, on every one of these:**
+
+1. the home's config is missing any field, or names `hedera:mainnet`, which §15.5 leaves undeployed;
+2. **§G-19** — a `provision: true` purchase, refused before anything is signed, because §5.4 requires two fields this purchase cannot name;
+3. the price topic carries no message, or the method asked for is not on the current one (§14.3 forbids charging under an unpublished price);
+4. the quote has expired, or its reference has already settled a purchase (T-P11-5);
+5. two accounts on this ledger are owned by the agent's key — refusing to choose, because choosing wrongly strands one;
+6. any topic's readback disagrees with the shape it was created under, in any field;
+7. the profile file topic already holds messages this run did not write — an HCS-1 topic has no admin key, so nothing there can be corrected;
+8. a chunk would exceed 1024 bytes **on the wire**, wrapper included;
+9. the declaration this run wrote does not resolve under §9.2, or resolves to coordinates this run did not create;
+10. the registration's payer on the mirror is not this agent's account;
+11. either agent resolves under `hol` **with `blurred`**;
+12. the receipt does not validate against the registered `StampReceipt` schema.
+
+**A refusal leaves no mark** (§3.5): every refusal above happens before a submission, except (10) and (12), which are reported with what did land because a transfer on consensus cannot be withdrawn.
+
+### 5. What is built, and what is checked before the gate
+
+Built: `app/sdk/` — the home directory and its record, the keystore, the live `Consensus` over a mirror node and the payer seam, the counter client, `generate_mailbox`, `register_agent`, the doorbell watcher, the stdio MCP server, and the provisioning driver. `app/src/counter/` — §14.3's pricing read from consensus, the three-legged purchase, and the Streamable HTTP MCP server serving `buy_stamp`, `verify` and `resolve`. `app/src/resolve/hol.ts` — §9.5's rule, which Gate One needs because "resolve self under `hol`" is step 5 of the order.
+
+`npm run check:correspondent` is **52 assertions with no network and no key**: D-147's six rows from the one template; a mirror-node key list decoded so §7.1's threshold lane can be checked at all; §14.3's arithmetic in integers with bundles at exactly their count; the §G-19 refusal read out of the registered schema; one sentence template that implies no delivery and no receipt; the doorbell rule over messages alone; and a home directory that is the agent — keys born once, loaded ever after.
+
+The rest of the battery is unchanged and green: typecheck, `p13:check`, `check:register` (86 both ways), `check:schemas`, `check:vectors`, `check:seal`, `check:hcs14`, `check:chunk`, `check:envelope`, `check:hcs10`, `check:store`, `check:mcp`, `check:letter`, `check:prefreeze`, `check:freeze`.
+
+### 6. §G-19 — the one thing that blocks the purchase, in full
+
+§5.4 gives `provisioning? {price, registrationFee?, account, doorbell, log?, manifestTopic, declRegistry?, profileFile?}` and the registered schema makes `price`, `account`, `doorbell` and `manifestTopic` **required**. §5.4's own sentence says why: "the fields after it are the entities **the Postmaster created for the holder**". §6.3's postcondition is a receipt "carrying a `provisioning` line **exactly when** `provision` was true".
+
+Under D-159 as amended the Postmaster creates exactly one entity for the holder — the account. The doorbell and the manifest topic are the **agent's**, created afterwards, by the agent, under the agent's own key. So a receipt that carries the line fails its own schema, and a receipt that omits it contradicts §6.3 and drops `registrationFee` — the field D-159's addendum added precisely so that a Verifier sees the fee "as a leg of the purchase and not as a gift". §14.3 closes the third door: the 2 ℏ cannot be charged with `provision` false, because that price is published under `provisioning` and a Postmaster may not charge under a price it has not published.
+
+**The code refuses rather than choosing.** `counter/purchase.ts` reads the required list out of `spec/schemas/stamp-receipt.schema.json` and refuses a `provision: true` purchase **before anything is signed**; a `provision: false` purchase works in full. Because the gate reads the schema, a 0.6 that changes it lifts the refusal by itself.
+
+**Two candidates, and they differ in whether a minor version is needed.** **(a)** The Postmaster provisions the topics after all — §4.6's provisioned path taken literally, the Postmaster paying and the agent signing each topic creation over the counter, exactly as Steps 2 and 3 already do for the Postmaster's own agent. **No schema moves**; `buy_stamp` becomes a multi-round-trip agent-signed exchange and CLAUDE.md §11's placement of `generate_mailbox` is amended. **(b)** `doorbell` and `manifestTopic` become optional inside `provisioning`, present exactly where the Postmaster created them — **a change to a registered schema, so 0.6 and not a patch**, on fourteen files that are now frozen on consensus. Smaller change to the text, larger to the version. Ledger §G-19 carries both.
+
+### 7. What Gate Two owes, and is not in this step
+
+`send`, `inbox` and `ack` refuse on the Correspondent's MCP, naming Gate Two. They are built and exercised end to end against the modelled ledger (`npm run check:letter`, 63 assertions) and what they still need is the live wiring and a letter to carry. §10.4's scheduled return receipt is still unimplemented and `send` still refuses `returnReceipt` outright, for the reason Step 6 gives: postage that pays for a receipt nobody was asked for is an artefact on consensus that cannot be withdrawn.
+
+### 8. Expected output until it is signed
+
+```
+npm run correspondent:provision -- <home> --dry-run
+  reads consensus, prints what exists and what step 1 would create, and submits nothing
+```
+
+Two funded testnet wallets and two filled home directories are what this step waits on, beside §G-19 and Sonic's word.
+
+## Step 6 — the first letter: GATE TWO, written before any signature
+
+**Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.
 
 **Status: GATED, NOT RUN.** Nothing in this section has been submitted. Written and committed before the first transaction, on the rule the probe, Step 2 and Step 3 followed.
 
@@ -728,7 +853,7 @@ Those the step **exercises** are expanded against fixtures captured from the run
 
 The letter has a postmark; `inbox` returned the payload byte-identical; `verify` produced a bundle from consensus alone with a narrative whose `bundleDigest` matches; every altered copy was refused with the reason §6.5 names; and no chunk on consensus carries `chunk_info`.
 
-### 8. Where Step 5 stands — close of 2026-09-09
+### 8. Where Step 6 stands — close of 2026-09-09
 
 **Nothing in this step has been signed.** No connection request, no settlement and no chunk has reached `hedera:testnet`, and the eleven entities §1 lists have not been created. What exists is the whole of the step that can exist without them.
 
@@ -738,7 +863,7 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 **Two things this step refuses rather than skips.** §6.4's step 7, the scheduled return receipt, is not implemented: postage would include the receipt fee and chunk 0's header would request it, so an envelope assembled without §10.4's schedule is one whose sender paid for a receipt nobody was asked for — an artefact that is wrong on consensus and cannot be withdrawn. `send` therefore refuses `returnReceipt` outright. And who submits the first-contact connection request is **parameterised, not decided**: ledger §G-14 states both readings, the code takes the sender-submits one by default, and `SenderContext.ringer` takes §6.4's literal one.
 
-**What the step still owes before the gate is re-confirmed and anything signs:** the Streamable HTTP transport; the second-process fixture under `app/sdk/`, with its own working directory, its own `.env` and keys born in that process; the fixture's provisioning under §4.6 and its funding, recorded as fixture funding and not as a sale; the letter itself on `hedera:testnet`; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
+**What the step owed, and what of it is now built (2026-09-09).** The Streamable HTTP transport: **built**, and it is the counter (`app/src/counter/server.ts`). The second-process Correspondent under `app/sdk/` with keys born in its own process: **built**, and its home directory is its identity (D-165) rather than a `.env`. Its provisioning: **Step 5**, and it is a **real sale at sequence 2's prices** rather than funding on the side — the account is bought, not funded, which is D-159 as amended and the reason this section's §1 row 8 no longer describes what happens. What remains this step's: `send`, `inbox` and `ack` wired to the live `Consensus` rather than the modelled one; §10.4's schedule, which `send` still refuses; the letter itself on `hedera:testnet`; `verify` run from a third, empty home; the second letter on the same lane, ringing nothing; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
 
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
@@ -905,9 +1030,11 @@ The network created the account **as a child transaction of the transfer**, one 
 
 ---
 
-## The `hol` resolver — a design note, written before it is built (7b)
+## The `hol` resolver — a design note, written before it was built (7b)
 
-Not code, and nothing here is normative. This is what §9.5 and the pinned HCS-10 text say the resolver must read, so that the build after the gate has one shape to follow.
+**Built 2026-09-09** as `app/src/resolve/hol.ts`, following this note. Gate One needs it: step 5 of D-159's order is "resolve self under `hcs14` **and `hol`**", and the fact the whole order exists for — no `blurred` — is a statement §9.5's rule is the only thing that can make. Two things the note did not say, found in the building. §5.2's canonical location is inside the proof's hash (D-163), so `resolutionProofFor` now takes the **rule** and the **statement** as arguments rather than hard-coding §9.2's: a manifest that did not say which rule produced it would be replayed under whichever rule the reader guessed, and two rules over one locator do not produce one output. And `SourceMessage` gained an optional `payer`, because §9.5 decides `blurred` on it and §9.2's port had no way to supply it — the resolver **refuses to appraise** a registration whose payer a source could not give, rather than assuming one.
+
+Nothing here is normative. This is what §9.5 and the pinned HCS-10 text say the resolver must read, so that the build after the gate has one shape to follow.
 
 **The read path, each step named by the one before it.**
 

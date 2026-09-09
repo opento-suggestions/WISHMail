@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:wishmail:app:0.5:tool:buy_stamp:input",
   "title": "buy_stamp input",
-  "description": "§6.3 — buy_stamp(count, payment, holder) -> StampReceipt. P-13: no field here carries private-key material, and none ever will; the buyer signs in its own process (§14.2).",
+  "description": "§6.3 — buy_stamp(count, payment, holder, provision = false) -> StampReceipt. P-13: no field here carries private-key material, and none ever will; the buyer signs in its own process (§14.2). A release artifact, not a specification schema: §18.5 fixes the fourteen files in spec/schemas/ and the tools' inputs are not among them (T-P15-4).",
   "type": "object",
   "properties": {
     "count": { "type": "integer", "minimum": 1, "description": "Stamps to buy. §6.3: count >= 1." },
     "payment": {
-      "description": "§14.2's two legs. The method must be one the Postmaster publishes on its price topic, or STAMP_METHOD_UNSUPPORTED.",
+      "description": "§14.2's two legs, and the two halves of the exchange. Called with no signature, buy_stamp QUOTES: the Postmaster reads the price message current on consensus, builds and freezes the purchase body, and returns it with a reference, having signed nothing. Called again with that reference and the buyer's signature over that body, it SETTLES. The method must be one the Postmaster publishes on its price topic, or STAMP_METHOD_UNSUPPORTED.",
       "oneOf": [
         {
           "type": "object",
@@ -22,9 +22,24 @@
           "type": "object",
           "properties": {
             "method": { "const": "hbar" },
-            "signedTransaction": {
+            "from": {
               "type": "string",
-              "description": "The buyer's signature over the purchase body, base64. The Postmaster MUST NOT submit a purchase transaction without it (§14.2, T-P13-3)."
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+              "description": "The account the price is debited from. §6.3 names no buyer because in the ordinary case the holder is the buyer — but it cannot be where the holder is a bare public key, since the account that would pay is the one this purchase creates (§4.6). Absent, the holder pays for itself."
+            },
+            "quoteRef": {
+              "type": "string",
+              "description": "The reference the quote came back under. Present exactly on the settling call: it names which frozen body this signature answers, and §14.2 requires that a payment reference settle at most one purchase (T-P11-5)."
+            },
+            "signature": {
+              "type": "object",
+              "description": "The buyer's signature over the body the Postmaster froze, made in the buyer's own process. NOT a transaction: returning a whole signed transaction would make 'never accept a body it did not build' a comparison the Postmaster has to remember to run correctly, where returning a signature makes it structural — the body is the one it froze and stored, and there is no second body for the check to be wrong about (T-P13-3).",
+              "properties": {
+                "publicKey": { "type": "string", "minLength": 1, "description": "The buyer's PUBLIC half. Never a private key (P-13)." },
+                "value": { "type": "string", "minLength": 1, "description": "The signature bytes, base64." }
+              },
+              "required": ["publicKey", "value"],
+              "additionalProperties": false
             }
           },
           "required": ["method"],
@@ -48,6 +63,11 @@
           "additionalProperties": false
         }
       ]
+    },
+    "provision": {
+      "type": "boolean",
+      "default": false,
+      "description": "§6.3, D-161 — also provision the holder under §4.6. False unless the Postmaster publishes a provisioning price (§14.3). Provisioning is never required: a holder that brings its own topics leaves this false and the receipt carries no provisioning line."
     }
   },
   "required": ["count", "payment", "holder"],

@@ -158,6 +158,15 @@ export interface SourceMessage {
   readonly consensusTimestamp: string;
   /** The body parsed as JSON, or null where it is not JSON. */
   readonly body: unknown;
+  /**
+   * The account that PAID for the message. §9.2's rule never reads it; §9.5's
+   * does, and it is the whole of `blurred`: "Where the registration's payer is
+   * not the address's account, the rule assigns `blurred` — the registration is
+   * on consensus, and under a key that is not the agent's." One port serves both
+   * rules, so the field is here and optional, and `hol` refuses to appraise a
+   * registration whose payer a source could not supply rather than assuming one.
+   */
+  readonly payer?: string;
 }
 
 /**
@@ -181,7 +190,13 @@ interface MirrorAccount {
   readonly deleted?: boolean;
 }
 interface MirrorMessages {
-  readonly messages?: { readonly message: string; readonly sequence_number: number; readonly consensus_timestamp: string }[];
+  readonly messages?: {
+    readonly message: string;
+    readonly sequence_number: number;
+    readonly consensus_timestamp: string;
+    readonly payer_account_id?: string;
+  }[];
+  readonly links?: { readonly next?: string | null };
 }
 interface MirrorTopic {
   readonly topic_id: string;
@@ -213,13 +228,30 @@ export function mirrorSource(mirror: Mirror): ProfileSource {
       return t === null ? null : (t.memo ?? '');
     },
     async topicMessages(topicId) {
-      const r = await mirror.get<MirrorMessages>(`/topics/${topicId}/messages?limit=100&order=asc`);
-      if (r === null) return null;
-      return (r.messages ?? []).map((m) => ({
-        sequenceNumber: m.sequence_number,
-        consensusTimestamp: m.consensus_timestamp,
-        body: decode(m),
-      }));
+      // EVERY PAGE. §9.5 says an anchor is "read in full, every page" and the
+      // testnet one is already past 380 messages; a reader that stopped at the
+      // mirror's 100-message maximum would answer RESOLVE_NOT_FOUND for every
+      // agent registered before the last hundred — a wrong answer that looks
+      // exactly like a right one.
+      let path: string | null = `/topics/${topicId}/messages?limit=100&order=asc`;
+      const out: SourceMessage[] = [];
+      let sawAnything = false;
+      while (path !== null) {
+        const r: MirrorMessages | null = await mirror.get<MirrorMessages>(path);
+        if (r === null) return sawAnything ? out : null;
+        sawAnything = true;
+        for (const m of r.messages ?? []) {
+          out.push({
+            sequenceNumber: m.sequence_number,
+            consensusTimestamp: m.consensus_timestamp,
+            body: decode(m),
+            ...(m.payer_account_id === undefined ? {} : { payer: m.payer_account_id }),
+          });
+        }
+        const next: string | null = r.links?.next ?? null;
+        path = next === null ? null : next.replace(/^\/api\/v1/, '');
+      }
+      return out;
     },
   };
 }
@@ -244,9 +276,15 @@ export function resolutionProofFor(
   output: Record<string, unknown>,
   location: ProofLocation,
   endorsements: readonly Endorsement[],
+  rule: { readonly id: string; readonly revision: string } = { id: 'hcs14', revision: '0.5' },
+  statement = 'Declared under HCS-11 via the HCS-2 registry the account memo names.',
 ): ResolutionProof {
+  // WHICH RULE PRODUCED IT is inside the hash, because §11.4 replays "the
+  // profile's rule under the profile the manifest names": a manifest that did
+  // not say would be replayed under whichever rule the reader guessed, and two
+  // rules over the same locator do not produce the same output.
   const proofBody = {
-    rule: { id: 'hcs14', revision: '0.5' },
+    rule,
     // §5.2's `inputs` is `{digest, locator, snapshot?}` and the registered Proof
     // schema requires exactly that, closed. `core/proof.ts` says what this rule
     // puts in each and why; the material itself is hashed into `digest` and
@@ -266,7 +304,7 @@ export function resolutionProofFor(
       // spends most of what there is. The long form this used to carry is in
       // §9.2, which is where a reader should look for what the rule does; a
       // manifest's statement is a label, not an explanation.
-      statement: 'Declared under HCS-11 via the HCS-2 registry the account memo names.',
+      statement,
       // §5.2's canonical location, as D-163 rules it: the topic THIS manifest
       // is published on — the resolving agent's own manifest topic — and not the
       // evidence the proof stands on, which is already in `inputs.locator`, and

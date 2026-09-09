@@ -38,6 +38,8 @@ import { publicHex, type Signer } from './identity.js';
 import { submit } from './hedera.js';
 import { named, Checks, type BackstopResult, type Ctx, type Discrepancy, type Step } from './step.js';
 import { fromMirrorTxId } from './mirror.js';
+import * as template from './template.js';
+import { HCS10_TTL, PRICE_TOPIC_MEMO, MANIFEST_MEMO } from './template.js';
 import { readHcs1 } from './hcs1.js';
 import type { EntityKey } from './record.js';
 import { pinRegisteredSchema } from './pins.js';
@@ -104,9 +106,11 @@ interface MMessages { messages?: { sequence_number: number; consensus_timestamp:
 
 /* --- constants fixed by decisions --------------------------------------- */
 
-export const HCS10_TTL = 60;                       // D-138: a deployment fact
-export const PRICE_TOPIC_MEMO = 'wishmail:prices:1';   // §14.3
-export const MANIFEST_MEMO = 'wishmail:manifest:1';    // §9.1
+// D-147's six rows and their memos live in ops/template.ts, which is the ONE
+// spelling of the provisioning template: this module provisions the Postmaster's
+// own agent with them and sdk/mailbox.ts provisions a Correspondent with the same
+// objects. Re-exported so existing importers are undisturbed.
+export { HCS10_TTL, PRICE_TOPIC_MEMO, MANIFEST_MEMO } from './template.js';
 export const FLOAT = 10_000n;                      // D-149
 // Fee caps live in app/src/ops/networks.ts with their citation, keyed by
 // HEDERA_NETWORK, because they are facts about a network and not about us.
@@ -285,18 +289,26 @@ const assocStep = (
   },
 });
 
+/**
+ * The template subject, from the provisioning context. D-147's six rows are
+ * built from `ops/template.ts` and never restated here.
+ */
+function subject(ctx: Ctx): template.TemplateSubject {
+  return {
+    account: ctx.agentId(),
+    publicKey: publicHex(ctx.agent),
+    treasury: ctx.treasuryId(),
+    stampToken: ctx.tokenId(),
+    autoRenewAccount: ctx.env.operatorId,
+  };
+}
+
 /* --- topics -------------------------------------------------------------- */
 
-interface TopicWant {
-  readonly memo: string;
-  readonly submitKey: string | null;
-  readonly adminKey: string | null;
-  readonly feeScheduleKey: null;
-  readonly fee: { readonly amount: number; readonly collector: string; readonly token: string } | null;
-  readonly feeExemptKeys: readonly string[];
-  readonly autoRenewAccount: string;
-  readonly warrant: string;
-}
+// One type, from `ops/template.ts`: the shape a step declares is the shape
+// the template describes, so a row cannot be created under one description
+// and asserted under another.
+type TopicWant = template.TopicShape;
 
 const topicStep = (
   key: EntityKey,
@@ -894,42 +906,20 @@ export const STEPS: readonly AnyStep[] = [
     warrant: 'D-142: the price list is the service speaking, so its keys are the operator’s; §4.6 and T-P17-1 do not reach it (D-146)',
   }), (c) => c.operator)),
   anon(priceListStep),
-  anon(topicStep('agent.doorbell', 'doorbell (HCS-10 inbound)', ['postage.token', 'agent.account'], (ctx) => ({
-    memo: `hcs-10:0:${HCS10_TTL}:0:${ctx.agentId()}`,
-    submitKey: null, adminKey: publicHex(ctx.agent), feeScheduleKey: null,
-    fee: { amount: 1, collector: ctx.treasuryId(), token: ctx.tokenId() },
-    feeExemptKeys: [publicHex(ctx.agent)],
-    autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-138/D-147 row 1 · §4.4’s MUST selects HCS-10’s fee-gated inbound option (index.md:113) · D-137’s exemption · no fee schedule key: the fee is immutable at birth',
-  }), (c) => c.agent)),
-  anon(topicStep('agent.log', 'log (HCS-10 outbound)', ['agent.account'], (ctx) => ({
-    memo: `hcs-10:0:${HCS10_TTL}:1`,
-    submitKey: publicHex(ctx.agent), adminKey: publicHex(ctx.agent), feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-138/D-147 row 2 · index.md:114 “Has submit key (only agent can write)”',
-  }), (c) => c.agent)),
-  anon(topicStep('agent.manifest', 'manifest', ['agent.account'], (ctx) => ({
-    memo: MANIFEST_MEMO,
-    submitKey: publicHex(ctx.agent), adminKey: publicHex(ctx.agent), feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-138/D-147 row 3 · §9.1:1255 a manifest topic MUST have the agent’s key as its sole submit key (T-P17-3)',
-  }), (c) => c.agent)),
+  anon(topicStep('agent.doorbell', 'doorbell (HCS-10 inbound)', ['postage.token', 'agent.account'],
+    (ctx) => template.doorbell(subject(ctx)), (c) => c.agent)),
+  anon(topicStep('agent.log', 'log (HCS-10 outbound)', ['agent.account'],
+    (ctx) => template.log(subject(ctx)), (c) => c.agent)),
+  anon(topicStep('agent.manifest', 'manifest', ['agent.account'],
+    (ctx) => template.manifest(subject(ctx)), (c) => c.agent)),
   // Step 3 — the hcs14 declaration. The order is forced: the file topic's memo
   // carries the SHA-256 of the profile plaintext, the registry entry names the
   // file topic, and the account memo names the registry topic.
-  anon(topicStep('agent.profileFile', 'HCS-11 profile file (HCS-1)', ['agent.account'], (ctx) => ({
-    memo: profileFor(ctx).memo,
-    submitKey: publicHex(ctx.agent), adminKey: null, feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-150 row 6 · hcs-1.md:48-49 — a file topic with an admin key is marked invalid and ignored, so it has none and the submit key is the agent’s',
-  }), (c) => c.agent)),
+  anon(topicStep('agent.profileFile', 'HCS-11 profile file (HCS-1)', ['agent.account'],
+    (ctx) => template.profileFile(subject(ctx), profileFor(ctx).memo), (c) => c.agent)),
   anon(profileChunksStep),
-  anon(topicStep('agent.declRegistry', 'declaration registry (HCS-2)', ['agent.account'], (ctx) => ({
-    memo: registryMemo(HCS10_TTL),
-    submitKey: publicHex(ctx.agent), adminKey: publicHex(ctx.agent), feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-147 row 5 · indexed 0 so prior entries stay readable at their consensus timestamps (T-P8-3)',
-  }), (c) => c.agent)),
+  anon(topicStep('agent.declRegistry', 'declaration registry (HCS-2)', ['agent.account'],
+    (ctx) => template.declRegistry(subject(ctx), registryMemo(HCS10_TTL)), (c) => c.agent)),
   anon(registryEntryStep),
   anon(accountMemoStep),
 ];

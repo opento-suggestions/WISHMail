@@ -37,6 +37,14 @@ replay_pid*
 # The intent journal: transient, per-machine, and meaningless to anyone else.
 app/deployment/*.pending.json
 
+# A Correspondent's HOME DIRECTORY is the agent (D-165): its config carries the
+# operator's own key and its keystore carries the agent's. The repository ships
+# app/sdk/config.template.json and never a filled one (CLAUDE.md §11), and
+# `npm run p13:check` is what keeps a key out of app/ regardless.
+.wishmail-*/
+*.wishmail-home/
+**/keystore.json
+
 # TypeScript / Node (app/, conformance/)
 node_modules/
 dist/

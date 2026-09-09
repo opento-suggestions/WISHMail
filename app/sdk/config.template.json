@@ -1,0 +1,54 @@
+{
+  "_readme": [
+    "A CORRESPONDENT'S CONFIGURATION — the template. Copy this to <home>/config.json and fill it in.",
+    "",
+    "The repository ships a template and never a filled config. A filled one carries your operator's",
+    "private key and is gitignored; `npm run p13:check` is what keeps it that way (CLAUDE.md §11).",
+    "",
+    "WHAT A HOME DIRECTORY IS. The home directory IS the agent's identity (D-165): this file, the",
+    "keystore beside it, the durable store, and the agent's own record of what it has on consensus.",
+    "A fresh home is a NEW AGENT; an existing home is a returning one. Point two processes at one",
+    "home and you have one agent running twice; point one process at two homes and you have two",
+    "agents. Nothing else distinguishes them.",
+    "",
+    "  <home>/config.json     this file, filled in",
+    "  <home>/keystore.json   the agent's keys, born on FIRST RUN and loaded on every later boot",
+    "  <home>/store/          sent envelopes for F-3 retry, pending receipt requests, the inbox cursor",
+    "  <home>/record.json     this agent's own entities on consensus, written from mirror-node reads",
+    "",
+    "THE AGENT SIGNS; THE OPERATOR PAYS (§3.5). Your key below is the OPERATOR's — the wallet that",
+    "pays for the agent's submissions. The AGENT's key is not here and never will be: it is born in",
+    "the agent's own process on first run, into the keystore, and no configuration file, tool input,",
+    "schema field or log ever carries it (P-13).",
+    "",
+    "THE POSTMASTER HOLDS NO KEY OF YOURS, EVER — not a decryption key, not a topic key, not an",
+    "account key (P-13, T-P13-1). It pays for what it carries and it holds nothing.",
+    "",
+    "BEFORE THE FIRST SEND, YOUR PAYER MUST BE ASSOCIATED WITH $POSTAGE. §4.4's doorbell fee is",
+    "debited from the PAYER of the submission (HIP-991), so when your operator pays for the agent's",
+    "connection request the stamp leaves the operator's account: the agent transfers one stamp to it",
+    "first, and it must be able to hold one. `generate_mailbox` associates it on first run and says",
+    "so; the association is paid by the operator and costs about 0.05 hbar.",
+    "",
+    "YOU NEED NONE OF THIS TO VERIFY. The VERIFIER suite runs with nothing configured (P-4): no key,",
+    "no credit, no account, no counter. `verify` reads a mirror node and a mirror node is a read",
+    "interface, not a broker. This file is for sending and buying."
+  ],
+
+  "network": "testnet",
+
+  "mirrorNodeUrl": null,
+
+  "postmasterUrl": "http://127.0.0.1:4600/mcp",
+
+  "payer": {
+    "accountId": "",
+    "derKey": ""
+  },
+
+  "agent": {
+    "displayName": "",
+    "alias": "",
+    "bio": ""
+  }
+}

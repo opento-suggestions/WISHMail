@@ -31,6 +31,10 @@
     "check:letter": "npm run check:letter --workspace app",
     "check:hcs10": "npm run check:hcs10 --workspace app",
     "check:freeze": "npm run check:freeze --workspace app",
-    "check:prefreeze": "npm run check:prefreeze --workspace app"
+    "check:prefreeze": "npm run check:prefreeze --workspace app",
+    "counter": "npm run counter --workspace app",
+    "correspondent": "npm run correspondent --workspace app",
+    "correspondent:provision": "npm run correspondent:provision --workspace app",
+    "check:correspondent": "npm run check:correspondent --workspace app"
   }
 }

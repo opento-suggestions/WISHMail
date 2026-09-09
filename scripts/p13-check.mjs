@@ -38,6 +38,26 @@ const SECRET_NAMES = /(AGENT|TREASURY)[A-Z0-9_]*_KEY/;
 /** The only two modules permitted to name them. See the module comment. */
 const ALLOWED = new Set(['app/src/ops/env.ts', 'app/src/ops/identity.ts']);
 
+/**
+ * The Correspondent's side of the same gate.
+ *
+ * A Correspondent's keys do not travel under an environment name: the agent's
+ * are in its keystore file and the operator's is a field in that operator's own
+ * config (CLAUDE.md §11). So the second sweep watches the FIELD names, over
+ * `app/sdk`, and permits exactly one module — the one that turns them into a
+ * `Signer` and lets nothing else out. `home.ts` asks `keystore.ts` whether the
+ * key is present rather than looking, which is why it is not on this list.
+ *
+ * The template is permitted because it is what an operator fills in, and it
+ * ships with the field blank; `.gitignore` covers the filled one.
+ *
+ * It watches the names key material TRAVELS UNDER and never the file it sits
+ * in: keystore.json was in this pattern for one run and is not, because knowing
+ * a filename leaks nothing and home.ts has to build the path.
+ */
+const KEY_FIELDS = /\b(derKey|privateKey|secretKey)\b/;
+const SDK_ALLOWED = new Set(['app/sdk/keystore.ts', 'app/sdk/config.template.json']);
+
 let out = '';
 try {
   out = execFileSync('git', ['grep', '-nE', SECRET_NAMES.source, '--', 'app/src'], {
@@ -64,4 +84,27 @@ if (offenders.length > 0) {
   process.exit(1);
 }
 
+let sdkOut = '';
+try {
+  sdkOut = execFileSync('git', ['grep', '-nE', KEY_FIELDS.source, '--', 'app/sdk'], { encoding: 'utf8' });
+} catch (e) {
+  const err = /** @type {{status?: number, stderr?: string}} */ (e);
+  if (err.status !== 1) {
+    console.error(`p13:check could not run git grep over app/sdk: ${err.stderr ?? String(e)}`);
+    process.exit(2);
+  }
+}
+
+const sdkOffenders = sdkOut
+  .split('\n')
+  .filter((line) => line.trim() !== '')
+  .filter((line) => !SDK_ALLOWED.has(line.slice(0, line.indexOf(':'))));
+
+if (sdkOffenders.length > 0) {
+  console.error('p13:check FAILED — a Correspondent key field is named outside keystore.ts (P-13):');
+  for (const line of sdkOffenders) console.error(`  ${line}`);
+  process.exit(1);
+}
+
 console.log(`p13:check PASS — ${SECRET_NAMES.source} read only in ${[...ALLOWED].join(', ')}`);
+console.log(`             and ${KEY_FIELDS.source} named only in ${[...SDK_ALLOWED].join(', ')}`);

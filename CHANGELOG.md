@@ -2,6 +2,42 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate One] — 2026-09-09 — the Correspondent, the counter, and one thing that cannot be sold
+
+**Not a specification version.** No text changed and no schema changed; §1.7 has fired and the fourteen are frozen on consensus. **Nothing was signed.** What changed is that the vertical slice the demo is now exists as far as the first gate, and one sentence of the specification turned out to be un-buildable as written.
+
+### Built — the Correspondent (`app/sdk/`)
+
+- **A home directory that IS the agent** (D-165): config (the operator's), keystore (the agent's keys, **born once** on first run and loaded ever after), the durable store, and the agent's own record of what it has on consensus. A fresh home is a new agent; an existing home is a returning one. Each agent's entity IDs live there and **never** in `app/deployment/` (CLAUDE.md §11).
+- **The payer seam**, as a seam: every submission is built *agent signs, payer signs*, with the payer an injected `Signer`. Today the operator's key from that operator's config; a remote `carry` replaces it later and nothing above `sdk/live.ts` knows which.
+- `generate_mailbox` and `register_agent` — §4.6 affordances and **not** among §6.1's six (D-159), marked as such in the tool table so a transport cannot present eight verbs as though the specification defined eight. Both idempotent against **consensus**, never against local state; both refuse loudly and say what they refused.
+- **The reader is run on the writer's output before it returns.** `generate_mailbox` does not finish until §9.2's rule, run from a mirror node with nothing configured, answers with the coordinates it just created — and compares them field by field. The Step 3 defect is why.
+- The **doorbell watcher**: auto-accepts, creating a lane whose submit key is a threshold of exactly the two agents' keys as **consensus** holds them, with no custom fee. Idempotent from the doorbell itself.
+- `sdk/live.ts` — the second implementation of `tools/consensus.ts`, over a mirror node and the SDK, so `send`, `inbox` and `verify` are the code they already are. Its read half takes **no key**, which is P-4 enforced by the type.
+
+### Built — the counter (`app/src/counter/`)
+
+- §14.3's price read **from consensus at every quote**, with the arithmetic in integers and a bundle taken at exactly its count.
+- **Two round trips, one purchase** (§14.2): quote → the buyer signs in its own process → settle. The buyer returns a **signature**, not a transaction, which makes "never accept a body it did not build" structural rather than a comparison someone has to remember to run (T-P13-3). The frozen body lives in the durable store, so the exchange survives a restart (T-P11-6) and a replayed reference returns the receipt it already bought (T-P11-5).
+- A Streamable HTTP MCP server serving `buy_stamp`, `verify` and `resolve` from `mcp/tools.ts`'s one table. `send`, `inbox` and `ack` are **not** served there: they need the agent's own keys, and the Postmaster holds none (P-13).
+
+### Built — §9.5
+
+- `app/src/resolve/hol.ts`, following the design note. `resolutionProofFor` now takes the rule and the statement as arguments: a manifest that did not say which rule produced it would be replayed under whichever rule the reader guessed (§11.4). `SourceMessage` gained an optional `payer`, because §9.5 decides `blurred` on it — and the resolver **refuses to appraise** where a source cannot supply it rather than assuming.
+
+### Raised — ledger §G-19, and it blocks Gate One's purchase
+
+**A provisioning purchase cannot produce a `StampReceipt` that validates.** §5.4 makes `doorbell` and `manifestTopic` required inside `provisioning` because "the fields after it are the entities **the Postmaster created for the holder**" — and under D-159 as amended the Postmaster creates one entity, the account; the agent creates its own topics afterwards, under its own key. A receipt carrying the line fails its schema; one omitting it contradicts §6.3's "exactly when" and drops `registrationFee`; and §14.3 forbids charging the 2 ℏ with `provision` false. The counter **refuses before signing anything**, reading the required list out of the registered schema so that a 0.6 lifts the refusal by itself. Two candidate answers are in §G-19 and in `OPERATIONS.md` Step 5 §6; one needs no schema change and one is 0.6.
+
+### Also
+
+- **One spelling of D-147's template.** `app/src/ops/template.ts` holds the six rows; `ops/steps.ts` and `sdk/mailbox.ts` both read it. Two provisioners that agreed about a doorbell's fee today and disagreed about its exempt list tomorrow would be the `hcs1File` defect with a permanent artefact at the end of it. `[CC]`
+- **One template, three readers** (D-162). `app/src/tools/sentences.json` holds every sentence the log lines, the text block and `narrate()` render; `narrate` is refactored onto it. No sentence implies receipt or delivery — §2.3 reserves *delivery* for the lane and §11.8 forbids reading silence — and `check:correspondent` asserts it.
+- **A mirror node's key list is decoded here**, forty lines in `sdk/protokey.ts`, because the alternative is a paid `TopicInfoQuery` that P-4 forbids a Verifier to need, and `@hashgraph/proto` is not in this repository's tree. The first version was wrong and `check:correspondent` caught it: protobuf field numbers are per message, not global. `[CC]`
+- **P-13's gate widened to the Correspondent.** `p13:check` now also greps `app/sdk` for the field names key material travels under, permitting only `keystore.ts` and the shipped template.
+- `npm run check:correspondent` — 53 assertions, no network and no key. One of them is that the **Postmaster’s own** HCS-11 profile is still byte-identical to the one on consensus: `buildProfile` gained an identity so a Correspondent can carry its own name, HCS-14 hashes that name, and the HCS-1 topic holding the result has no admin key.
+- `app/sdk/.env.example` removed. A Correspondent is configured by its **home directory** (D-165) and not by an environment file; `app/sdk/config.template.json` is what the repository ships.
+
 ## [Step 4] — 2026-09-09 — the schemas are registered, and frozen
 
 **Not a specification version.** No text changed and no schema changed; what changed is that the fourteen schemas of §18.5 are now **registered under HCS-13 on `hedera:testnet`** and pinned. §1.7: once a minor version's schemas are registered a patch changes no schema, so **from here the smallest field in any of the fourteen is 0.6.**
