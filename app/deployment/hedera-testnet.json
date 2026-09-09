@@ -424,6 +424,15 @@
       "specTag": "v0.5.4",
       "supersededBy": "the second profile file, registered as the registry’s next entry",
       "why": "The first declaration hashed the agent under version \"1.0.0\" while the HCS-11 profile carried version \"1.0\". An HCS-11 profile has exactly one version field, and §9.5 recomputes an agent identifier \"from the profile's name, version, and skills\", so the published uaid was not recomputable from the profile that carried it — found by resolving our own address and failing. §9.2:1284 provides the remedy: \"Rotation is a new profile file registered as a new entry; prior entries stay on the registry topic.\" An HCS-1 file topic has no admin key (D-150), so this one is permanent and is recorded here rather than deleted. It is not the deployment's profile file; the registry's current entry names the second."
+    },
+    {
+      "kind": "topic",
+      "role": "proof schema file (HCS-1)",
+      "id": "0.0.10448375",
+      "transactionId": "0.0.8641261@1788989235.076690044",
+      "consensusTimestamp": "1788989243.440798527",
+      "supersededBy": null,
+      "why": "Step 4's first run, 2026-09-09. This topic was created correctly — the memo carries the proof schema's digest and the agent is its sole submit key, with no admin key per D-150 — and then the chunk step wrote an unreadable file into it and the run stopped. The defect was ours and it is fixed in the same change: `ops/hcs1.ts` bounded an HCS-1 chunk's CONTENT at 1024 bytes where the bound belongs on the whole message, so `{\"o\":N,\"c\":\"…\"}` came to 1037 bytes, and the SDK silently split each chunk across two consensus messages. Neither half is parseable JSON on its own, which is what the run's own readback reported: \"Unterminated string in JSON at position 1024\". This topic therefore holds five messages that are three half-chunks and cannot be reassembled by any reader. It carries no admin key, because HCS-1 forbids one (hcs-1.md:48-49, D-150), so it can never be deleted and its messages can never be withdrawn. It is recorded here so that `entities` holds exactly one proof schema file and no reader is left wondering what an orphan topic is. A new file topic was created for the corrected chunks. Nothing was pinned from this one: `spec/pins.json` was still fully unfilled when the run stopped, so no `schemaRef` names it and no claim could ever have cited it."
     }
   ]
 }

@@ -18,9 +18,11 @@ import { createHash } from 'node:crypto';
 import zlib from 'node:zlib';
 import { CANONICAL_ORDER, uaid, type AgentData } from '../core/hcs14.js';
 import { schemas } from '../schema/loader.js';
+import { hcs1File } from './hcs1.js';
 
 /** HCS-1's chunk bound: "no greater than 1024 bytes" of base64 (`hcs-1.md:92-95`). */
-export const HCS1_CHUNK_MAX = 1024;
+// Re-exported from ops/hcs1.ts, which is now the only chunker (2026-09-09).
+export { HCS1_MESSAGE_MAX } from './hcs1.js';
 
 /**
  * The compression algorithm named in the HCS-1 memo. `brotli` is one of the two
@@ -175,27 +177,16 @@ export function profileBytes(repoRoot: string, inputs: ProfileInputs): ProfileBy
     );
   }
 
-  const plain = Buffer.from(JSON.stringify(profile), 'utf8');
-  const digest = createHash('sha256').update(plain).digest('hex');
-  const compressed = zlib.brotliCompressSync(plain);
-  const b64 = compressed.toString('base64');
+  // ONE CHUNKER, because there were two and they carried the same bug (2026-09-09).
+  // This module had its own copy of `hcs1File`'s loop, bounding the chunk's
+  // CONTENT at 1024 where the bound belongs on the whole message — see
+  // `ops/hcs1.ts`. It never showed here, because a profile is one chunk (the
+  // 2026-09-08 one is 563 bytes), and it showed in `hcs1File` the first time a
+  // schema file needed two. A second spelling of a rule is a second place for it
+  // to be wrong, and this one was already wrong (CLAUDE.md §9).
+  const file = hcs1File(Buffer.from(JSON.stringify(profile), 'utf8'), 'application/json');
 
-  // `o = 0` carries the data prefix (`hcs-1.md:97-100`); the bound is on the
-  // chunk's own content, so the prefix is counted with it.
-  const prefix = 'data:application/json;base64,';
-  const chunks: { o: number; c: string }[] = [];
-  let offset = 0;
-  let index = 0;
-  while (offset < b64.length || index === 0) {
-    const room = HCS1_CHUNK_MAX - (index === 0 ? prefix.length : 0);
-    const slice = b64.slice(offset, offset + room);
-    chunks.push({ o: index, c: index === 0 ? prefix + slice : slice });
-    offset += slice.length;
-    index += 1;
-    if (offset >= b64.length) break;
-  }
-
-  return { profile, plain, digest, memo: `${digest}:${HCS1_ALGO}:${HCS1_ENCODING}`, chunks };
+  return { profile, plain: file.plain, digest: file.digest, memo: file.memo, chunks: file.chunks };
 }
 
 /**
