@@ -60,7 +60,8 @@ export interface MailCoordinates {
 export interface ResolutionProof {
   readonly rule: { readonly id: string; readonly revision: string };
   readonly inputs: Record<string, unknown>;
-  readonly output: { readonly digest: string };
+  /** §5.2: "{digest} | value". For a resolution it is the coordinates themselves (§11.2, §11.4). */
+  readonly output: Record<string, unknown>;
   readonly meaning: {
     readonly statement: string;
     readonly uri: Record<string, unknown>;
@@ -129,6 +130,43 @@ const decode = (m: { message: string }): unknown => {
  * `ledgerTag` is the tag of the mirror node being read; a resolution is a fact
  * about one ledger (§5.1).
  */
+/**
+ * §5.2's Proof as this rule fills it, built in one place.
+ *
+ * The fixture that exercises `verify` builds its manifest through this
+ * function rather than restating its shape: a Verifier's lookup compares the
+ * manifest's own hash to the one the AAD bound, so a second construction that
+ * ordered a field differently would produce a manifest that hashes correctly to
+ * itself and to nothing else (CLAUDE.md §9).
+ */
+export function resolutionProofFor(
+  inputs: Record<string, unknown>,
+  output: Record<string, unknown>,
+  meaningUri: Record<string, unknown>,
+  endorsements: readonly Endorsement[],
+): ResolutionProof {
+  const proofBody = {
+    rule: { id: 'hcs14', revision: '0.5' },
+    inputs,
+    // §5.2 gives the output as "{digest} | value", and for a resolution it is
+    // the VALUE. §11.2's ingestion table reaches the recipient's account and
+    // doorbell from "the resolution manifest's output", and §11.4 requires the
+    // replayed output to equal "the coordinates the manifest carries" — neither
+    // of which a digest alone can answer. Found by writing the reader: verify
+    // could look the manifest up and hash it, and could not learn from it which
+    // doorbell the lane had to be born from (CLAUDE.md §9).
+    output,
+    meaning: {
+      statement:
+        'The account named by this address declares these coordinates under HCS-11, through the HCS-2 registry its memo names, in an HCS-1 file whose topic memo is the digest of the profile it holds.',
+      uri: meaningUri,
+      trustClass: 'math',
+      endorsements: [...endorsements],
+    },
+  };
+  return { ...proofBody, hash: canonicalDigest(proofBody) };
+}
+
 export async function resolveHcs14(
   mirror: Mirror,
   ledgerTag: string,
@@ -274,19 +312,7 @@ export async function resolveHcs14(
   };
 
   // §5.2's Proof. The `uri` is empty until `send` publishes the manifest (§6.2).
-  const proofBody = {
-    rule: { id: 'hcs14', revision: '0.5' },
-    inputs,
-    output: { digest: canonicalDigest(output) },
-    meaning: {
-      statement:
-        'The account named by this address declares these coordinates under HCS-11, through the HCS-2 registry its memo names, in an HCS-1 file whose topic memo is the digest of the profile it holds.',
-      uri: { ledgerTag, topicId: fileTopic },
-      trustClass: 'math',
-      endorsements: [...endorsements],
-    },
-  };
-  const manifest: ResolutionProof = { ...proofBody, hash: canonicalDigest(proofBody) };
+  const manifest = resolutionProofFor(inputs, output, { ledgerTag, topicId: fileTopic }, endorsements);
 
   const coordinates: MailCoordinates = {
     ...output,
