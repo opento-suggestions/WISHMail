@@ -522,7 +522,7 @@ The order inside a schema is forced: the file topic's memo carries the digest of
 
 **These are the Postmaster's own infrastructure, so the keys are the operator's** — not an agent's. §4.6 and T-P17-1 govern the topics provisioning creates *for an agent*; a schema registry is the release speaking about its own schemas, which is D-142's reasoning for the price topic, applied again.
 
-### 2. ONE REGISTRY PER SCHEMA, and a divergence to rule
+### 2. ONE REGISTRY PER SCHEMA — the divergence, and how it was ruled
 
 The instruction for this step said "one HCS-2 schema registry topic … with a `p: "hcs-2"` register per schema whose sequence number becomes the `schemaRef` `hcs://13/<registry>#<seq>`" — one shared topic. **It is built one topic per schema instead, and that is a divergence recorded rather than silently taken.** FETCHED 2026-09-08, blob `07f1ac67b344d6655b98ce8196b3053fe1b4f566`, verified with `git hash-object`:
 
@@ -540,7 +540,9 @@ and, on the locator:
 
 The difference is not cosmetic. On a shared topic, `#42` is the forty-second registration *of anything* — a different schema, not a later version of one — so the fragment stops meaning "version" and `hcs://13/<topic>` unpinned, which §5.11 says "names whatever version is latest", names nothing at all. A reader resolving `schemaRef` would still find the right file, because `t_id` is in the message; what breaks is the meaning of the locator and every future rotation of a single schema.
 
-**The cost of the shape that is built is 14 extra topics.** The cost of the other is a locator that does not mean what two documents say it means. This is stated here rather than decided: Sonic rules, and nothing is signed either way.
+**The cost of the shape that is built is 14 extra topics.** The cost of the other is a locator that does not mean what two documents say it means.
+
+**Ruled 2026-09-08 (D-155): one HCS-2 topic per schema, as built, and no discovery registration.** Sonic ratified the shape and recorded that the one-shared-registry instruction was Claude's error rather than his. The failure it avoids is worth naming, because no test would have caught it: a reader dereferencing one `schemaRef` reaches the right file either way, since `t_id` is in the message. It would have surfaced the first time a single schema rotated, with that schema's two registrations at arbitrary sequence numbers and thirteen others' between them — the same failure mode as Step 3 §8, a structure that validates and dereferences while being unreadable by the rule it exists for.
 
 ### 3. What it asserts, and what it reads back
 
