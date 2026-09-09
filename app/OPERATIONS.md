@@ -577,6 +577,115 @@ npm run conformance      NO REPORT — 28 unfilled pins in spec/pins.json (T-P9-
 
 Both are correct. The suite refuses a report because the schemas are not registered, and the schemas are not registered because the tool bodies have not passed their fixtures. Nothing here is a defect to route around; it is the freeze being held on purpose.
 
+## Step 5 — the first letter: gate report, written before any signature
+
+**Status: GATED, NOT RUN.** Nothing in this section has been submitted. Written and committed before the first transaction, on the rule the probe, Step 2 and Step 3 followed.
+
+### 0. `send` before implementation — actors, I/O, invariants, failure modes
+
+**Actors** (§3). The **Correspondent** is a second process: it holds its own keys, resolves, seals, affixes its own postage and signs its own submissions. The **Postmaster** pays and carries; it holds no key of the Correspondent's and attests nothing (§3.5, P-2). The **Recipient** here is the Postmaster-agent `0.0.10426206` — a Correspondent peer, not a spec role (D-140). **Consensus** produces the postmark; nothing else does. The **Verifier** is anyone, configured with nothing.
+
+**I/O.** `send(coordinates, payload, returnReceipt = false, window?) -> Postmark | AttemptedDeliverySlip` (§6.4). In: coordinates carrying a resolution proof, bytes, a window. Out: chunk 0's `Postmark` — or an `AttemptedDeliverySlip`, which is a **result and not a failure** (F-6). Seven ordered acts: lane, manifest, assembly, affix, submit, settle, receipt request.
+
+**The invariants, as they bind at `send`.**
+
+| | binds here as |
+|---|---|
+| **P-1** Binding | The AAD names the lane and the resolution proof; the settlement's memo names the AAD; the chunks' `operator_id` names the settlement's `from`; the chunks chain from the header; the header's epoch is the one the resolution yielded. Five welds, and all five are `send`'s to make. |
+| **P-7** Stamp precedes send | One settlement, signed by the sender, carrying the identifier, with a consensus timestamp **earlier than chunk 0's**. Affix is act 4 and submit is act 5, and that order is the invariant, not a convenience. A retried `send` never affixes twice. |
+| **P-9** Strict HCS-10 | Chunks ride inside HCS-10 `message` operations, one HCS message each, **no transport-layer chunking**, ≤ `CHUNK_WIRE_MAX` 1000 bytes on the whole operation, each carrying HCS-10's transaction memo. This is where §5 below bites. |
+| **P-10** Directed only | A stamp buys one envelope to one witnessed-resolved address; the lane must have been born from the doorbell the resolution yielded. No broadcast, no unaddressed mail. |
+| **P-11** Uniform postage | Postage is `$POSTAGE` and nothing else; weight is the only scale; the lane carries no custom fee. |
+| **P-12** Declared vs appraised | `send` returns coordinates with an endorsement rather than failing where it can; the readers appraise at or below what was declared, and downgrade rather than error. |
+| **P-13** Never hold the soul | Every key the Correspondent owns is born in the Correspondent's process. The Postmaster pays for what it carries and holds nothing. This is why the fixture is a **second process** and not a second object in this one. |
+| **P-14** Affidavit, not gate | No call waits on another agent — except first contact, bounded by `window`, which returns a slip when it closes. |
+
+**The failure modes, and where each lands** (§13).
+
+F-1 misresolution → the AAD's `rp`; the envelope is unbound at replay. F-2 a forged manifest → the proof hash is bound into the AAD, so it does not recompute. F-3 postage due → `SEND_INSUFFICIENT_STAMPS` before affix, or `unstamped` at replay. F-4 a partial envelope → `SEND_SUBMIT_FAILED`, and the reader's walk stops at the break. F-5 drift → not `send`'s at all; an observation at replay. F-6 **an unanswered doorbell → the slip**, which is this step's second possible outcome and not an error. F-7 a stale lane / closed lane → `SEND_LANE_INVALID`. F-8 a stale key epoch → `SEND_STALE_KEY`, re-resolve; the envelope still opens. F-9 an unresolvable `schemaRef` → the reader reports `VERIFY_SCHEMA_UNRESOLVED` and appraises unverified. F-10 a Postmaster that delays → it can delay a submission and cannot forge one (P-2). F-11 a mirror that disagrees → read another; evidence never depends on which was read (P-4).
+
+**The eight `TOOL_REASON` codes** §6.4 fixes, and none other: `SEND_UNRESOLVED`, `SEND_INSUFFICIENT_STAMPS`, `SEND_TOO_HEAVY`, `SEND_STALE_KEY`, `SEND_LANE_INVALID`, `SEND_AFFIX_FAILED`, `SEND_SUBMIT_FAILED`, `SEND_SETTLE_TIMEOUT`.
+
+### 1. What it creates
+
+**The Correspondent fixture is a second OS process**, under `app/sdk/`, with its own working directory, its own `.env` from the four-variable example already committed there, and its keys born in that process. Nothing it holds is written anywhere the Postmaster reads: the Postmaster's `.env`, `app/deployment/hedera-testnet.json` and `spec/pins.json` are all outside its reach, and its own state directory is its own.
+
+It reaches the Postmaster **only through the MCP server over Streamable HTTP**. That transport does not exist yet and lands in this step; §14.2 already fixes that the MCP server is the resource server and a page is a client of it, so the shape is not a choice.
+
+| # | Entity | Declared shape | Warrant |
+|---|---|---|---|
+| 1 | `fixture.account` | ED25519 born **in the fixture's process**, funded by the Postmaster | §4.6's provisioned path: "it generates its keys in its own process, submits their public halves, and the Postmaster pays to create the account" |
+| 2 | `fixture.doorbell` | HCS-10 inbound, memo `hcs-10:0:60:0:<acct>`, no submit key, admin the fixture's, HIP-991 fee of 1 `$POSTAGE` to the treasury, exempt list the fixture's key | D-147 row 1, §4.4 |
+| 3 | `fixture.log` | HCS-10 outbound, memo `hcs-10:0:60:1`, submit and admin the fixture's | D-147 row 2 |
+| 4 | `fixture.manifest` | memo `wishmail:manifest:1`, sole submit key the fixture's | §9.1, T-P17-3 |
+| 5 | `fixture.declRegistry` | HCS-2, memo `hcs-2:0:60`, submit and admin the fixture's | D-147 row 5 |
+| 6 | `fixture.profileFile` | HCS-1, memo `<sha256>:brotli:base64`, submit the fixture's, **no admin key** | D-150 |
+| 7 | `fixture.profileChunks`, `fixture.registryEntry`, `fixture.accountMemo` | as Step 3 | §9.2:1284 |
+| 8 | `fixture.funding` | a treasury transfer of `$POSTAGE` to the fixture, **recorded as fixture funding and not a sale** | `buy_stamp` is Step 6; the record says which act this was, because a receipt nobody bought would be a lie about §6.3 |
+| 9 | `letter.lane` | the HCS-10 connection topic, submit key a threshold of **exactly** the two agents' keys | §7.1, T-P17-2 |
+| 10 | `letter.settlement` | the affixing transfer, memo `wishmail:` + `aadHash` | §4.3, P-7 |
+| 11 | `letter.chunks` | the HCS-10 `message` operations | §7.4, P-9 |
+
+Every submission the fixture owns — its `connection_created`, its side of the lane, its declaration, its settlement, its chunks — is **signed in the fixture's process**. The Postmaster pays, as §4.6 allows, and signs nothing of the agent's.
+
+### 2. What it asserts
+
+**Before the letter**: the fixture's declaration resolves under `hcs14` through the Postmaster's own `resolve`, from a mirror node, returning `trustClass: math` and `endorsements: []` — and the Postmaster-agent's declaration resolves for the fixture, because a letter needs both ends findable.
+
+**The first contact**: a `connection_request` on the recipient's doorbell whose HIP-991 fee assesses exactly **one** `$POSTAGE` to the treasury (T-P7-4); a `connection_created` **submitted by the fixture's process**; and a lane whose `submit_key` is a threshold of exactly two keys, and those two (T-P17-2), with no custom fee (T-P11-3).
+
+**The affix**: one settlement, `to` the treasury, `amount` equal to the envelope's weight, `memo` exactly `wishmail:<aadHash>`, and a consensus timestamp **strictly earlier** than chunk 0's (T-P7-1). And the fourth weld: every chunk's `operator_id` names the settlement's `from` account (T-P1-6).
+
+**The submission**: every message ≤1000 bytes, **no `chunkInfo`**, `data` parsing as a Chunk (T-P9-7); the transaction memo `hcs-10:op:6:1` that HCS-10's table gives a `message` on a connection topic (T-P9-5).
+
+**The readers, on what `send` produced.** `inbox` reassembles by the chain, rebuilds the AAD from the header and the lane, checks it against `id`, fetches the settlement and checks memo and amount, and decrypts — and the payload comes back byte-identical. `verify` replays **from the mirror with no key, stamp, account or broker configured** (T-P4-1) and emits an `EvidenceBundle` whose digest is stable across two runs, plus a `Narrative` whose `bundleDigest` equals it (T-P3-4).
+
+**And every refusal the readers owe**, against an altered copy of what was actually sent: a changed header, a wrong lane, a swapped resolution proof, a settlement memo that is not the identifier, an `operator_id` that is not the settlement's `from`, a `ke` that is not the epoch the resolution yielded, and a broken `nx` link. Each must come back unopened with the reason §6.5 names, and none may be a tool failure (P-12).
+
+### 3. What it writes, and where
+
+`spec/pins.json` is **not touched**. `app/deployment/hedera-testnet.json` takes the fixture's rows and the letter's, each citing its `specTag`; the fixture's own record is under its own working directory. Fixtures captured from the run — the lane's messages, the settlement, the postmarks, the manifest — go to `conformance/fixtures/`, and the tests expanded in this step read those files with no network (P-4).
+
+### 4. Idempotency, and every way it stops
+
+Step 2's conditions carry over. Three are this step's own.
+
+**A settlement is not idempotent and must not be retried blindly.** P-7: "one settlement stamps one envelope" and "a retried `send` never affixes twice". A re-run reuses a recorded settlement rather than making a second, and T-P7-5 is the test.
+
+**A lane, once created, is the lane.** §7.1 takes the earliest-created open lane between two agents; a second lane created by a confused re-run is not an error the ledger will let us undo.
+
+**The readers gate the step.** The step is **not done** until `inbox` opens what `send` produced and `verify` reproduces it from consensus alone. A letter nobody has read is not a letter; it is bytes on a topic.
+
+### 5. STOP CONDITION SETTLED BEFORE THE GATE — `chunkInfo`
+
+STATUS §6 recorded, unacted, that `TopicMessageSubmitTransaction.freezeWith` attaches `chunkInfo` to **every** message including a single-chunk one, while §7.4 requires an envelope chunk to carry none. That would have made every chunk this step submits fail T-P9-7 — permanently, because a consensus message cannot be withdrawn.
+
+**Confirmed on consensus**, not from reading: our own price-list message at `0.0.10426551` sequence 1 carries `chunk_info {"number":1,"total":1}` on the mirror node. So the defect is real and it is ours already, in a message that is not an envelope and therefore not subject to §7.4.
+
+**Confirmed fixed, and without a signature.** The SDK sets `_chunkInfo` only inside `freezeWith`'s chunk loop and `_makeTransactionData()` omits the field entirely when it is null. Freezing through the base class instead skips the loop. Both transaction bodies were built and **decoded locally from their own protobuf bytes** — no submission:
+
+```
+ordinary   freezeWith -> chunkInfo: {"total":1,"number":1, ...}
+base-class freezeWith -> chunkInfo: null
+                         message bytes preserved: true
+```
+
+So `app/src/ops/hcs10.ts` carries a `MessageOperation` transaction that overrides `freezeWith` to the base class's and nothing else. It is used for envelope chunks and for nothing that is not one.
+
+**This is also the concrete answer to an open question.** "HCS-10 by hand vs SDK" (STATUS §6) is settled in the narrow way the evidence supports: the SDK's transaction classes are used, with **one** override, scoped to the one operation whose wire form §7.4 constrains — not a hand-rolled protobuf, and not the SDK unmodified. The first chunk on consensus is the confirmation, and if the mirror shows `chunk_info` on it the step stops there.
+
+### 6. The T-IDs this step answers
+
+Sender side: **T-P1-6** (`operator_id` names the settlement's `from`), **T-P1-11** (the `nx` chain, a foreign chunk, and `hdr.h`), **T-P4-2** (a Correspondent with nothing but stamps and its own keys completes `send`), **T-P7-1** (settlement precedes chunk 0), **T-P7-2** (one settlement, one envelope), **T-P7-3** (short postage rejected), **T-P7-5** (a retried `send` affixes once), **T-P9-5** (HCS-10's memos), **T-P9-6** (a closed lane), **T-P9-7** (1000 bytes, no `chunkInfo`), **T-P9-8** (the manifest, one message, before chunk 0), **T-P9-11** (an undefined ledger tag), **T-P10-1** (no proof, or the wrong lane), **T-P10-2** (a lane not born from the doorbell), **T-P11-1** (a settlement in another token), **T-P11-3** (a lane with a custom fee), **T-P12-3** (expired coordinates re-resolve), **T-P13-2** (no tool input carries key material), **T-P14-1** (nothing waits but first contact), **T-P17-2** (the lane's threshold key).
+
+Reader side: **T-P1-1** (`INBOX_UNBOUND`), **T-P1-2** (`INBOX_UNSTAMPED`), **T-P1-4** (the AAD vectors, now against a real envelope), **T-P1-5** (the seal vectors, likewise), **T-P3-1** (byte-identical evidence from a fresh Verifier), **T-P3-3** (the walk takes the earliest chunk the chain admits).
+
+Those the step **exercises** are expanded against fixtures captured from the run. The rest stay failing honestly: a test that passes on a fixture it was not given is worse than one that fails.
+
+### 7. What must be true before this is called done
+
+The letter has a postmark; `inbox` returned the payload byte-identical; `verify` produced a bundle from consensus alone with a narrative whose `bundleDigest` matches; every altered copy was refused with the reason §6.5 names; and no chunk on consensus carries `chunk_info`.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
