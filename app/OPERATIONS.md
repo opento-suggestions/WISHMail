@@ -744,6 +744,8 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 **Status at the time of writing: prepared, not run.** No transaction has been built, signed, or submitted for this probe. It waits on Sonic's approval, which is what CLAUDE.md §11's disposable-probe rule asks for.
 
+**Approved to run, 2026-09-09 (Sonic), with act 2 extended — and one thing in this report turned out to be wrong before it ran.** The amendments are marked below and the original wording is left where it stood, because a gate report that is quietly corrected after approval is not a gate. The run of record follows this section.
+
 **Why it exists.** D-159 puts the whole provisioning order on one mechanism that this repository has read about and never watched: a token transfer to a public-key alias that has no account creates the account under that key. §4.6 states it, T-P16-1 tests it, ledger §H carries it from `docs.hedera.com` and HIP-542 — and every word of that is second-hand. The 2026-09-08 HIP-991 probe is the precedent: four things about doorbell fees that had been inferred from our own ADRs turned out to be observable in one afternoon, and one of them (the fee is debited from the payer, not the submitter) is the reason D-157 exists at all.
 
 Two questions, and the second is the one D-159 actually rests on.
@@ -751,32 +753,40 @@ Two questions, and the second is the one D-159 actually rests on.
 1. **Does the alias transfer create the account, with the token associated and the balance credited?** If it does not, "the account is bought, not funded" is false and step 2 of D-159's order needs a funded account before it, which changes the demo.
 2. **Can that new account, holding zero ℏ, sign a token transfer *out* with someone else as payer?** This is the affix shape under D-157's seam — the agent signs as the stamps' owner (§4.3), the operator pays — and every submission after step 2 depends on it. If a zero-ℏ account cannot be a non-payer signer, the seam does not work and the agents need ℏ, which contradicts D-156.
 
+**AMENDED 2026-09-09 (Sonic).** Act 2 carries **two legs in one transaction** — one unit of the probe token and the registration fee in ℏ — because that is the purchase's shape under D-159's addendum: the account is born holding stamps and exactly one fee, in one act. So question 1 widens to "with the token associated, the balance credited, **and the ℏ leg credited in the same transaction**", and question 2 becomes "holding only the fee it was given", with the added predicate that after act 4 **its ℏ balance is unchanged** — the payer paid.
+
 **What it creates.** Nothing that survives. Throwaway keypairs generated in the probe's own process; the inert probe token and its throwaway treasury from 2026-09-08, reused as CLAUDE.md §11 permits; the operator as payer throughout.
+
+**CORRECTED 2026-09-09, before the first signature: the 09-08 probe token is not reusable, and the reason is the reason it is safe.** `0.0.10425740` holds 9,999 units of `0.0.10425743` — confirmed from the mirror, `GET /accounts/0.0.10425740/tokens` — and its private key was born in that run's process and discarded. It is in no file, by design (`identity.ts`: "the private half never leaves this closure"). **Nothing can move those units, including us**, which is the strongest sense in which a probe token can be inert, and it is exactly what CLAUDE.md §11's "where reusable" was hedging against. So this probe mints its own token with its own throwaway treasury, as the 09-08 probe did, and leaves a second permanently inert token behind for the same reason the first one is. The cost of that is two extra transactions on the operator's account and a second dead token on testnet; the alternative is keeping a probe treasury's key, which is worse.
 
 | # | Act | Body, exactly | Signed by | Paid by |
 |---|---|---|---|---|
-| 1 | generate | a fresh ED25519 keypair, in-process, never written to disk | — | — |
-| 2 | `TransferTransaction` | probe token `<probeToken>`: `-1` from the probe treasury, `+1` to the **public-key alias** of the new key (`AccountId.fromEvmAddress` is NOT used; the alias is the public key, per §H — an EVM-address alias makes a hollow account with no key) | probe treasury | operator |
-| 3 | read | `GET /accounts/<alias>` and `GET /accounts/<alias>/tokens` on the mirror node | — | — |
+| 0 | generate | two fresh ED25519 keypairs, in-process, never written to disk: the probe treasury and the new agent | — | — |
+| 0b | `AccountCreateTransaction` | the probe treasury account, 2 ℏ float *(added: see the correction above)* | operator | operator |
+| 1 | `TokenCreateTransaction` + `TokenMintTransaction` | the probe token — `decimals 0`, `initialSupply 0`, `INFINITE`, supply key the probe treasury's, **no admin, freeze, wipe, pause, KYC or fee-schedule key** — then 10 units minted in its own transaction. D-141's posture and D-149's birth-then-mint, so the probe mirrors the real token's shape and not a convenient one *(added)* | probe treasury | operator |
+| 2 | `TransferTransaction` | **one transaction, two legs, both to the alias** *(amended)*: probe token `-1` from the probe treasury / `+1` to the **public-key alias** of the new key, and ℏ `-5_000_000` tinybar from the operator / `+5_000_000` to the same alias. `AccountId.fromEvmAddress` is NOT used; the alias is the public key, per §H — an EVM-address alias makes a hollow account with no key | probe treasury | operator |
+| 3 | read | `GET /accounts?account.publickey=<raw hex>&balance=true` — which asserts the predicate directly rather than assuming an account id — and `GET /transactions/<act 2>` | — | — |
 | 4 | `TransferTransaction` | probe token: `-1` from the new account, `+1` back to the probe treasury | **the new account's key** | operator |
-| 5 | read | `GET /transactions/<txRef>` — `token_transfers`, and the `transfers` list showing which account paid | — | — |
+| 5 | read | `GET /transactions/<act 4>` — `token_transfers`, and the `transfers` list showing which account paid — and the new account's balance again | — | — |
 
 **What it asserts, by named predicate, each read from the mirror node and never from an SDK receipt.**
 
-- After act 2: an account exists at the alias; its `key` is the generated public key; its `balance.balance` in ℏ is **0**; its token balance for the probe token is **1**; the account-creation fee appears in act 2's `transfers` against the **operator**, not against the new account (§H, HIP-32/HIP-542).
-- After act 4: the transfer succeeded; `token_transfers` shows `-1` from the new account and `+1` to the treasury; the `transfers` list shows the fee paid by the **operator**; the new account's ℏ balance is still **0**.
+- After act 2: an account exists at the alias; its `key` is the generated public key; **its `balance.balance` in ℏ equals the tinybars sent** *(amended: was "is 0")*; its token balance for the probe token is **1**; the account-creation fee appears in act 2's `transfers` against the **operator**, not against the new account (§H, HIP-32/HIP-542).
+- After act 4: the transfer succeeded; `token_transfers` shows `-1` from the new account and `+1` to the treasury; the `transfers` list shows the fee paid by the **operator**; **the new account's ℏ balance is unchanged** *(amended: was "still 0")* — which is the whole of what D-157's seam claims, watched rather than assumed.
 
 **What it writes, and where.** Nothing in `app/deployment/hedera-testnet.json` — a probe is not an entity of record. The raw mirror JSON for each read goes into this file under the probe's own heading, as the HIP-991 probe's did, so a reader can check the claim without re-running it. The keys are discarded when the process exits and are named in no file.
 
 **Every way it stops.**
 
-- The probe token or its treasury is not the 2026-09-08 one → stop. It must not touch `$POSTAGE` `0.0.10426208` or the treasury `0.0.10426205`, and the runner refuses if it sees either.
+- The probe names any real entity → stop. The runner carries the list — `$POSTAGE` `0.0.10426208`, the treasury `0.0.10426205`, the doorbell `0.0.10426553`, the agent `0.0.10426206`, its manifest topic `0.0.10426591` — and refuses if a created entity id is any of them *(amended: the 09-08 token is not reusable, so the check is against the real entities rather than for the old probe's)*.
 - Act 2's receipt is not `SUCCESS` → stop, report the status, sign nothing further.
 - The alias account exists before act 2 → stop; the probe is meaningless if it did not create the account.
-- Act 4 fails with `INSUFFICIENT_PAYER_BALANCE` against the **new** account → that is the finding, not a failure: it means a zero-ℏ account cannot sign as a non-payer, and D-159 step 4's "fund one fee" becomes "fund every submission", which is a scope change and goes to Sonic before anything else is built.
+- Act 4 fails with `INSUFFICIENT_PAYER_BALANCE` against the **new** account → that is the finding, not a failure: it means a nearly-empty account cannot sign as a non-payer, D-157's payer seam does not work, and "fund one fee" becomes "fund every submission", which is a scope change and goes to Sonic before anything else is built.
 - Anything unexpected in the mirror JSON → record it verbatim and stop. The probe exists to be surprised.
 
-**Cost.** Two transactions and two mirror reads, all on the operator's account. No stamp is spent, because no stamp is involved.
+**Cost.** Five transactions and four mirror reads, all on the operator's account *(amended: the treasury and token have to be created, per the correction above)*. **No stamp is spent, because no `$POSTAGE` is involved** — the units moved here are a token minted for this run and worth nothing.
+
+**Where the runner is.** `app/src/ops/probe542.ts`, `npm run probe:542` inside `app/`. It writes its raw observations to `probe542-observations.json` and its findings here.
 
 ---
 

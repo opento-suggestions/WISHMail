@@ -24,7 +24,8 @@
     "resolve": "tsx src/resolve/resolve.cli.ts",
     "mcp": "tsx src/mcp/server.ts",
     "check:letter": "tsx src/tools/letter.check.ts",
-    "check:freeze": "tsx src/ops/freeze.check.ts"
+    "check:freeze": "tsx src/ops/freeze.check.ts",
+    "probe:542": "tsx src/ops/probe542.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",
