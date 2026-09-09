@@ -23,7 +23,8 @@
  */
 import { canonicalDigest } from '../core/canonical.js';
 import { matchAgentId, parseUaid, type AgentData, type KeyOrder } from '../core/hcs14.js';
-import { proofInputs, type ProofInputs } from '../core/proof.js';
+import type { ProofLocation } from '../core/locator.js';
+import { proofInputs, proofLocation, type ProofInputs } from '../core/proof.js';
 import { readProfile } from '../ops/declaration.js';
 import type { Mirror } from '../ops/mirror.js';
 
@@ -66,7 +67,8 @@ export interface ResolutionProof {
   readonly output: Record<string, unknown>;
   readonly meaning: {
     readonly statement: string;
-    readonly uri: Record<string, unknown>;
+    /** §5.2's canonical location: the resolving agent's own manifest topic (D-163). */
+    readonly uri: ProofLocation;
     readonly trustClass: string;
     readonly endorsements: readonly Endorsement[];
   };
@@ -144,7 +146,7 @@ const decode = (m: { message: string }): unknown => {
 export function resolutionProofFor(
   inputs: ProofInputs,
   output: Record<string, unknown>,
-  meaningUri: Record<string, unknown>,
+  location: ProofLocation,
   endorsements: readonly Endorsement[],
 ): ResolutionProof {
   const proofBody = {
@@ -165,7 +167,11 @@ export function resolutionProofFor(
     meaning: {
       statement:
         'The account named by this address declares these coordinates under HCS-11, through the HCS-2 registry its memo names, in an HCS-1 file whose topic memo is the digest of the profile it holds.',
-      uri: meaningUri,
+      // §5.2's canonical location, as D-163 rules it: the topic THIS manifest
+      // is published on — the resolving agent's own manifest topic — and not the
+      // evidence the proof stands on, which is already in `inputs.locator`, and
+      // not a message, which no proof can name before it is one (§6.4).
+      uri: location,
       trustClass: 'math',
       endorsements: [...endorsements],
     },
@@ -173,10 +179,22 @@ export function resolutionProofFor(
   return { ...proofBody, hash: canonicalDigest(proofBody) };
 }
 
+/**
+ * Resolve `address` under §9.2's rule.
+ *
+ * `manifestTopic` is the CALLER's own manifest topic — where the proof this
+ * returns would be published — and it is inside the proof's hash, because §5.2's
+ * canonical location is part of `meaning` (D-163). It is not a credential and
+ * not a configuration in P-4's sense: it is a public topic id, and §6.2's
+ * "reads and pays nothing" is untouched. A caller that publishes nothing — a
+ * Verifier re-resolving during appraisal — replays the manifest it read rather
+ * than rebuilding one, so it never reaches this argument (§11.4).
+ */
 export async function resolveHcs14(
   mirror: Mirror,
   ledgerTag: string,
   address: string,
+  manifestTopic: string,
 ): Promise<ResolveResult> {
   const parsed = parseAddress(address);
   if (parsed === null) {
@@ -330,11 +348,14 @@ export async function resolveHcs14(
     keyEpoch: wishmail.keyEpoch,
   };
 
-  // §5.2's Proof. The `uri` is empty until `send` publishes the manifest (§6.2).
+  // §5.2's Proof. The manifest's own canonical location is the resolver's
+  // manifest topic — known before anything is resolved (D-163). The COORDINATES'
+  // `resolutionProof.uri` is a reference and stays empty until `send` publishes
+  // the manifest and learns its sequence number (§6.2, §6.4 step 2).
   const manifest = resolutionProofFor(
     proofInputs(locator, readMaterial, snapshot),
     output,
-    { ledgerTag, topicId: fileTopic },
+    proofLocation(ledgerTag, manifestTopic),
     endorsements,
   );
 

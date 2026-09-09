@@ -33,10 +33,31 @@
  *             second form carries the memo, and every non-consensus profile
  *             carries the bytes it read (§9.1, T-P6-2).
  *
+ * THE SECOND HALF, ruled 2026-09-09 as D-163 (ledger §G item 16, closed).
+ * `meaning.uri` is the proof's CANONICAL LOCATION, and a location is
+ * `{ledgerTag, topicId}` — **the topic this manifest is published on**, and no
+ * sequence number. The reason is the same defect `check:freeze` surfaced: §5.1
+ * hashes `meaning` into the proof, §6.2 fixes that hash at `resolve` time, and
+ * §6.4 step 2 publishes the manifest afterwards with the AAD already binding it,
+ * so no manifest can carry its own publication locator. Every writer knows its
+ * TOPIC before it writes — the sender's manifest topic for a resolution proof
+ * and for a slip, the recipient's for a receipt, which the sender already
+ * targets in the ScheduleCreate — and the manifest there is found by hash, which
+ * is what §9.1 has said all along: "a manifest that recomputes to that hash is
+ * the one the envelope meant, whoever published it."
+ *
+ * What this code took BEFORE the ruling, recorded because a reader of the diff
+ * will want it: each writer named the EVIDENCE it stood on. The resolver named
+ * the HCS-1 profile file topic; the slip named its own log entry; the receipt
+ * named sequence number 7, which nobody could have known, because the manifest
+ * lands only when the recipient signs and the bytes are pre-filled before that.
+ * All three now name a manifest topic.
+ *
  * The hash is unchanged in rule: SHA-256 over the canonical JSON of
  * {rule, inputs, output, meaning}, `hash` absent (§5.1).
  */
 import { canonicalBytes, canonicalDigest, sha256hex } from './canonical.js';
+import type { ProofLocation } from './locator.js';
 
 /** §2.2's endorsements. */
 export type Endorsement = 'missing' | 'vague' | 'blurred' | 'stale' | 'timed-out' | 'withheld';
@@ -55,11 +76,44 @@ export interface Proof {
   readonly output: unknown;
   readonly meaning: {
     readonly statement: string;
-    readonly uri: Record<string, unknown>;
+    /** §5.2's canonical location: the TOPIC this manifest is published on (D-163). */
+    readonly uri: ProofLocation;
     readonly trustClass: 'math' | 'economic-game' | 'hardware-TEE' | 'social-committee';
     readonly endorsements: readonly Endorsement[];
   };
   readonly hash: string;
+}
+
+/**
+ * The location a manifest published on `manifestTopic` is found at (§5.2, §9.1).
+ *
+ * One function rather than an object literal in four places, for the same reason
+ * `proofInputs` is one function: a proof's hash covers its meaning, so a second
+ * construction that spelled a field differently would produce a manifest that
+ * hashes correctly to itself and to nothing else (CLAUDE.md §9).
+ */
+export function proofLocation(ledgerTag: string, manifestTopic: string): ProofLocation {
+  return { ledgerTag, topicId: manifestTopic };
+}
+
+/**
+ * §11.1's lookup, as a predicate over what a topic holds.
+ *
+ * "Read the topic the proof's canonical location names for a message whose body
+ * recomputes to the proof's hash." Content-addressed, so the caller supplies the
+ * bodies it read from that topic and this decides which of them, if any, is the
+ * manifest. Absence is T-P6-7 and is a downgrade, never an error (P-12).
+ */
+export function manifestAmong(
+  bodies: readonly Record<string, unknown>[],
+  hash: string,
+): Record<string, unknown> | null {
+  for (const body of bodies) {
+    if (body['hash'] !== hash) continue;
+    if (canonicalDigest(body, 'hash') !== hash) continue;
+    return body;
+  }
+  return null;
 }
 
 /**

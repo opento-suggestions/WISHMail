@@ -28,6 +28,7 @@ import { settlementMemo } from '../core/envelope.js';
 import { isToolFailure } from '../core/failure.js';
 import { TRANSACTION_MEMO, connectionCreatedBody, operatorId as operatorIdOf } from '../ops/hcs10.js';
 import { proofInputs } from '../core/proof.js';
+import { proofLocation } from '../core/proof.js';
 import { resolutionProofFor } from '../resolve/hcs14.js';
 import { inbox, type Delivery } from './inbox.js';
 import { MemoryLedger } from './memory.js';
@@ -65,21 +66,17 @@ const openFindings: string[] = [];
  * putting the input material there directly. `core/proof.ts` is the one builder
  * now.
  *
- * OPEN, ledger §G-16, NOT coded around: the schema requires `meaning.uri` to be
- * `{ledgerTag, topicId, sequenceNumber}`, all three, because §2.2 defines a
- * canonical location as "the structured locator, recorded in a proof's meaning,
- * at which the proof's MANIFEST is found". A manifest cannot carry its own
- * publication locator: §5.1 hashes `meaning` into the proof, §6.2 computes that
- * hash at `resolve` time, and §6.4 step 2 publishes the manifest afterwards. So
- * this one error is expected until Sonic rules, and any OTHER error is a
- * failure.
+ * ALSO FIXED, and it was ledger §G-16 until 2026-09-09: `meaning.uri` is a
+ * LOCATION — `{ledgerTag, topicId}`, the topic the manifest is published on — and
+ * not a locator naming a message. A manifest cannot carry its own publication
+ * locator, because §5.1 hashes `meaning` into the proof, §6.2 fixes that hash at
+ * `resolve` time, and §6.4 step 2 publishes the manifest afterwards. D-163 rules
+ * that the location is the topic and the lookup is content-addressed, so every
+ * manifest here names a manifest topic and every error is now a failure.
  */
 function manifestAgainstProofSchema(label: string, manifest: unknown): void {
   const errors = registry.validate('proof', manifest);
-  const open = errors.filter((e) => e.startsWith('/meaning/uri'));
-  const rest = errors.filter((e) => !e.startsWith('/meaning/uri'));
-  ok(`${label} validates against the registered Proof schema: ${rest.join('; ')}`, rest.length === 0);
-  if (open.length > 0) openFindings.push(`${label}: ${open.join('; ')}`);
+  ok(`${label} validates against the registered Proof schema: ${errors.join('; ')}`, errors.length === 0);
 }
 
 const SENDER_KEY = 'sender-ed25519';
@@ -161,7 +158,9 @@ function stand(): World {
       profileDigest: sha256hex(canonicalBytes(output)),
     },
   );
-  const manifest = resolutionProofFor(inputs, output, { ledgerTag: ledger.ledgerTag, topicId: profileFile }, []);
+  // D-163: the canonical location is the SENDER's manifest topic — the topic
+  // this manifest is published on — and not the profile file the proof read.
+  const manifest = resolutionProofFor(inputs, output, proofLocation(ledger.ledgerTag, senderManifests), []);
 
   const coordinates: Coordinates = {
     ...output,

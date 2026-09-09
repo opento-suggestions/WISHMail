@@ -31,7 +31,7 @@
  * T-P9-11, T-P10-1, T-P10-2, T-P11-3, T-P12-5, T-P14-1, T-P17-2.
  */
 import { canonicalDigest } from '../core/canonical.js';
-import { proofInputs } from '../core/proof.js';
+import { proofInputs, proofLocation } from '../core/proof.js';
 import { repoRoot } from '../ops/env.js';
 import { schemas } from '../schema/loader.js';
 import { affix, sealEnvelope, type AssembledEnvelope, type Envelope } from '../core/envelope.js';
@@ -260,7 +260,7 @@ async function firstContact(
 }
 
 /** §10.5's slip proof, as a manifest to publish. */
-function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string): Record<string, unknown> {
+function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string, manifestTopic: string): Record<string, unknown> {
   const parts = {
     rule: { id: 'wishmail:slip', revision: '0.5' },
     // §5.2's inputs: the locator is where a Verifier re-obtains them — the
@@ -285,7 +285,11 @@ function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string): Record<st
     meaning: {
       statement:
         'First contact was attempted and no lane had answered when the window closed. Expiry is not silence, and nothing is claimed about the recipient.',
-      uri: { ledgerTag, topicId: slip.log, sequenceNumber: slip.logSeq },
+      // §5.2's canonical location (D-163): the topic this slip's manifest is
+      // published on — the sender's own manifest topic, which §10.5 requires the
+      // slip's manifest to be on before `send` returns a slip. It is NOT the log
+      // entry: that is evidence, and evidence lives in `inputs.locator` above.
+      uri: proofLocation(ledgerTag, manifestTopic),
       trustClass: 'math',
       endorsements: ['timed-out'],
     },
@@ -359,7 +363,7 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       }
       // §10.5: "send MUST publish the slip's manifest on the sender's manifest
       // topic before returning a slip" (T-P12-5).
-      const manifestLocator = await publishManifest(ctx, slipManifest(slip, ctx.ledgerTag));
+      const manifestLocator = await publishManifest(ctx, slipManifest(slip, ctx.ledgerTag, ctx.manifestTopic));
       return { kind: 'slip', slip, manifestLocator };
     }
     lane = contact.lane;

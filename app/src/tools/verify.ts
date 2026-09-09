@@ -39,6 +39,8 @@ import { canonicalBytes, canonicalDigest, sha256hex } from '../core/canonical.js
 import { reassemble, type ChunkHeader, type ObservedChunk } from '../core/chunk.js';
 import { recoverEnvelope, settlementMemo, type Envelope } from '../core/envelope.js';
 import { refuse } from '../core/failure.js';
+import { isProofLocation } from '../core/locator.js';
+import { manifestAmong } from '../core/proof.js';
 import { accountOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
 import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
@@ -195,6 +197,35 @@ async function readManifest(reader: Reader, topicId: string, sequenceNumber: num
   const manifest = operationOf(message);
   if (manifest === null) return null;
   return { manifest, message };
+}
+
+/**
+ * §11.1's LOOKUP, as D-163 fixes it: read the topic the proof's own canonical
+ * location names for a message whose body recomputes to the proof's hash.
+ *
+ * The reference — `hdr.rp.u` — is what got the Verifier to a message. This is
+ * what the proof itself said about where it lives, and only this is inside the
+ * hash (§5.1, §5.2). A reference reaching a manifest on some other topic does
+ * not answer the lookup: a copy of a manifest published anywhere by anyone would
+ * hash correctly, and the location is what makes the reference checkable rather
+ * than merely followable.
+ *
+ * Absence is T-P6-7 and a downgrade, never an error (P-12).
+ */
+async function foundAtItsLocation(
+  reader: Reader,
+  manifest: Record<string, unknown>,
+  hash: string,
+): Promise<{ readonly found: boolean; readonly topicId: string | null }> {
+  const meaning = manifest['meaning'] as Record<string, unknown> | undefined;
+  const uri = meaning?.['uri'];
+  if (!isProofLocation(uri)) return { found: false, topicId: null };
+  const bodies: Record<string, unknown>[] = [];
+  for (const m of await reader.messages(uri.topicId)) {
+    const body = operationOf(m);
+    if (body !== null) bodies.push(body);
+  }
+  return { found: manifestAmong(bodies, hash) !== null, topicId: uri.topicId };
 }
 
 /**
@@ -411,6 +442,13 @@ export async function verify(
         const recomputed = canonicalDigest(read.manifest, 'hash');
         if (recomputed !== header.rp.h || read.manifest['hash'] !== header.rp.h) resolutionReasons.push('T-P6-2');
         if (!before(read.message.consensusTimestamp, chunkZeroAt)) resolutionReasons.push('T-P9-8');
+
+        // §11.1's lookup at the manifest's OWN canonical location (D-163,
+        // T-P6-7). The reference above found a message; this asks whether the
+        // topic the proof itself names holds one that recomputes to it.
+        const located = await foundAtItsLocation(reader, read.manifest, header.rp.h);
+        if (located.topicId !== null) topicsRead.add(located.topicId);
+        if (!located.found) resolutionReasons.push('T-P6-7');
 
         const meaning = read.manifest['meaning'] as Record<string, unknown> | undefined;
         if (meaning !== undefined) {

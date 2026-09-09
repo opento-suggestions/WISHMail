@@ -42,7 +42,7 @@ import {
 } from '@hashgraph/sdk';
 
 import { canonicalBytes, canonicalDigest } from '../core/canonical.js';
-import { proofInputs } from '../core/proof.js';
+import { manifestAmong, proofInputs, proofLocation } from '../core/proof.js';
 import { CHUNK_WIRE_MAX } from '../core/chunk.js';
 import { repoRoot } from './env.js';
 import { schemas, type SchemaName } from '../schema/loader.js';
@@ -99,7 +99,10 @@ console.log('');
 // ---------------------------------------------------------------- StampReceipt
 // §5.4 with D-161's provisioning line: the Postmaster-provisioned path of §4.6,
 // bought in the same act as the stamps. What the receipt names is what the agent
-// receives — coordinates, and no secret (P-13).
+// receives — coordinates, and no secret (P-13). `registrationFee` is D-159's
+// addendum: the ℏ the same transaction funded into the agent's account so the
+// agent can pay for its own registration, which is what T-P13-4 requires and
+// what a Verifier reads here to see the fee was a leg of the purchase.
 const stampReceipt = {
   ledgerTag: LEDGER,
   tokenId: FX.stampToken,
@@ -109,6 +112,7 @@ const stampReceipt = {
   holder: FX.agentAccount,
   provisioning: {
     price: { amount: '0.50', currency: 'USDC' },
+    registrationFee: '0.05',
     account: FX.agentAccount,
     doorbell: FX.doorbell,
     log: FX.log,
@@ -133,6 +137,21 @@ ok(
     provisioning: { ...stampReceipt.provisioning, doorbell: undefined },
   }).length > 0,
 );
+// A provisioning line without `registrationFee` is a Postmaster that did not fund
+// the fee: §4.6's permission is a MAY, so this must still validate.
+{
+  const noFee: Record<string, unknown> = { ...stampReceipt.provisioning };
+  delete noFee['registrationFee'];
+  validates('stamp-receipt', { ...stampReceipt, provisioning: noFee });
+}
+ok(
+  'a registrationFee written as a JSON number is refused (§14.3: decimal strings, never floats)',
+  registry.validate('stamp-receipt', {
+    ...stampReceipt,
+    provisioning: { ...stampReceipt.provisioning, registrationFee: 0.05 },
+  }).length > 0,
+);
+
 // A receipt with no provisioning line is the ordinary case and must still pass.
 const plainReceipt: Record<string, unknown> = { ...stampReceipt };
 delete plainReceipt['provisioning'];
@@ -141,8 +160,8 @@ validates('stamp-receipt', plainReceipt);
 // --------------------------------------------------------------- ReturnReceipt
 // §10.4's parts. The inputs are the envelope identifier, chunk 0's postmark, and
 // the epoch the envelope opened under; the output is `opened` over exactly
-// those; the meaning names the recipient's account and the manifest's canonical
-// location on the recipient's own manifest topic.
+// those; the meaning names the recipient's account and the recipient's manifest
+// topic as the receipt's canonical location (D-163).
 const envelopeId = 'a'.repeat(64);
 const chunk0 = { topicId: FX.lane, sequenceNumber: 41 };
 const keyEpoch = 1;
@@ -162,7 +181,11 @@ const receiptManifestParts = {
   meaning: {
     statement:
       'The recipient opened this envelope with its AAD verified, under the key of the epoch its header names. The signature is the recipient testimony; what recomputes is that this key signed for this envelope after this postmark.',
-    uri: { ledgerTag: LEDGER, topicId: FX.recipientManifest, sequenceNumber: 7 },
+    // D-163: a LOCATION — the topic this manifest lands on when the recipient
+    // signs. Honest at ScheduleCreate for the first time: the sender already
+    // targets this topic in the inner submission below, and there is nothing
+    // here that the sender does not know when it pre-fills the bytes.
+    uri: proofLocation(LEDGER, FX.recipientManifest),
     trustClass: 'math',
     endorsements: [] as string[],
   },
@@ -174,6 +197,8 @@ const returnReceipt = {
   postmarkRef: chunk0,
   recipient: `${FX.doorbell}@${FX.agentAccount}`,
   keyEpoch,
+  // The REFERENCE, which is a locator and carries the sequence number — filled
+  // by `ack` after execution, because only then does the sequence exist (§5.2).
   proof: {
     hash: receiptManifest.hash,
     uri: { ledgerTag: LEDGER, topicId: FX.recipientManifest, sequenceNumber: 7 },
@@ -186,16 +211,32 @@ const returnReceipt = {
 };
 validates('return-receipt', returnReceipt);
 
-// The receipt's manifest is a §5.2 Proof. Its `inputs` are §5.2's three fields
-// through `core/proof.ts`; its `meaning.uri` runs into ledger §G-16, exactly as
-// the resolution manifest does, and is reported rather than worked around.
+// The receipt's manifest is a §5.2 Proof, whole: `inputs` through
+// `core/proof.ts`, and `meaning.uri` the location D-163 fixes. This assertion is
+// what ledger §G-16 was open on, and it now passes rather than reporting.
 {
   const errors = registry.validate('proof', receiptManifest);
-  const open = errors.filter((e) => e.startsWith('/meaning/uri'));
-  const rest = errors.filter((e) => !e.startsWith('/meaning/uri'));
-  ok(`the receipt manifest validates against the registered Proof schema: ${rest.join('; ')}`, rest.length === 0);
-  if (open.length > 0) openFindings.push(`the receipt manifest: ${open.join('; ')}`);
+  ok(`the receipt manifest validates against the registered Proof schema: ${errors.join('; ')}`, errors.length === 0);
 }
+ok(
+  'a manifest whose location carries a sequence number is refused (D-163: a location is not a locator)',
+  registry.validate('proof', {
+    ...receiptManifest,
+    meaning: { ...receiptManifest.meaning, uri: { ...receiptManifest.meaning.uri, sequenceNumber: 7 } },
+  }).length > 0,
+);
+// §11.1's lookup, over the messages a topic holds. The manifest is found by its
+// hash and by nothing else, which is what lets a location name a topic.
+is(
+  'the lookup finds the manifest among the topic\'s messages by hash alone',
+  manifestAmong([{ p: 'wishmail', t: 'manifest' }, receiptManifest], receiptManifest.hash),
+  receiptManifest,
+);
+is(
+  'the lookup finds nothing where no message recomputes to the hash (T-P6-7)',
+  manifestAmong([{ ...receiptManifest, hash: 'b'.repeat(64) }], receiptManifest.hash),
+  null,
+);
 
 // What `ack` holds before execution, and what it can only fill after. The
 // schema permits `proof.uri` to be null and requires `witness` — which is
@@ -252,18 +293,14 @@ ok(
   }).length > 0,
 );
 
-// The schema is satisfied by the shape and cannot see the problem. §2.2 makes a
-// canonical location "the structured locator … at which the proof's MANIFEST is
-// found", and §10.4 says the receipt's meaning names it. The sequence number
-// above is a guess: the manifest lands only when the recipient signs, and the
-// sender must pre-fill these bytes at ScheduleCreate, because a scheduled
-// transaction's body cannot be edited. So `ack` cannot fill this field, and no
-// party can. The resolution manifest fails the schema outright for the adjacent
-// reason — an HCS-1 profile file is a topic, not a message, so its locator has
-// no sequence number at all. One question, showing in two ways.
-openFindings.push(
-  "the receipt manifest's meaning.uri names a sequence number nobody can know at ScheduleCreate: the manifest lands when the recipient signs, and the bytes are pre-filled before that (§10.4)",
-);
+// WHAT WAS HERE, and why it is gone. Until D-163 this file pushed an open
+// finding at exactly this point: the receipt's `meaning.uri` named a sequence
+// number nobody can know at ScheduleCreate, because the manifest lands only when
+// the recipient signs and a scheduled transaction's body cannot be edited after
+// it is created. §G-16 is closed for reading (B): `meaning.uri` is a LOCATION —
+// the topic — so the sender fills it from the topic it is already submitting to,
+// and the manifest is found there by hash. The bytes measured below are honest
+// for the first time.
 
 // --------------------------------------- §10.4: does the manifest fit a schedule?
 console.log('');
@@ -328,24 +365,12 @@ if (failures > 0) {
 }
 
 if (openFindings.length > 0) {
-  console.log('  FREEZE NOT READY — ledger §G-16, raised and unruled:');
+  console.log('  FREEZE NOT READY — an open finding stands:');
   for (const f of openFindings) console.log(`    ${f}`);
   console.log('');
-  console.log("    §2.2 defines a canonical location as the structured locator at which the PROOF'S");
-  console.log('    OWN MANIFEST is found, and §10.2, §10.4 and §10.5 each say the meaning names it.');
-  console.log('    §5.1 hashes the meaning into the proof; §6.2 computes that hash at resolve time;');
-  console.log('    §6.4 step 2 publishes the manifest afterwards and the AAD binds the hash. So a');
-  console.log('    manifest cannot carry its own publication locator, and the registered Proof');
-  console.log("    schema requires meaning.uri to be {ledgerTag, topicId, sequenceNumber}, all three.");
-  console.log('');
-  console.log('    Every writer here names something else instead — the resolver the HCS-1 profile');
-  console.log("    file's topic (no sequence number: a file is a topic, not a message), the slip the");
-  console.log("    sender's log entry, this receipt the recipient's manifest topic at a sequence it");
-  console.log('    cannot know before execution. The slip passes the schema and the other two do');
-  console.log('    not, which is the same defect showing in two ways.');
-  console.log('');
-  console.log('    STEP 4 MUST NOT SIGN UNTIL THIS IS RULED: registration freezes proof.schema.json');
-  console.log('    for the life of 0.5, and either reading changes it.');
+  console.log('    STEP 4 MUST NOT SIGN UNTIL THIS IS RULED: registration freezes the schemas in');
+  console.log('    spec/schemas/ for the life of 0.5, and a finding here is a schema that would be');
+  console.log('    frozen wrong. This is the gate D-161 ordered the freeze to sit behind.');
   console.log('');
   process.exit(2);
 }
