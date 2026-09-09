@@ -10,6 +10,7 @@
     "provision": "tsx src/ops/provision.ts",
     "probe": "tsx src/ops/probe.ts",
     "provision:plan": "tsx src/ops/provision.ts --dry-run",
+    "schemas:plan": "tsx src/ops/provision.ts --schemas --dry-run",
     "check:seal": "tsx src/core/seal.check.ts",
     "check:schemas": "tsx src/schema/loader.check.ts",
     "vectors": "tsx src/vectors/generate.ts",

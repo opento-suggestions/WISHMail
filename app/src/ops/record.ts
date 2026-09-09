@@ -44,7 +44,15 @@ export type EntityKey =
   | 'agent.profileChunks'
   | 'agent.declRegistry'
   | 'agent.registryEntry'
-  | 'agent.accountMemo';
+  | 'agent.accountMemo'
+  // Step 4, the HCS-13 schema registration (§5.11). Four per schema, fourteen
+  // schemas: HCS-13 at the pin has one HCS-2 topic manage ONE schema's versions
+  // (`hcs-13.md:134-160`), and §5.11 pins a schemaRef to a sequence number ON
+  // THAT TOPIC — so the topics are per schema and are not shared.
+  | `schema.${string}.file`
+  | `schema.${string}.chunks`
+  | `schema.${string}.registry`
+  | `schema.${string}.register`;
 
 export interface EntityRecord {
   readonly kind: EntityKind;

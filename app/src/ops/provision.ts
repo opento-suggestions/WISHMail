@@ -19,12 +19,14 @@ import { Mirror, toMirrorTxId } from './mirror.js';
 import { SPEC_TAG, Record_, type EntityKey, type EntityRecord } from './record.js';
 import { pinStampToken, unfilledPins } from './pins.js';
 import * as journal from './journal.js';
-import { STEPS, buildPriceList, canonicalBytes, sha256hex, validatePriceList } from './steps.js';
+import { STEPS, buildPriceList, canonicalBytes, schemaStepsAll, sha256hex, validatePriceList } from './steps.js';
 import type { Ctx, Discrepancy, Outcome, Row } from './step.js';
 
 const flags = {
   dryRun: process.argv.includes('--dry-run'),
   repin: process.argv.includes('--repin'),
+  // Step 4's ordered set, and only under this flag. See the loop below.
+  schemas: process.argv.includes('--schemas'),
   json: process.argv.includes('--json'),
 };
 
@@ -134,7 +136,12 @@ async function main(): Promise<number> {
     return 1;
   };
 
-  for (const step of STEPS) {
+  // Step 4 is a SEPARATE ordered set and `npm run provision` cannot reach it.
+  // §1.7: "once a minor version's schemas are registered it changes no schema."
+  // Registering is the freeze, and the freeze is held until the six tool bodies
+  // pass their fixtures — see app/OPERATIONS.md, Step 4's gate report.
+  const steps = flags.schemas ? schemaStepsAll(env.repoRoot) : STEPS;
+  for (const step of steps) {
     n += 1;
     const missing = step.needs.filter((k) => !record.has(k));
     if (missing.length && !flags.dryRun) return stop(step.key, `prerequisite not in the record: ${missing.join(', ')}`);

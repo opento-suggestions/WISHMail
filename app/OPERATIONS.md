@@ -497,6 +497,84 @@ By UAID, the same coordinates, and the identifier comparison of §9.1 runs: the 
 
 Two defects in the coordinates were caught by validating against the schema before printing, which is why the tool validates rather than trusts: `resolutionProof.uri` had been an empty string where §5.2 fixes locators as **structured, not strings**, and `resolvedAt` had been an ISO instant where §5.1 writes a timestamp as `seconds.nanos`.
 
+## Step 4 — the HCS-13 schema registration: gate report, written before any signature
+
+**Status: BUILT, PLANNED, NOT SIGNED — and deliberately not signable by `npm run provision`.** The plan resolves all 56 steps under `npm run schemas:plan`; nothing has been submitted. This section is written before the first transaction, on the rule the probe, Step 2 and Step 3 followed.
+
+**Why it is held.** §1.7: "A patch revision amends text and tests within a minor version; it changes no wire string, and **once a minor version's schemas are registered it changes no schema**." Registering *is* the freeze of `spec/schemas/` for minor version 0.5. Three of the last four patches changed a schema — 0.5.1 and 0.5.2 each corrected one, and 0.5.4 added `observations.agentIdOrder` — and each was permitted *only because nothing is registered yet*. The six tool bodies still return `NOT_IMPLEMENTED` and no fixture has yet validated a real object against a real schema, so the schemas have not been exercised by the thing they exist for.
+
+**The sentence that governs when this is signed:** *this step is §1.7's freeze, and it is signed only when the six tool bodies pass their fixtures.* Until then `npm run conformance` prints `NO REPORT — 28 unfilled pins (T-P9-2)`, and that is the correct output, not a defect to route around.
+
+So Step 4's steps are a **separate ordered set**: `npm run provision` runs `STEPS` and cannot reach them; they run only under an explicit `--schemas`.
+
+### 1. What it creates, in the forced order
+
+Four entities per schema, for each of §18.5's fourteen — **56 steps, 14 file topics, 14 registry topics, 31 chunk messages, 14 register messages.**
+
+| # | Entity | Declared shape | Warrant |
+|---|---|---|---|
+| 1 | `schema.<name>.file` | HCS-1 topic, memo `<sha256 of the committed schema>:brotli:base64`, sole submit key the operator's, **no admin key**, no fee | `hcs-13.md:136` step 1 · `hcs-1.md:48-49` forbids an admin key on a file topic (D-150) |
+| 2 | `schema.<name>.chunks` | HCS-1 `{o, c}`, `o=0` prefixed `data:application/schema+json;base64,`, each ≤1024 b | `hcs-1.md:92-100` |
+| 3 | `schema.<name>.registry` | HCS-2 topic, memo `hcs-2:0:60`, submit **and** admin the operator's, no fee | `hcs-13.md:138` step 2 |
+| 4 | `schema.<name>.register` | `{p:"hcs-2", op:"register", t_id:<file>, metadata:{name, description}}`, tx memo `hcs-2:op:register:0` | `hcs-13.md:140`, `:150-160` |
+
+The order inside a schema is forced: the file topic's memo carries the digest of the bytes, so the bytes are final first; the register names the file topic; and the `schemaRef` is knowable only after the register has a sequence number.
+
+**These are the Postmaster's own infrastructure, so the keys are the operator's** — not an agent's. §4.6 and T-P17-1 govern the topics provisioning creates *for an agent*; a schema registry is the release speaking about its own schemas, which is D-142's reasoning for the price topic, applied again.
+
+### 2. ONE REGISTRY PER SCHEMA, and a divergence to rule
+
+The instruction for this step said "one HCS-2 schema registry topic … with a `p: "hcs-2"` register per schema whose sequence number becomes the `schemaRef` `hcs://13/<registry>#<seq>`" — one shared topic. **It is built one topic per schema instead, and that is a divergence recorded rather than silently taken.** FETCHED 2026-09-08, blob `07f1ac67b344d6655b98ce8196b3053fe1b4f566`, verified with `git hash-object`:
+
+> "1. Create an HCS-1 file containing the JSON Schema definition
+> 2. **Create an HCS-2 topic to manage versions of the schema**
+> 3. Register the HCS-1 file in the HCS-2 topic using the register operation"
+> — `hcs-13.md:136-140`
+
+and, on the locator:
+
+> "`topicId` is the topic ID of the HCS-2 topic managing **the schema**. … `hcs://13/0.0.123456#42` — References **version 42 of the schema**"
+> — `hcs-13.md:230-241`
+
+§5.11 says the same thing in this document's words: "each as an HCS-1 file registered on an HCS-2 topic that manages **the schema's** versions", and "the topic is the HCS-2 topic managing the schema and the sequence number is that of the register operation **for the version claimed**".
+
+The difference is not cosmetic. On a shared topic, `#42` is the forty-second registration *of anything* — a different schema, not a later version of one — so the fragment stops meaning "version" and `hcs://13/<topic>` unpinned, which §5.11 says "names whatever version is latest", names nothing at all. A reader resolving `schemaRef` would still find the right file, because `t_id` is in the message; what breaks is the meaning of the locator and every future rotation of a single schema.
+
+**The cost of the shape that is built is 14 extra topics.** The cost of the other is a locator that does not mean what two documents say it means. This is stated here rather than decided: Sonic rules, and nothing is signed either way.
+
+### 3. What it asserts, and what it reads back
+
+`schema.<name>.file`: memo equal to `<digest>:brotli:base64`, `submit_key` the operator's, **`admin_key` null**, `fee_schedule_key` null. `schema.<name>.chunks`: every chunk present; the file reassembled by `o`, base64-decoded, brotli-decompressed, and hashed — equal to its topic memo's digest **and** to the committed schema. `schema.<name>.registry`: the same nine field assertions every other topic in this build gets, through the shared `topicStep`. `schema.<name>.register`: the registry's **current** entry, byte-for-byte, with `t_id` naming the file topic.
+
+**WHICH BYTES — the check that had to be run rather than assumed.** `spec/pins.json` records `sha256` as "the digest of the registered schema, which a release's shipped `spec/schemas/` file must equal" (T-P9-4); HCS-1's memo carries "the SHA-256 hash of the file being uploaded **before any compression**". If those are over different bytes, T-P9-4 compares two different things and passes or fails by accident.
+
+They are taken from the **committed git blob** (`git cat-file blob`), never from the working tree, for the reason ledger §H already records: "`core.autocrlf=true` corrupts working-tree digests". On this machine the two happen to be identical today — the checkout is LF — but on a fresh clone with `core.autocrlf=true` the working tree would be CRLF and every digest would differ from the blob's. So the step **stops** if the working tree and the blob disagree, and **stops** if any file's HCS-1 memo digest differs from the digest that would be pinned. Confirmed on the plan: **14 of 14 agree**, 31 chunks in total.
+
+### 4. What it writes, and where
+
+`spec/pins.json`'s `registeredSchemas`, and nothing else. `pins.ts` gains a **second narrow writer**, `pinRegisteredSchema`, on the same discipline as `pinStampToken`: it fills one entry's `schemaRef` and `sha256`, edits **one line**, refuses to write if that line is not in its expected form, and has no parameter for anything else — so it physically cannot write a topic id anywhere but into the entry it names. It is called from the register step's **readback**, because §5.11's sequence number is assigned by the network and is knowable only after consensus; a predicted `schemaRef` would be a guess written into the file of record.
+
+Twenty-eight nulls close if all fourteen register. `app/deployment/hedera-testnet.json` takes the 56 rows, each citing its `specTag`.
+
+### 5. Idempotency, and every way it stops
+
+Step 2's stop conditions carry over. Three are specific to this step:
+
+**The blob check** and **the digest-agreement check**, above: both stop before any transaction.
+
+**A file topic has no admin key, so a registered schema is permanent.** A schema registered wrong cannot be withdrawn, only superseded by a new register on its own registry topic — which is exactly what the version indirection is for, and why `indexed` is `0`: a `schemaRef` pinned to an earlier sequence number must stay resolvable, and indexed `1` would make only the last message state.
+
+**A pins conflict.** `pinRegisteredSchema` returns `conflict` where an entry is already filled with something else, and the readback fails rather than overwriting: a second registration of the same schema is a rotation and needs a decision, not a silent repin.
+
+### 6. Expected output until it is signed
+
+```
+npm run schemas:plan     56 planned · spec/pins.json 28 pins unfilled
+npm run conformance      NO REPORT — 28 unfilled pins in spec/pins.json (T-P9-2)
+```
+
+Both are correct. The suite refuses a report because the schemas are not registered, and the schemas are not registered because the tool bodies have not passed their fixtures. Nothing here is a defect to route around; it is the freeze being held on purpose.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.

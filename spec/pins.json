@@ -158,9 +158,8 @@
   "ledgerTags": ["hedera:testnet", "hedera:mainnet"],
 
   "stampToken": {
-    "_note": "§4.1. Filled at the first deployment on a network. T-P9-2 blocks any claim naming a network whose token is unfilled.",
-    "hedera:testnet": { "tokenId": "0.0.10426208", "treasury": "0.0.10426205" },
-    "hedera:mainnet": { "tokenId": null, "treasury": null }
+    "_note": "§4.1. ONE ENTRY PER DEPLOYED LEDGER TAG, and no entry at all for a tag that names no deployment (D-154). §18.4 says 'per network', and a network §15.5 leaves undeployed has no network to be per. hedera:mainnet is therefore absent rather than null: a null here means 'a pin this deployment owes and has not filled', which T-P9-2 reads to block a claim, and a stamp token on a network this version does not deploy to is not owed. It is not a sentinel either — a sentinel would be a value standing for the absence of a value, which is the thing that was wrong. ledgerTags below is unchanged: §5.1 defines two tags whether or not either is deployed, and a claim is scoped to what it names (§1.5). When hedera:mainnet is deployed, its entry is added and filled in the same act.",
+    "hedera:testnet": { "tokenId": "0.0.10426208", "treasury": "0.0.10426205" }
   },
 
   "registeredSchemas": {

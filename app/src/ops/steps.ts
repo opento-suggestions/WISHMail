@@ -38,6 +38,17 @@ import { publicHex, type Signer } from './identity.js';
 import { submit } from './hedera.js';
 import { named, Checks, type BackstopResult, type Ctx, type Discrepancy, type Step } from './step.js';
 import { fromMirrorTxId } from './mirror.js';
+import { readHcs1 } from './hcs1.js';
+import type { EntityKey } from './record.js';
+import { pinRegisteredSchema } from './pins.js';
+import {
+  SCHEMA_REGISTER_TX_MEMO,
+  schemaRefFor,
+  schemaRegisterOperation,
+  schemaRegistryMemo,
+  schemaSources,
+  type SchemaSource,
+} from './schemas13.js';
 import {
   HCS2_REGISTER_TX_MEMO,
   accountMemoFor,
@@ -288,7 +299,7 @@ interface TopicWant {
 }
 
 const topicStep = (
-  key: 'prices.topic' | 'agent.doorbell' | 'agent.log' | 'agent.manifest' | 'agent.profileFile' | 'agent.declRegistry',
+  key: EntityKey,
   role: string,
   needs: readonly ('postage.token' | 'agent.account' | 'treasury.account')[],
   build: (ctx: Ctx) => TopicWant,
@@ -676,6 +687,192 @@ const accountMemoStep: Step<MemoWant> = {
     return { ...r, signedBy: ['operator', 'agent'] };
   },
 };
+
+/* --- Step 4: the HCS-13 schema registration (§5.11) — BUILT, NOT SIGNED --- */
+
+interface SchemaFileWant {
+  readonly name: string;
+  readonly memo: string;
+  readonly submitKey: string;
+  readonly adminKey: null;
+  readonly sha256: string;
+  readonly blobSha: string;
+  readonly warrant: string;
+}
+
+interface SchemaChunkWant {
+  readonly name: string;
+  readonly topic: string;
+  readonly memoDigest: string;
+  readonly chunks: readonly { readonly o: number; readonly c: string }[];
+}
+
+interface SchemaRegisterWant {
+  readonly name: string;
+  readonly topic: string;
+  readonly fileTopic: string;
+  readonly bytes: string;
+  readonly txMemo: string;
+  readonly sha256: string;
+}
+
+/**
+ * The four steps one schema needs, generated for each of §18.5's fourteen.
+ *
+ * The order inside a schema is forced the same way the declaration's was: the
+ * file topic's memo carries the digest of the bytes, so the bytes are final
+ * first; the register names the file topic; and the `schemaRef` is only known
+ * once the register has a sequence number, which is why the pin is written from
+ * the readback rather than predicted.
+ */
+function schemaSteps(source: SchemaSource): readonly AnyStep[] {
+  const n = source.name;
+
+  const fileTopic: Step<SchemaFileWant> = {
+    key: `schema.${n}.file`, kind: 'topic', role: `${n} schema file (HCS-1)`,
+    builtBy: 'TopicCreateTransaction', needs: [],
+    want: (ctx) => ({
+      name: n,
+      memo: source.file.memo,
+      submitKey: publicHex(ctx.operator),
+      adminKey: null,
+      sha256: source.sha256,
+      blobSha: source.blobSha,
+      warrant: 'hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)',
+    }),
+    detail: (w) => `${w.memo.slice(0, 20)}… · blob ${w.blobSha.slice(0, 8)} · admin NONE`,
+    async confirm(ctx, id, want) {
+      if (!id) return 'absent';
+      const p = named<MTopic>('the schema file topic exists and is not deleted', (t) => t.topic_id === id && !t.deleted);
+      const t = await ctx.mirror.poll<MTopic>(`/topics/${id}`, p.test);
+      if (!t || !p.test(t)) return 'absent';
+      const c = new Checks();
+      c.eq('memo', t.memo, want.memo);
+      c.keyIs('submit_key', t.submit_key, want.submitKey);
+      c.isNull('admin_key', t.admin_key);
+      c.isNull('fee_schedule_key', t.fee_schedule_key);
+      return c.result;
+    },
+    async create(ctx, want) {
+      const r = await submit(ctx.client, ctx.env.operatorId, new TopicCreateTransaction()
+        .setTopicMemo(want.memo)
+        .setSubmitKey(ctx.operator.publicKey)
+        .setAutoRenewAccountId(ctx.env.operatorId)
+        .setMaxTransactionFee(new Hbar(ctx.env.constants.feeCaps.plainTopicCreate)), [ctx.operator]);
+      return { ...r, signedBy: ['operator'] };
+    },
+  };
+
+  const chunks: Step<SchemaChunkWant> = {
+    key: `schema.${n}.chunks`, kind: 'message', role: `${n} schema, as an HCS-1 file`,
+    builtBy: 'TopicMessageSubmitTransaction', needs: [`schema.${n}.file`],
+    want: (ctx) => ({
+      name: n,
+      topic: ctx.record.get(`schema.${n}.file`)?.id ?? '0.0.PENDING',
+      memoDigest: source.file.digest,
+      chunks: source.file.chunks,
+    }),
+    detail: (w) => `${w.chunks.length} chunk${w.chunks.length === 1 ? '' : 's'} on ${w.topic} · sha256 ${w.memoDigest.slice(0, 12)}…`,
+    async confirm(ctx, _id, want) {
+      const p = named<MMessages>('every chunk of the schema is on its file topic',
+        (m) => (m.messages ?? []).length >= want.chunks.length);
+      const m = await ctx.mirror.poll<MMessages>(`/topics/${want.topic}/messages?limit=25&order=asc`, p.test);
+      if (!m || !p.test(m)) return 'absent';
+      const c = new Checks();
+      const got = (m.messages ?? []).map((x) => JSON.parse(Buffer.from(x.message, 'base64').toString('utf8')) as { o: number; c: string });
+      c.num('chunk count', got.length, want.chunks.length);
+      const topic = await ctx.mirror.poll<MTopic>(`/topics/${want.topic}`, (t) => t.topic_id === want.topic);
+      const read = readHcs1(topic?.memo ?? '', got);
+      c.eq('the file digest equals its topic memo digest', read.digest, read.memoDigest);
+      c.eq('and equals the committed schema', read.digest, want.memoDigest);
+      return c.result;
+    },
+    async create(ctx, want) {
+      let last: Submitted | undefined;
+      for (const chunk of want.chunks) {
+        last = await submit(ctx.client, ctx.env.operatorId, new TopicMessageSubmitTransaction()
+          .setTopicId(want.topic)
+          .setMessage(Buffer.from(JSON.stringify(chunk), 'utf8')), [ctx.operator]);
+        if (!last.ok) break;
+      }
+      if (last === undefined) throw new Error(`${want.name} produced no chunks`);
+      return { ...last, signedBy: ['operator'] };
+    },
+  };
+
+  // The registry is an ordinary HCS-2 topic under the operator's keys, so it
+  // reuses topicStep rather than restating its readback: the same nine field
+  // assertions run on it as on every other topic this build creates.
+  const registry = topicStep(`schema.${n}.registry`, `${n} schema registry (HCS-2)`, [], (ctx) => ({
+    memo: schemaRegistryMemo(HCS10_TTL),
+    submitKey: publicHex(ctx.operator), adminKey: publicHex(ctx.operator), feeScheduleKey: null,
+    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
+    warrant: 'hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number',
+  }), (c) => c.operator);
+
+  const register: Step<SchemaRegisterWant> = {
+    key: `schema.${n}.register`, kind: 'message', role: `${n} schema registration`,
+    builtBy: 'TopicMessageSubmitTransaction',
+    needs: [`schema.${n}.registry`, `schema.${n}.file`],
+    want: (ctx) => {
+      const ft = ctx.record.get(`schema.${n}.file`)?.id ?? '0.0.PENDING';
+      return {
+        name: n,
+        topic: ctx.record.get(`schema.${n}.registry`)?.id ?? '0.0.PENDING',
+        fileTopic: ft,
+        bytes: Buffer.from(JSON.stringify(schemaRegisterOperation(ft, n as never)), 'utf8').toString('base64'),
+        txMemo: SCHEMA_REGISTER_TX_MEMO,
+        sha256: source.sha256,
+      };
+    },
+    detail: (w) => `register on ${w.topic} → t_id ${w.fileTopic} · schemaRef hcs://13/${w.topic}#<seq>`,
+    async confirm(ctx, _id, want) {
+      const p = named<MMessages>('the current entry on the schema registry names this file',
+        (m) => (m.messages ?? []).some((x) => x.message === want.bytes));
+      const m = await ctx.mirror.poll<MMessages>(`/topics/${want.topic}/messages?limit=1&order=desc`, p.test);
+      if (!m || !p.test(m)) return 'absent';
+      const c = new Checks();
+      const current = m.messages?.[0];
+      c.eq('message (base64, byte-for-byte)', current?.message, want.bytes);
+      // §5.11's schemaRef is only knowable HERE: the sequence number the network
+      // assigned. It is read back and pinned, never predicted.
+      const seq = current?.sequence_number;
+      if (typeof seq === 'number') {
+        const outcome = pinRegisteredSchema(ctx.env.repoRoot, want.name, {
+          schemaRef: schemaRefFor(want.topic, seq),
+          sha256: want.sha256,
+        });
+        if (outcome.kind === 'conflict') {
+          c.eq(`spec/pins.json registeredSchemas.${want.name}`, outcome.found, 'an unfilled entry');
+        }
+      }
+      return c.result;
+    },
+    async create(ctx, want) {
+      const r = await submit(ctx.client, ctx.env.operatorId, new TopicMessageSubmitTransaction()
+        .setTopicId(want.topic)
+        .setMessage(Buffer.from(want.bytes, 'base64'))
+        .setTransactionMemo(want.txMemo), [ctx.operator]);
+      return { ...r, signedBy: ['operator'] };
+    },
+  };
+
+  return [anon(fileTopic), anon(chunks), anon(registry), anon(register)];
+}
+
+/**
+ * Step 4's ordered set — DELIBERATELY NOT IN `STEPS`.
+ *
+ * §1.7: "once a minor version's schemas are registered it changes no schema".
+ * Registering is the freeze, and this build is not ready to be frozen: the six
+ * tool bodies return `NOT_IMPLEMENTED` and no fixture has exercised a schema
+ * against a real object. So `npm run provision` cannot reach these steps at all;
+ * they run only under an explicit `--schemas`, and the gate report says what
+ * must be true before that is a real run rather than a plan.
+ */
+export function schemaStepsAll(repoRoot: string): readonly AnyStep[] {
+  return schemaSources(repoRoot).flatMap((s) => schemaSteps(s));
+}
 
 /* --- the ordered set ----------------------------------------------------- */
 

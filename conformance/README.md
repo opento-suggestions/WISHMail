@@ -58,7 +58,7 @@ conformance/
 
 **Determinism is the point of most of it.** Two Verifiers on the same scope and window produce evidence with the same digest, byte for byte, from any mirror node, at any time (P-3; T-P3-1, T-P4-3). `observations` is excluded from that digest because two Verifiers at two clocks cannot agree on it (§11.6, D-82).
 
-**No report while a pin is unfilled.** The suite reads `spec/pins.json` and refuses to produce a report while any pin there is null (T-P9-2). **Thirty are**, since the `hedera:testnet` stamp token filled on 2026-09-08: the twenty-eight `registeredSchemas` entries, which wait on HCS-13 registration, and the `$POSTAGE` token and treasury on `hedera:mainnet`, which wait on a network §15.5 leaves undeployed. There is no flag that produces a report anyway; a way past T-P9-2 would be a way past the invariant.
+**No report while a pin is unfilled.** The suite reads `spec/pins.json` and refuses to produce a report while any pin there is null (T-P9-2). **Twenty-eight are**: the `registeredSchemas` entries, two per schema for fourteen, which wait on HCS-13 registration. The `hedera:testnet` stamp token filled on 2026-09-08, and `hedera:mainnet` carries no entry at all — an undeployed ledger tag has no pin, so its absence is not an unfilled one (D-154). There is no flag that produces a report anyway; a way past T-P9-2 would be a way past the invariant.
 
 Because of that, nothing in an ordinary run reaches `report.mjs`, so the report is exercised on its own: `npm run check:report` calls it with a synthetic, fully-pinned input in a scratch directory and holds it to §5.1's hashing rule — the digest recomputes from the file, `generated` is outside it so two runs at two clocks agree, and a failed or unrun test stops `passedInFull`, which is what T-P15-3 reads to refuse a claim.
 
@@ -71,7 +71,7 @@ Because of that, nothing in an ordinary run reaches `report.mjs`, so the report 
   passed          0
   failed          83
 
-  NO REPORT — 30 unfilled pins in spec/pins.json (T-P9-2).
+  NO REPORT — 28 unfilled pins in spec/pins.json (T-P9-2).
 ```
 
 **No key of a provisioned agent, anywhere here** (P-13; T-P13-1, T-P13-2). P-13 forbids the private key "of any **agent** — decryption, topic, or account" (§12.2), and that is the rule: no key any agent this deployment provisioned appears in a fixture, in the corpus, or in a report. It is **not** a rule against key material as such, and it cannot be: T-P1-5 requires an independent implementation to *open* what the reference sealed, so `spec/vectors/seal.json` carries the recipient's private key exactly as RFC 9180 publishes `skRm` beside its own vectors. Those keys are born for the vector, bound to no account, topic or epoch, and the generator refuses any key that appears in `app/deployment/hedera-testnet.json`. See D-151.
