@@ -128,6 +128,30 @@ The repository's **first `CHANGED` markers**, which D-131 set the convention up 
 
 ## [Unreleased]
 
+### 2026-09-09 — the third planning artifact **[CC]**
+
+`plans/` held two plans and the repository had moved two patches past the later of them. The missing
+one is `2026-09-08-0.5.3-the-wiring.md`, which directed the 0.5.3 patch (D-150, D-151), the whole of
+`app/src/core`, `schema`, `state` and `mcp`, the conformance harness, and the `hcs14` declaration —
+commits `1b6f243` through `ca9d45c`. It is here verbatim as approved, byte-identical to the plan-mode
+file it was executed from, verified by `git hash-object` as the other two were. No normative change:
+no specification sentence moves, no schema changes, no test is added or amended, the register stays
+at 83, and nothing here binds anything.
+
+- **The README says why a plan's version and the repository's can differ**, using the case that
+  produced this gap: the 0.5.3 plan's Phase D treated HCS-14's hashing algorithm as a settled fact to
+  confirm by a fetch before signing, and the fetch found the standard contradicting itself about the
+  canonical key order — which stopped the declaration mid-step and produced 0.5.4 (D-152, D-153), a
+  patch that appears nowhere in the plan that was executing when it happened.
+- **It also records that this plan was rewritten before approval, not after.** Its first form took an
+  HPKE library as a dependency; that was refused, and the approved file composes RFC 9180 base mode on
+  `node:crypto` with the RFC's Appendix A.1 as its court. The refusal is not in the file, because the
+  file is what was approved; the reasoning is in `app/OPERATIONS.md`.
+- **And it names what directed the windows with no plan file.** Steps 4 and 5 were directed by
+  instruction in-session; the gate report written before each step's first signature stands in for a
+  plan and carries the same four things a plan carries.
+
+
 ### 2026-09-08 — `send`, `inbox` and `verify`, and the letter run end to end in a modelled ledger **[CC]**
 
 The three tool bodies of §6.4, §6.5 and §6.7, over one consensus port whose **read half has no write on it** — which is how P-4 is enforced rather than promised: a Verifier is handed a `Reader` and there is nothing in its hands to configure, key, or pay for. No specification sentence moves; no schema changes; no test is added or amended; the register stays at 83.
