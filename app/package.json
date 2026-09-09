@@ -1,6 +1,6 @@
 {
   "name": "@wishmail/app",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "private": true,
   "type": "module",
   "description": "The reference implementation. Provisioning scripts under src/ops/ stand up the Postmaster's entities on hedera:testnet.",
@@ -25,7 +25,8 @@
     "mcp": "tsx src/mcp/server.ts",
     "check:letter": "tsx src/tools/letter.check.ts",
     "check:freeze": "tsx src/ops/freeze.check.ts",
-    "probe:542": "tsx src/ops/probe542.ts"
+    "probe:542": "tsx src/ops/probe542.ts",
+    "check:prefreeze": "tsx src/ops/prefreeze.check.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

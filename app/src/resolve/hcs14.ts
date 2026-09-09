@@ -42,6 +42,13 @@ export interface MailCoordinates {
   readonly account: string;
   readonly doorbell: string;
   readonly log?: string;
+  /**
+   * The recipient's manifest topic (§5.3, D-166). `send` schedules the receipt's
+   * submission here (§6.4 step 7, §10.4), and a Verifier checks that a receipt
+   * landed here (T-P1-8) — which it can only do from the resolution proof's
+   * output, because re-resolving now would answer at its own clock (§11.6).
+   */
+  readonly manifestTopic: string;
   readonly x25519Pub: string;
   readonly keyEpoch: number;
   /**
@@ -295,8 +302,19 @@ export async function resolveHcs14(
   };
 
   const wishmail = profile.properties?.wishmail;
-  if (wishmail === undefined || typeof wishmail.x25519Pub !== 'string' || typeof wishmail.keyEpoch !== 'number') {
-    return { failure: 'RESOLVE_NOT_FOUND', detail: 'the profile carries no properties.wishmail declaration' };
+  // §9.2's rule takes `properties.wishmail.{manifestTopic, x25519Pub, keyEpoch}` —
+  // all three. The guard had checked two of them, which is the same omission
+  // D-166 found in the coordinates: a declaration missing its manifest topic is
+  // not a declaration, and T-P6-3 says a profile carrying no
+  // `properties.wishmail` resolves to RESOLVE_NOT_FOUND rather than to
+  // coordinates with a hole in them.
+  if (
+    wishmail === undefined ||
+    typeof wishmail.manifestTopic !== 'string' ||
+    typeof wishmail.x25519Pub !== 'string' ||
+    typeof wishmail.keyEpoch !== 'number'
+  ) {
+    return { failure: 'RESOLVE_NOT_FOUND', detail: 'the profile carries no complete properties.wishmail declaration (§9.1: account, doorbell, log?, manifestTopic, x25519Pub, keyEpoch)' };
   }
   if (typeof profile.inboundTopicId !== 'string') {
     return { failure: 'RESOLVE_NOT_FOUND', detail: 'the profile carries no inboundTopicId' };
@@ -344,6 +362,10 @@ export async function resolveHcs14(
     account: parsed.account,
     doorbell: profile.inboundTopicId,
     ...(typeof profile.outboundTopicId === 'string' ? { log: profile.outboundTopicId } : {}),
+    // Read from properties.wishmail all along (§9.2) and, until D-166, dropped
+    // on the floor: two of the three made it into the coordinates and this one
+    // did not, for no stated reason. §10.4 is what needed it.
+    manifestTopic: wishmail.manifestTopic,
     x25519Pub: wishmail.x25519Pub,
     keyEpoch: wishmail.keyEpoch,
   };

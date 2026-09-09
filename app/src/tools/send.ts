@@ -65,6 +65,13 @@ export interface Coordinates {
   readonly account: string;
   readonly doorbell: string;
   readonly log?: string;
+  /**
+   * The recipient's manifest topic (§5.3, D-166). `send` schedules the receipt's
+   * submission here (§6.4 step 7, §10.4), and a Verifier checks that a receipt
+   * landed here (T-P1-8) — which it can only do from the resolution proof's
+   * output, because re-resolving now would answer at its own clock (§11.6).
+   */
+  readonly manifestTopic: string;
   readonly x25519Pub: string;
   readonly keyEpoch: number;
   readonly resolutionProof: { readonly hash: string; readonly uri: MessageLocator | null };

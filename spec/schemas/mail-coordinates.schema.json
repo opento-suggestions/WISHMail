@@ -44,6 +44,12 @@
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
       "description": "Outbound topic. Optional."
     },
+    "manifestTopic": {
+      "type": "string",
+      "pattern": "^[0-9]+.[0-9]+.[0-9]+$",
+      "description": "The recipient's manifest topic (§5.3, §9.1, D-166). Here and not only in the declaration because `send` schedules the receipt's submission to it (§6.4 step 7, §10.4) and a Verifier must know which topic a receipt was owed to without re-resolving at its own clock (§11.6, P-3).",
+      "$comment": "T-P1-8 — the executed submission's postmark is on the recipient's manifest topic; that check is what requires this field. T-P17-3 fixes the topic's own shape."
+    },
     "x25519Pub": {
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]+$",
@@ -144,6 +150,7 @@
     "ledgerTag",
     "account",
     "doorbell",
+    "manifestTopic",
     "x25519Pub",
     "keyEpoch",
     "resolutionProof",

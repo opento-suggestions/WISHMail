@@ -138,6 +138,7 @@ function stand(): World {
     account: recipientAccount,
     doorbell: recipientDoorbell,
     log: recipientLog,
+    manifestTopic: recipientManifests,
     x25519Pub: recipientEncryption.x25519Pub,
     keyEpoch: 1,
   };

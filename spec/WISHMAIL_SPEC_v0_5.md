@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.6
+# WISHMail — Specification v0.5.7
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -675,6 +675,7 @@ MailCoordinates
   account          string       the agent's account (HCS-10 operator_id; §10)
   doorbell         string       inbound topic
   log              string       outbound topic (optional)
+  manifestTopic    string       the agent's manifest topic (§9.1)
   x25519Pub        base64       current encryption public key
   keyEpoch         integer
   resolutionProof  {hash, uri}
@@ -682,6 +683,10 @@ MailCoordinates
   endorsements     [enum]       missing | vague | blurred | stale | timed-out | withheld
   resolvedAt       timestamp    query time, as bound into the proof's inputs
 ```
+
+<!-- CHANGED: D-166 -->
+`manifestTopic` is the recipient's, and it is here rather than only in the declaration because two rules need it from a source that does not move. `send` writes there: §6.4's step 7 schedules the receipt's submission to the recipient's manifest topic (§10.4), and coordinates are the only thing `send` is given about the recipient. A Verifier reads it: §10.4 requires a receipt to be the execution of a scheduled submission **to the recipient's manifest topic**, so a Verifier must know which topic that is, and the only replay-stable record of what an envelope resolved to is the resolution proof's output — which is this object. Re-resolving now would answer at the Verifier's clock, and an observation cannot decide a standing (§11.6, P-3).
+`Conformance:` T-P1-8 — the check that the executed submission's postmark is on the recipient's manifest topic is what requires this field; T-P6-2 — the manifest carrying these coordinates as its output recomputes to its hash.
 
 ### 5.4 StampReceipt and Settlement
 
@@ -2245,6 +2250,7 @@ D-159  Provisioning has one order; two affordances, not two verbs      §4.6, §
 D-160  Orphans are read from the treasury, filtered to senders in scope §11.2
 D-161  buy_stamp takes provision; the receipt records it              §5.4, §6.3
 D-163  A proof's location is a topic; lookup is content-addressed      §2.2, §5.2, §9.1, §10.2, §10.4, §10.5, §11.1, §11.4, §11.5
+D-166  MailCoordinates carries the recipient's manifest topic          §5.3
 ```
 
 ### 18.3 Concordance of identifiers (informative)
