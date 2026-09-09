@@ -25,6 +25,7 @@
     "conformance:scaffold": "node conformance/scaffold.mjs",
     "check:suite": "node conformance/scaffold.mjs --check",
     "check:report": "node conformance/report.check.mjs",
-    "check:hcs14": "npm run check:hcs14 --workspace app"
+    "check:hcs14": "npm run check:hcs14 --workspace app",
+    "check:chunk": "npm run check:chunk --workspace app"
   }
 }
