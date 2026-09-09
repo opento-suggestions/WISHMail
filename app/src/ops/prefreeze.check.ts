@@ -35,6 +35,7 @@ import {
   sha256hex,
 } from '../core/canonical.js';
 import { proofInputs, proofLocation, type Endorsement } from '../core/proof.js';
+import { resolvedFieldsOf } from '../resolve/hcs14.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { budget, profileBudgets, CHUNK_WIRE_MAX } from './budget.js';
@@ -197,6 +198,26 @@ console.log('');
     `the registered schema bounds meaning.statement at N = ${b.N}`,
     SCHEMA_STATEMENT_MAX === b.N,
     `schema says ${SCHEMA_STATEMENT_MAX}`,
+  );
+
+  // §10.2 names the digest's domain as nine fields. resolvedFieldsOf() is what
+  // computes it. A drift between the sentence and the function would be a
+  // manifest that hashes correctly to itself and to nothing a Verifier
+  // recomputes — the §G-16 shape again — so the two are compared here.
+  const NAMED_BY_10_2 = ['account', 'address', 'doorbell', 'keyEpoch', 'ledgerTag', 'log', 'manifestTopic', 'profile', 'x25519Pub'];
+  const produced = Object.keys(
+    resolvedFieldsOf({
+      address: 'a', profile: 'hcs14', ledgerTag: LEDGER, account: FX.recipientAccount,
+      doorbell: FX.recipientDoorbell, log: FX.recipientLog, manifestTopic: FX.recipientManifest,
+      x25519Pub: X25519, keyEpoch: 1,
+      resolutionProof: { hash: 'a'.repeat(64), uri: null }, trustClass: 'math', endorsements: [],
+      resolvedAt: '1757400000.000000000',
+    } as never),
+  ).sort();
+  ok(
+    "the resolved fields are the nine §10.2 names, and the four it omits are omitted",
+    JSON.stringify(produced) === JSON.stringify(NAMED_BY_10_2),
+    produced.join(', '),
   );
   console.log('');
 }

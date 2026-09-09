@@ -2,6 +2,19 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.9] — 2026-09-09
+
+A patch: **text only**. No schema moves, no wire string moves, no test added, no ADR added. `schemas:plan` is byte-for-byte what 0.5.8 planned.
+
+### Changed
+
+- **§10.2 names the domain of the output digest** (completing D-167, recorded as a dated addendum inside it rather than as a new decision). 0.5.8 said the output is "the coordinates, carried as the digest of their canonical JSON" and stopped — and "the coordinates" is §5.3's `MailCoordinates`, which carries `resolutionProof.hash`, which is computed **over the output**. Read literally the sentence was circular, which is the very thing D-167's own alternatives section says it must not be. The reasoning was in the ADR; it was not in the specification, and the specification is what binds. §10.2 now names the nine **resolved fields** positively — `address`, `profile`, `ledgerTag`, `account`, `doorbell`, `log` where present, `manifestTopic`, `x25519Pub`, `keyEpoch` — with each of the four exclusions given the place it already lives, and §11.4 cites the same nine so the two sentences can be checked against each other. Listing them positively is what lets an implementer of a fifth profile know what to hash from §10 alone.
+- **`check:prefreeze` asserts the list against the code** (36 assertions). §10.2's nine and `resolvedFieldsOf`'s output are compared, so a drift between the sentence and the function cannot survive a run — it would be a manifest that hashes correctly to itself and to nothing a Verifier recomputes.
+
+### Added
+
+- **Ledger §G-18, open and unruled, blocking nothing.** §5.3 glosses `resolvedAt` as "query time, **as bound into the proof's inputs**", but §5.2 closes `inputs` at `{digest, locator, snapshot?}` and none of the three is a query clock. §9.2's and §9.5's locators carry a `consensusTimestamp` — the registry **entry's**, not the query's — while §9.3's carries `queryTime` and §9.4's `fetchTime`, which are. **So the two off-consensus profiles satisfy §5.3's phrase and the two consensus ones do not**, and that asymmetry is probably the real finding. The exclusion of `resolvedAt` from the digest is right either way, and §10.2 gives the reason that holds unconditionally: a digest containing the query's clock could never be matched by a replay at another clock.
+
 ## [0.5.8] — 2026-09-09
 
 A patch: text and tests within minor version `0.5`. **No wire string changes.** **One schema changes** — `proof` — which a patch permits only because `registeredSchemas` is null (§1.7, D-161). **No test is added**: T-P9-8 is the court for the budget, and T-P6-1 and T-P6-2 are the court for the digest, all three unchanged. The register stays at **86 (81 core + 5 extension)**.

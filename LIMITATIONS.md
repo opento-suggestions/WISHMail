@@ -11,7 +11,7 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.8 |
+| Specification | 0.5.9 |
 | Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |

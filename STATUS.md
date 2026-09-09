@@ -1,6 +1,6 @@
 # STATUS — WISHMail, ETHOnline 2026
 
-The one file in this repository where ordering is allowed. Specification: 0.5.8 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166) and 0.5.8 (D-167); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+The one file in this repository where ordering is allowed. Specification: 0.5.9 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
 
 ## 1. Scope line (RECORD)
 

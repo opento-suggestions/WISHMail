@@ -73,7 +73,7 @@
     "NOTHING HERE IS ON CONSENSUS. This file is a prepared body awaiting a signature, and the",
     "signature is Sonic's to authorize."
   ],
-  "spec": "0.5.8",
+  "spec": "0.5.9",
   "stampToken": {
     "ledgerTag": "hedera:testnet",
     "tokenId": null,
