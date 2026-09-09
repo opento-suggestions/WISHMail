@@ -23,6 +23,7 @@
  */
 import { createHash } from 'node:crypto';
 import { b64u, unb64u } from './canonical.js';
+import type { MessageLocator } from './locator.js';
 
 /** §7.4: the whole HCS-10 `message` operation, as UTF-8 JSON, at or under this. */
 export const CHUNK_WIRE_MAX = 1000;
@@ -33,8 +34,15 @@ export interface ChunkHeader {
   readonly l: string;
   /** profile. */
   readonly pr: string;
-  /** resolutionProof `{hash, uri}`. */
-  readonly rp: { readonly h: string; readonly u?: string };
+  /**
+   * resolutionProof in the chunk's short keys: `h` is the hash, `u` the
+   * structured locator of its manifest on the sender's manifest topic (§5.2).
+   * Both are on the wire: the Chunk schema requires them, and §11.2's ingestion
+   * reaches the sender's manifest topic by following `hdr.rp.u` and nothing
+   * else. It is known before chunk 0 exists because §6.4 publishes the manifest
+   * at step 2, before assembly at step 3.
+   */
+  readonly rp: { readonly h: string; readonly u: MessageLocator };
   /** nonce, base64url. */
   readonly nc: string;
   /** keyEpoch. */

@@ -51,12 +51,14 @@ function refuses(name: string, f: () => unknown): void {
 const ID = 'a'.repeat(64);
 const OPERATOR = '0.0.10426553@0.0.10426206';
 const SCHEMA_REF = 'hcs://13/0.0.10428113#1';
+/** §5.2's structured locator: the manifest on the sender's manifest topic. */
+const MANIFEST = { ledgerTag: 'hedera:testnet', topicId: '0.0.10426591', sequenceNumber: 7 } as const;
 
 function headerFor(ciphertext: Buffer): ChunkHeader {
   return {
     l: 'hedera:testnet',
     pr: 'hcs14',
-    rp: { h: 'b'.repeat(64) },
+    rp: { h: 'b'.repeat(64), u: MANIFEST },
     nc: b64u(randomBytes(16)),
     ke: 1,
     ep: b64u(randomBytes(32)),
@@ -147,7 +149,7 @@ for (const size of [1, 100, 170, 512, 2048, 16384, 65536]) {
   is('unrooted: without chunk 0', reassemble(chunks.slice(1).map((c) => observe(c)), ID, binds).state, 'unrooted');
 
   // A chunk 0 whose header does not rebuild to the identifier (P-1's first weld).
-  const badHeader: Chunk = { ...(chunks[0] as Chunk), hdr: { ...header, rp: { h: 'c'.repeat(64) } } };
+  const badHeader: Chunk = { ...(chunks[0] as Chunk), hdr: { ...header, rp: { h: 'c'.repeat(64), u: MANIFEST } } };
   is('unrooted: a chunk 0 whose header does not bind', reassemble([observe(badHeader), ...chunks.slice(1).map((c) => observe(c))], ID, binds).state, 'unrooted');
 
   // A missing middle link.

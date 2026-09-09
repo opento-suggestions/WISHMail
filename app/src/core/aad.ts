@@ -103,8 +103,12 @@ export function buildAad(parts: AadParts): Aad {
 export interface ChunkHeader {
   /** `l` — ledgerTag. */
   readonly l: string;
-  /** `rp` — the resolution proof, `{h, u}`. */
-  readonly rp: { readonly h: string; readonly u?: string };
+  /**
+   * `rp` — the resolution proof. Only its hash enters the AAD (§7.2); the
+   * locator `u` rides in the header beside it and is not bound, which is why
+   * this interface names only what the rebuild reads.
+   */
+  readonly rp: { readonly h: string };
   /** `nc` — the nonce. */
   readonly nc: string;
 }
