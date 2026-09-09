@@ -36,7 +36,16 @@ And the alternative was not neutral. **FETCHED 2026-09-08:** `@hpke/core` carrie
 
 **The durable store is a few lines here, not a dependency.** §14.2 requires that "the Postmaster keeps its own durable record of settled payment references — retained until the payment it names can no longer land, and surviving restarts," and T-P11-5 and T-P11-6 test exactly the restart: a replayed payload returns the original `StampReceipt` with no second transfer, and requirements issued before a restart are accepted after it. That is a keyed set of tens of rows behind `WISHMAIL_STATE_DIR`, and `journal.ts` already established the discipline it needs — write a temp file, then `renameSync`, so a half-written file is never observed. `better-sqlite3` is a native build on Windows inside a five-day window and `node:sqlite` is experimental on Node 22: a build-toolchain risk taken on for something a directory does. **[CC]**, recorded here per the plan; the alternative considered was `better-sqlite3`, and it lost on the toolchain rather than on the code.
 
-**A mirror node's KEY LIST is decoded here, not by a library.** §7.1 requires a lane's submit key to be "a threshold of the two agents' keys, and MUST NOT include any other key" (T-P17-2), and §11.4 has a Verifier check that from consensus. A mirror node returns a single key as raw hex and a key **list** as `{_type: "ProtobufEncoded", key: "<hex>"}`, so the list has to be decoded before the invariant can be checked at all. The alternatives were both worse. A `TopicInfoQuery` against a consensus node returns the structure already parsed — and it is a **paid query**, so a Verifier would need an account and a balance to check a lane, which is exactly what P-4 forbids. And `@hashgraph/proto`, which ships the generated decoder, is **not in this repository's dependency tree**: it resolves today only from a `node_modules` directory *above* the repository, so importing it would work on this machine and fail on a clean clone — the worst kind of dependency, because it passes here. So it is composed in `app/sdk/protokey.ts`, on the same grounds the seal is: the surface is forty lines, it is a **read** of public data, the wire format is fixed by protobuf itself rather than by a draft, and it cannot fail silently the way a mis-composed cipher can — a wrong parse yields keys that match neither account, which is a loud refusal. `[CC]` **And the first version of it was wrong**, caught by `check:correspondent` before it ever met a lane: protobuf field numbers are per message, not global, so a context-free walker read `ThresholdKey.keys` (field 2) as `Key.ed25519` (also field 2) and handed back the key list's own bytes as though they were a public key. The alternative considered was to skip the decode and check only single-key topics, which would have made T-P17-2 uncheckable for the one topic type it is about.
+**A mirror node's KEY LIST is decoded here, not by a library.** §7.1 requires a lane's submit key to be "a threshold of the two agents' keys, and MUST NOT include any other key" (T-P17-2), and §11.4 has a Verifier check that from consensus. A mirror node returns a single key as raw hex and a key **list** as `{_type: "ProtobufEncoded", key: "<hex>"}`, so the list has to be decoded before the invariant can be checked at all. The alternatives were both worse. A `TopicInfoQuery` against a consensus node returns the structure already parsed — and it is a **paid query**, so a Verifier would need an account and a balance to check a lane, which is exactly what P-4 forbids. And `@hashgraph/proto`, which ships the generated decoder, is **not in this repository's dependency tree**: it resolves today only from a `node_modules` directory *above* the repository, so importing it would work on this machine and fail on a clean clone — the worst kind of dependency, because it passes here. So it is composed in `app/src/core/protokey.ts` — it began in `app/sdk/` and moved to `core/` when the counter needed the same primitives, because a Postmaster module that imported a Correspondent module would blur the line CLAUDE.md §11 draws between the two — on the same grounds the seal is: the surface is forty lines, it is a **read** of public data, the wire format is fixed by protobuf itself rather than by a draft, and it cannot fail silently the way a mis-composed cipher can — a wrong parse yields keys that match neither account, which is a loud refusal. `[CC]` **And the first version of it was wrong**, caught by `check:correspondent` before it ever met a lane: protobuf field numbers are per message, not global, so a context-free walker read `ThresholdKey.keys` (field 2) as `Key.ed25519` (also field 2) and handed back the key list's own bytes as though they were a public key. The alternative considered was to skip the decode and check only single-key topics, which would have made T-P17-2 uncheckable for the one topic type it is about.
+
+**And its primitives are now read twice, by two parties, for two rules.** `app/src/counter/body.ts` decodes a
+`TransactionBody` on the same `varint` and `fields` — the counter has to read every body it is asked to pay for before it
+will sign it (D-168), and the alternatives were the two this ruling already refused. **It decodes the bytes it signs**, which
+is the stronger form and was chosen deliberately over the comfortable one: parsing a whole serialized transaction with the
+SDK’s typed getters and signing the body derived from that parse inspects one representation and signs another, and the two
+agree only because the same object produced them. `[CC]` **Every field number in it was PROBED and none was recalled** — read
+off bodies the SDK itself froze, 2026-09-09, and re-read the same way by `check:correspondent` on every run. That is not
+politeness: `CryptoUpdateTransactionBody.memo` is field **14**, and a confident memory says 26.
 
 ## DIVERGENCE — every transaction is `@hashgraph/sdk`, not the Hedera MCP server
 
@@ -625,7 +634,16 @@ Both are correct. The suite refuses a report because the schemas are not registe
 
 **Status: GATED, NOT RUN. NOTHING IS SIGNED.** Written and committed before the first transaction, on the rule the probe and Steps 2, 3 and 4 followed. What follows is what it will create, what it will assert from the mirror, what it writes and where, how it is idempotent, and every way it stops.
 
-**One thing in it is blocked, and it is named here rather than discovered on the day.** The purchase cannot produce a `StampReceipt` that validates against the schema Step 4 froze — ledger **§G-19**, and §6 below has it in full. Everything else in this step is built and green. The block is a specification question and it is Sonic's.
+**Re-armed 2026-09-09 after §G-19 was ruled.** The thing that blocked this step — a provisioning purchase could produce no
+`StampReceipt` that validates — is closed by **D-168, reading (a)**: §4.6’s provisioned path is taken as written and **the
+Postmaster provisions the mailbox it sells**, so §5.4’s "the entities the Postmaster created for the holder" is literally
+true of the receipt. §6 below carries the finding and the ruling in full. **The provisioner did not move**: `sdk/mailbox.ts`
+creates the same rows in the same forced order signed by the same agent key, and the payer seam is simply exercised at its
+remote half — which is §6.1’s carry, and the first thing in this project to test whether that seam was real.
+
+**What that changes in this report is one column.** Rows 2 through 9 were "agent signs · operator pays" and are now "agent
+signs · **Postmaster pays, carried**". Everything else in the forced order, every readback, and every stop condition stands
+as it was, with four stops added and one removed.
 
 ### 0. The parties, and which of them is which
 
@@ -642,22 +660,39 @@ Per agent, and D-159 as amended is what forces the order. Nothing may be reorder
 | # | Act | Declared shape | Who signs / who pays | Warrant |
 |---|---|---|---|---|
 | 0 | **boot** | the agent's ED25519 account key and its epoch-1 X25519 key, born in the agent's own process, into `<home>/keystore.json` | — | D-165: keys are born once; a process that regenerated on boot would make every restart a new agent |
-| 1 | **buy_stamp** at the counter | one atomic `TransferTransaction` with three legs: ℏ from the operator to the Postmaster for the price; 12 `$POSTAGE` from the treasury to the agent's **public-key alias**; 0.05 ℏ from the Postmaster to that same alias | buyer signs its own leg in its own process; **the Postmaster is payer** | §14.2 (it cannot be submitted without the Postmaster) · D-159 addendum · HIP-542, probe-observed 2026-09-09 |
-| 2 | `doorbell` | HCS-10 inbound, memo `hcs-10:0:60:0:<acct>`, **no submit key**, admin the agent's, HIP-991 fee of 1 `$POSTAGE` to the treasury, the agent's own key exempt | agent signs · operator pays | D-147 row 1 · §4.4 · D-137's exemption · T-P7-4 |
-| 3 | `log` | HCS-10 outbound, memo `hcs-10:0:60:1`, submit and admin the agent's | agent · operator | D-147 row 2 |
-| 4 | `manifest` | memo `wishmail:manifest:1`, **sole** submit key the agent's | agent · operator | §9.1 · T-P17-3 |
-| 5 | `declRegistry` | HCS-2, memo `hcs-2:0:60` — **indexed 0** | agent · operator | D-147 row 5 · T-P8-3 |
-| 6 | `profileFile` | HCS-1, memo `<sha256 of the plaintext>:brotli:base64`, submit the agent's, **NO admin key** | agent · operator | D-150 · `hcs-1.md:48-49` |
-| 7 | `profileChunks` | the HCS-11 profile as HCS-1 `{o, c}` chunks, each bounded as a **whole message** at 1024 | agent · operator | `ops/hcs1.ts`, and the Step 4 defect is why |
-| 8 | `registryEntry` | `{p: "hcs-2", op: "register", t_id: <profileFile>}`, transaction memo `hcs-2:op:register:0` | agent · operator | §H:359 |
-| 9 | `accountMemo` | `hcs-11:hcs://2/<declRegistry>` | agent · operator | §9.2:1284's MUST |
-| 10 | `holRegistration` | `{p, op, account_id, uaid, t_id, m}` on the anchor `0.0.6913983`, **no transaction memo** | **agent signs AND pays** | §4.6 · D-164 · T-P13-4 |
+| 1 | **buy_stamp** at the counter, leg 1 — the transfer | one atomic `TransferTransaction` with three legs: ℏ from the operator to the Postmaster for the price; 12 `$POSTAGE` from the treasury to the agent's **public-key alias**; 0.05 ℏ from the Postmaster to that same alias | buyer signs the frozen body in its own process; **the Postmaster is payer** | §14.2 (it cannot be submitted without the Postmaster) · D-159 addendum · HIP-542, probe-observed 2026-09-09 |
+| 2 | `doorbell` | HCS-10 inbound, memo `hcs-10:0:60:0:<acct>`, **no submit key**, admin the agent's, HIP-991 fee of 1 `$POSTAGE` to the treasury, the agent's own key exempt, auto-renew the **operator's** | agent signs · **Postmaster pays**, carried + operator signs as auto-renew | D-147 row 1 · §4.4 · D-137’s exemption · T-P7-4 · D-168 |
+| 3 | `log` | HCS-10 outbound, memo `hcs-10:0:60:1`, submit and admin the agent's | agent signs · **Postmaster pays**, carried + operator signs as auto-renew | D-147 row 2 · D-168 |
+| 4 | `manifest` | memo `wishmail:manifest:1`, **sole** submit key the agent's | agent signs · **Postmaster pays**, carried + operator signs as auto-renew | §9.1 · T-P17-3 · D-168 |
+| 5 | `declRegistry` | HCS-2, memo `hcs-2:0:60` — **indexed 0** | agent signs · **Postmaster pays**, carried + operator signs as auto-renew | D-147 row 5 · T-P8-3 · D-168 |
+| 6 | `profileFile` | HCS-1, memo `<sha256 of the plaintext>:brotli:base64`, submit the agent's, **NO admin key** | agent signs · **Postmaster pays**, carried + operator signs as auto-renew | D-150 · `hcs-1.md:48-49` · D-168 |
+| 7 | `profileChunks` | the HCS-11 profile as HCS-1 `{o, c}` chunks, each bounded as a **whole message** at 1024 | agent signs · **Postmaster pays**, carried | `ops/hcs1.ts`, and the Step 4 defect is why · D-168 |
+| 8 | `registryEntry` | `{p: "hcs-2", op: "register", t_id: <profileFile>}`, transaction memo `hcs-2:op:register:0` | agent signs · **Postmaster pays**, carried | §H:359 · D-168 |
+| 9 | `accountMemo` | `hcs-11:hcs://2/<declRegistry>` | agent signs · **Postmaster pays**, carried | §9.2:1284's MUST · D-168 |
+| 10 | **buy_stamp**, last leg — the receipt | §5.4's `provisioning` line, every coordinate read back from the mirror under a transaction id this counter's own signature carried | nothing signs | §5.4 · §6.3 · D-168 |
+| 11 | `holRegistration` | `{p, op, account_id, uaid, t_id, m}` on the anchor `0.0.6913983`, **no transaction memo** | **agent signs AND pays** | §4.6 · D-164 · T-P13-4 |
 
-Rows 2–9 are one act — `generate_mailbox` — and row 10 is `register_agent`. Both are **§4.6 affordances and not among §6.1's six** (D-159): no conformance class is tested against either, no claim names them, and a Correspondent that brought its own topics would call neither. They live on the Correspondent's MCP because the topics are the agent's and the agent signs each one.
+**Rows 1 through 10 are one call — `buy_stamp` with `provision`** — and row 11 is `register_agent`. goose says two things, and
+they are the two things a person would say: buy me a mailbox, then register me.
 
-**Row 10 is the one place an agent pays.** "An agent's account never holds ℏ, with one exception" — this is it, and it is why the purchase funds exactly one fee and no more (§3.9: funding is a payment and not a party). The payer seam is deliberately *not* used: the whole value of the act is that the mirror records **this account** as the payer, and a borrowed payer would put `blurred` on every `hol` resolution of this agent forever.
+**Who signs and who pays, row by row, and why there are three parties on a topic creation.** The AGENT signs, because the
+admin key is the agent’s and the topic is the agent’s. The OPERATOR signs, because it is the auto-renew account the row names
+and a topic that names an account takes that account’s signature. The POSTMASTER pays, and the transaction id names it as
+payer. That is §6.1’s carry (D-157, D-168): agent-signed bodies, the Postmaster’s account as payer, a published policy, a
+co-signature.
 
-**One act is not in the table because it is not always needed.** `generate_mailbox` associates the OPERATOR's account with `$POSTAGE` on first run if it is not already, paid by the operator. §4.4's doorbell fee is debited from the **payer** of the submission (HIP-991), so when the operator pays for the agent's connection request the stamp leaves the operator's account — which means the operator must be able to hold one (D-157). The agent's own account needs no association: HIP-542 creates it with unlimited auto-associations, which the probe observed, so the stamp transfer associates it as it arrives. The config template says so.
+**The auto-renew account is the Correspondent’s own operator and never the Postmaster’s**, and the counter refuses a row that
+says otherwise. The Postmaster sells a mailbox once, at the price on consensus; it does not undertake to renew it forever,
+and a topic naming it would say so on consensus where every reader can see it.
+
+**`generate_mailbox` and `register_agent` are §4.6 affordances and not among §6.1’s six** (D-159): no conformance class is
+tested against either and no claim names them. `generate_mailbox` remains on the Correspondent’s MCP as the
+**self-provisioned** path — an agent that brings its own account and pays for its own mailbox, at its own operator’s expense —
+and this step does not take it. Its tool description says which path it is.
+
+**Row 11 is the one place an agent pays.** "An agent's account never holds ℏ, with one exception" — this is it, and it is why the purchase funds exactly one fee and no more (§3.9: funding is a payment and not a party). The payer seam is deliberately *not* used: the whole value of the act is that the mirror records **this account** as the payer, and a borrowed payer would put `blurred` on every `hol` resolution of this agent forever.
+
+**One act is not in the table because it is not always needed, and it is NOT carried.** `generate_mailbox` associates the OPERATOR's account with `$POSTAGE` on first run if it is not already, paid by the operator on the operator's own client. Carry covers the mailbox and nothing beside it, and the counter would refuse this body — correctly. §4.4's doorbell fee is debited from the **payer** of the submission (HIP-991), so when the operator pays for the agent's connection request the stamp leaves the operator's account — which means the operator must be able to hold one (D-157). The agent's own account needs no association: HIP-542 creates it with unlimited auto-associations, which the probe observed, so the stamp transfer associates it as it arrives. The config template says so.
 
 ### 2. What it asserts, and what it reads back
 
@@ -667,7 +702,24 @@ Every readback is a mirror-node REST read with a **named predicate**, never an S
 
 **The template is now one spelling for both provisioners.** `ops/steps.ts` stands up the Postmaster's own agent with these six rows and `sdk/mailbox.ts` stands up a Correspondent with them, and they read the same functions. That is the `hcs1File` lesson applied before it costs anything: two provisioners that agreed about a doorbell's fee today and disagreed about its exempt list tomorrow would be the same failure with a permanent artefact at the end of it.
 
-**Per purchase**: the transfer reads back SUCCESS from the mirror; the `$POSTAGE` credit names an account; that account is the one the agent's key owns, found by `GET /accounts?account.publickey=…` and refused if two exist under one key; and the receipt validates against the **registered** `StampReceipt` schema before it is returned.
+**Per purchase**: the transfer reads back SUCCESS from the mirror; the `$POSTAGE` credit names an account; that account is the
+one the agent's key owns, found by `GET /accounts?account.publickey=…` and refused if two exist under one key; and the receipt
+validates against the **registered** `StampReceipt` schema before it is returned.
+
+**Per carried body, before the counter will sign it.** The counter decodes the very bytes it is being asked to sign — a
+`TransactionBody`, read by `counter/body.ts` — and pays only for what the policy in `counter/carry.ts` recognises: a row of
+`ops/template.ts` with this holder’s key in the slots that row names, an HCS-1 chunk on the file topic it itself paid to
+create under this reference, the HCS-2 register entry on the registry it paid for, or the account-memo update on the
+holder’s account naming that registry and setting nothing else. Beside the shape it checks that the payer is the Postmaster,
+that the node is the one this purchase pinned, that the fee the body authorises is within the cap `networks.ts` gives that
+row, and that the row has not already been carried. **It decodes what it signs**, and that is the design rather than a
+detail: parsing one representation and signing another makes the two agree only because the same object produced them.
+
+**Per receipt, and it is issued last.** The counter reads back every transaction its signature paid for, under the
+transaction ids it recorded, and refuses to issue anything while a row is outstanding. Then it runs §9.2’s rule on the
+holder **from its own reader** and refuses if the mailbox does not resolve, or resolves to a doorbell or manifest topic this
+purchase did not create. Only then is the `provisioning` line filled — every coordinate in it from that readback, never
+echoed from anything the agent said — and validated against the registered schema before it is returned.
 
 **Per declaration**: the profile file's memo digest equals the SHA-256 of the plaintext the chunks decode to; the register entry is on the registry; the account memo reads back as `hcs-11:hcs://2/<registry>`.
 
@@ -689,7 +741,13 @@ The counter writes one thing of its own: §14.2's durable requirement and settle
 
 **Every provisioning verb is idempotent against CONSENSUS, never against local state** (D-165). A wiped home cannot cause a second doorbell — and a second doorbell is not merely waste: §9.5 assigns `vague` where more than one registration names an address, and a topic has no second creation. The local record is a **cache of consensus and never an authority over it**.
 
-- `buy_stamp` with `provision` is not attempted where an account already exists under the agent's key; a returning agent buys without it.
+- `buy_stamp` with `provision` **refuses** where the holder already has an account, and where the holder's mailbox already
+  resolves under `hcs14`; a returning agent buys without it.
+- `buy_stamp` with `provision` **resumes** under an outstanding reference where the account exists and the mailbox does not.
+  The counter’s record and the agent’s record are reconciled **from consensus and never from each other**: the counter learns
+  what each carried body became by reading the mirror under the transaction id it recorded, which is also how the receipt is
+  filled. A purchase that stops between rows is resumable from either side by reading the ledger.
+- a replayed reference returns the receipt it already bought, and never a second charge (T-P11-5).
 - `generate_mailbox` resolves the agent's own address under `hcs14` **first**. Coordinates come back → it creates nothing and says so.
 - `register_agent` reads the anchor **first**. A registration by this account → nothing.
 - the doorbell watcher derives what is answered by reading the doorbell: every `connection_created` names the `connection_id` of the request it answered, so a restart re-derives it and answers nothing twice.
@@ -697,7 +755,7 @@ The counter writes one thing of its own: §14.2's durable requirement and settle
 **It stops, before or instead of signing, on every one of these:**
 
 1. the home's config is missing any field, or names `hedera:mainnet`, which §15.5 leaves undeployed;
-2. **§G-19** — a `provision: true` purchase, refused before anything is signed, because §5.4 requires two fields this purchase cannot name;
+2. a `provision: true` purchase whose holder already has an account, or whose mailbox already resolves under `hcs14` — there is nothing left to create and a second mailbox is the duplicate §9.5 assigns `vague` to (D-165);
 3. the price topic carries no message, or the method asked for is not on the current one (§14.3 forbids charging under an unpublished price);
 4. the quote has expired, or its reference has already settled a purchase (T-P11-5);
 5. two accounts on this ledger are owned by the agent's key — refusing to choose, because choosing wrongly strands one;
@@ -707,19 +765,32 @@ The counter writes one thing of its own: §14.2's durable requirement and settle
 9. the declaration this run wrote does not resolve under §9.2, or resolves to coordinates this run did not create;
 10. the registration's payer on the mirror is not this agent's account;
 11. either agent resolves under `hol` **with `blurred`**;
-12. the receipt does not validate against the registered `StampReceipt` schema.
+12. the receipt does not validate against the registered `StampReceipt` schema — which is also the assertion that this counter
+    can still fill every field §5.4 requires, read from the schema itself, so a field added there stops the sale **before the
+    quote** rather than after the transfer;
+13. **a carry request outside the policy** — a body that is no row of the template, a body whose payer is not the Postmaster,
+    a body on a node this purchase did not pin, a body authorising a fee above its row’s cap, an account update that sets any
+    field besides the memo, a message on a topic this reference never bought, or a row already carried;
+14. the counter’s co-signature does not verify against the bytes it was asked to carry, checked in the Correspondent’s own
+    process before it is added — because finding that out at the network would mean finding it out with this agent’s
+    signature already on the transaction;
+15. the account the counter names as its payer is controlled by more than one key on consensus, or by a key the mirror does
+    not agree with;
+16. **the receipt is not issued** while any row is outstanding, or while the holder does not resolve under §9.2 from the
+    counter’s reader. The reference stays open and the receipt is recoverable by it; nothing is lost and nothing is charged
+    twice.
 
-**A refusal leaves no mark** (§3.5): every refusal above happens before a submission, except (10) and (12), which are reported with what did land because a transfer on consensus cannot be withdrawn.
+**A refusal leaves no mark** (§3.5): every refusal above happens before a submission, except (10), (12) and (16), which are reported with what did land because a transfer on consensus cannot be withdrawn.
 
 ### 5. What is built, and what is checked before the gate
 
-Built: `app/sdk/` — the home directory and its record, the keystore, the live `Consensus` over a mirror node and the payer seam, the counter client, `generate_mailbox`, `register_agent`, the doorbell watcher, the stdio MCP server, and the provisioning driver. `app/src/counter/` — §14.3's pricing read from consensus, the three-legged purchase, and the Streamable HTTP MCP server serving `buy_stamp`, `verify` and `resolve`. `app/src/resolve/hol.ts` — §9.5's rule, which Gate One needs because "resolve self under `hol`" is step 5 of the order.
+Built: `app/src/counter/` — the carry policy (`carry.ts`), the `TransactionBody` decoder it reads its evidence with (`body.ts`), and what both halves of the counter share (`context.ts`); `app/sdk/carry.ts` — the remote `Signer`. Beside them, `app/sdk/` — the home directory and its record, the keystore, the live `Consensus` over a mirror node and the payer seam, the counter client, `generate_mailbox`, `register_agent`, the doorbell watcher, the stdio MCP server, and the provisioning driver. `app/src/counter/` — §14.3's pricing read from consensus, the three-legged purchase, and the Streamable HTTP MCP server serving `buy_stamp`, `verify` and `resolve`. `app/src/resolve/hol.ts` — §9.5's rule, which Gate One needs because "resolve self under `hol`" is step 5 of the order.
 
-`npm run check:correspondent` is **52 assertions with no network and no key**: D-147's six rows from the one template; a mirror-node key list decoded so §7.1's threshold lane can be checked at all; §14.3's arithmetic in integers with bundles at exactly their count; the §G-19 refusal read out of the registered schema; one sentence template that implies no delivery and no receipt; the doorbell rule over messages alone; and a home directory that is the agent — keys born once, loaded ever after.
+`npm run check:correspondent` is **105 assertions with no network and no key** — it was 53 before D-168 —: D-147's six rows from the one template; a mirror-node key list decoded so §7.1's threshold lane can be checked at all; §14.3's arithmetic in integers with bundles at exactly their count; the §G-19 refusal read out of the registered schema; one sentence template that implies no delivery and no receipt; the doorbell rule over messages alone; and a home directory that is the agent — keys born once, loaded ever after.
 
 The rest of the battery is unchanged and green: typecheck, `p13:check`, `check:register` (86 both ways), `check:schemas`, `check:vectors`, `check:seal`, `check:hcs14`, `check:chunk`, `check:envelope`, `check:hcs10`, `check:store`, `check:mcp`, `check:letter`, `check:prefreeze`, `check:freeze`.
 
-### 6. §G-19 — the one thing that blocks the purchase, in full
+### 6. §G-19 — the thing that blocked the purchase, and the ruling that closed it
 
 §5.4 gives `provisioning? {price, registrationFee?, account, doorbell, log?, manifestTopic, declRegistry?, profileFile?}` and the registered schema makes `price`, `account`, `doorbell` and `manifestTopic` **required**. §5.4's own sentence says why: "the fields after it are the entities **the Postmaster created for the holder**". §6.3's postcondition is a receipt "carrying a `provisioning` line **exactly when** `provision` was true".
 
@@ -727,7 +798,31 @@ Under D-159 as amended the Postmaster creates exactly one entity for the holder 
 
 **The code refuses rather than choosing.** `counter/purchase.ts` reads the required list out of `spec/schemas/stamp-receipt.schema.json` and refuses a `provision: true` purchase **before anything is signed**; a `provision: false` purchase works in full. Because the gate reads the schema, a 0.6 that changes it lifts the refusal by itself.
 
-**Two candidates, and they differ in whether a minor version is needed.** **(a)** The Postmaster provisions the topics after all — §4.6's provisioned path taken literally, the Postmaster paying and the agent signing each topic creation over the counter, exactly as Steps 2 and 3 already do for the Postmaster's own agent. **No schema moves**; `buy_stamp` becomes a multi-round-trip agent-signed exchange and CLAUDE.md §11's placement of `generate_mailbox` is amended. **(b)** `doorbell` and `manifestTopic` become optional inside `provisioning`, present exactly where the Postmaster created them — **a change to a registered schema, so 0.6 and not a patch**, on fourteen files that are now frozen on consensus. Smaller change to the text, larger to the version. Ledger §G-19 carries both.
+**RULED (a), 2026-09-09 (Sonic), D-168: the Postmaster provisions the mailbox it sells.** §4.6’s provisioned path is taken as
+written, so §5.4’s "the entities the Postmaster created for the holder" is literally true of the receipt and it validates
+against the schema Step 4 froze. **Nothing in the specification changes**, and that is why (a) was taken: it needs nothing
+from a frozen document and it is the path §4.6 named first. It is not a workaround.
+
+**(b) is the more accurate description of what D-159 attempted, and it is recorded rather than dismissed.** Making
+`doorbell` and `manifestTopic` optional, present exactly where the Postmaster created them, is what the split D-159
+introduced actually looks like. It lost on cost, not on truth: the freeze has happened, so it is **0.6**, across fourteen
+schema files registered on consensus and every wire string that names them (§1.7). The third candidate — drop the
+provisioning line and price the account some other way — stays refused for the reason it was refused: §14.3 has one schedule
+for everyone and the 2 ℏ is published under `provisioning`.
+
+**What (a) cost to build, and what it did not.** The provisioner did not move: `sdk/mailbox.ts` creates the same six rows in
+the same forced order, signed by the same agent key, with the same readbacks, and it does not know it is being carried.
+`Session.payer` has been an injected `Signer` since D-157 and under a provisioning purchase it is **remote** — the
+Correspondent sends each frozen body and the purchase reference to the counter and receives the Postmaster’s payer
+signature. Four new modules carry the difference: `counter/body.ts` decodes a `TransactionBody`, `counter/carry.ts` is the
+policy, `counter/context.ts` holds what both halves of the counter need, and `sdk/carry.ts` is the remote `Signer` — which is
+four lines of substance, and that is the whole report on whether the seam was real.
+
+**`provisioningFieldsThisCounterCannotFill` stops refusing and is kept as the assertion that it can.** It still reads the
+required list out of the registered schema, so a field added there stops the sale before the quote rather than after the
+transfer.
+
+**The finding as it stood, kept:** **(a)** The Postmaster provisions the topics after all — §4.6’s provisioned path taken literally, the Postmaster paying and the agent signing each topic creation over the counter, exactly as Steps 2 and 3 already do for the Postmaster's own agent. **No schema moves**; `buy_stamp` becomes a multi-round-trip agent-signed exchange and CLAUDE.md §11's placement of `generate_mailbox` is amended. **(b)** `doorbell` and `manifestTopic` become optional inside `provisioning`, present exactly where the Postmaster created them — **a change to a registered schema, so 0.6 and not a patch**, on fourteen files that are now frozen on consensus. Smaller change to the text, larger to the version. Ledger §G-19 carries both.
 
 ### 7. What Gate Two owes, and is not in this step
 
@@ -737,10 +832,19 @@ Under D-159 as amended the Postmaster creates exactly one entity for the holder 
 
 ```
 npm run correspondent:provision -- <home> --dry-run
-  reads consensus, prints what exists and what step 1 would create, and submits nothing
 ```
 
-Two funded testnet wallets and two filled home directories are what this step waits on, beside §G-19 and Sonic's word.
+It reads consensus, prints what this home already has, and then prints **the plan with a payer against every row** — built
+from `ops/template.ts` itself rather than from a list kept beside it, so what the dry run shows is what the run submits. It
+submits nothing. An operator about to authorise the Postmaster to pay for nine bodies its agent signs should be able to see
+that on one screen without reading code, which is what the payer column is for.
+
+Run against two throwaway homes 2026-09-09, one fresh and one returning, both print the provisioning plan and exit 0; the
+fresh one reports `keys born` and the returning one `keys loaded`, which is D-165’s whole distinction and the only thing
+that separates two agents.
+
+**Two funded testnet wallets, two filled home directories, and Sonic’s word are what this step now waits on.** §G-19 is
+ruled and no longer among them.
 
 ## Step 6 — the first letter: GATE TWO, written before any signature
 

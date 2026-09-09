@@ -64,3 +64,63 @@ The last line is the whole point of the third leg. §9.5 assigns `blurred` where
 ## Report at the end
 
 Gate One's report, and stop. On Sonic's word, the run of record; then Gate Two's report, and stop again.
+
+---
+
+## Post-ruling — §G-19 answered, and the seam exercised
+
+**2026-09-09, later the same day.** Sonic ruled §G-19 **(a)**: the Postmaster provisions the mailbox it sells. HEAD at the
+start of this half was `b1638c2`, tree clean.
+
+### The line this half drew before writing anything
+
+**The provisioner must not move into the counter, and the ruling does not ask it to.** The topics are the agent’s, signed
+with a key the Postmaster does not hold; the counter could not build those bodies if it wanted to (P-13). What moves is who
+pays, and D-157 already built that as a seam. So the first question was whether the seam was real, and the answer is that
+ `sdk/carry.ts` is four lines of substance and nothing above it changed.
+
+**Where the risk actually was.** Carry without a policy is a blank cheque: an account with a balance and a signature it will
+add to anything. So the work is `counter/carry.ts`, and the design question is what the policy reads. **It decodes the
+bytes it signs.** The comfortable alternative — send a whole serialized transaction, parse it with the SDK’s typed getters,
+sign the body derived from that parse — inspects one representation and signs another, and they agree only because the same
+object produced them.
+
+**Which meant a `TransactionBody` decoder, and therefore a court for it before a line of it was trusted.** The field numbers
+were **probed** — four transactions built with the SDK, frozen offline, their bodies walked — and `check:correspondent`
+re-probes them on every run by building each row with the real builder and asserting the decode. That is `core/protokey.ts`’s
+lesson applied from the first line rather than after: its first version read `ThresholdKey.keys` as `Key.ed25519` because
+both are field 2. And the probe earned its keep immediately — `CryptoUpdateTransactionBody.memo` is field **14**, where a
+confident memory says 26.
+
+### What was expected to be hard, and what actually was
+
+**Expected:** the remote signer. It was four lines, because the seam was built as a seam.
+
+**Not expected: a flat fee ceiling would have refused the doorbell.** A carried body names its own maximum fee and the
+Postmaster is the account it comes out of, so a ceiling is the only thing between a published policy and an unbounded one —
+and 2 ℏ looked prudent. `networks.ts` gives a fee-gated topic creation **100 ℏ**, observed to fail at 20 and to succeed at
+100 charged far less. A 2 ℏ ceiling would have refused row 1 of every provisioning purchase, **after the transfer had
+landed** — the one place in this exchange where a refusal is expensive rather than free. The ceiling is now per row and read
+from the file the Correspondent builds the cap from. Caught offline by the check, before a signature.
+
+**Also not expected:** that `liveConsensus` had been quietly building a `Client` of its own since it was written. The only
+symptom was a `--dry-run` that printed its entire report and then never returned to the shell.
+
+### Verification, before the gate
+
+1. `npm run typecheck` — clean at the root and in `app`.
+2. `npm run p13:check` — unchanged, both halves.
+3. `npm run check:correspondent` — **105** assertions, no network and no key: the decoder against what the SDK froze, the
+   carry policy paying for every row of the template and refusing every near-miss, and everything it checked before.
+4. The rest of the battery unchanged and green — fifteen checks.
+5. `npm run correspondent:provision -- <home> --dry-run` against two throwaway homes, one fresh and one returning: both
+   print the plan with a payer against every row, and both exit 0.
+
+### What is deliberately not in this half
+
+Carry outside the purchase, so **T-P4-2 stays untested** and L-5 says so. The measurement of what a carried row actually
+costs the Postmaster, so the authorised exposure is the network’s cap and LIMITATIONS says so. Everything Gate Two owes.
+
+### Report at the end
+
+Gate One’s amended report, and stop. It signs on Sonic’s word.

@@ -14,14 +14,32 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { PrivateKey } from '@hashgraph/sdk';
+import {
+  AccountId,
+  AccountUpdateTransaction,
+  Client,
+  Hbar,
+  PrivateKey,
+  Transaction,
+  TransactionId,
+} from '@hashgraph/sdk';
 import { repoRoot } from '../src/ops/env.js';
 import { buildProfile, readProfile } from '../src/ops/declaration.js';
 import * as template from '../src/ops/template.js';
 import { sentenceKeys, line } from '../src/tools/narration.js';
 import { quote, scaled, unscaled, type CurrentPrice } from '../src/counter/pricing.js';
 import { provisioningFieldsThisCounterCannotFill } from '../src/counter/purchase.js';
-import { keysOfProtobuf, flattenMirrorKey } from './protokey.js';
+import { decodeTransactionBody } from '../src/counter/body.js';
+import { carrySignature, openCarry, type CarriedRow } from '../src/counter/carry.js';
+import { carryFeeCapTinybars } from '../src/counter/server.js';
+import type { CounterContext } from '../src/counter/context.js';
+import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
+import { HCS2_REGISTER_TX_MEMO, accountMemoFor, registerOperation, registryMemo } from '../src/ops/declaration.js';
+import { topicCreateFor } from './mailbox.js';
+import type { Signer } from '../src/ops/identity.js';
+import { toMirrorTxId, type Mirror } from '../src/ops/mirror.js';
+import { networkConstants } from '../src/ops/networks.js';
+import { keysOfProtobuf, flattenMirrorKey } from '../src/core/protokey.js';
 import { unanswered, connectionTopicMemo } from './watcher.js';
 import { openHome, AgentRecord } from './home.js';
 import { ensureKeys, agentSigner, agentSeal, currentEpoch, payerKeyPresent, withPayerKey } from './keystore.js';
@@ -174,18 +192,19 @@ async function refused(f: () => Promise<unknown>): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/* §G-19 — the counter refuses the provisioned path, from the schema.  */
+/* §G-19, ruled (a) — the counter can now fill every field §5.4 asks   */
+/* for, and this is the assertion that it still can (D-168).           */
 /* ------------------------------------------------------------------ */
 
 {
   const missing = provisioningFieldsThisCounterCannotFill(repoRoot());
   is(
-    'the registered StampReceipt requires two fields a D-159 purchase cannot name (ledger §G-19)',
+    'every field the registered StampReceipt requires inside `provisioning` is one this counter reads back (§G-19, D-168)',
     [...missing].sort(),
-    ['doorbell', 'manifestTopic'],
+    [],
   );
   ok(
-    'and the gate reads the SCHEMA, so a 0.6 that makes them optional lifts it with no second place to remember',
+    'and the gate still reads the SCHEMA, so a field added there stops the sale before the quote rather than after the transfer',
     fs.readFileSync(path.join(repoRoot(), 'spec', 'schemas', 'stamp-receipt.schema.json'), 'utf8').includes('"manifestTopic"'),
   );
 }
@@ -349,6 +368,320 @@ function fieldsFor(_key: string): Record<string, string> {
 }
 
 /* ------------------------------------------------------------------ */
+/* D-168 — the transaction-body decoder, and the carry policy that     */
+/* reads it. Every assertion below is offline: the SDK freezes a body, */
+/* the decoder reads it, and the policy decides. No network, no key    */
+/* but throwaway ones, and no state outside a temp directory.          */
+/* ------------------------------------------------------------------ */
+
+{
+  const agentKey = PrivateKey.generateED25519();
+  const postmasterKey = PrivateKey.generateED25519();
+  const strangerKey = PrivateKey.generateED25519();
+  const POSTMASTER = '0.0.800';
+  const BUYER = '0.0.900';
+  const ACCOUNT = '0.0.1000';
+  const TREASURY = '0.0.2002';
+  const TOKEN = '0.0.3003';
+  const NODE = '0.0.3';
+  const FILE_TOPIC = '0.0.5005';
+  const REGISTRY = '0.0.5006';
+  // The network's OWN caps, from the file the Correspondent builds with. Made
+  // up numbers here would test a policy nobody runs: the first version of this
+  // check used 4 and 3 hbar and passed, while the real doorbell asks for 100
+  // and would have been refused after the transfer had already landed.
+  const constants = networkConstants('testnet');
+  const feeCaps = constants.feeCaps;
+
+  const client = Client.forName('testnet');
+  client.setOperator(POSTMASTER, postmasterKey);
+
+  /** Freeze offline and hand back the bytes a signer would be handed. */
+  const bodyOf = async (tx: Transaction, payer = POSTMASTER, node = NODE): Promise<Buffer> => {
+    tx.setTransactionId(TransactionId.generate(payer));
+    tx.setNodeAccountIds([AccountId.fromString(node)]);
+    const frozen = await tx.freezeWith(client);
+    const one = frozen.signableNodeBodyBytesList[0] as { signableTransactionBodyBytes: Uint8Array } | undefined;
+    if (one === undefined) throw new Error('a body frozen against one node produced no signable bytes');
+    return Buffer.from(one.signableTransactionBodyBytes);
+  };
+
+  const carrySubject: template.TemplateSubject = {
+    account: ACCOUNT,
+    publicKey: agentKey.publicKey.toStringRaw(),
+    treasury: TREASURY,
+    stampToken: TOKEN,
+    autoRenewAccount: BUYER,
+  };
+  const rowShapes = {
+    doorbell: template.doorbell(carrySubject),
+    log: template.log(carrySubject),
+    manifest: template.manifest(carrySubject),
+    declRegistry: template.declRegistry(carrySubject, registryMemo(template.HCS10_TTL)),
+    profileFile: template.profileFile(carrySubject, 'ab'.repeat(32) + ':brotli:base64'),
+  } as const;
+
+  /* ---- the decoder, against what the SDK froze ---- */
+
+  {
+    const decoded = decodeTransactionBody(await bodyOf(topicCreateFor(rowShapes.doorbell, agentKey.publicKey, feeCaps)));
+    ok('the decoder reads the payer off a body the SDK froze', decoded.payer === POSTMASTER);
+    ok('and the node it is addressed to', decoded.node === NODE);
+    ok('and the maximum fee it authorises, in tinybars', decoded.transactionFee === feeCaps.feeGatedTopicCreate * 100_000_000);
+    ok('and the transaction id, which is how the counter later reads back what the body became', decoded.transactionId.startsWith(POSTMASTER + '@'));
+    ok('a topic create decodes as one', decoded.body.kind === 'topic-create');
+    if (decoded.body.kind === 'topic-create') {
+      const b = decoded.body;
+      is('the doorbell memo, byte for byte', b.memo, rowShapes.doorbell.memo);
+      is('the admin key, raw hex, as the template names it', b.adminKey, agentKey.publicKey.toStringRaw());
+      ok('and no submit key: HCS-10 leaves an inbound topic open (index.md:113)', b.submitKey === null);
+      ok('and no fee schedule key: the fee is immutable at birth', b.feeScheduleKey === null);
+      is('the auto-renew account', b.autoRenewAccount, BUYER);
+      is('§4.4’s one stamp to the treasury', [...b.fees], [{ amount: 1, token: TOKEN, collector: TREASURY }]);
+      is('and D-137’s exemption, so the agent can answer its own door', [...b.feeExemptKeys], [agentKey.publicKey.toStringRaw()]);
+    }
+  }
+
+  {
+    const decoded = decodeTransactionBody(await bodyOf(topicCreateFor(rowShapes.profileFile, agentKey.publicKey, feeCaps)));
+    if (decoded.body.kind === 'topic-create') {
+      ok(
+        'an HCS-1 file topic decodes with NO admin key, which is the one thing hcs-1.md:48-49 requires of it (D-150)',
+        decoded.body.adminKey === null && decoded.body.submitKey === agentKey.publicKey.toStringRaw(),
+      );
+    } else ok('an HCS-1 file topic decodes as a topic create', false);
+  }
+
+  {
+    const submit = new UnchunkedTopicMessageSubmitTransaction().setTopicId(FILE_TOPIC).setMessage(Buffer.from('{"o":0,"c":"x"}'));
+    const decoded = decodeTransactionBody(await bodyOf(submit));
+    ok('a message submission decodes as one, with its topic and its bytes', decoded.body.kind === 'submit-message');
+    if (decoded.body.kind === 'submit-message') {
+      is('the topic it is addressed to', decoded.body.topicId, FILE_TOPIC);
+      is('the message, byte for byte', decoded.body.message.toString('utf8'), '{"o":0,"c":"x"}');
+      ok(
+        'and NO chunkInfo — which is the whole reason `UnchunkedTopicMessageSubmitTransaction` exists (§7.4, D-96)',
+        decoded.body.chunked === false,
+      );
+    }
+  }
+
+  {
+    // The plain SDK class attaches a chunkInfo even for one chunk. The decoder
+    // must SEE it, or §7.4’s rule is unenforceable at the counter.
+    const { TopicMessageSubmitTransaction } = await import('@hashgraph/sdk');
+    const chunked = new TopicMessageSubmitTransaction().setTopicId(FILE_TOPIC).setMessage(Buffer.from('x')).setMaxChunks(1);
+    const decoded = decodeTransactionBody(await bodyOf(chunked));
+    ok(
+      'and the decoder SEES a chunkInfo where the SDK attaches one, which is what makes §7.4 checkable at all',
+      decoded.body.kind === 'submit-message' && decoded.body.chunked === true,
+    );
+  }
+
+  {
+    const update = new AccountUpdateTransaction().setAccountId(ACCOUNT).setAccountMemo(accountMemoFor(REGISTRY)).setMaxTransactionFee(new Hbar(2));
+    const decoded = decodeTransactionBody(await bodyOf(update));
+    ok('an account update decodes as one', decoded.body.kind === 'account-update');
+    if (decoded.body.kind === 'account-update') {
+      is('the account it names', decoded.body.account, ACCOUNT);
+      is(
+        'and §9.2’s memo — field 14 of CryptoUpdateTransactionBody, which is the number a confident guess gets wrong',
+        decoded.body.memo,
+        accountMemoFor(REGISTRY),
+      );
+      is('and it sets nothing else', [...decoded.body.otherFields], []);
+    }
+  }
+
+  {
+    const rotates = new AccountUpdateTransaction().setAccountId(ACCOUNT).setKey(strangerKey.publicKey).setMaxTransactionFee(new Hbar(2));
+    const decoded = decodeTransactionBody(await bodyOf(rotates));
+    ok(
+      'an account update that rotates the KEY is decoded as setting another field, and is therefore visible to the policy',
+      decoded.body.kind === 'account-update' && decoded.body.otherFields.length > 0,
+    );
+  }
+
+  /* ---- the policy, over a temp store and a stubbed mirror ---- */
+
+  const created = new Map<string, string>();
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wishmail-carry-'));
+  const operator: Signer = {
+    label: 'postmaster',
+    publicKey: postmasterKey.publicKey,
+    sign: (m) => Promise.resolve(postmasterKey.sign(m)),
+  };
+  const mirror = {
+    get: <TRes>(pathname: string): Promise<TRes | null> => {
+      // A mirror node spells a transaction id with dashes where the SDK spells it
+      // with an @ and a dot, and `toMirrorTxId` is the one place that conversion
+      // lives — the stub uses it rather than a second spelling of it.
+      const found = [...created.entries()].find(([id]) => pathname.includes(toMirrorTxId(id)));
+      if (found === undefined) return Promise.resolve(null);
+      return Promise.resolve({ transactions: [{ transaction_id: found[0], result: 'SUCCESS', entity_id: found[1] }] } as unknown as TRes);
+    },
+  } as unknown as Mirror;
+  const ctx = {
+    repoRoot: repoRoot(),
+    ledgerTag: 'hedera:testnet',
+    constants,
+    mirror,
+    mirrorNodeUrl: '',
+    client,
+    stateDir,
+    operatorId: POSTMASTER,
+    operator,
+    treasuryId: TREASURY,
+    treasury: operator,
+    stampToken: TOKEN,
+    priceTopic: '0.0.7',
+    carryFeeCap: carryFeeCapTinybars(feeCaps.feeGatedTopicCreate),
+  } as unknown as CounterContext;
+
+  const REFERENCE = POSTMASTER + '@1757000000.000000001';
+  openCarry(ctx, {
+    reference: REFERENCE,
+    txRef: REFERENCE,
+    count: 12,
+    quote: { amount: '1.00', currency: 'HBAR', from: { sequenceNumber: 2, consensusTimestamp: '0.0' } },
+    holderKey: agentKey.publicKey.toStringRaw(),
+    account: ACCOUNT,
+    buyer: BUYER,
+    node: NODE,
+    feeCap: carryFeeCapTinybars(feeCaps.feeGatedTopicCreate),
+  });
+
+  /** Ask the counter to carry a body, and say which row it called it. */
+  const carried = async (bytes: Buffer): Promise<CarriedRow> => {
+    const d = await carrySignature(ctx, REFERENCE, bytes.toString('base64'));
+    ok(
+      `the signature the counter returns for \`${d.row}\` verifies against the very bytes it decided about`,
+      postmasterKey.publicKey.verify(bytes, Buffer.from(d.signature, 'base64')),
+    );
+    return d.row;
+  };
+  /** Ask, and expect a refusal. Returns the reason, so a check can read it. */
+  const refused = async (what: string, bytes: Buffer): Promise<void> => {
+    try {
+      await carrySignature(ctx, REFERENCE, bytes.toString('base64'));
+      failures.push(`the counter should have refused to pay for ${what}, and did not`);
+    } catch {
+      passed += 1;
+    }
+  };
+
+  for (const row of ['doorbell', 'log', 'manifest', 'declRegistry', 'profileFile'] as const) {
+    const bytes = await bodyOf(topicCreateFor(rowShapes[row], agentKey.publicKey, feeCaps));
+    const called = await carried(bytes);
+    is(`the counter recognises row \`${row}\` of the template and pays for it`, called, row);
+    // Remember what each row BECAME, as a mirror would.
+    created.set(decodeTransactionBody(bytes).transactionId, row === 'profileFile' ? FILE_TOPIC : row === 'declRegistry' ? REGISTRY : '0.0.9' + row.length);
+  }
+
+  await refused(
+    'the same row twice — a second doorbell cannot be undone (D-165)',
+    await bodyOf(topicCreateFor(rowShapes.doorbell, agentKey.publicKey, feeCaps)),
+  );
+  await refused(
+    'a doorbell whose auto-renew account is the POSTMASTER — it sells a mailbox once and does not undertake to renew it forever',
+    await bodyOf(topicCreateFor({ ...rowShapes.doorbell, autoRenewAccount: POSTMASTER }, agentKey.publicKey, feeCaps)),
+  );
+  await refused(
+    'a doorbell whose fee is collected by somebody other than the treasury (§4.4)',
+    await bodyOf(
+      topicCreateFor({ ...template.doorbell({ ...carrySubject, treasury: '0.0.6666' }), memo: rowShapes.doorbell.memo }, agentKey.publicKey, feeCaps),
+    ),
+  );
+  await refused(
+    'a doorbell with no fee-exempt key, which is not the row D-137 declares',
+    await bodyOf(topicCreateFor({ ...rowShapes.doorbell, feeExemptKeys: [] }, agentKey.publicKey, feeCaps)),
+  );
+  await refused(
+    'a row whose keys are a STRANGER’s and not the holder’s',
+    await bodyOf(topicCreateFor(rowShapes.manifest, strangerKey.publicKey, feeCaps)),
+  );
+  await refused(
+    'a topic that is no row of the template at all',
+    await bodyOf(topicCreateFor({ ...rowShapes.manifest, memo: 'something-else' }, agentKey.publicKey, feeCaps)),
+  );
+  await refused(
+    'a body whose payer is somebody else — the counter signs only for its own account',
+    await bodyOf(topicCreateFor(rowShapes.log, agentKey.publicKey, feeCaps), BUYER),
+  );
+  await refused(
+    'a body addressed to a node this purchase did not pin — one body, one signature',
+    await bodyOf(topicCreateFor(rowShapes.log, agentKey.publicKey, feeCaps), POSTMASTER, '0.0.4'),
+  );
+  await refused(
+    'a body that authorises a fee above the ceiling its own row declares',
+    await bodyOf(
+      topicCreateFor(rowShapes.log, agentKey.publicKey, {
+        feeGatedTopicCreate: feeCaps.feeGatedTopicCreate,
+        plainTopicCreate: feeCaps.plainTopicCreate + 1,
+      }),
+    ),
+  );
+  ok(
+    'and the doorbell’s own cap is the fee-gated one, which is higher than every other row’s — a flat ceiling ' +
+      'below it would refuse the first row of every provisioning purchase, after the transfer had landed',
+    feeCaps.feeGatedTopicCreate > feeCaps.plainTopicCreate,
+  );
+
+  is(
+    'an HCS-1 chunk on the file topic the counter paid for is carried',
+    await carried(
+      await bodyOf(new UnchunkedTopicMessageSubmitTransaction().setTopicId(FILE_TOPIC).setMessage(Buffer.from('{"o":0}'))),
+    ),
+    'profileChunks',
+  );
+  await refused(
+    'a message on a topic this reference never bought',
+    await bodyOf(new UnchunkedTopicMessageSubmitTransaction().setTopicId('0.0.9999').setMessage(Buffer.from('x'))),
+  );
+  is(
+    'the HCS-2 register entry on the registry it paid for is carried',
+    await carried(
+      await bodyOf(
+        new UnchunkedTopicMessageSubmitTransaction()
+          .setTopicId(REGISTRY)
+          .setMessage(Buffer.from(JSON.stringify(registerOperation(FILE_TOPIC))))
+          .setTransactionMemo(HCS2_REGISTER_TX_MEMO),
+      ),
+    ),
+    'registryEntry',
+  );
+  await refused(
+    'a register entry naming a profile file this purchase did not create',
+    await bodyOf(
+      new UnchunkedTopicMessageSubmitTransaction()
+        .setTopicId(REGISTRY)
+        .setMessage(Buffer.from(JSON.stringify(registerOperation('0.0.4242'))))
+        .setTransactionMemo(HCS2_REGISTER_TX_MEMO),
+    ),
+  );
+  is(
+    'the account memo naming that registry is carried — §9.2’s first link',
+    await carried(
+      await bodyOf(new AccountUpdateTransaction().setAccountId(ACCOUNT).setAccountMemo(accountMemoFor(REGISTRY)).setMaxTransactionFee(new Hbar(2))),
+    ),
+    'accountMemo',
+  );
+  await refused(
+    'an account update that also rotates the account’s key — the counter does not pay to hand away what it sold',
+    await bodyOf(
+      new AccountUpdateTransaction()
+        .setAccountId('0.0.1001')
+        .setKey(strangerKey.publicKey)
+        .setAccountMemo(accountMemoFor(REGISTRY))
+        .setMaxTransactionFee(new Hbar(2)),
+    ),
+  );
+
+  fs.rmSync(stateDir, { recursive: true, force: true });
+  client.close();
+}
+
+/* ------------------------------------------------------------------ */
 
 console.log('');
 for (const f of failures) console.log(`  FAIL  ${f}`);
@@ -359,9 +692,10 @@ if (failures.length > 0) {
 console.log(
   `check:correspondent PASS — ${passed} assertions: D-147's six rows from one template; a mirror key list decoded so ` +
     "§7.1's threshold lane can be checked at all; §14.3's arithmetic in integers, rounded up, with bundles at exactly " +
-    'their count; the counter refusing the provisioned path from the registered schema itself (§G-19); one sentence ' +
-    'template that implies no delivery and no receipt; the doorbell rule over messages alone; a home directory ' +
-    'that is the agent — keys born once, loaded ever after; and the Postmaster’s own HCS-11 profile still ' +
-    'byte-identical to the one on consensus, after the identity refactor a Correspondent needed.',
+    'their count; a transaction body decoded off what the SDK itself froze, and the carry policy paying for every ' +
+    'row of the template and refusing every near-miss (D-168); one sentence template that implies no delivery and ' +
+    'no receipt; the doorbell rule over messages alone; a home directory that is the agent — keys born once, ' +
+    'loaded ever after; and the Postmaster’s own HCS-11 profile still byte-identical to the one on consensus, ' +
+    'after the identity refactor a Correspondent needed.',
 );
 console.log('');

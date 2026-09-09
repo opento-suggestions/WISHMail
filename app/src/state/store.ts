@@ -27,8 +27,11 @@ import path from 'node:path';
 /**
  * A namespace is a directory. `payments` holds §14.2's two kinds of row —
  * requirements this Postmaster issued, and payment references it has settled.
+ * `carry` holds what a provisioning purchase is still carrying (D-168): the
+ * holder, the node, and the row-by-row record of what the counter has paid for,
+ * so a purchase that stops between rows is resumable from either side.
  */
-export type Namespace = 'payments' | 'requirements';
+export type Namespace = 'payments' | 'requirements' | 'carry';
 
 /** What a stored row carries beside its value: when it was written, and when it may go. */
 export interface Entry<T> {

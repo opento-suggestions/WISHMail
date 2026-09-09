@@ -141,14 +141,22 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 
         case 'buy_stamp': {
           const hadNoAccount = s.account === '';
-          const receipt = await buyStamps(s, {
+          // With `provision`, this is the whole of §4.6’s provisioned path: the
+          // transfer, then the mailbox — signed here, paid for at the counter —
+          // then the receipt naming what the counter created (D-168). goose sees
+          // one call, because it is one purchase.
+          const bought = await buyStamps(s, {
             count: (args['count'] as number | undefined) ?? 1,
             ...(args['provision'] === true ? { provision: true } : {}),
             onLine: (l) => console.error(`  ${l}`),
           });
           // The account this purchase created is not this session's yet.
           if (hadNoAccount) await box.reboot();
-          return ok(receipt, { receipt: receipt as unknown as Record<string, unknown> });
+          // The door is watched from the moment there is a door.
+          if (bought.mailbox !== undefined) watcherFor();
+          return ok(bought.receipt, {
+            receipt: bought.receipt as unknown as Record<string, unknown>,
+          });
         }
 
         case 'generate_mailbox': {
@@ -213,7 +221,11 @@ export async function main(): Promise<void> {
   const box: SessionBox = {
     s,
     reboot: async () => {
+      const previous = box.s;
       box.s = await boot(home);
+      // The old session's clients hold the event loop; a server that re-booted
+      // on every purchase and kept them would leak one pair per sale.
+      previous.close();
     },
   };
 

@@ -19,6 +19,14 @@
  * and fail on a clean clone — the worst kind of dependency, because it passes
  * here.
  *
+ * IT LIVES IN `core/` BECAUSE BOTH PARTIES READ IT. It began on the
+ * Correspondent's side, where a lane's submit key is checked; the counter now
+ * needs the same primitives to read the transaction bodies it is asked to pay
+ * for (D-168), and a Postmaster module that imported a Correspondent module
+ * would blur the line CLAUDE.md §11 draws between the two. It is a decoder of
+ * public data and holds nothing of either party, so it belongs beside
+ * `canonical.ts` and neither side owns it.
+ *
  * So it is composed here, on the same grounds the seal is (`OPERATIONS.md`):
  * the surface is tiny, it is a READ of public data, it cannot fail silently in
  * the way a mis-composed cipher can — a wrong parse yields keys that do not
@@ -45,8 +53,14 @@
  * Conformance: T-P17-2, T-P11-3.
  */
 
-/** A varint, and the offset after it. Protobuf's base-128, little-endian groups. */
-function varint(b: Buffer, at: number): { readonly value: number; readonly next: number } {
+/**
+ * A varint, and the offset after it. Protobuf's base-128, little-endian groups.
+ *
+ * Exported because `counter/body.ts` decodes a different set of messages with
+ * the same two primitives, and a second copy of a wire format is a second place
+ * for it to be wrong — the lesson at the head of `ops/template.ts`.
+ */
+export function varint(b: Buffer, at: number): { readonly value: number; readonly next: number } {
   let value = 0;
   let shift = 0;
   let i = at;
@@ -76,22 +90,32 @@ export function keysOfProtobuf(encoded: Buffer, depth = 0): string[] {
   return readKey(encoded, depth);
 }
 
-/** Walk one length-delimited field at a time, calling back with (field, body). */
-function fields(b: Buffer, visit: (field: number, body: Buffer) => void): void {
+const EMPTY = Buffer.alloc(0);
+
+/**
+ * Walk one field at a time, calling back with (field, wire type, body, value).
+ *
+ * A length-delimited field's body is its contents and its value is 0; a varint
+ * is the reverse. Both are reported rather than one skipped, because
+ * `TransactionBody` carries numbers this file’s own messages do not — a
+ * transaction fee and an account number are varints, and a walker that dropped
+ * them would make the counter's fee ceiling uncheckable.
+ */
+export function fields(b: Buffer, visit: (field: number, wire: number, body: Buffer, value: number) => void): void {
   let i = 0;
   while (i < b.length) {
     const tag = varint(b, i);
     i = tag.next;
     const field = Math.floor(tag.value / 8);
     const wire = tag.value % 8;
-    if (wire === 0) { i = varint(b, i).next; continue; }
+    if (wire === 0) { const v = varint(b, i); visit(field, 0, EMPTY, v.value); i = v.next; continue; }
     if (wire === 5) { i += 4; continue; }
     if (wire === 1) { i += 8; continue; }
     if (wire !== 2) throw new Error(`protokey: unexpected wire type ${wire} for field ${field}`);
     const len = varint(b, i);
     const end = len.next + len.value;
     if (end > b.length) throw new Error('protokey: a length-delimited field runs past the end');
-    visit(field, b.subarray(len.next, end));
+    visit(field, 2, b.subarray(len.next, end), 0);
     i = end;
   }
 }
@@ -107,7 +131,8 @@ function fields(b: Buffer, visit: (field: number, body: Buffer) => void): void {
 function readKey(b: Buffer, depth: number): string[] {
   if (depth > 8) throw new Error('protokey: the key structure nests deeper than 8, which no lane does');
   const out: string[] = [];
-  fields(b, (field, body) => {
+  fields(b, (field, wire, body) => {
+    if (wire !== 2) return;
     if (field === 2 || field === 7) out.push(body.toString('hex')); // ed25519 | ECDSASecp256k1
     else if (field === 5) out.push(...readThresholdKey(body, depth + 1));
     else if (field === 6) out.push(...readKeyList(body, depth + 1));
@@ -121,8 +146,8 @@ function readKey(b: Buffer, depth: number): string[] {
 /** `KeyList { repeated Key keys = 1; }` */
 function readKeyList(b: Buffer, depth: number): string[] {
   const out: string[] = [];
-  fields(b, (field, body) => {
-    if (field === 1) out.push(...readKey(body, depth + 1));
+  fields(b, (field, wire, body) => {
+    if (wire === 2 && field === 1) out.push(...readKey(body, depth + 1));
   });
   return out;
 }
@@ -134,8 +159,8 @@ function readKeyList(b: Buffer, depth: number): string[] {
  */
 function readThresholdKey(b: Buffer, depth: number): string[] {
   const out: string[] = [];
-  fields(b, (field, body) => {
-    if (field === 2) out.push(...readKeyList(body, depth + 1));
+  fields(b, (field, wire, body) => {
+    if (wire === 2 && field === 2) out.push(...readKeyList(body, depth + 1));
   });
   return out;
 }

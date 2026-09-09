@@ -18,10 +18,14 @@
  * server reads that table rather than restating it, exactly as the stdio server
  * does.
  *
- * CARRY, AND ITS ONE PLACE. The service side of `send` is implemented only where
- * the `hbar` leg needs it — inside `buy_stamp` (D-157, LIMITATIONS L-5). The
- * counter carries a purchase body it built itself and refuses everything else,
- * and a refusal leaves no mark (§3.5).
+ * CARRY, AND ITS ONE PLACE. Carry is implemented only inside `buy_stamp` —
+ * the transfer, and the provisioning it sells (D-157, D-168, LIMITATIONS L-5).
+ * The counter builds the transfer body itself and refuses to accept one it did
+ * not build (T-P13-3); it accepts PROVISIONING bodies, which it could not have
+ * built because they are signed with a key it does not hold, and decides
+ * whether to pay for each by reading it against `ops/template.ts` — the policy
+ * is `counter/carry.ts` and the decoder is `counter/body.ts`. Everything else is
+ * refused, and a refusal leaves no mark (§3.5).
  *
  * Conformance: T-P15-4, T-P11-2, T-P11-5, T-P11-6, T-P13-3, T-P16-1, T-P4-1.
  */
@@ -44,7 +48,9 @@ import { liveReader } from '../../sdk/live.js';
 import { mirrorSource, resolveHcs14 } from '../resolve/hcs14.js';
 import { resolveHol } from '../resolve/hol.js';
 import { verify } from '../tools/verify.js';
-import { CounterRefusal, quotePurchase, settlePurchase, type CounterContext, type Holder } from './purchase.js';
+import { carrySignature } from './carry.js';
+import { CounterRefusal, type CounterContext, type Holder } from './context.js';
+import { issueReceipt, quotePurchase, settlePurchase } from './purchase.js';
 
 /** The three the counter serves, of §6.1's six. */
 const SERVED = ['buy_stamp', 'verify', 'resolve'] as const;
@@ -66,6 +72,8 @@ interface BuyStampInput {
     readonly from?: string;
     readonly quoteRef?: string;
     readonly signature?: { readonly publicKey?: string; readonly value?: string };
+    readonly carry?: { readonly body?: string };
+    readonly receipt?: boolean;
   };
   readonly holder?: Holder;
   readonly provision?: boolean;
@@ -87,29 +95,98 @@ function errorResult(code: string, message: string): Record<string, unknown> {
 }
 
 /**
- * `buy_stamp`, both halves of §14.2's exchange, over one tool.
+ * `buy_stamp`, every leg of §14.2’s exchange, over one tool.
  *
- * With no signature it QUOTES: the requirement comes back in `_meta` — never in
- * `structuredContent`, which MCP validates against the tool's `outputSchema`
- * and which is a `StampReceipt`. A requirement is not a receipt and putting one
- * there would turn "not paid yet" into a protocol error at the client, which is
- * the same lesson the stdio server's `NOT_IMPLEMENTED` diagnostic learned.
+ * WHY ONE TOOL AND NOT FOUR. §6.1 defines the surface, "every transport that
+ * exposes it exposes the same schema" (T-P15-4), and the counter serves
+ * exactly the three of §6.1’s six it can. A purchase with more legs is still a
+ * purchase: what varies is the leg, which the `payment` object names, and the
+ * input schema is a RELEASE artifact (`urn:wishmail:app:0.5:tool:`…) rather than
+ * one of §18.5’s frozen fourteen, so it may say so. A `carry` tool beside
+ * `buy_stamp` would be a fourth verb on a conformance surface that has three,
+ * and would say that carry exists outside a purchase, which is exactly what
+ * L-5 records that it does not.
  *
- * With a signature it SETTLES and returns the receipt.
+ *   no quoteRef              → QUOTE. The requirement comes back in `_meta` —
+ *                              never in `structuredContent`, which MCP validates
+ *                              against the tool’s `outputSchema` and which is a
+ *                              `StampReceipt`. A requirement is not a receipt, and
+ *                              putting one there would turn "not paid yet" into a
+ *                              protocol error at the client.
+ *   quoteRef + signature     → SETTLE the transfer. A plain purchase returns
+ *                              its receipt here; a provisioning purchase
+ *                              returns the account it created and stays open.
+ *   quoteRef + carry         → decide and co-sign one provisioning body (D-168).
+ *   quoteRef + receipt       → issue the receipt, once every row has landed.
  */
 async function buyStamp(cfg: CounterConfig, input: BuyStampInput): Promise<Record<string, unknown>> {
   const method = input.payment?.method;
   if (typeof method !== 'string') return errorResult('STAMP_METHOD_UNSUPPORTED', 'payment.method is required (§6.3)');
   if (input.holder === undefined) return errorResult('STAMP_HOLDER_INVALID', 'holder is required (§6.3)');
 
+  const reference = input.payment?.quoteRef;
   const signature = input.payment?.signature;
-  if (signature?.publicKey !== undefined && signature.value !== undefined) {
-    const reference = input.payment?.quoteRef;
+  const carried = input.payment?.carry;
+
+  if (carried !== undefined || input.payment?.receipt === true || (signature?.publicKey !== undefined && signature.value !== undefined)) {
     if (typeof reference !== 'string') {
-      return errorResult('STAMP_PAYMENT_FAILED', 'a signed purchase names the quote it answers (payment.quoteRef)');
+      return errorResult('STAMP_PAYMENT_FAILED', 'every leg after the quote names the quote it answers (payment.quoteRef)');
     }
-    const receipt = await settlePurchase(cfg.ctx, reference, signature.publicKey, signature.value);
-    return textResult(receipt, { receipt: receipt as unknown as Record<string, unknown> });
+  }
+
+  // The carry leg: one provisioning body, decided and co-signed (D-168).
+  if (carried !== undefined && typeof reference === 'string') {
+    if (typeof carried.body !== 'string') return errorResult('STAMP_PAYMENT_FAILED', 'payment.carry.body is the frozen body to be carried, base64');
+    const decision = await carrySignature(cfg.ctx, reference, carried.body);
+    return {
+      isError: false,
+      content: [{ type: 'text' as const, text: decision.statement }],
+      _meta: { 'wishmail/carried': decision, 'wishmail/spec': RELEASE.spec },
+    };
+  }
+
+  // The receipt leg: issued only when every row this counter paid for has
+  // landed AND the holder resolves under §9.2 from the counter’s own reader.
+  if (input.payment?.receipt === true && typeof reference === 'string') {
+    const asked = await issueReceipt(cfg.ctx, reference);
+    if (asked.kind === 'receipt') return textResult(asked.receipt, { receipt: asked.receipt as unknown as Record<string, unknown> });
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text' as const,
+          text: `the receipt is not issued: ${asked.rows.join(', ')} has not landed. §5.4 names the entities the ` +
+            'Postmaster created for the holder, and a receipt cannot name one that does not exist yet.',
+        },
+      ],
+      _meta: { 'wishmail/code': 'STAMP_PAYMENT_UNSETTLED', 'wishmail/outstanding': asked.rows, 'wishmail/spec': RELEASE.spec },
+    };
+  }
+
+  if (signature?.publicKey !== undefined && signature.value !== undefined && typeof reference === 'string') {
+    const settled = await settlePurchase(cfg.ctx, reference, signature.publicKey, signature.value);
+    if (settled.kind === 'receipt') {
+      return textResult(settled.receipt, { receipt: settled.receipt as unknown as Record<string, unknown> });
+    }
+    // The transfer landed and the account exists. Nothing else does yet, and a
+    // receipt saying otherwise would be a receipt for something that has not
+    // happened, so the reference stays open and the buyer is told where it is.
+    return {
+      isError: false,
+      content: [
+        {
+          type: 'text' as const,
+          text:
+            `the transfer settled as ${settled.carry.txRef} and created account ${settled.carry.account}. The mailbox ` +
+            `is next: sign each body in your own process and this counter will pay for it, under the policy it ` +
+            `publishes (§4.6, §6.1). The receipt names what it paid for, when every row has landed.`,
+        },
+      ],
+      _meta: {
+        'wishmail/carrying': { reference: settled.carry.reference, account: settled.carry.account, node: settled.carry.node, feeCap: settled.carry.feeCap },
+        'wishmail/spec': RELEASE.spec,
+      },
+    };
   }
 
   const requirement = await quotePurchase(cfg.ctx, {
@@ -252,6 +329,30 @@ export async function serve(cfg: CounterConfig, bind: string, port: number): Pro
   console.log(`the counter is at http://${bind}:${port}/  — buy_stamp, verify, resolve (§14.2)`);
 }
 
+/**
+ * The operator’s ABSOLUTE ceiling on a single carried body, in tinybars.
+ *
+ * It defaults to the network’s own largest cap, because that is what a
+ * fee-gated topic creation needs: 20 ℏ was observed to return
+ * INSUFFICIENT_TX_FEE and 100 ℏ to succeed, charged far less (`networks.ts`,
+ * FETCHED 2026-09-08). A default below it would refuse the doorbell — the very
+ * first row of every provisioning purchase — and refuse it AFTER the transfer
+ * had landed, which is the one place in this exchange where a refusal is
+ * expensive rather than free.
+ *
+ * The effective limit for any body is the lower of this and the cap the
+ * template declares for its row, so this exists for an operator who has
+ * measured what these actually cost and wants to say so.
+ */
+export function carryFeeCapTinybars(defaultHbar: number): number {
+  const raw = process.env['WISHMAIL_CARRY_MAX_HBAR']?.trim();
+  const hbar = raw === undefined || raw === '' ? defaultHbar : Number(raw);
+  if (!Number.isFinite(hbar) || hbar <= 0) {
+    throw new Error(`WISHMAIL_CARRY_MAX_HBAR is ${JSON.stringify(raw)} and a fee ceiling is a positive number of hbar`);
+  }
+  return Math.round(hbar * 100_000_000);
+}
+
 export async function main(): Promise<void> {
   const env = loadEnv();
   const record = Record_.load(env.repoRoot, env.mirrorNodeUrl);
@@ -271,6 +372,7 @@ export async function main(): Promise<void> {
   const ctx: CounterContext = {
     repoRoot: env.repoRoot,
     ledgerTag: env.constants.ledgerTag,
+    constants: env.constants,
     mirror: new Mirror(env.mirrorNodeUrl),
     mirrorNodeUrl: env.mirrorNodeUrl,
     client,
@@ -281,6 +383,7 @@ export async function main(): Promise<void> {
     treasury,
     stampToken: token,
     priceTopic,
+    carryFeeCap: carryFeeCapTinybars(env.constants.feeCaps.feeGatedTopicCreate),
   };
 
   const pins = JSON.parse(fs.readFileSync(path.join(env.repoRoot, 'spec', 'pins.json'), 'utf8')) as {

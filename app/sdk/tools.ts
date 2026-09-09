@@ -49,8 +49,7 @@ export function affordances(): readonly Affordance[] {
     {
       name: 'generate_mailbox',
       summary:
-        'Stand up this agent’s own six topics and its HCS-11 declaration, under this agent’s own key (§4.6, §9.2). ' +
-        'Not one of §6.1’s six tools: no conformance class is tested against it.',
+        'Stand up this agent’s own six topics and its HCS-11 declaration, under this agent’s own key, PAID FOR BY THIS AGENT’S OPERATOR (§4.6, §9.2). This is the SELF-PROVISIONED path, for an agent that already has an account and wants a mailbox at its own expense. An agent buying a mailbox does not call this: `buy_stamp` with `provision` is the whole of §4.6’s provisioned path, and there the Postmaster pays (D-168). Not one of §6.1’s six tools: no conformance class is tested against it.',
       refuses: [
         'It creates nothing if this agent already resolves under hcs14. That is not a failure: a second doorbell cannot be undone, and §9.5 assigns `vague` where more than one registration names an address.',
         'It refuses if the agent has no account yet. The account is BOUGHT, not funded — buy a mailbox at the counter first, and the stamp transfer to your public-key alias creates it (§4.6, HIP-542).',

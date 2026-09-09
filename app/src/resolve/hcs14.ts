@@ -547,3 +547,33 @@ export async function resolveHcs14(
     observations: agentIdOrder.length > 0 ? { agentIdOrder } : {},
   };
 }
+
+/**
+ * Resolve an account’s OWN address under this rule — two passes, the first
+ * one’s proof discarded.
+ *
+ * `resolveHcs14` takes the CALLER’s manifest topic because §5.2’s canonical
+ * location is inside the proof’s hash (D-163), and on the very first read an
+ * agent does not yet know its own. So pass one is run with the account id in
+ * that slot purely to learn whether a declaration exists and what manifest
+ * topic it names, and pass two is run with the real one. Nothing from pass one
+ * is published, carried, or compared: only its `manifestTopic` is read, from the
+ * coordinates, which is the registry’s answer and not the proof’s.
+ *
+ * IT IS HERE AND NOT IN A CALLER because both parties run it. The agent runs
+ * it on its own output before `generate_mailbox` returns, and the counter runs it
+ * on the mailbox it carried before it will issue a receipt naming those
+ * coordinates (D-168). Two spellings of §9.2’s two-pass rule would be two
+ * places for it to drift.
+ */
+export async function resolveSelf(
+  source: ProfileSource,
+  ledgerTag: string,
+  account: string,
+): Promise<MailCoordinates | null> {
+  const first = await resolveHcs14(source, ledgerTag, account, account);
+  if ('failure' in first) return null;
+  const second = await resolveHcs14(source, ledgerTag, account, first.coordinates.manifestTopic);
+  if ('failure' in second) return null;
+  return second.coordinates;
+}

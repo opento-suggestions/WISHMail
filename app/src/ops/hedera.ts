@@ -6,7 +6,7 @@
  * A client is driven by a `Signer`, through `setOperatorWith`, so that not even
  * the payer's private key is held outside `identity.ts`.
  */
-import { Client, TransactionId, type Transaction, Status } from '@hashgraph/sdk';
+import { Client, TransactionId, type AccountId, type Transaction, Status } from '@hashgraph/sdk';
 import * as journal from './journal.js';
 import type { Env } from './env.js';
 import type { Signer } from './identity.js';
@@ -27,6 +27,20 @@ export function clientFor(env: Env, payerId: string, payer: Signer): Client {
   return c;
 }
 
+export interface SubmitOptions {
+  /**
+   * Pin the consensus node before the freeze, so the transaction is ONE body.
+   *
+   * A transaction frozen with a client is frozen once per node, and each copy
+   * has its own body and needs its own signature. That is merely wasteful
+   * where every signer is local; it is the whole shape of the problem where a
+   * signer is REMOTE, because N bodies is N round trips and N policy
+   * decisions for one act (D-168). `purchase.ts` pins a node for the same
+   * reason and says so in the same words.
+   */
+  readonly nodeAccountIds?: readonly AccountId[];
+}
+
 /**
  * Freeze, gather signatures, submit, and return the outcome without throwing on
  * a network status. A failed status is an observation here, not an error: the
@@ -37,12 +51,16 @@ export async function submit(
   payerId: string,
   tx: Transaction,
   signers: readonly Signer[] = [],
+  options: SubmitOptions = {},
 ): Promise<Submitted> {
   // Pin the id before submitting, so a run that dies between consensus and the
   // record write leaves behind the one handle that can find what it made.
   // setRegenerateTransactionId(false) keeps that handle single-valued.
   if (!tx.transactionId) tx.setTransactionId(TransactionId.generate(payerId));
   tx.setRegenerateTransactionId(false);
+  if (options.nodeAccountIds !== undefined && options.nodeAccountIds.length > 0) {
+    tx.setNodeAccountIds([...options.nodeAccountIds]);
+  }
 
   const frozen = await tx.freezeWith(client);
   for (const s of signers) await frozen.signWith(s.publicKey, s.sign);

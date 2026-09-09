@@ -38,14 +38,45 @@ Confidentiality ends at each operating estate (§15.1). Whoever runs a sender's 
 
 A lane's threshold key names the two agents' account keys literally (§7.1, F-8). An agent that rotates its Hedera account key can read but no longer sign on lanes created before the rotation; new mail needs a new lane born from the doorbell. This release does not migrate lanes and does not attempt to; it reports the condition through `SEND_LANE_INVALID` and re-rings.
 
-## L-5 — The Postmaster's liveness is required for purchase, and for a first contact whose payer the sender borrows from it
+## L-5 — The Postmaster's liveness is required for purchase — the transfer and the provisioning it sells — and for a first contact whose payer the sender borrows from it
 
-Required to sell stamps and to provision. Required at a first-contact `send` **only where the sender borrows it as payer**, in which case it pays the doorbell's fee and submits the request the sender signed (F-7, D-157). Bound on loss: one stamp per abandoned first contact. Bound on wait: the sender's `window`. For every submission — the connection request included — the Postmaster is a payer the sender may use or not; a sender that can pay its own network fees is never stranded. Delivery (`inbox`) and verification (`verify`) never involve it. This release runs one Postmaster instance on testnet with no availability guarantee.
+Required to sell stamps, and to provision — under D-168 it pays for every body of the mailbox it sells. Required at a first-contact `send` **only where the sender borrows it as payer**, in which case it pays the doorbell's fee and submits the request the sender signed (F-7, D-157). Bound on loss: one stamp per abandoned first contact. Bound on wait: the sender's `window`. For every submission — the connection request included — the Postmaster is a payer the sender may use or not; a sender that can pay its own network fees is never stranded. Delivery (`inbox`) and verification (`verify`) never involve it. This release runs one Postmaster instance on testnet with no availability guarantee.
 
-**Carry exists in this release only inside `buy_stamp`, and that is our scoping.** §6.1 defines the Postmaster's service side of `send` as **carry** — accepting bodies the agent signed whose transaction identifier names the Postmaster as payer, checking them against a published policy, adding the payer signature and submitting. This release implements it only where §14.2's HBAR leg already requires it: inside the purchase. Every other submission an agent makes is paid by that agent's own operator, from that operator's own configuration, through the payer seam D-157 requires (`agent signs, payer signs`, the payer injected). **The consequence is that T-P4-2 — "a Correspondent configured with nothing but stamps and its own keys completes `send` through the reference Postmaster" — is untested at this release, and the POSTMASTER suite therefore does not pass in full.** Nothing in the specification is at fault and nothing in Hedera prevents it: the seam is built so that the same code path takes a remote signature, and only the remote half is unbuilt in this window.
+**Carry exists in this release only inside the purchase: the transfer, and the provisioning it sells.** §6.1 defines the
+Postmaster's service side of `send` as **carry** — accepting bodies the agent signed whose transaction identifier names the
+Postmaster as payer, checking them against a published policy, adding the payer signature and submitting. This release
+implements it in exactly two places, both inside `buy_stamp`: §14.2's HBAR leg, where the purchase itself needs it; and
+§4.6’s provisioned path, where the Postmaster pays for the nine bodies the agent signs to stand up the mailbox it just
+bought (D-168). Under an outstanding provisioning reference the counter signs a body only if it is a row of the
+provisioning template naming that holder’s key, a chunk on the file topic it itself paid for, the register entry on the
+registry it paid for, or the account-memo update on the holder’s account; everything else is refused before anything is
+signed. Every submission an agent makes **outside a purchase** is paid by that agent’s own operator, from that operator’s
+own configuration, through the payer seam D-157 requires (`agent signs, payer signs`, the payer injected).
 
-**The PROVISIONED path is not sellable in this release, and the reason is a specification defect we raised rather than coded around (ledger §G-19, 2026-09-09).** §5.4 requires the receipt’s `provisioning` line to name a `doorbell` and a `manifestTopic`, on the warrant that they are “the entities the Postmaster created for the holder” — and D-159 as amended has the purchase create the **account** while the agent creates its own topics afterwards, under its own key, through `generate_mailbox`. So a receipt carrying that line fails the schema Step 4 froze, and one omitting it contradicts §6.3 and drops `registrationFee`, which exists so a Verifier sees the fee as a leg of the purchase and not as a gift. The counter **refuses a `provision: true` purchase before anything is signed**; a `provision: false` purchase works in full. Two candidate answers are on the ledger, one of which needs no schema change and one of which is 0.6. **Nothing in Hedera prevents it and the fault is ours, in a sentence we wrote**; what this release will not do is sell under a shape a Verifier would reject.
+**The consequence is that T-P4-2 — "a Correspondent configured with nothing but stamps and its own keys completes `send`
+through the reference Postmaster" — is untested at this release, and the POSTMASTER suite therefore does not pass in
+full.** `send`'s submissions still use the local payer. Nothing in the specification is at fault and nothing in Hedera
+prevents it: the seam’s remote half is built and is exercised on every provisioning purchase, and what is unbuilt is the
+policy that would let it carry a letter as well as a mailbox. **That is our scoping, and it is a smaller gap than it was.**
 
+**The provisioned path IS sellable in this release, and the sentence that blocked it was a specification defect we raised
+rather than coded around (ledger §G-19, raised and closed 2026-09-09).** §5.4 requires the receipt’s `provisioning` line to
+name a `doorbell` and a `manifestTopic`, on the warrant that they are "the entities the Postmaster created for the
+holder" — and D-159 as amended had the purchase create the **account** while the agent created its own topics afterwards.
+A receipt carrying the line failed the schema Step 4 froze; one omitting it contradicted §6.3 and dropped
+`registrationFee`. The counter refused before anything was signed, and it was Sonic’s to rule. **Ruled (a), D-168**:
+§4.6’s provisioned path is taken as written, the Postmaster provisions the mailbox it sells, and §5.4’s sentence is
+literally true of the receipt. What remains a limitation is what it cost to decide: **the more accurate description of what
+D-159 attempted — making the two fields optional — is a minor version, 0.6, across fourteen schema files now registered on
+consensus, and this release does not take it.**
+
+**A carried body authorises a fee this release does not measure.** A body the Postmaster co-signs names its own maximum
+transaction fee, and that fee comes out of the Postmaster’s account. The ceiling for each row is read from `networks.ts` —
+the same file the Correspondent builds the row’s cap from — and a fee-gated topic creation was observed to fail at a 20 ℏ
+cap and to succeed at 100 ℏ, charged far less (FETCHED 2026-09-08). So the authorised exposure per doorbell is 100 ℏ and
+the actual charge is what the network charges, which we have not measured. An operator who has can lower it with
+`WISHMAIL_CARRY_MAX_HBAR`, which may only lower. **That is our scoping — a measurement we did not take — and not a
+property of Hedera or of the specification.**
 ## L-6 — Refusal leaves no mark
 
 A Postmaster that will not sell, a doorbell that does not answer, a registry that delists, a recipient that does not sign: none is on consensus as a refusal (§15.3). This release records what happened and never what was intended; it produces slips for unanswered first contact and reports unsigned receipts as `unclaimed`, and nothing else.

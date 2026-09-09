@@ -4,8 +4,15 @@
  *
  * §4.6 affordance, NOT one of §6.1's six (D-159): no conformance class is tested
  * against it, and it is on the Correspondent's own MCP because the topics are
- * the agent's and the agent signs each one. The Postmaster pays for nothing here
- * and holds nothing; the operator of THIS agent pays, through the seam.
+ * the agent’s and the agent signs each one.
+ *
+ * WHO PAYS IS NOT THIS FILE’S BUSINESS, and D-168 is what made that true rather
+ * than merely tidy. Under a self-provisioned run the operator of THIS agent
+ * pays, from its own config. Under a provisioning purchase the POSTMASTER pays,
+ * because §G-19 is ruled (a) and §4.6’s provisioned path has the Postmaster
+ * create the mailbox it sells — and the only difference visible here is that
+ * `Session.payer` is a remote `Signer` and `Session.submitOpts` pins a node. Not one
+ * line below asks which, and the same bytes reach consensus either way.
  *
  * IDEMPOTENT AGAINST CONSENSUS, NEVER AGAINST LOCAL STATE (D-165). The first
  * thing this does is resolve the agent's own address under `hcs14`. If
@@ -38,7 +45,7 @@
  *
  * Conformance: T-P7-4, T-P13-1, T-P17-1, T-P17-3, T-P6-3, T-P8-3.
  */
-import { AccountUpdateTransaction, CustomFixedFee, Hbar, TokenAssociateTransaction, TopicCreateTransaction, type Key } from '@hashgraph/sdk';
+import { AccountUpdateTransaction, CustomFixedFee, Hbar, TokenAssociateTransaction, TopicCreateTransaction, type Key, type PublicKey } from '@hashgraph/sdk';
 import {
   HCS2_REGISTER_TX_MEMO,
   accountMemoFor,
@@ -54,7 +61,7 @@ import { submit } from '../src/ops/hedera.js';
 import { Mirror } from '../src/ops/mirror.js';
 import { TRANSACTION_OP_MEMO } from '../src/ops/hcs10.js';
 import { repoRoot } from '../src/ops/env.js';
-import { mirrorSource, resolveHcs14, type MailCoordinates, type ProfileSource } from '../src/resolve/hcs14.js';
+import { mirrorSource, resolveSelf, type MailCoordinates } from '../src/resolve/hcs14.js';
 import type { AgentRecord, CorrespondentKey } from './home.js';
 import type { Session } from './session.js';
 import { line } from '../src/tools/narration.js';
@@ -99,28 +106,14 @@ export interface MailboxResult {
 }
 
 /**
- * Resolve the agent's own address under §9.2's rule.
+ * §9.2’s rule run on an agent’s own address, re-exported from where it lives.
  *
- * Two passes, and the first one's proof is discarded. `resolveHcs14` takes the
- * CALLER's manifest topic because §5.2's canonical location is inside the
- * proof's hash (D-163) — and on the very first read this agent does not yet
- * know its own. So pass one is run with the account id in that slot purely to
- * learn whether a declaration exists and what manifest topic it names, and pass
- * two is run with the real one. Nothing from pass one is published, carried, or
- * compared: only its `manifestTopic` is read, from the coordinates, which is
- * the registry's answer and not the proof's.
+ * It moved to `resolve/hcs14.ts` when the counter needed it too: under D-168
+ * the Postmaster will not issue a provisioning receipt until the mailbox it
+ * carried resolves from its own reader, and two spellings of a two-pass rule
+ * would be two places for it to drift.
  */
-export async function resolveSelf(
-  source: ProfileSource,
-  ledgerTag: string,
-  account: string,
-): Promise<MailCoordinates | null> {
-  const first = await resolveHcs14(source, ledgerTag, account, account);
-  if ('failure' in first) return null;
-  const second = await resolveHcs14(source, ledgerTag, account, first.coordinates.manifestTopic);
-  if ('failure' in second) return null;
-  return second.coordinates;
-}
+export { resolveSelf };
 
 /** The declared shape, rendered for the log and for the record's `policy`. */
 function detail(w: TopicShape): string {
@@ -160,8 +153,49 @@ async function confirmTopic(mirror: Mirror, id: string, want: TopicShape): Promi
 }
 
 /**
+ * One declared shape, as a transaction.
+ *
+ * Exported because the counter’s carry policy decides whether to PAY for a
+ * body of exactly this construction (D-168), and `check:correspondent` courts
+ * the two against each other with no network: it builds each row here, freezes
+ * it offline, and asserts that `counter/body.ts` decodes what was built and
+ * `counter/carry.ts` recognises which row it is. A builder the policy was
+ * tested against a COPY of would drift from it silently, and the first sign
+ * would be a refusal in the middle of a provisioning purchase that has already
+ * created three topics.
+ */
+export function topicCreateFor(
+  want: TopicShape,
+  agentKey: PublicKey,
+  feeCaps: { readonly feeGatedTopicCreate: number; readonly plainTopicCreate: number },
+): TopicCreateTransaction {
+  const tx = new TopicCreateTransaction()
+    .setTopicMemo(want.memo)
+    .setAutoRenewAccountId(want.autoRenewAccount)
+    .setMaxTransactionFee(new Hbar(want.fee ? feeCaps.feeGatedTopicCreate : feeCaps.plainTopicCreate));
+  // HCS-1 marks a file topic that HAS an admin key invalid and ignores it
+  // (hcs-1.md:48-49, D-150), so the absence is declared and asserted rather
+  // than merely omitted.
+  if (want.adminKey !== null) tx.setAdminKey(agentKey);
+  if (want.submitKey !== null) tx.setSubmitKey(agentKey);
+  if (want.fee) {
+    tx.setCustomFees([
+      new CustomFixedFee().setAmount(want.fee.amount).setDenominatingTokenId(want.fee.token).setFeeCollectorAccountId(want.fee.collector),
+    ]);
+  }
+  if (want.feeExemptKeys.length) tx.setFeeExemptKeys([agentKey as Key]);
+  return tx;
+}
+
+/**
  * Create one topic under a declared shape, confirm it from the mirror, and
- * record it. Agent signs — it is the agent's topic — and the operator pays.
+ * record it.
+ *
+ * THREE PARTIES, AND EACH ONE NAMED. The AGENT signs, because the admin key is
+ * the agent’s and the topic is the agent’s. The OPERATOR signs, because it is
+ * the auto-renew account the row names and a topic that names an account takes
+ * that account’s signature. The PAYER pays — the operator again on a
+ * self-provisioned run, the Postmaster under a purchase (D-168).
  */
 async function topicRow(
   s: Session,
@@ -180,28 +214,14 @@ async function topicRow(
     return existing.id;
   }
 
-  const tx = new TopicCreateTransaction()
-    .setTopicMemo(want.memo)
-    .setAutoRenewAccountId(want.autoRenewAccount)
-    .setMaxTransactionFee(new Hbar(want.fee ? s.constants.feeCaps.feeGatedTopicCreate : s.constants.feeCaps.plainTopicCreate));
-  // HCS-1 marks a file topic that HAS an admin key invalid and ignores it
-  // (hcs-1.md:48-49, D-150), so the absence is declared and asserted rather
-  // than merely omitted.
-  if (want.adminKey !== null) tx.setAdminKey(s.agent.publicKey);
-  if (want.submitKey !== null) tx.setSubmitKey(s.agent.publicKey);
-  if (want.fee) {
-    tx.setCustomFees([
-      new CustomFixedFee().setAmount(want.fee.amount).setDenominatingTokenId(want.fee.token).setFeeCollectorAccountId(want.fee.collector),
-    ]);
-  }
-  if (want.feeExemptKeys.length) tx.setFeeExemptKeys([s.agent.publicKey as Key]);
+  const tx = topicCreateFor(want, s.agent.publicKey, s.constants.feeCaps);
 
-  // The auto-renew account must sign for a topic that names it, and here that
-  // account is the operator's — which it is, as payer. The agent signs because
-  // the admin key is the agent's; a topic with no admin key still takes the
-  // agent's signature harmlessly, and asking for it unconditionally is one
-  // fewer branch to get wrong.
-  const r = await submit(s.client, s.payerId, tx, [s.agent]);
+  // Both signatures are asked for unconditionally. Where the operator is also
+  // the payer the SDK would sign with it anyway and the duplicate is dropped;
+  // where it is not, the auto-renew account still has to sign. A topic with no
+  // admin key takes the agent’s signature harmlessly. Two branches fewer to be
+  // wrong about, on a transaction that has no second chance.
+  const r = await submit(s.client, s.payerId, tx, [s.agent, s.operator], s.submitOpts);
   if (!r.ok) throw new MailboxRefusal(`${role} was not created: ${r.status} (tx ${r.transactionId})`);
   const id = r.entityId;
   if (id === undefined) throw new MailboxRefusal(`${role} was created but the receipt names no topic`);
@@ -215,7 +235,7 @@ async function topicRow(
     role,
     id,
     builtBy: 'TopicCreateTransaction',
-    signedBy: ['agent'],
+    signedBy: ['agent', 'operator (auto-renew)'],
     payer: s.payerId,
     transactionId: r.transactionId,
     consensusTimestamp: '',
@@ -232,25 +252,31 @@ async function topicRow(
  * §4.4's consequence for the payer, stated in the config template and enforced
  * here (D-157).
  *
- * HIP-991 debits the doorbell's fee from the PAYER of the submission. Under the
- * seam the payer is the operator, so when the operator submits the connection
- * request the agent signed, the stamp leaves the operator's account — which
- * means the operator must be able to hold one. The agent's own account needs no
+ * HIP-991 debits the doorbell's fee from the PAYER of the submission. When this
+ * agent rings a door, the party paying for that submission is its OWN operator
+ * — carry covers the mailbox it bought and nothing after it (L-5) — so the
+ * operator must be able to hold a stamp. The agent’s own account needs no
  * association: HIP-542 creates it with unlimited auto-associations, which the
  * 2026-09-09 probe observed, so the stamp transfer associates it as it arrives.
+ *
+ * IT IS THE OPERATOR HERE AND NOT `payerId`, deliberately. Under a provisioning
+ * purchase `payerId` is the Postmaster, and associating the Postmaster with
+ * $POSTAGE would be both useless and outside the carry policy — which would
+ * refuse it, correctly. This association is the operator’s own act, paid by the
+ * operator, on the local client.
  */
 async function ensurePayerHoldsStamps(s: Session, push: Emit): Promise<void> {
-  const a = await s.mirror.get<MAccount>(`/accounts/${s.payerId}?limit=1`);
-  if (a === null) throw new MailboxRefusal(`the payer ${s.payerId} is not an account on this ledger`);
+  const a = await s.mirror.get<MAccount>(`/accounts/${s.operatorId}?limit=1`);
+  if (a === null) throw new MailboxRefusal(`the operator ${s.operatorId} is not an account on this ledger`);
   if ((a.balance?.tokens ?? []).some((t) => t.token_id === s.stampToken)) return;
   const r = await submit(
-    s.client,
-    s.payerId,
-    new TokenAssociateTransaction().setAccountId(s.payerId).setTokenIds([s.stampToken]).setMaxTransactionFee(new Hbar(2)),
-    [s.payer],
+    s.localClient,
+    s.operatorId,
+    new TokenAssociateTransaction().setAccountId(s.operatorId).setTokenIds([s.stampToken]).setMaxTransactionFee(new Hbar(2)),
+    [s.operator],
   );
-  if (!r.ok) throw new MailboxRefusal(`the payer could not associate with $POSTAGE: ${r.status}`);
-  push(line('provision.associated', { account: s.payerId, token: s.stampToken }));
+  if (!r.ok) throw new MailboxRefusal(`the operator could not associate with $POSTAGE: ${r.status}`);
+  push(line('provision.associated', { account: s.operatorId, token: s.stampToken }));
 }
 
 /** §6.4's step-2 shape, reused: the HCS-1 chunk messages onto the file topic. */
@@ -330,7 +356,11 @@ export async function generateMailbox(s: Session, record: AgentRecord, options: 
     publicKey: s.agentPublicHex,
     treasury: s.treasury,
     stampToken: s.stampToken,
-    autoRenewAccount: s.payerId,
+    // The Correspondent’s own operator, and never whoever is paying today. A
+    // Postmaster that named itself here would be undertaking to renew every
+    // mailbox it ever sold, on consensus, where every reader can see it — and
+    // the carry policy refuses a row that says so (D-168).
+    autoRenewAccount: s.operatorId,
   };
 
   // --- Rows 1-3: the three topics the profile names. -------------------------
@@ -398,6 +428,7 @@ export async function generateMailbox(s: Session, record: AgentRecord, options: 
       s.payerId,
       new AccountUpdateTransaction().setAccountId(s.account).setAccountMemo(memo).setMaxTransactionFee(new Hbar(2)),
       [s.agent],
+      s.submitOpts,
     );
     if (!r.ok) throw new MailboxRefusal(`the account memo was not set: ${r.status} (tx ${r.transactionId})`);
     const p = named<MAccount>('the account memo names the registry', (a) => a.memo === memo);

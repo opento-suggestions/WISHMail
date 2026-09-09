@@ -22,12 +22,11 @@
  *
  * Conformance: T-P4-1, T-P4-2, T-P4-3, T-P9-5, T-P9-7, T-P17-2.
  */
-import { Hbar, TransactionId, TransferTransaction } from '@hashgraph/sdk';
-import { flattenMirrorKey } from './protokey.js';
-import { submit, clientFor } from '../src/ops/hedera.js';
+import { Hbar, TransactionId, TransferTransaction, type AccountId, type Client } from '@hashgraph/sdk';
+import { flattenMirrorKey } from '../src/core/protokey.js';
+import { submit } from '../src/ops/hedera.js';
 import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
 import { Mirror, fromMirrorTxId, toMirrorTxId } from '../src/ops/mirror.js';
-import type { Env } from '../src/ops/env.js';
 import type { Signer } from '../src/ops/identity.js';
 import type {
   Consensus,
@@ -197,7 +196,6 @@ export function liveReader(mirrorNodeUrl: string, ledgerTag: string): Reader {
  * arguments.
  */
 export interface WriterContext {
-  readonly env: Pick<Env, 'network'>;
   readonly account: string;
   readonly agent: Signer;
   readonly payerId: string;
@@ -205,6 +203,22 @@ export interface WriterContext {
   readonly stampToken: string;
   readonly mirrorNodeUrl: string;
   readonly ledgerTag: string;
+  /**
+   * The consensus node every submission is pinned to, where one is pinned.
+   *
+   * Present exactly when the payer is REMOTE: a carried body must be one body,
+   * because the payer’s signature costs a round trip and a policy decision
+   * (D-168). Absent, the SDK chooses, which is what a local payer wants.
+   */
+  readonly nodeAccountIds?: readonly AccountId[];
+  /**
+   * The client to submit through. Given rather than built, because a `Client`
+   * holds the event loop open until it is closed and a caller cannot close one
+   * it does not know exists — which is exactly what happened: the first version
+   * built its own, and a `--dry-run` that printed its whole report then hung
+   * forever was the only sign of it. One session, two clients, both closable.
+   */
+  readonly client: Client;
 }
 
 /**
@@ -225,10 +239,11 @@ const HCS_MESSAGE_MAX = 1024;
 export function liveConsensus(ctx: WriterContext): Consensus {
   const reader = liveReader(ctx.mirrorNodeUrl, ctx.ledgerTag);
   const mirror = new Mirror(ctx.mirrorNodeUrl);
-  const client = clientFor({ network: ctx.env.network } as Env, ctx.payerId, ctx.payer);
+  const client = ctx.client;
 
   /** The reference pinned by `pinTransferRef` and consumed by `transferStamps`. */
   let pinned: TransactionId | null = null;
+  const nodePin = ctx.nodeAccountIds === undefined ? {} : { nodeAccountIds: ctx.nodeAccountIds };
 
   const writer: Writer = {
     account: ctx.account,
@@ -246,7 +261,7 @@ export function liveConsensus(ctx: WriterContext): Consensus {
       // is why there is one path here and not two.
       const tx = new UnchunkedTopicMessageSubmitTransaction().setTopicId(topicId).setMessage(bytes);
       if (transactionMemo !== '') tx.setTransactionMemo(transactionMemo);
-      const r = await submit(client, ctx.payerId, tx, [ctx.agent]);
+      const r = await submit(client, ctx.payerId, tx, [ctx.agent], nodePin);
       if (!r.ok) throw new Error(`submitMessage on ${topicId} returned ${r.status} (tx ${r.transactionId})`);
 
       // Read back from the mirror and never from the receipt: a postmark is what
@@ -296,7 +311,7 @@ export function liveConsensus(ctx: WriterContext): Consensus {
         .setMaxTransactionFee(new Hbar(2));
       // The agent signs as the OWNER of the stamps; the payer signs as payer.
       // Two signatures, two parties, and §3.5 is the whole of why.
-      const r = await submit(client, ctx.payerId, tx, [ctx.agent]);
+      const r = await submit(client, ctx.payerId, tx, [ctx.agent], nodePin);
       if (!r.ok) throw new Error(`the postage transfer returned ${r.status} (tx ${r.transactionId})`);
       const settlement = await mirror.poll<MTransactions>(
         `/transactions/${toMirrorTxId(r.transactionId)}`,

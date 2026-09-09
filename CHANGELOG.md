@@ -2,6 +2,60 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate One, re-armed] — 2026-09-09 — §G-19 ruled: the counter pays for the mailbox it sells
+
+**Not a specification version.** No sentence, no schema, no wire string and no test changed; §1.7 has fired and the fourteen
+are frozen on consensus. The version stays **0.5.9**. **Nothing was signed.** What changed is that the one thing blocking
+Gate One is ruled, and the payer seam CLAUDE.md §11 asked to be built as a seam is exercised at its remote half for the first
+time.
+
+### Ruled — D-168, §G-19 closed for reading (a)
+
+**The Postmaster provisions the mailbox it sells** — §4.6’s provisioned path taken as written — so §5.4’s "the entities the
+Postmaster created for the holder" is literally true of the receipt and it validates against the schema Step 4 froze. Reading
+**(b)**, making `doorbell` and `manifestTopic` optional, is **the more accurate description of what D-159 attempted**, and
+is recorded rather than dismissed; it lost on cost, not on truth — the freeze has happened, so it is **0.6** across fourteen
+registered schema files and every wire string that names them. (a) needs nothing from the specification and is the path §4.6
+named first. It is not a workaround.
+
+### Built — the carry policy (`app/src/counter/`)
+
+- **The provisioner did not move.** `sdk/mailbox.ts` creates the same six rows in the same forced order, signed by the same
+  agent key, with the same readbacks, and does not know it is being carried. `Session.payer` has been an injected `Signer`
+  since D-157; under a provisioning purchase it is **remote**, and the transaction id names the Postmaster as payer. That is
+  §6.1’s carry exactly.
+- **The counter decodes the bytes it signs.** `counter/body.ts` reads a `TransactionBody` — on `core/protokey.ts`’s own
+  primitives, exported rather than copied — and `counter/carry.ts` pays only for a row of `ops/template.ts` naming this
+  holder’s key, an HCS-1 chunk on the file topic it itself paid for, the HCS-2 register entry on the registry it paid for, or
+  the account-memo update on the holder’s account setting nothing else. Anything else is refused and no mark is left (§3.5).
+  The alternative — parse a whole serialized transaction with the SDK’s getters and sign the body derived from that parse —
+  is more comfortable and weaker: it inspects one representation and signs another. `[CC]`
+- **Every protobuf field number was probed, not recalled**, off bodies the SDK itself froze, and `check:correspondent`
+  re-probes them on every run. `CryptoUpdateTransactionBody.memo` is field **14**; a confident memory says 26.
+- **The receipt is issued from the counter’s own readback**, only once every row has landed and the holder resolves under
+  §9.2 from the counter’s reader, and validated against the registered schema before it is returned. Until then the reference
+  is outstanding and a purchase interrupted between rows is **resumable from either side by reading the ledger** — the
+  counter’s record and the agent’s are reconciled from consensus, never from each other.
+- **The counter still sees no private key and builds no provisioning body** (P-13, T-P13-1). It receives bytes the agent has
+  already signed and decides whether to pay for them.
+
+### Also
+
+- `buy_stamp` with `provision` now does the whole of §4.6’s provisioned path and returns the receipt. `generate_mailbox`
+  remains as the **self-provisioned** affordance, for an agent that brings its own account and pays for its own mailbox; its
+  tool description says which path it is.
+- **A flat carry fee ceiling would have refused the doorbell.** The first design capped a carried body at 2 ℏ; `networks.ts`
+  gives a fee-gated topic creation 100 ℏ, observed to fail at 20 (FETCHED 2026-09-08). The ceiling is now per row, read from
+  the same file the Correspondent builds the cap from, with `WISHMAIL_CARRY_MAX_HBAR` able only to lower it.
+  `check:correspondent` caught this offline, before a transfer. `[CC]`
+- **A `--dry-run` that printed its whole report and then hung forever** was the only visible sign that `liveConsensus`
+  was building a third `Client` nobody could close. A session now holds exactly two and closes both. `[CC]`
+- `core/protokey.ts` moved out of `app/sdk/`: both parties read it now, and a Postmaster module must not import a
+  Correspondent one (CLAUDE.md §11).
+- `resolveSelf` — §9.2’s two-pass rule on an agent’s own address — moved to `resolve/hcs14.ts`, because the counter runs
+  it too before it will issue a receipt.
+- The dry run prints **the plan with a payer against every row**, built from `ops/template.ts` itself.
+- `npm run check:correspondent` — **105** assertions, no network and no key, up from 53.
 ## [Gate One] — 2026-09-09 — the Correspondent, the counter, and one thing that cannot be sold
 
 **Not a specification version.** No text changed and no schema changed; §1.7 has fired and the fourteen are frozen on consensus. **Nothing was signed.** What changed is that the vertical slice the demo is now exists as far as the first gate, and one sentence of the specification turned out to be un-buildable as written.

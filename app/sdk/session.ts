@@ -20,11 +20,12 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { Client } from '@hashgraph/sdk';
+import { Client, type AccountId } from '@hashgraph/sdk';
 import { repoRoot } from '../src/ops/env.js';
 import { Mirror } from '../src/ops/mirror.js';
 import { SPEC_TAG } from '../src/ops/record.js';
 import type { NetworkConstants } from '../src/ops/networks.js';
+import type { SubmitOptions } from '../src/ops/hedera.js';
 import type { SealIdentity, Signer } from '../src/ops/identity.js';
 import type { Consensus } from '../src/tools/consensus.js';
 import type { ProfileIdentity } from '../src/ops/declaration.js';
@@ -72,9 +73,34 @@ export interface Session {
   readonly agentPublicHex: string;
   readonly seal: SealIdentity;
   readonly identity: ProfileIdentity;
-  /** The operator: what pays. The seam (CLAUDE.md §11). */
+  /**
+   * The Correspondent’s OWN operator — the wallet in this home’s config.
+   *
+   * It is the payer of everything this agent does on its own account, and it
+   * stays named even when it is not paying: it is the auto-renew account of
+   * every topic in the template, and the account §4.4’s doorbell fee will be
+   * debited from when this agent rings someone’s door. Under a provisioning
+   * purchase it signs the rows as that auto-renew account while the Postmaster
+   * pays for them, which is three roles in one transaction and each one named.
+   */
+  readonly operator: Signer;
+  readonly operatorId: string;
+  /** A client whose payer is the operator, for the submissions carry does not cover. */
+  readonly localClient: Client;
+  /**
+   * What pays for THIS session’s submissions. The seam (CLAUDE.md §11).
+   *
+   * Ordinarily the operator above. Under a provisioning purchase it is a REMOTE
+   * signer over the counter’s carry leg, and the Postmaster’s account is the
+   * payer on consensus (D-157, D-168). Nothing above this field knows which,
+   * which is what makes it a seam rather than a shortcut.
+   */
   readonly payer: Signer;
   readonly payerId: string;
+  /** True where the payer is remote. Named so a record can say who paid a row. */
+  readonly carried: boolean;
+  /** Passed to every submission: a pinned node where the payer is remote (D-168). */
+  readonly submitOpts: SubmitOptions;
   /** The agent's account, once it exists. Empty before the purchase creates it. */
   readonly account: string;
   readonly stampToken: string;
@@ -85,6 +111,15 @@ export interface Session {
   readonly record: AgentRecord;
   /** Whether this boot is the one that made the agent (D-165). */
   readonly keysOrigin: 'born' | 'loaded';
+  /**
+   * Release the network handles this session holds.
+   *
+   * A `Client` keeps the event loop alive, so a process that booted one and did
+   * not close it never returns to the shell — which is a defect in a CLI and a
+   * leak in a long-running server that re-boots after a purchase. It is here and
+   * not left to the caller because the caller does not know there are two.
+   */
+  readonly close: () => void;
 }
 
 interface MAccounts {
@@ -113,9 +148,26 @@ export async function accountForKey(mirror: Mirror, publicKeyHex: string): Promi
   return live[0]?.account ?? null;
 }
 
+/**
+ * A payer that is not this home’s operator — the seam’s remote half (D-168).
+ *
+ * `signer` is a public key and a closure exactly like every other `Signer` in
+ * this project; the closure happens to be a round trip to the counter. Nothing
+ * that takes one can tell, and that is the point: the same `generateMailbox` runs
+ * over a local wallet and over a carried one, unchanged.
+ */
+export interface BorrowedPayer {
+  readonly accountId: string;
+  readonly signer: Signer;
+  /** The node the purchase pinned. One body, one signature, one round trip. */
+  readonly nodeAccountIds: readonly AccountId[];
+}
+
 export interface BootOptions {
   /** Skip the account lookup — for the boot that runs before the purchase. */
   readonly withoutAccount?: boolean;
+  /** Pay through someone else. Absent, the operator in this home’s config pays. */
+  readonly payer?: BorrowedPayer;
 }
 
 /**
@@ -130,24 +182,36 @@ export interface BootOptions {
 export async function boot(home: Home, options: BootOptions = {}): Promise<Session> {
   const keysOrigin = ensureKeys(home);
   const agent = agentSigner(home);
-  const payer = payerSigner(home);
+  const operator = payerSigner(home);
+  const operatorId = home.config.payer.accountId;
   const publicHex = agentPublicHex(home);
   const mirror = new Mirror(home.mirrorNodeUrl);
   const facts = deploymentFacts(home.constants.ledgerTag);
   const account = options.withoutAccount === true ? '' : ((await accountForKey(mirror, publicHex)) ?? '');
 
-  const client = Client.forName(home.config.network);
-  client.setOperatorWith(home.config.payer.accountId, payer.publicKey, payer.sign);
+  const borrowed = options.payer;
+  const payer = borrowed?.signer ?? operator;
+  const payerId = borrowed?.accountId ?? operatorId;
+  const submitOpts: SubmitOptions = borrowed === undefined ? {} : { nodeAccountIds: borrowed.nodeAccountIds };
+
+  // Two clients, because there are two payers and a client IS its payer. The
+  // local one is not a fallback: §4.4’s association and anything else this
+  // agent does on its own behalf is the operator’s to pay for, carried or not.
+  const localClient = Client.forName(home.config.network);
+  localClient.setOperatorWith(operatorId, operator.publicKey, operator.sign);
+  const client = borrowed === undefined ? localClient : Client.forName(home.config.network);
+  if (borrowed !== undefined) client.setOperatorWith(payerId, payer.publicKey, payer.sign);
 
   const consensus = liveConsensus({
-    env: { network: home.config.network },
+    client,
     account,
     agent,
-    payerId: home.config.payer.accountId,
+    payerId,
     payer,
     stampToken: facts.stampToken,
     mirrorNodeUrl: home.mirrorNodeUrl,
     ledgerTag: home.constants.ledgerTag,
+    ...(borrowed === undefined ? {} : { nodeAccountIds: borrowed.nodeAccountIds }),
   });
 
   return {
@@ -165,8 +229,13 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
       alias: home.config.agent.alias,
       bio: home.config.agent.bio,
     },
+    operator,
+    operatorId,
+    localClient,
     payer,
-    payerId: home.config.payer.accountId,
+    payerId,
+    carried: borrowed !== undefined,
+    submitOpts,
     account,
     stampToken: facts.stampToken,
     treasury: facts.treasury,
@@ -175,5 +244,9 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
     specTag: SPEC_TAG,
     record: AgentRecord.load(home, SPEC_TAG),
     keysOrigin,
+    close: () => {
+      client.close();
+      if (localClient !== client) localClient.close();
+    },
   };
 }

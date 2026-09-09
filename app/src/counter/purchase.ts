@@ -47,35 +47,23 @@ import {
   PublicKey,
   Transaction,
   TransferTransaction,
+  type Client,
 } from '@hashgraph/sdk';
 import { submit } from '../ops/hedera.js';
 import { Mirror, fromMirrorTxId, toMirrorTxId } from '../ops/mirror.js';
 import { open as openStore } from '../state/store.js';
 import { schemas } from '../schema/loader.js';
+import { carriedMailbox, carryReference, openCarry, type CarryReference } from './carry.js';
+import { CounterRefusal, safeKey, type CounterContext, type Holder } from './context.js';
 import { currentPriceList, quote, scaled, type Quote } from './pricing.js';
-import type { Client } from '@hashgraph/sdk';
-import type { Signer } from '../ops/identity.js';
+import { mirrorSource, resolveSelf } from '../resolve/hcs14.js';
 
-/** §6.3's holder: an account, or a public key with no account yet (§4.6, P-16). */
-export type Holder = { readonly account: string } | { readonly publicKey: string };
-
-export interface CounterContext {
-  readonly repoRoot: string;
-  readonly ledgerTag: string;
-  readonly mirror: Mirror;
-  /** The mirror's URL, for the read-only `Reader` a Verifier is handed (P-4). */
-  readonly mirrorNodeUrl: string;
-  readonly client: Client;
-  readonly stateDir: string;
-  /** The Postmaster's payer — §14.2: a purchase cannot be submitted without it. */
-  readonly operatorId: string;
-  readonly operator: Signer;
-  /** The treasury holds the unissued supply and must sign its own debit. */
-  readonly treasuryId: string;
-  readonly treasury: Signer;
-  readonly stampToken: string;
-  readonly priceTopic: string;
-}
+/**
+ * Re-exported so a caller that has `purchase.ts` need not also know
+ * `context.ts` exists. The types live there because `carry.ts` and this file
+ * each call the other and neither can own them (D-168).
+ */
+export { CounterRefusal, type CounterContext, type Holder };
 
 /** §6.3's call, as the counter receives it. */
 export interface PurchaseRequest {
@@ -104,7 +92,26 @@ export interface Requirement {
   readonly quote: Quote;
   readonly count: number;
   readonly holder: Holder;
+  /** The account the price is debited from — the Correspondent's operator (§3.5). */
+  readonly buyer: string;
   readonly provision: boolean;
+  /**
+   * The consensus node this purchase is pinned to.
+   *
+   * One body, one signature — and where the purchase also buys the provisioned
+   * path, every body the counter carries afterwards must be addressed to this
+   * same node, so the buyer is told which one rather than guessing (D-168).
+   */
+  readonly node: string;
+  /**
+   * The account that will pay for the provisioning bodies, present exactly on a
+   * provisioning quote (§6.1's carry, D-157, D-168).
+   *
+   * The buyer reads this account's PUBLIC key from a mirror node before it
+   * submits anything under it, so a counter cannot name a payer whose key the
+   * ledger does not agree with.
+   */
+  readonly carriedBy?: string;
   /** ISO 8601. §14.2: the quote stands for the transaction's valid duration. */
   readonly expiresAt: string;
 }
@@ -121,34 +128,27 @@ export interface StampReceipt {
   readonly provisioning?: Record<string, unknown>;
 }
 
-export class CounterRefusal extends Error {
-  readonly reason: string;
-  constructor(reason: string, detail: string) {
-    super(`${reason}: ${detail}`);
-    this.name = 'CounterRefusal';
-    this.reason = reason;
-  }
-}
-
 /**
- * §G-19's gate, read from the registered schema itself rather than restated.
+ * §G-19's gate, kept as the assertion it became — read from the registered
+ * schema itself rather than restated.
  *
- * §5.4 makes `doorbell` and `manifestTopic` REQUIRED inside `provisioning`, and
- * §6.3 makes the line present "exactly when `provision` was true". Under D-159
- * as amended the Postmaster creates neither: the purchase creates the ACCOUNT
- * and funds the registration fee, and the agent creates its own six topics
- * afterwards, under its own key, through `generate_mailbox`. So a `provision:
- * true` purchase cannot produce a receipt that validates, and a receipt that
- * omitted the line would contradict §6.3's postcondition. Both branches
- * contradict a sentence, which is a specification defect and not a coding
- * problem (CLAUDE.md §5).
+ * §5.4 makes `doorbell` and `manifestTopic` REQUIRED inside `provisioning` on
+ * its own warrant: "the fields after it are the entities **the Postmaster
+ * created for the holder**". Under D-159 as first amended the Postmaster created
+ * neither, and this function was a REFUSAL: a `provision: true` purchase could
+ * not produce a receipt that validated, and one omitting the line contradicted
+ * §6.3's "exactly when". Both branches contradicted a sentence, which is a
+ * specification defect and not a coding problem (CLAUDE.md §5), so it was raised
+ * as ledger §G-19 rather than coded around — and it was found because the reader
+ * was run on the writer's output before that output could be signed.
  *
- * This function is the refusal, and it refuses BEFORE anything is signed —
- * which is the whole value of running the reader on the writer's output before
- * that output is published (CLAUDE.md §9). It reads the required list out of
- * `spec/schemas/stamp-receipt.schema.json`, so when §G-19 is ruled and the
- * schema moves at 0.6, the refusal lifts by itself and no second place has to
- * be remembered.
+ * §G-19 IS RULED (a), and D-168 is the ruling: the Postmaster provisions the
+ * mailbox it sells, which is §4.6's own provisioned path. So every field in the
+ * list is now one this counter fills — from its OWN readback of the
+ * transactions its signature paid for (`carry.ts`), and never from anything the
+ * agent said. The function stays, and it is now the assertion that this is true:
+ * a schema that added a field the counter cannot read back would stop the sale
+ * again, before anything is charged, rather than after.
  */
 export function provisioningFieldsThisCounterCannotFill(repoRoot: string): readonly string[] {
   const file = path.join(repoRoot, 'spec', 'schemas', 'stamp-receipt.schema.json');
@@ -156,9 +156,11 @@ export function provisioningFieldsThisCounterCannotFill(repoRoot: string): reado
     properties?: { provisioning?: { required?: readonly string[] } };
   };
   const required = schema.properties?.provisioning?.required ?? [];
-  // What a purchase under D-159 as amended CAN name: the price it charged, the
-  // account the alias transfer created, and the fee it funded into it.
-  const available = new Set(['price', 'registrationFee', 'account']);
+  // What a provisioning purchase under D-168 can name: the price it charged and
+  // the fee it funded, from the price message current at the quote; and the
+  // account, the six topics and the profile file, from the mirror, under the
+  // transaction ids this counter's own signature carried.
+  const available = new Set(['price', 'registrationFee', 'account', 'doorbell', 'log', 'manifestTopic', 'declRegistry', 'profileFile']);
   return required.filter((f) => !available.has(f));
 }
 
@@ -213,9 +215,18 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
       throw new CounterRefusal(
         'STAMP_METHOD_UNSUPPORTED',
         `this release cannot sell the provisioned path: §5.4 requires ${missing.join(', ')} inside the receipt's ` +
-          '`provisioning` line, and under D-159 as amended the Postmaster creates neither — the agent creates its ' +
-          'own topics through `generate_mailbox`, after the purchase. Raised as ledger §G-19; it is a specification ' +
-          'question, and nothing is charged until it is ruled.',
+          '`provisioning` line and this counter cannot read them back from the transactions it carries (D-168). ' +
+          'Nothing is charged: the sale stops before the quote rather than after the transfer.',
+      );
+    }
+    if ('account' in holder) {
+      // D-165: a returning agent buys WITHOUT provisioning. An account under
+      // this key already exists, so there is nothing here to create and a second
+      // mailbox would be the duplicate §9.5 assigns `vague` to.
+      throw new CounterRefusal(
+        'STAMP_HOLDER_INVALID',
+        `the holder already has an account (${holder.account}), so there is no mailbox to provision. Buy without ` +
+          '`provision` — a returning agent keeps the one it has (D-165).',
       );
     }
   }
@@ -232,6 +243,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
   const provisionTinybar = q.provisioning === undefined ? 0n : scaled(q.provisioning.amount);
   const feeTinybar = q.provisioning?.registrationFee === undefined ? 0n : scaled(q.provisioning.registrationFee);
 
+  const node = oneNode(ctx.client);
   const tx = new TransferTransaction()
     // leg 1 — the price, from the buyer to the Postmaster.
     .addHbarTransfer(buyer, Hbar.fromTinybars(-(priceTinybar + provisionTinybar)))
@@ -241,7 +253,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
     .addTokenTransfer(ctx.stampToken, ctx.treasuryId, -count)
     .addTokenTransfer(ctx.stampToken, target, count)
     .setTransactionMemo('')
-    .setNodeAccountIds([oneNode(ctx.client)])
+    .setNodeAccountIds([node])
     .setMaxTransactionFee(new Hbar(5));
 
   // leg 3 — the registration fee, from the Postmaster into the account the
@@ -261,7 +273,10 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
     quote: q,
     count,
     holder,
+    buyer,
     provision,
+    node: node.toString(),
+    ...(provision ? { carriedBy: ctx.operatorId } : {}),
     expiresAt: new Date(Date.now() + QUOTE_SECONDS * 1000).toISOString(),
   };
 
@@ -289,20 +304,33 @@ function buyerOf(req: PurchaseRequest): string {
   );
 }
 
-function safeKey(reference: string): string {
-  return reference.replace(/[@.]/g, '-');
-}
+/**
+ * What a settled purchase yields.
+ *
+ * A plain purchase yields a receipt at once: the transfer IS the whole of it.
+ * A PROVISIONING purchase does not, and that is D-168’s shape rather than an
+ * inconvenience — §5.4’s `provisioning` line names the entities the Postmaster
+ * created for the holder, and at the moment the transfer lands it has created
+ * exactly one of them. So the reference stays outstanding, the counter carries
+ * the rows the agent signs, and the receipt is issued when it can read every
+ * one of them back. A receipt issued earlier would be a receipt for something
+ * that had not happened.
+ */
+export type Settled =
+  | { readonly kind: 'receipt'; readonly receipt: StampReceipt }
+  | { readonly kind: 'carrying'; readonly carry: CarryReference };
 
 /**
  * Step 2 — the buyer has signed. Add the counter's signatures, submit, read the
- * result back from a mirror node, and build the receipt.
+ * result back from a mirror node, and either build the receipt or open the
+ * carry record the rest of the purchase runs under.
  */
 export async function settlePurchase(
   ctx: CounterContext,
   reference: string,
   buyerPublicKey: string,
   signature: string,
-): Promise<StampReceipt> {
+): Promise<Settled> {
   const requirements = openStore(ctx.stateDir, 'requirements');
   const payments = openStore(ctx.stateDir, 'payments');
   const key = safeKey(reference);
@@ -311,7 +339,12 @@ export async function settlePurchase(
   // The settled row is returned rather than a second submission attempted — a
   // replay gets the receipt it already bought, not a second charge.
   const settled = payments.get<StampReceipt>(key);
-  if (settled !== undefined) return settled.value;
+  if (settled !== undefined) return { kind: 'receipt', receipt: settled.value };
+
+  // A provisioning purchase whose transfer has already landed is carrying. A
+  // second call returns where it got to rather than charging again (T-P11-5).
+  const carrying = carryReference(ctx, reference);
+  if (carrying !== undefined) return { kind: 'carrying', carry: carrying };
 
   const row = requirements.get<Requirement>(key);
   if (row === undefined) throw new CounterRefusal('STAMP_PAYMENT_FAILED', `no quote is outstanding under ${reference}`);
@@ -338,6 +371,26 @@ export async function settlePurchase(
   }
 
   const receipt = await receiptFrom(ctx, requirement, r.transactionId);
+
+  if (requirement.provision) {
+    // The account exists now, and nothing else does. The rest of §4.6’s path is
+    // eight bodies the agent signs and this counter pays for, under the policy
+    // in `carry.ts`, and the receipt waits for all of them.
+    const carry = openCarry(ctx, {
+      reference,
+      txRef: receipt.txRef,
+      count: requirement.count,
+      quote: requirement.quote,
+      holderKey: holderKeyOf(requirement.holder),
+      account: receipt.holder,
+      buyer: requirement.buyer,
+      node: requirement.node,
+      feeCap: ctx.carryFeeCap,
+    });
+    requirements.remove(key);
+    return { kind: 'carrying', carry };
+  }
+
   const errors = schemas(ctx.repoRoot).validate('stamp-receipt', receipt);
   if (errors.length > 0) {
     // The transfer is on consensus and cannot be withdrawn, so this is recorded
@@ -351,7 +404,95 @@ export async function settlePurchase(
 
   payments.put(key, receipt, { retainUntil: new Date(Date.now() + 90 * 86_400_000).toISOString() });
   requirements.remove(key);
-  return receipt;
+  return { kind: 'receipt', receipt };
+}
+
+/** The holder’s public key, raw hex — the form every row of the template names. */
+function holderKeyOf(holder: Holder): string {
+  if ('account' in holder) {
+    throw new CounterRefusal('STAMP_HOLDER_INVALID', 'a provisioning purchase names its holder by PUBLIC KEY: the account is what it creates');
+  }
+  return PublicKey.fromString(holder.publicKey).toStringRaw();
+}
+
+/**
+ * §5.4’s `provisioning` line, and the readback that earns it.
+ *
+ * Called once the agent has signed every row and this counter has paid for
+ * every one. It resolves the holder under §9.2’s rule FROM ITS OWN READER
+ * before it will issue anything: a mailbox that does not resolve is not a
+ * mailbox, and the Step 3 defect is what leaving that sentence out costs. Only
+ * then is the receipt built — every coordinate in it read back from the mirror
+ * under a transaction id this counter’s own signature carried, and never
+ * echoed from anything the agent said — and validated against the registered
+ * schema before it is returned.
+ */
+export async function issueReceipt(
+  ctx: CounterContext,
+  reference: string,
+): Promise<{ readonly kind: 'receipt'; readonly receipt: StampReceipt } | { readonly kind: 'outstanding'; readonly rows: readonly string[] }> {
+  const payments = openStore(ctx.stateDir, 'payments');
+  const key = safeKey(reference);
+  const already = payments.get<StampReceipt>(key);
+  if (already !== undefined) return { kind: 'receipt', receipt: already.value };
+
+  const ref = carryReference(ctx, reference);
+  if (ref === undefined) throw new CounterRefusal('STAMP_PAYMENT_FAILED', `no provisioning purchase is outstanding under ${reference}`);
+
+  const read = await carriedMailbox(ctx, ref);
+  if ('outstanding' in read) return { kind: 'outstanding', rows: read.outstanding };
+
+  // THE READER, ON WHAT THIS COUNTER PAID FOR. §9.2’s rule, run from a mirror
+  // node with nothing configured (P-4). A declaration nobody can read is not a
+  // declaration, and this counter is about to certify one in a receipt.
+  const coordinates = await resolveSelf(mirrorSource(ctx.mirror), ctx.ledgerTag, ref.account);
+  if (coordinates === null) {
+    throw new CounterRefusal(
+      'STAMP_PAYMENT_UNSETTLED',
+      `every row of ${reference} has landed and ${ref.account} does not resolve under hcs14. The receipt is not ` +
+        'issued: §5.4 would name coordinates no reader can reach. The reference stays outstanding.',
+    );
+  }
+  if (coordinates.doorbell !== read.mailbox.doorbell || coordinates.manifestTopic !== read.mailbox.manifestTopic) {
+    throw new CounterRefusal(
+      'STAMP_PAYMENT_UNSETTLED',
+      `${ref.account} resolves to a doorbell and manifest topic this purchase did not create ` +
+        `(${coordinates.doorbell}, ${coordinates.manifestTopic} against ${read.mailbox.doorbell}, ${read.mailbox.manifestTopic})`,
+    );
+  }
+
+  const receipt: StampReceipt = {
+    ledgerTag: ctx.ledgerTag,
+    tokenId: ctx.stampToken,
+    amount: ref.count,
+    txRef: ref.txRef,
+    price: { amount: ref.quote.amount, currency: ref.quote.currency },
+    ...(ref.quote.rate === undefined ? {} : { rate: ref.quote.rate }),
+    holder: ref.account,
+    provisioning: {
+      price: {
+        amount: ref.quote.provisioning?.amount ?? ref.quote.amount,
+        currency: ref.quote.provisioning?.currency ?? ref.quote.currency,
+      },
+      ...(ref.quote.provisioning?.registrationFee === undefined ? {} : { registrationFee: ref.quote.provisioning.registrationFee }),
+      account: read.mailbox.account,
+      doorbell: read.mailbox.doorbell,
+      log: read.mailbox.log,
+      manifestTopic: read.mailbox.manifestTopic,
+      declRegistry: read.mailbox.declRegistry,
+      profileFile: read.mailbox.profileFile,
+    },
+  };
+
+  const errors = schemas(ctx.repoRoot).validate('stamp-receipt', receipt);
+  if (errors.length > 0) {
+    throw new CounterRefusal(
+      'STAMP_PAYMENT_UNSETTLED',
+      `the provisioned mailbox is on consensus and its receipt does not validate against the registered schema: ${errors.join('; ')}`,
+    );
+  }
+  payments.put(key, receipt, { retainUntil: new Date(Date.now() + 90 * 86_400_000).toISOString() });
+  return { kind: 'receipt', receipt };
 }
 
 interface MTransactions {
