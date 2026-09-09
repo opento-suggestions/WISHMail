@@ -740,6 +740,65 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 **What the step still owes before the gate is re-confirmed and anything signs:** the Streamable HTTP transport; the second-process fixture under `app/sdk/`, with its own working directory, its own `.env` and keys born in that process; the fixture's provisioning under §4.6 and its funding, recorded as fixture funding and not as a sale; the letter itself on `hedera:testnet`; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
 
+## Step 4 — the HCS-13 schema registration, signed 2026-09-09
+
+**Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.
+
+**The entities.** Fifty-six, four per schema, in the order §5.11 and HCS-13 force: the HCS-1 file topic, its chunks, the HCS-2 registry that manages that one schema's versions (`hcs-13.md:134-160`), and the `register` entry whose sequence number the `schemaRef` pins. Every file topic carries the schema's SHA-256 as its memo and **no admin key**, because HCS-1 forbids one (`hcs-1.md:48-49`, D-150); every registry carries the agent as both submit and admin key, memo `hcs-2:0:60` — **indexed 0**, so earlier entries stay readable and an earlier `schemaRef` never becomes unresolvable (D-155).
+
+| schema | file topic | chunks | registry | schemaRef | sha256 |
+|---|---|---|---|---|---|
+| `proof` | 0.0.10448471 | 3 | 0.0.10448473 | `hcs://13/0.0.10448473#1` | e4ebeabad267… |
+| `mail-coordinates` | 0.0.10448477 | 3 | 0.0.10448480 | `hcs://13/0.0.10448480#1` | ba3abb30e43e… |
+| `stamp-receipt` | 0.0.10448482 | 3 | 0.0.10448486 | `hcs://13/0.0.10448486#1` | fab6540859a8… |
+| `settlement` | 0.0.10448487 | 2 | 0.0.10448492 | `hcs://13/0.0.10448492#1` | ad265c1c2df0… |
+| `envelope` | 0.0.10448498 | 3 | 0.0.10448503 | `hcs://13/0.0.10448503#1` | aa85c277596d… |
+| `chunk` | 0.0.10448507 | 3 | 0.0.10448509 | `hcs://13/0.0.10448509#1` | af96d14f2862… |
+| `postmark` | 0.0.10448510 | 2 | 0.0.10448513 | `hcs://13/0.0.10448513#1` | 99d02ab5a39f… |
+| `return-receipt` | 0.0.10448514 | 2 | 0.0.10448518 | `hcs://13/0.0.10448518#1` | d4a25c5f64e9… |
+| `attempted-delivery-slip` | 0.0.10448526 | 2 | 0.0.10448529 | `hcs://13/0.0.10448529#1` | f87178d4c468… |
+| `evidence-bundle` | 0.0.10448532 | 3 | 0.0.10448537 | `hcs://13/0.0.10448537#1` | 248fdaae31ae… |
+| `narrative` | 0.0.10448540 | 1 | 0.0.10448544 | `hcs://13/0.0.10448544#1` | b06588bbb9c6… |
+| `conformance-claim` | 0.0.10448547 | 2 | 0.0.10448551 | `hcs://13/0.0.10448551#1` | 430d4e2fc0d7… |
+| `declaration` | 0.0.10448556 | 2 | 0.0.10448560 | `hcs://13/0.0.10448560#1` | 59c6a779e1bc… |
+| `price-list` | 0.0.10448565 | 3 | 0.0.10448570 | `hcs://13/0.0.10448570#1` | f772d558cf73… |
+
+**Read back from consensus, not from a receipt, and compared to the shipped bytes.** Every one of the fourteen `schemaRef`s was resolved as a Verifier resolves one — the registry topic at that sequence, its `t_id`, the HCS-1 file there, reassembled by `o` and decompressed — and the result compared byte-for-byte against `spec/schemas/<name>.schema.json`. **14 of 14 match, and each digest equals the pin.** That is T-P9-4's substance, observed rather than asserted.
+
+**Idempotency, the acceptance test this project holds every provisioning run to.** The second run printed `existing 56` and created nothing.
+
+**Cost.** 9.70 ℏ for Step 4 and the second `PriceList` together, on the operator.
+
+---
+
+### The first run stopped, and the defect was ours
+
+**Run 1 stopped at step 2 with `Unterminated string in JSON at position 1024`** — its own readback refusing to parse what it had just written. The stop condition worked exactly as it is meant to: nothing was pinned, and the run refused to continue past an entity it could not confirm.
+
+`hcs-1.md:92-95` says "the final base64 string should chunked into segments no greater than 1024 bytes", and the same section says "each chunk is uploaded to a Hedera Consensus Service topic as an HCS message". **Those two sentences cannot both hold.** A single HCS message caps at 1024 bytes (ledger §H, measured: `getRequiredChunks()` is 1 at 1024 and 2 at 1025), and a 1024-byte segment inside `{"o":N,"c":"…"}` is 1037 on the wire. The SDK does not refuse it — it silently splits the message across two consensus messages, and neither half is parseable JSON alone.
+
+Our code had taken the standard literally and bounded the chunk's **content**. It now bounds the **whole message**, which keeps every segment "no greater than 1024" and keeps every chunk one HCS message; the standard's stated maximum is simply not attainable. `hcs1File` also checks its own output against that ceiling and throws rather than emitting a chunk the network would split — the only thing standing between a silent split and a permanent HCS-1 file no reader can reassemble.
+
+**Why it had never shown.** Every HCS-1 file this project had written before was one chunk: the 2026-09-08 profile is 563 bytes. Step 4 is the first time a file needed more than one, and it needed three.
+
+**A second copy of the same bug.** `ops/declaration.ts` had its own chunking loop with the identical error. It never showed there for the same reason, and it would have shown the first time an agent's profile grew past a chunk. Collapsed to one chunker: a second spelling of a rule is a second place for it to be wrong, and this one already was (CLAUDE.md §9).
+
+**What it left on the ledger, permanently.** Topic `0.0.10448375` — created correctly, with the proof schema's digest as its memo and the agent as its sole submit key — then written with three half-chunks. HCS-1 forbids an admin key, so **it can never be deleted and its messages can never be withdrawn**. It is in the ops record under `residue` with the whole reason, so that `entities` holds exactly one proof schema file and no reader is left wondering what an orphan topic is. **Nothing was pinned from it**: `spec/pins.json` was still fully unfilled when the run stopped, so no `schemaRef` names it and no claim could ever have cited it. The intent-journal entry that would have re-adopted it for the chunks step was cleared deliberately — that transaction did submit, and its messages are the ones on that topic.
+
+---
+
+### The second PriceList — sequence 2, signed 2026-09-09
+
+**Numbers RECORD (Sonic):** `provisioning {method: "hbar", unitPrice: "2", registrationFee: "0.05"}`. Two ℏ flat for the mailbox purchase, the 0.05 ℏ registration fee funded out of it. Every cost the Postmaster incurs for provisioning is denominated in ℏ — the HIP-542 probe measured account creation at 0.64 ℏ — so a flat ℏ price is stable against the rate in a way a USDC-referenced one is not.
+
+Sequence 2 on `0.0.10426551`, **637 canonical bytes**, sha256 `14d1ee1b6fec4d5e…`, payer `0.0.8641261`, consensus `1788989981.685451648`, transaction `0.0.8641261@1788989976.210208773`.
+
+**§14.3's schedule is the sequence of messages, so nothing was edited.** Sequence 1 stands untouched at 563 bytes — which `priceListStep.confirm` rebuilds and byte-compares on every later run, so an edit would have been caught. The submitter validated the message against the registered schema before signing, refused to run if the topic did not hold exactly one message, and after signing read sequence 2 back from the mirror and compared it byte-for-byte to what it had sent. A re-run finds sequence 2 already identical and does nothing.
+
+**What is now sellable that was not.** §14.3 forbids charging under a price that has not been published, so until this message the provisioned path of §4.6 could not be sold at all. T-P11-4's arithmetic for a provisioning purchase is `count × unitPrice (by rate) + 2 ℏ`.
+
+---
+
 ## The HIP-542 probe — gate report, written before any signature. NOTHING IS SIGNED.
 
 **Status: RUN 2026-09-09.** This report was written and committed before any signature (`562fd10`); the run of record follows it below. Nothing in this section was edited after the run except the marked amendments, which were made before it.

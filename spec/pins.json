@@ -164,20 +164,20 @@
 
   "registeredSchemas": {
     "_note": "§5.11, §1.7, T-P9-4, T-P9-9. schemaRef is HCS-13's version-pinned locator hcs://13/<topicId>#<sequenceNumber> for minor version 0.5; sha256 is the digest of the registered schema, which a release's shipped spec/schemas/ file must equal. Both are null until HCS-13 registration; the digests of the current stub files are deliberately NOT recorded here, because nothing is registered yet.",
-    "proof": { "schemaRef": null, "sha256": null },
-    "mail-coordinates": { "schemaRef": null, "sha256": null },
-    "stamp-receipt": { "schemaRef": null, "sha256": null },
-    "settlement": { "schemaRef": null, "sha256": null },
-    "envelope": { "schemaRef": null, "sha256": null },
-    "chunk": { "schemaRef": null, "sha256": null },
-    "postmark": { "schemaRef": null, "sha256": null },
-    "return-receipt": { "schemaRef": null, "sha256": null },
-    "attempted-delivery-slip": { "schemaRef": null, "sha256": null },
-    "evidence-bundle": { "schemaRef": null, "sha256": null },
-    "narrative": { "schemaRef": null, "sha256": null },
-    "conformance-claim": { "schemaRef": null, "sha256": null },
-    "declaration": { "schemaRef": null, "sha256": null },
-    "price-list": { "schemaRef": null, "sha256": null }
+    "proof": { "schemaRef": "hcs://13/0.0.10448473#1", "sha256": "e4ebeabad267c98184e0e18c099b9f0dfd43e473665ef44668fc2944c93a9970" },
+    "mail-coordinates": { "schemaRef": "hcs://13/0.0.10448480#1", "sha256": "ba3abb30e43e2ba3fbce0fc431da6b95954cce348ca0e8038ea716168d24fbdb" },
+    "stamp-receipt": { "schemaRef": "hcs://13/0.0.10448486#1", "sha256": "fab6540859a8ba60be404e306e40100650a69fc779664b06e5438c3373b1fd37" },
+    "settlement": { "schemaRef": "hcs://13/0.0.10448492#1", "sha256": "ad265c1c2df0a65ebd1f75fd8cbee6f8a084dfe2b9acbf7e9667359d02d062e6" },
+    "envelope": { "schemaRef": "hcs://13/0.0.10448503#1", "sha256": "aa85c277596de1c74d2d03c13c9b25f4fb8b34ae0c1b6a0e36968e71f1207937" },
+    "chunk": { "schemaRef": "hcs://13/0.0.10448509#1", "sha256": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec" },
+    "postmark": { "schemaRef": "hcs://13/0.0.10448513#1", "sha256": "99d02ab5a39ffb339606c83d8abfc9f07cd6b28c79fccbe717edf75205cc91fd" },
+    "return-receipt": { "schemaRef": "hcs://13/0.0.10448518#1", "sha256": "d4a25c5f64e91adbe3dba0686c05c5e9cae0ac19209fc4fcc50d27b948a512a8" },
+    "attempted-delivery-slip": { "schemaRef": "hcs://13/0.0.10448529#1", "sha256": "f87178d4c4683ecd5495ec69ad437cedaf5c61d46d0dca778fac1e68746facca" },
+    "evidence-bundle": { "schemaRef": "hcs://13/0.0.10448537#1", "sha256": "248fdaae31aeb761aa5474f497d2219804b0e41569eb0120356d91e3a7e0f912" },
+    "narrative": { "schemaRef": "hcs://13/0.0.10448544#1", "sha256": "b06588bbb9c6b44c0ef960cdfa0437372924ed87d4d0c0ce4c3253da4ca361d6" },
+    "conformance-claim": { "schemaRef": "hcs://13/0.0.10448551#1", "sha256": "430d4e2fc0d7a1d04e1fea2b47734fc5d84249031c19f5b435a053e4249493cc" },
+    "declaration": { "schemaRef": "hcs://13/0.0.10448560#1", "sha256": "59c6a779e1bc57377a63ed85cd0dae102dec61fa05fb3c00f617ee68fd469dcc" },
+    "price-list": { "schemaRef": "hcs://13/0.0.10448570#1", "sha256": "f772d558cf738f041fc129a9640139d62a4f13f9d7a3c9b31640cd3258efef77" }
   },
 
   "provenance": {

@@ -37,6 +37,10 @@ export type EntityKey =
   | 'agent.association'
   | 'prices.topic'
   | 'prices.first'
+  // The second PriceList, sequence 2: the provisioned path priced (D-159's
+  // addendum). §14.3's schedule is the sequence of messages, so a new schedule
+  // is a new message and sequence 1 is never edited.
+  | 'prices.second'
   | 'agent.doorbell'
   | 'agent.log'
   | 'agent.manifest'

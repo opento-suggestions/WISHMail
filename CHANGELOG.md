@@ -2,6 +2,26 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Step 4] — 2026-09-09 — the schemas are registered, and frozen
+
+**Not a specification version.** No text changed and no schema changed; what changed is that the fourteen schemas of §18.5 are now **registered under HCS-13 on `hedera:testnet`** and pinned. §1.7: once a minor version's schemas are registered a patch changes no schema, so **from here the smallest field in any of the fourteen is 0.6.**
+
+### Signed
+
+- **Step 4, 56 entities**, four per schema in the order §5.11 and HCS-13 force: HCS-1 file topic (memo the digest, no admin key — D-150), chunks, HCS-2 registry (`hcs-2:0:60`, indexed 0 so an earlier `schemaRef` stays resolvable, D-155), and the `register` entry whose sequence the `schemaRef` pins. All 28 pins in `spec/pins.json` filled from mirror readbacks. Second run: `existing 56`. **All fourteen `schemaRef`s resolved from consensus and compared byte-for-byte to `spec/schemas/` — 14 of 14 match** (T-P9-4, observed).
+- **The second `PriceList`, sequence 2** on `0.0.10426551`: 637 bytes, sha256 `14d1ee1b6fec4d5e…`, `provisioning {method: "hbar", unitPrice: "2", registrationFee: "0.05"}` — RECORD (Sonic). Sequence 1 untouched: §14.3's schedule is the sequence of messages. **The provisioned path of §4.6 is sellable for the first time.**
+- Cost 9.70 ℏ, on the operator.
+
+### Fixed, and it is why the first run stopped
+
+- **An HCS-1 chunk is one HCS message, wrapper included.** `hcs-1.md:92-95` says a segment is "no greater than 1024 bytes" **and** that each chunk is one HCS message; a single HCS message caps at 1024, and a 1024-byte segment inside `{"o":N,"c":"…"}` is 1037. The two cannot both hold, and the SDK splits silently rather than refusing. Step 4's first run wrote at the standard's bound and its own readback stopped with `Unterminated string in JSON at position 1024`. We now bound the whole message, and `hcs1File` throws rather than emitting a chunk the network would split. Ledger §H records the standard's contradiction.
+- **A second copy of the same loop**, in `ops/declaration.ts`, had the identical bug and is collapsed into the one chunker. Neither had ever shown, because every HCS-1 file before Step 4 was one chunk.
+- **Residue**: topic `0.0.10448375` holds three half-chunks, carries no admin key, and can never be deleted. Recorded under `residue` with the reason; nothing was ever pinned from it.
+
+### The harness, for the first time
+
+`86 registered · 86 present · 86 selected · 0 passed · 86 failed`, then `report conformance/reports/all.json`, `reportDigest f635da3f…`. **T-P9-2 is satisfied; T-P15-3 is not.** A claim may name no class whose suite did not pass in full, and none did. Registering the schemas made a claim checkable, not true.
+
 ## [0.5.9] — 2026-09-09
 
 A patch: **text only**. No schema moves, no wire string moves, no test added, no ADR added. `schemas:plan` is byte-for-byte what 0.5.8 planned.

@@ -404,6 +404,1498 @@
         "warrant": "D-70 · §9.2:1284 “register each profile version there” · §H:359 register is {p, op, t_id}"
       },
       "specTag": "v0.5.4"
+    },
+    "schema.proof.file": {
+      "kind": "topic",
+      "role": "proof schema file (HCS-1)",
+      "id": "0.0.10448471",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989634.455675060",
+      "consensusTimestamp": "1788989642.217706104",
+      "confirmedFrom": "GET /topics/0.0.10448471",
+      "confirmedAt": "2026-09-09T21:34:06.947Z",
+      "policy": {
+        "name": "proof",
+        "memo": "e4ebeabad267c98184e0e18c099b9f0dfd43e473665ef44668fc2944c93a9970:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "e4ebeabad267c98184e0e18c099b9f0dfd43e473665ef44668fc2944c93a9970",
+        "blobSha": "c6d59ef10ee7e18749eb95143db0e04ed742da1f",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.proof.chunks": {
+      "kind": "message",
+      "role": "proof schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989645.758388054",
+      "consensusTimestamp": "1788989651.733567104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:13.678Z",
+      "policy": {
+        "name": "proof",
+        "topic": "0.0.10448471",
+        "memoDigest": "e4ebeabad267c98184e0e18c099b9f0dfd43e473665ef44668fc2944c93a9970",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,GzUYQCwHbGMY9qFRysZrlP7hXhSP4+M6mOW02ixa7Z0uzqlsDtymBO4MjlndLUB8e51O6yuBYQtNgGD1rDYKKef/nfK+RJuTlA3vB6/npux6bU0XSpI9nwosOq0gRYXGvpbfqk5x5dFYLELI3/16X9XOv8tLSFnl2Z25kAJIULgkU3IonKEojx9jvqYzcyAfvMXjQEXS3gdI3zL+mc/XAzKFvLWdAJKZslB6CnWBCslihKL33yvq2VjHtBiB3NfSXzSR7bYQM4PrUZ2vxjn0MMgwpqIVYzb+rfV8Usyv//7W4DvEpUGJaYrsiGnzHVwVC3W88nHR1aIU8d+niaBmVSCGYHNVEDvgK63tvf3BMOeCqpQm3c2AjkzxUCr8+HVuS4NvDu6j6f52Jd93hIrmxM37Cc1oHuIlQz/5q4YYx99Bvny9HopOAtXko66gQ3UbyKkvsym81P9QHw4jVD5UCmNII9D60TyotwMWw8u/cNRANO+We88QgnLLLS+WUBdj64coEspXEm5Br8ApWxX7aiSorTCIYOsn1ME/z4i5AIDgwPsFrblRaRC+n8XvlxichK9QgVgIPyASqkBMr1MQ0EgjZ1SKydwq5JDUY1OebaRxHjgrKV5hMIcntn77pXSn1bn1d+w8P8l0dNOzjh9Z0miyMDS66jipkLYd021Y8nDhPtkWOkZSek4arbrIAW/flp1xw7S/sNcmX+DckMt2IBgfg+77cWLhMoCHy23zqCaWU0rrIeVAVe4imCPtblwdTB2NpzATnWGojA7hCg2FYWMKlcHH7S9WS07D/rgsWZ1kF0wT7qF+J+tIY0njMMDcyQ3/7dkkUJ5Eu6w78So/YWcEt2UdJKyWJb5HHqumS0olnjBOqsyAanSvaGTH10nhQBiVlfmCPbjPzWHPgHNtUl4Mfm2QcFa744sUMB83JErC7mIiTMO7Vbh0VDqLF6tVnjb2gqUSzn22uV"
+          },
+          {
+            "o": 1,
+            "c": "dd0QvgP6xkUBCYGQaorpKqBCtHSmMNjXTkmkoMOdaLx1YMy0/4t5T0DzjzwYBoFOHis2o4HpfFKptCdSFgP8h/b8ER1pVioMQ8YR5YsujrgscqYIPZTPrfEkYsGdKFiLs/li7d+yPeuEFgMjj9UwK1ijehBjK5EoTZJQ6EAF4RFohCdpRgncRm3KfMTvwoBm3w7zh0JbHQJD+QvcSOE2EAzHaf8OMVAQzsCiSzOIjM/du+IniJKKPQs2Yve0OfRFkPxBKIKpABY9NCIvA43FYdgmBgd4Cl4d7FFA3QIg0x73gZHhe4tZ2JMEfS/S1E+CRewh2qWzXcbbXnatiejx/ov7PM1nWV4IFDo8KUH/5GetSfjfe0SnBrBhbSLB0q2L5YI2P3o8rEpqd+KDTgyC58564rFb68K18ZturrcefvWg+rk2qeXJqyL0j0T4DqIDF4XBcoIAyvagGfkk2eOqUOLnkekqcm2NUJiWP9wN9APZFM3GYT+yyJiTLZON2TAWESzoCkWr4iUA9ihBqTYX79rSw6u900kKALiGeV0mr/GMpYlXOwilpa2+Bfuf11CDYrY/y0jXCC9ydMfHtnUXnKKd92KpYUyxMPdCekB60cWZKaCJ0S44QQKIGywaUSxGLuaHXyyZIOCuXAPZ7kNiWkBQup0wFveyh5+P/MV0Ct1g7qFyXJXlT3xvnDsK6LPJ+wqEsejwzSOx0KCdEMtoM5yjI9mqjoejHhQLKe667MTOgWF+fk4C76Gjb0FkJiGeFynG2TVLbDQbFag73hHbpt4hKXmPEDHuphH99wsegM2x5ZntLLwEvQ4b/rGCNTCkMj55dgaaJQ8gUOVTmy1RGCftdj9lM5ryPist8z/Rhlxkj4YC7MsaK+EUYqdMYs2eEZBGBhvs+iy7YflRCl48NgnnnpZpmwEljC3cPmnVH71VwjxiHnjlKwsWdF+4DC54yY80BgoEPan7IAzB9lcjmrxfl0JeJF68pqhR8uKZtmYqjIwF+C"
+          },
+          {
+            "o": 2,
+            "c": "aSXfEFoV1qhe6CPHUR3DwWxi1dKgNi3sObQYnwQOFef6omkYFxzLZZHEbjcW9EXEJuwUIt598F6JsxmLx00TgzFhStULVB4T5KNBU/L33ENEpdcwzubmwRfUg8yEjq5CKyptnvAN1ipr5phxC5lTrNAzSWfwkDFOvhUp0z7dRkYV/sPS8TI2Bhcuyecei2bxt5oh3H2dZnW6qMM6sUE0rq5l1RrvYYYqU7bnEYHO24bfcNp6jKGTLX2t643FRmtfcqYZ9wD419dEXNcOWCdaMd7FysPlfN9cA6bB5RsTGNcpXU2Te3SRftAbx61SnzriFkMeLGFb2ejUTpakEc+Gueobg/QmtJQh5znMH6l6MvRdD9lSkO/FyffgEKcmq7fferSVR9J5UwId+N35n7mv2q8zCST81P5H5GWQ39cGQLdhWkstmmO1UrSWL7XBkdfgJmiqEdaoExB2SETtTwA="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.proof.registry": {
+      "kind": "topic",
+      "role": "proof schema registry (HCS-2)",
+      "id": "0.0.10448473",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989649.352288248",
+      "consensusTimestamp": "1788989654.663370104",
+      "confirmedFrom": "GET /topics/0.0.10448473",
+      "confirmedAt": "2026-09-09T21:34:20.714Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.proof.register": {
+      "kind": "message",
+      "role": "proof schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989656.242687371",
+      "consensusTimestamp": "1788989661.580234095",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:24.415Z",
+      "policy": {
+        "name": "proof",
+        "topic": "0.0.10448473",
+        "fileTopic": "0.0.10448471",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODQ3MSIsIm1ldGFkYXRhIjp7Im5hbWUiOiJwcm9vZiIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgcHJvb2Ygc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "e4ebeabad267c98184e0e18c099b9f0dfd43e473665ef44668fc2944c93a9970"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.mail-coordinates.file": {
+      "kind": "topic",
+      "role": "mail-coordinates schema file (HCS-1)",
+      "id": "0.0.10448477",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989657.247022718",
+      "consensusTimestamp": "1788989665.239843104",
+      "confirmedFrom": "GET /topics/0.0.10448477",
+      "confirmedAt": "2026-09-09T21:34:31.451Z",
+      "policy": {
+        "name": "mail-coordinates",
+        "memo": "ba3abb30e43e2ba3fbce0fc431da6b95954cce348ca0e8038ea716168d24fbdb:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "ba3abb30e43e2ba3fbce0fc431da6b95954cce348ca0e8038ea716168d24fbdb",
+        "blobSha": "0136155acc4f7b713784a9d4b3066407b4dee4e1",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.mail-coordinates.chunks": {
+      "kind": "message",
+      "role": "mail-coordinates schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989670.446136080",
+      "consensusTimestamp": "1788989675.063852104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:36.431Z",
+      "policy": {
+        "name": "mail-coordinates",
+        "topic": "0.0.10448477",
+        "memoDigest": "ba3abb30e43e2ba3fbce0fc431da6b95954cce348ca0e8038ea716168d24fbdb",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G0EXACwLeEP6pIvYeosVv+GvRVSnCBh4O4Qt5Rvd3uKcytYOkhK4A7PafnaP0wYR6er7/m06rdQkZu0kavQ+zRGBex/i+5ZW0GGZWwpU/v/v9w2TlkiNWNn77TnzFPER8YbdOfdfxLWR8KidWMiJNSVhNrRM+VpcJZDEsuYPzpksGS1n/ROLWRySKSyuys1iQtMaioJLDQMXdJ1yG9jD55UHBi/ZMSQk+MQOQx2+OT1n6NkalAz3aJh11oMlQsFjy6GQw2CVMajjP9qN+pXS7lfcacwCzDVKFEr5gq1kJ0S4u1ImwbBYX/h2HgWA+H0UwMQ1AkoAO6gDLYUIrORY7GE8KSLxpcL2fD/Ev1jsa4XffSjv+v6BCTkwZGz//WlpBFwGllFSyFhsuA/hsuWDABMGbNBBDyQzzY4IfQ8q9XXtnWx5kKRvVNvn+FL/hX04zlCRrLTWcgeiLu/ug45dOvyEMN3qYLsL+a9HwILaM3m5YWJhDL4ftkqs382eN4m9k+wmUyabHljytouZQYZtD+HqmW+vvQZ2hNTA4nU4NxbdaBCGi2AUiwSKCNtE9S3VuUbyLo+gfNBfzMc03k+miZXUQrq/I4hNekNQAt4Pp9pbfDivqRLQecLtfnOMIt4g5+s98tFvCtBD8BuBdv4eUsVqC7lBHZHRttDKAAp5yVH0guyriI+H2/0CChRxxw72CGWyOxeRbHVaIpSXsuwCv5Ujy9IB8gSuRc4SC3b6SN1avXSxLQZj6+wuQYEOprNgL742U95PIiVet41QIS/q0A33cB6vuJ/FMqSeZlTd7twrlD0D71bVPK2n4B1s0P1FBzo0PN+PWedmgwYDuU7aeyLFdi/XFOST71Q+YfZf+v5g4DfJ52f+m/Nfdi8WygAWopbL9ZDWsIYBd/7weRmUgO+5S+aceR6gC8DGPy59fZaMhAKtxIH/vKft37fffD/SNPnhEHj3fts+Nl"
+          },
+          {
+            "o": 1,
+            "c": "0+BZLpLj1jbRhlBw67t/RCafv71NwjTx0CNyZChyHEaoYAN+RGRJoUv4bd/LbIgINxvx3E2V23Df7GQLSH/XeHQUXtbGrAfLpQRZ4xCM+XVxwEi4NKFMGVZG5w49+HERroiAK4AqabjpSL9K/ELfqQeJre/kU5mtQtSJfv4OBudAJQTw+KdKwdABqumQU0az2Zq92IRBBoRaeQpmKRQAX2321BXtUOJSSHtpbpQSjp2dK3Oy5rzX3/e7SjeQVYHmB6c907sCDxZrtI5mydZMedrtqlWLVj6juPHpL0WbRKcKuqwOrzKu7/2Kt7rq7CyaE0A8oWqYw0C8VEBQU53m5v3EgQwGj+IIPJG8cvcdH27pEhUBo7QFcqhA+1i5siDKQ4qKWxKjLCCfY4v8vZzcW7qDBtk8VFViSGC5GgFPXbwZKrtZgtx8EW50Eam5pgKPGAc8IB/r826v8aT5sjH+oFENqkqkRgMHpSGhfwygplh23nroMXS/em5nRzBR63Y7GEHLsucs5qT1XIhm6NQL50qBBu13HULEOrCOUvQYHTYTtbWRpikpoVsPzn8JF6RP2MUoVSJWTR8wE6uwnk23WB2viWhuCeC9BcbMGzbO0VFeXpw4qB+PTbvMSXlMXBzT8728fJgzfJ2VueWkkDXb4RHgQhjpzbG0Vk2HX/VCXbyKSMj/F1TShU9NsvYM5R2v2FEKeJY6ErteqprWZUoooXwqlOiyY74zZ2sF8qT4n0YImuAM5Lcpz3wntYGLHkjZVoRf6SBknQCxSqfNZvbUQQ8HaRQoIG2E00Uy6eK1a0OVXN5LQzNEBukHTsKagNg0kNM7uJsStyvN6ymW0E4BO5x0rlRoS/EcVp1Wa2ZiLnqHoOsbsLcxZRHjQaPxxXj5RocEOCUssmJIR7r3tiYxdHvGWI7QFNBjuNjFz++jRz7C37Kc59Cjn9+j1wPkhSM5btLZ5opx+lBsM6mlcSxtlh/l4jqjoudPMq1bYZvQau4CkfxZOv"
+          },
+          {
+            "o": 2,
+            "c": "cEhhr37eMgZnozdcsluJP7pixDQ1oVOSHe62vEvgN8JT54SXC3c+jtsMk2IzXY5aRV3NqDqPSvPpJI+tcDmAeM3Xr8a4VYlWUHvEhaO2H8mmknclRYk9Bw=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.mail-coordinates.registry": {
+      "kind": "topic",
+      "role": "mail-coordinates schema registry (HCS-2)",
+      "id": "0.0.10448480",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989672.264857726",
+      "consensusTimestamp": "1788989677.361142395",
+      "confirmedFrom": "GET /topics/0.0.10448480",
+      "confirmedAt": "2026-09-09T21:34:38.521Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.mail-coordinates.register": {
+      "kind": "message",
+      "role": "mail-coordinates schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989672.155507333",
+      "consensusTimestamp": "1788989679.477650635",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:42.115Z",
+      "policy": {
+        "name": "mail-coordinates",
+        "topic": "0.0.10448480",
+        "fileTopic": "0.0.10448477",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODQ3NyIsIm1ldGFkYXRhIjp7Im5hbWUiOiJtYWlsLWNvb3JkaW5hdGVzIiwiZGVzY3JpcHRpb24iOiJXSVNITWFpbCBtYWlsLWNvb3JkaW5hdGVzIHNjaGVtYSwgc3BlY2lmaWNhdGlvbiBtaW5vciB2ZXJzaW9uIDAuNSAowqcxOC41KSJ9fQ==",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "ba3abb30e43e2ba3fbce0fc431da6b95954cce348ca0e8038ea716168d24fbdb"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.stamp-receipt.file": {
+      "kind": "topic",
+      "role": "stamp-receipt schema file (HCS-1)",
+      "id": "0.0.10448482",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989677.037184009",
+      "consensusTimestamp": "1788989682.863407104",
+      "confirmedFrom": "GET /topics/0.0.10448482",
+      "confirmedAt": "2026-09-09T21:34:48.739Z",
+      "policy": {
+        "name": "stamp-receipt",
+        "memo": "fab6540859a8ba60be404e306e40100650a69fc779664b06e5438c3373b1fd37:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "fab6540859a8ba60be404e306e40100650a69fc779664b06e5438c3373b1fd37",
+        "blobSha": "ad6218ac116c0eb7bd0340e41a86783edf602627",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.stamp-receipt.chunks": {
+      "kind": "message",
+      "role": "stamp-receipt schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989684.323203792",
+      "consensusTimestamp": "1788989692.317571604",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:53.656Z",
+      "policy": {
+        "name": "stamp-receipt",
+        "topic": "0.0.10448482",
+        "memoDigest": "fab6540859a8ba60be404e306e40100650a69fc779664b06e5438c3373b1fd37",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,GyUcAJwFdsN1sL5/PCEsilBqhEG54JLvv1N/Z5luSgeSrDit/FKaYgSRi8R5kvu+ZRq/qYspe/bDeuzWtktnDJ+gERJHyNNHwgYR6errf03/96G77uhCYgTKodQ992xmsslvPZRSVN3s7sv7pRRhaJJB1vFNGoREKp4DIXFYjGl9MbnWFRfYMtCN98gqo82pny2rrE/JVDguK36EgAY3pIciddm0ntvY3IF2qTe+MElaMZIE+HdUk3k8aNwVifssXawOsuQu/fjzYR8Wl2TvSmLbZI7KMpfjH/r7vm+v//6P/ia/NZ4kg7QwOsQJvR2Ei9sb6MB0d+Wlug4u/DIpqB+WQFoj+ofXbRALcYTCwz5++nxVQoRS3/NaYA1ZGGIFX72r9MYCCw48CJX+Fc+uPxbyA++4f9iJehnw7rr2IwE3HOIYlweUGZ898cnuthj4PG/ZKutGiESW37SXbLlm8+mFMm8VB6kDZFoe5QPybAN1CjGFBVj2QXkYMUTButILhwGBZc79wqKA+I9LlN68/fQrr3rh+dWr2/PXx98JE5moc3+Ff3JU/IO0mSXsTnhcD4ZVVQ7wP1gv8+1zie1EKpUZXoyBJwq62LsvLRjDD0aYcl7aLQPCHZpQaSKvp734uCBZrJoE64dKN4W8sHtEVgSqV5+CA7UGcVPW3ZOlnaSJqhu4eLC0JxP9dVG0/de6023PlnrZXzETn35XRvHEGyPODYvhuf/pxaScEoVDPNBYjJdUSJSC37HoFmVc/b7TWeFJlVVGOtLmV9MnahfXAVXgW/izE6yTcf7ze78yPXLNiaofeyjHev4iKnMrl3xr+dWPfUXLZQS1qoOyJWiSKN7wJPluIGYWkhwODJU+oMTv9kCKkazVqjBjWD0vJdGp1vYQLwoF51TcF3rIp+cg+B2ShpT9PK5THlnHkT9weXmTMuwhTdMOGXlwmTjG2einQA33LupGUbvomO"
+          },
+          {
+            "o": 1,
+            "c": "jBb7cn7kRWAzD71WaG5/28jjMaQvnxT/rzc1p/Hr9+lV/MaXM9WiQKINuY+MvA5rvXjLklnGzEUucbC3NdCyrAmlH10a3AJbgwJef8JfrY0nz8/bCpyl0JeUPov5h/4OY6cRfhZVINBoz4yEPvobvCcjoHZDUckmFPcuGuuZ7BRtVszyVxpzlIAxXgpSq0t4DQO4hy2Ds/AsJFBa0UtBQz8hOxpWZk6DFPBygQwixk4emZHhbRky4QQuHYtRkjXdG0eYliUdB3CnQpkpe05YjUMVfUKDPQmUruYUGpVDmXJbBrYcdANhDoX0/ixJnf6hnwuJ6X00sUnFOVBnXREJUNhBD1f7Eo7lmTXwiBWa5WuMhM3jj0B56H6vrL3R/0DgA6+ek6WpwXEV6gy4fDS7BUAcsWbnGnMcbYKINpv9bREhuigTWkmZZ4ZfVf60SLgE8GuKH7iXgQZgj06RD7mFqtwQSFA56D6w9aQprxxWLIC9BIqEqyyeZi22UmL9Uyd9Tw5Ypl0m8ltBqr56pljUS/StrZfWnBoT1KQppESuTnJYN7SylFj1lGs7cA8JTbY5OiZi3Ef9nddyZHapflpvAwX+zeS4l3+JywXOYqPVq+TE6FxqGCxioMpJtRbuYqwZ+JgkW3JB6Nu2zHEcMo8Ui0b7ztCsGTaOaIdywMVWqFHC6rBsBEpW5hCbkb1rZhKBOGM2X1Wo2KjYU2YTGRjLeIeI6CNTUZ2VLu06Lesbld4X9TIEcYmuTCYbqQb3XYTFFJEl0JsyCJ1cZKdLqa4lAyOrJT3Be0nowthteoW9FFTGjlOz2MSb9jzZQ41MlTdRAO5McEINJ0KFuQzNcO6U8zjN9HloueybOQPhw5oRDM0ORyw9xb0TMfJht1pZlb45VpX+YCXwCszGtI9QV1CHSYUHEchC+FNIKQljskIwVbcvWKQHUyHyIoXqWAR580KIGTst5Po1Fl2dLxEMnkcBM2WZrDGUoKisW6GhJhDnzkM4hdf3Y6"
+          },
+          {
+            "o": 2,
+            "c": "g1CecIb3IIy4hTXecKdo2kLsG9b/iIoYieO21UhaODHKq0l41iaYhmAWNBuZU0TSkWNiveYHEBXBGCHYEPSZlG5IeUQDXZBbW0xIngg6EDRFjEJ+GtpmQLlAocq9uYGlh5h8khapPbuXsO/+vZG1Hltqk7g0lx2yThWd2LxElO08zDtaw63uhjB9jNf8rRLR6LqBPGmMgCHDxN3dMY8NxRVmjfZKAp+N5lcqjOmaEvrfQLg4QydBxtFE/rJFnA5fUZYnWkqmXAv/WPVTyoLhvXQZuTnt+cqNpJl7o7FqQrN8UouXLvagVlsIykVMN7xWZeqXcDSkVoM6KYrtK0wN5xmNoC9Em5tR7suH9WRxlrMhyxl/niSizYiribD2Zw=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.stamp-receipt.registry": {
+      "kind": "topic",
+      "role": "stamp-receipt schema registry (HCS-2)",
+      "id": "0.0.10448486",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989688.794077640",
+      "consensusTimestamp": "1788989694.515755438",
+      "confirmedFrom": "GET /topics/0.0.10448486",
+      "confirmedAt": "2026-09-09T21:34:55.630Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.stamp-receipt.register": {
+      "kind": "message",
+      "role": "stamp-receipt schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989691.659222644",
+      "consensusTimestamp": "1788989696.517729144",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:34:57.666Z",
+      "policy": {
+        "name": "stamp-receipt",
+        "topic": "0.0.10448486",
+        "fileTopic": "0.0.10448482",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODQ4MiIsIm1ldGFkYXRhIjp7Im5hbWUiOiJzdGFtcC1yZWNlaXB0IiwiZGVzY3JpcHRpb24iOiJXSVNITWFpbCBzdGFtcC1yZWNlaXB0IHNjaGVtYSwgc3BlY2lmaWNhdGlvbiBtaW5vciB2ZXJzaW9uIDAuNSAowqcxOC41KSJ9fQ==",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "fab6540859a8ba60be404e306e40100650a69fc779664b06e5438c3373b1fd37"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.settlement.file": {
+      "kind": "topic",
+      "role": "settlement schema file (HCS-1)",
+      "id": "0.0.10448487",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989692.537978847",
+      "consensusTimestamp": "1788989698.510546104",
+      "confirmedFrom": "GET /topics/0.0.10448487",
+      "confirmedAt": "2026-09-09T21:35:05.977Z",
+      "policy": {
+        "name": "settlement",
+        "memo": "ad265c1c2df0a65ebd1f75fd8cbee6f8a084dfe2b9acbf7e9667359d02d062e6:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "ad265c1c2df0a65ebd1f75fd8cbee6f8a084dfe2b9acbf7e9667359d02d062e6",
+        "blobSha": "09c275c318b338a86cc10d1d3f8ec5d2ccab64df",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.settlement.chunks": {
+      "kind": "message",
+      "role": "settlement schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989702.386055851",
+      "consensusTimestamp": "1788989708.859759104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:10.998Z",
+      "policy": {
+        "name": "settlement",
+        "topic": "0.0.10448487",
+        "memoDigest": "ad265c1c2df0a65ebd1f75fd8cbee6f8a084dfe2b9acbf7e9667359d02d062e6",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G1QJYBwHuYn1SpmvxXgl8iUYbvrf5jxdv2sQ2Grs3tiTM5VPjSPhkeDu/dJWoJI7HSD+f/u1sz/u2dA5hEirtMZ9786sOKKafAZRS4QiVr0TCyE0TGqz9kxf4JFJCN1FbMwBQL6o9xt5ml8fU8AtaVQXKQsU4qY9tRu2Y7aQaLad51GbLVkqKIog7TvUIj4lWBsUgvC+WljHJXWW+kA0dkwr1uD4V+Pw4/Z6vLbGPllF8H+feIQCKgFtm3Ut5onPjCZH2TUqJJCJ0BbguhtVacTr5+Z3faSZZzswNFGRsPd9RcCC4qr/5wEZEydLWJHCp8ib1LBDHQ6KR//h4To0bJeqBKdm0h/I3W0wEZLXo4ArWCwP6Lb8Tcj46BhesyDVMS3fNYpFJJt79pIXro+sXSgfWhWMllJYMqWVQKmGtc5vF1IDYkfynyUCF7G6EitdlQgYq9wPhEqEX881gUPpLnlRTrSig9+ieXoAEF8aeGfaY78vbttq04HWKESRrZL9CngfOcMIU0ZJKRXYn9lqwYoCviSHjcwBy8QLIVnQrwQVhQ0Hw3QdeobgPYWgNxKYiGAJUZIPQOx6sAtMwMKN1dHwsULlHImTcZEBAPyh9012QFqvlhvfAgQJpbZtO+jJKLHGpUzm9FZ7eXmjHPzb0ZxlS+5K7t6iF2qYhkzP5SxZsFargkxsD3U+xfmKqvSSf2/3nNfbL4zVRc+Ien806ltGZ9gYDEjRahc/+yrmNSTId3yH3Qoj+TaLZC5lcdqKEREi4xFKs1WihHybR9waZ3CrS/2ycEbgH4Qkbq69k5rQusFlxBebPAkyVnaKA4Yt4/+lLeI0b4zA4+ofaPk2TqfIVJbuqAk7c8tYY4o53zmS5bwyMAity+5xMlQn1Z0gORSQ9aWPx8B1IoeORv/QqC6FcxuoVSM14hXbIv7lrnAlOjt8xP0NmREPD4H391E5yLcxbpBvMBYltx"
+          },
+          {
+            "o": 1,
+            "c": "h47rhEvFo46DJemouzTsUj2hYinU0QsmX9WqPNow37bFbypcTKPHlF+otdEs1EhOksEwuw8C+k70DAdmkmiCnHiG5oqKBNghQW0vnAh4MEf2jiOyvPwB27mAWTnt7nJyCQ0DL0Bw=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.settlement.registry": {
+      "kind": "topic",
+      "role": "settlement schema registry (HCS-2)",
+      "id": "0.0.10448492",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989705.359383273",
+      "consensusTimestamp": "1788989711.843232848",
+      "confirmedFrom": "GET /topics/0.0.10448492",
+      "confirmedAt": "2026-09-09T21:35:17.636Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.settlement.register": {
+      "kind": "message",
+      "role": "settlement schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989710.244068857",
+      "consensusTimestamp": "1788989718.477847084",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:21.532Z",
+      "policy": {
+        "name": "settlement",
+        "topic": "0.0.10448492",
+        "fileTopic": "0.0.10448487",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODQ4NyIsIm1ldGFkYXRhIjp7Im5hbWUiOiJzZXR0bGVtZW50IiwiZGVzY3JpcHRpb24iOiJXSVNITWFpbCBzZXR0bGVtZW50IHNjaGVtYSwgc3BlY2lmaWNhdGlvbiBtaW5vciB2ZXJzaW9uIDAuNSAowqcxOC41KSJ9fQ==",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "ad265c1c2df0a65ebd1f75fd8cbee6f8a084dfe2b9acbf7e9667359d02d062e6"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.envelope.file": {
+      "kind": "topic",
+      "role": "envelope schema file (HCS-1)",
+      "id": "0.0.10448498",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989716.520187760",
+      "consensusTimestamp": "1788989722.403094709",
+      "confirmedFrom": "GET /topics/0.0.10448498",
+      "confirmedAt": "2026-09-09T21:35:23.489Z",
+      "policy": {
+        "name": "envelope",
+        "memo": "aa85c277596de1c74d2d03c13c9b25f4fb8b34ae0c1b6a0e36968e71f1207937:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "aa85c277596de1c74d2d03c13c9b25f4fb8b34ae0c1b6a0e36968e71f1207937",
+        "blobSha": "b2abdb149a7b702772cc975868ed43620270023b",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.envelope.chunks": {
+      "kind": "message",
+      "role": "envelope schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989723.017392266",
+      "consensusTimestamp": "1788989728.017729596",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:30.898Z",
+      "policy": {
+        "name": "envelope",
+        "topic": "0.0.10448498",
+        "memoDigest": "aa85c277596de1c74d2d03c13c9b25f4fb8b34ae0c1b6a0e36968e71f1207937",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G9sWICwOzFOf+CiOD00NUttpOIP4hWrv1Gxbqqs7t4cBP5QSDM3zvG40Srg40r8BhTIIEuyaavXXVPshC6VLKWkNK4sxXjSA7Nw3nwosOn7/+/1PEj8UyHRS+jXuPXPPYu59yBPEPPkcQ1wiDV7FuoVCiuT4SyK0+G2IC00mWoVwaPNpJ8eYId8l/8LXfb0iUwCuE3PYzgSDJRq13bNWVmlbv6/Vulsaxys4Qnt/fWXAddwjY2takATh9cL9OZ7QaD68Ga5KGVdv/Eeft1f7u5+99HMer4L/CWLvKgCsveOuItjrsaA9sA0FEA8AW538ZZBVwx0P6Ah+b3Ko+I+TOtrf8xYy7/7QFUl+HxlQBusAWQFgeqp+BVOt7Xa027v7nViUzjzhjyO25IonZeFvPhW7sAGGFCJIOoGfONq9FVlffE0yqTX7WFR+URnCy3wb4Ew+ICwwdsKduFr2OfPL3rI2xtaUStRFfxmYHcBJJjMp0XSMsG5XYtn4vCC0AG2IU1UYCvIjdcsQaA7vhVzZLr0mrtIfoGZSMNJB3NBQiFp4kcluyLv+wPxDYki1yd1h+8OvL2ZgSmYtJG663eskvB5ZkSKHK8T0mfaUnAnFm9Knrgtl0NyekbIMwrOiSZobKYnWgtSYMHNZG/oWW3pSKXYdoCmwVfSF8yFLbqL5hfCO45nGfQbAIQjYFIn5rPykVIdYGGShdCuXtYjZ4drt7b38YiJkRucZ/h7QHs7WsAYD9JMeYX0urq0eGv4jVPcdDUUq7Tf6hPbEyCQvtaWY+48+XlNfvra3t/jXt/X9q0hcEZT2H01jUzAJetQmngv8vCB9NgebBxT7KR8yskJY3Zk1WHJ1XE3Y0v1wzDFihwHTqnO6D8gGgsL1nFfgRzFxcypaUq3hHAi78IZWyetjnvrBNlz8X/CLohDHN7Mn8tR1CbEuPqET3qElmmwXdjvdvQ2gW6lok4CWKJ"
+          },
+          {
+            "o": 1,
+            "c": "dfhqm5Fj3WaBb+OihB3nhwFogJEysgkIflGY8o3y2MH4r5pjnx9mhb5EwTDCB2X1fR4DWA0ktjTEjjNHEfWqbLEoUPYKlygd0WggtxQ6eksN46SDvWWCY/pEcQRJ6deq1jkOHo5kyqdFaYogfUxJJw5AS4hWYwZU9UuYTC97ydvwuI7bZQ4TcEX6Bf834ht9xFuvKs6i/0++zhO14FShIIpYm/+8cKHmfd3ZRLtz0CiYHNfj8MQbOFY7b5QYqKU/treWzSKMlEqljVClXBs2ZYk5fI9n4lqFmS7IKaVKqopXKq5PBK6NR5SRAvuDIdPCNLiod6W4lBsC9La1x2rXvki5Bu5xyaxWNssTRlBfRXFnAD7vs9hG0AGZbuEr+yUdq+IMfJglcsFHo2H2vUN50PBowT1bMbpR22LV5QjN5u+xax2QlZSmsYyI/CsbEmZ08wlsUyhHXmDXu2ZrINjRkeLZfcVuK5GduTISrC81KkBSNh56/IkInL3/l9c7ALS3Onii1hXEd6ERMxyBRxdYTl1C56kz1t13doaBNJLmOgG7MWmWtS3tz4CuSM30JPC3OfM7zhtlfl/NUGKeUBCo4XfLZYVMWqkGCHCDQ0PVLKj2Q+J9onhsxU+z1Kmvf6BFElrCkxHduh4X5tJTs1xssbrMtOBRiqQGx4oz2ga67L1i3+O99lJ7GGEl7ttTt+YsPUvE+K40URGHbTrGJuTkh1RV1yaK6alsqQR/rLATkTE/Z6LDzlZBzDPICnr646ujrdh+JYFsKa7kuOBaiDVbnalWw7xdhyqZ/ngi7QIOzpNvmAvHCjNtbc3X4D9UWE2Y6unk0IXZhtTippZ3UrbvJ8HFxeKtbhAbu1X7H4eL8zI0mb31z8JiQu7y929z93nu/2b//oqvPtp8+/5fM9sC7LxrBhPdAmM9LVCP+LGypz6quzlWPvD4MbKkc42oNlqQfoaqqhpD4jR6kxnW2S+5UsVD5W1gvtV/TtQcppOljKYvF6Hqc8"
+          },
+          {
+            "o": 2,
+            "c": "GpNZGOrRcg3IRw0vx9gtJJorERhJMchSI0vj5wCgra0lHXs2vNJCSqqOUZLLx47de8uUf0na6KyZKzISJWqa0Lg8dNPYyDRnK46pimH6Dw=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.envelope.registry": {
+      "kind": "topic",
+      "role": "envelope schema registry (HCS-2)",
+      "id": "0.0.10448503",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989725.217809970",
+      "consensusTimestamp": "1788989731.677727104",
+      "confirmedFrom": "GET /topics/0.0.10448503",
+      "confirmedAt": "2026-09-09T21:35:37.544Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.envelope.register": {
+      "kind": "message",
+      "role": "envelope schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989730.839086949",
+      "consensusTimestamp": "1788989738.499738203",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:41.105Z",
+      "policy": {
+        "name": "envelope",
+        "topic": "0.0.10448503",
+        "fileTopic": "0.0.10448498",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODQ5OCIsIm1ldGFkYXRhIjp7Im5hbWUiOiJlbnZlbG9wZSIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgZW52ZWxvcGUgc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "aa85c277596de1c74d2d03c13c9b25f4fb8b34ae0c1b6a0e36968e71f1207937"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.chunk.file": {
+      "kind": "topic",
+      "role": "chunk schema file (HCS-1)",
+      "id": "0.0.10448507",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989733.389471505",
+      "consensusTimestamp": "1788989741.963311104",
+      "confirmedFrom": "GET /topics/0.0.10448507",
+      "confirmedAt": "2026-09-09T21:35:43.087Z",
+      "policy": {
+        "name": "chunk",
+        "memo": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec",
+        "blobSha": "960229bb989a8d8e2256391380fcc32f63d4d2a8",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.chunk.chunks": {
+      "kind": "message",
+      "role": "chunk schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989742.908595517",
+      "consensusTimestamp": "1788989747.788260386",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:49.131Z",
+      "policy": {
+        "name": "chunk",
+        "topic": "0.0.10448507",
+        "memoDigest": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,Gy8aACwKbGdqg+FBsss3HDoldWEz4ZDV1CpKu7h3RgrPeM9IjBZq+YEyu/7y5K1c079RsfC3IXAFpPG1dY3TVGDRSRAFYb9a+wyQIpAaUUa59Oue/YC3B7Q/rBhnd6YPiGQUoUIVG2lS0epUZPzy57IzflOE7bws0UTvbpsFqE+qn6emumRKFpf7PQuChjVk/rrURTJWvSbbCqqcefG5QZIlQ6IvXPN4hVBbO5D+YiCHhjbb020ag7m0F6PeKFOvjX/rtbsYbL9+1Svga/A/IGKrInh6bXR2fvMflHpusjUf/Dn05F+MhPp9/OIKLWONzm4jMoPOJoQOVn3QYYX8rlnnX7NNN70nKpaXx7IPfTvBc+BVrj8TtAEn2DbSTie4fqFF/5IDbn6vazLbOjUeLZJLb6KdeMr+SEGJvr0OuqL5JA62d2Q004osaoBnzJ5QIwv2AmUQldwNhow2AQimigq6v2n74HA2e/Vf+pb3xeYDWwUSUTMpMEaKttUSpEF+I0LItYw0J47/P9Wawc7/njPpbqzhFZA/QgJqS0jrNn5XNJIC+WJ+t7q+OWyBxa5MNgRSgoeVoG0bjH3oj7NQMOECxOFLLMOvu4ocuf0bneQ/Fm8vy9rMZBFRg0igzHAGng3v+RLU4kEJXREhzXHBir1SpgPcxTWfXSoSxJtXQSANC/r7T3YlseJlrvEMJ5bHKwb4oC87QNgA4Cpy5Y83hpN4Y2b4YkWOm9VmAdNlFANIolcaH8+qudUfLb8u2xthc8MZ8yQS0rPxzbZR5o/VTt00lYd8efkzklt45D+twhExWKrRFXdGNoHhoGtEnbnTZr/g53f3Oov+v/FGIlPrlQ63fTrLkH2IjLoxueQYHVuqnDcpPVhn2eMt7VJFBtfTI5zXUbWhPSm7VMPN0auHcJNNQcJgnBZdTucFMtWXi6gjfAWYFeTrYsZh6LwpEB5J7IQZoYVVuL1D1z"
+          },
+          {
+            "o": 1,
+            "c": "c8rai8yHqAIlA/86bWRctpx5gozH9wbEOXdlyPsyRYOk3uZy08UHVuGdR0bz5Al1iW7WqH/rQ1afBw8CEBu9uqivUDmsEb3pMcJgYnH84oAdoZnXBp3uzs+F0ltrB1PrujCc8r+kkKoWJ+yGKexefpzO5X2XCipcK5CPPnXIJQ0TL7ln9d2i2Nn5yw6XFCod7OimVCwFGO1wviQ3qpqYyCSUvLf6jfBbx2bRkkaLSeAaQcA8r5jRLqzEjFLmKZKJhrIpI8BwLADnY3oTHRp47kBs9k1aAkWEeSwmrjmRznMprVaaSCN7TUUGw08XzGQL7relVizCgWF1hdoOnWVumCba69Jic0kic/V0gMDTNjg1ezdRhM8G5SuKY9eH7zoF1yFboKQyP3tlq1rK6BA1ekj8T2S9Hlqt4crEs4jJqZfeTKCwfJfcBBU8QRFP6psGVMSeGaLE9rsl6n+tjnydQj1wed3zbEthoUpS1OWx57IIvRIUp6ngBq4JSojojiZqWoWoP2lKKQkFQJg+BrOT4KytZYoMlbSHBwNYfiDCJpklQXgP+hW0gVCWU9gTr0KuFl2HHH3VBvEb2K/F1PH1H1kdXtfotxpF1cIq6vE4BSZC9G4dDYh9uF3TAc7qxTb/bASgpoyu3SBE6QQWlyLZWbCKNWNJaabwkmTZKI8ywOXhUAl88OsOvYfHeQU1ApA7iSr6f6KkrJYnc4VRuV/mp3ETvQ3pSbKWZIzcyAyu5eOx489MS4937DlxYr6AG9pxlmJIvms//dr88K03EXwNxb/SJ9nuzG0Nrnf8+R9b+Go+V/nMhfDBpiDi+XlgwMHWxM05BpJS2ncsXdvTdGSuqgnreVxl2OVHHG1IecXrMSMyhIIRWryMllQfpMpiC7FyuTSk+N+FjyHdqapNFwNOeKKDUt6aihOM7Y6LSNkPW8bN+aFC/0u0vpzTcheCa58zv2TKOaUSz4c/ahOLw2cfQLCPCOehMor0oy9pT9UtxP2v36vB/H"
+          },
+          {
+            "o": 2,
+            "c": "/XJpN7qts6yLBOkUhVltiMWCiTDFZLaDZLXDWiJtdYVfOuo3seVkNps+OCWXUfxiZG2uc+ZuzmslMgpXOo7uUeT9ebexjmdM2rkK+VAVHi4sQwIi5CIQ1Srh1EQsJxG6zgqV6DueoUvKfA5cNftZfigeWHEwpeNXM6UDStiwblVTtiYNJ2GfOZJQJnqu3zlgcHiWWArNr/oA"
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.chunk.registry": {
+      "kind": "topic",
+      "role": "chunk schema registry (HCS-2)",
+      "id": "0.0.10448509",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989745.079428860",
+      "consensusTimestamp": "1788989750.181497104",
+      "confirmedFrom": "GET /topics/0.0.10448509",
+      "confirmedAt": "2026-09-09T21:35:53.801Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.chunk.register": {
+      "kind": "message",
+      "role": "chunk schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989746.853431088",
+      "consensusTimestamp": "1788989754.597764781",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:35:55.781Z",
+      "policy": {
+        "name": "chunk",
+        "topic": "0.0.10448509",
+        "fileTopic": "0.0.10448507",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODUwNyIsIm1ldGFkYXRhIjp7Im5hbWUiOiJjaHVuayIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgY2h1bmsgc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.postmark.file": {
+      "kind": "topic",
+      "role": "postmark schema file (HCS-1)",
+      "id": "0.0.10448510",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989751.534107081",
+      "consensusTimestamp": "1788989756.697771104",
+      "confirmedFrom": "GET /topics/0.0.10448510",
+      "confirmedAt": "2026-09-09T21:35:57.810Z",
+      "policy": {
+        "name": "postmark",
+        "memo": "99d02ab5a39ffb339606c83d8abfc9f07cd6b28c79fccbe717edf75205cc91fd:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "99d02ab5a39ffb339606c83d8abfc9f07cd6b28c79fccbe717edf75205cc91fd",
+        "blobSha": "f7276a8460dafb468148931f8d565bea5a2a9bb2",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.postmark.chunks": {
+      "kind": "message",
+      "role": "postmark schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989755.014814052",
+      "consensusTimestamp": "1788989760.562794818",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:02.348Z",
+      "policy": {
+        "name": "postmark",
+        "topic": "0.0.10448510",
+        "memoDigest": "99d02ab5a39ffb339606c83d8abfc9f07cd6b28c79fccbe717edf75205cc91fd",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G5gIQJyHsTGr2TBcvr2GaDyrtdo79Xttq2o/JpldxELFuVRojp0HgySLWd9cu9HBmU0FKmGr3zsHNMYglGT39h+QVqqr7326Dy5dZ3x1pflIE6OyrVnb2t3LMSJJF7QfAojGBX8rqhHdIFPoW6cCkM3UhbJnUEuqUPRSdOST90uQdH6ztFqNwO517VNF4wRkrDvig2frByDEMwIjmGGjlLHxxr/qf3/cXve3fr9C8wD/K1SjzMV/JPap1BDjjPxA5UGxioHgZzJExhVKdofn/0u/SMU8PlQxQ2hZsC3PXMgYmxUc7vi1kJcYjjd22oQwCQ9q5z29L0+eCQbgo9mRpmY4Q0eIU/8E7StkNKyTmurVJqUm/jagHs+EELp2X1HAq0bsivD983tFMPzyinkXgRtnuWIYNj9EeHNrHHg9FMtA9PPD9bcqlDRWIQ+9i11tm0TYZcc3fuUVwVibEBB3Ao+kPhqqnEdTV8MjxBbN7fgAD0WuqbTa0jOqRpim1aWl0GRYMLDGxvIvWbeGoe2XvxlDFDEMW+stIzf2FACGxYLJlER6PHAIb0aK/QKzK9xgUJ8C0RkHI17+mFHLMLm5oqxB8mw38472j+32jzngpdG4DFjOKA0G48/q1tntpoJFdbxg0ov1XVolbsMvanSUHBpLTxPrnbMbrdiKky/QHe00YWCdzOYfVcVppGOcatlOtwACkX9/oartTk5svlSFgULB8JuMzbGEOtFq3UgHGXnprGlGXuEcrTFi3IRptYfM1we2sMLGblz3L3lxqMa+zsujIxoS2n4MJCaXDuAf9dq+anRznQ41niseFUrHgwxfA1vL+gCBkDMvQzMrou345NObvFLQTKKnBaCK2KowEtwVQDOthZ55UPcJhRtGfPU0u2/2bZLR9oLexxrrVv+KV5jIuEr0qst4oLUy631zWS7dskZD1UttSnkqTFfN5jhxorUN0KIXNGpd1f"
+          },
+          {
+            "o": 1,
+            "c": "KFjzBchg8+7hpIMMCeYE4dXE/VyPldetYdHWKQV4odWpq9VKGZVSpZBW6low+y5rsuAA=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.postmark.registry": {
+      "kind": "topic",
+      "role": "postmark schema registry (HCS-2)",
+      "id": "0.0.10448513",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989759.211125225",
+      "consensusTimestamp": "1788989763.200616202",
+      "confirmedFrom": "GET /topics/0.0.10448513",
+      "confirmedAt": "2026-09-09T21:36:04.258Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.postmark.register": {
+      "kind": "message",
+      "role": "postmark schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989761.126118189",
+      "consensusTimestamp": "1788989765.199968665",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:06.361Z",
+      "policy": {
+        "name": "postmark",
+        "topic": "0.0.10448513",
+        "fileTopic": "0.0.10448510",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODUxMCIsIm1ldGFkYXRhIjp7Im5hbWUiOiJwb3N0bWFyayIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgcG9zdG1hcmsgc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "99d02ab5a39ffb339606c83d8abfc9f07cd6b28c79fccbe717edf75205cc91fd"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.return-receipt.file": {
+      "kind": "topic",
+      "role": "return-receipt schema file (HCS-1)",
+      "id": "0.0.10448514",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989761.181427427",
+      "consensusTimestamp": "1788989767.137776775",
+      "confirmedFrom": "GET /topics/0.0.10448514",
+      "confirmedAt": "2026-09-09T21:36:12.968Z",
+      "policy": {
+        "name": "return-receipt",
+        "memo": "d4a25c5f64e91adbe3dba0686c05c5e9cae0ac19209fc4fcc50d27b948a512a8:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "d4a25c5f64e91adbe3dba0686c05c5e9cae0ac19209fc4fcc50d27b948a512a8",
+        "blobSha": "1d736d3702e6f45bd455315002dc48c45dbc8174",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.return-receipt.chunks": {
+      "kind": "message",
+      "role": "return-receipt schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989769.282149816",
+      "consensusTimestamp": "1788989775.682699104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:18.517Z",
+      "policy": {
+        "name": "return-receipt",
+        "topic": "0.0.10448514",
+        "memoDigest": "d4a25c5f64e91adbe3dba0686c05c5e9cae0ac19209fc4fcc50d27b948a512a8",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G6ITAKwKeDI0nqhN1QL4hT9DTCesBAyV1/zQn5vWh0l+ZRPTqUXCz5UGuSi+bxhtLlVg4o9JCdOs11fXiNMASR0WhVaAohLu964loBGtERXC9c3P7ByUgBwm2cwd+wLK1pPQ6Fg4ebaG4t5qEIHHmaTXfX8IOy36O8eOD8mUJK5d/AqMhjSkMiq1MEnF46RPoFeryLMfnouCRAxfL2ZhE8sPCU8paRvDgy66Ty8D5C1vbKL9oQje6DCV6XCOv/RwzDuthz/7YPEp/FsEkMMlQmmYgRasaiIYhIFzr/QDOUiVjutylDxOUescHUvRFmDlz8zO9y4vBcy4FmtuCl+vukl12L/3fwIME4g/6c1YgmQFwwRrQhybKSjxjifxZTzjMiE7/PemDnTaVdbUZQZPyy65swckQ6bR+OQiqe1QjWiEF1x4e7Fab5oJ0fxU4NZliNmzEnuGwXcvJZiaiB+KbiyQ6PV+ayWkTsFSmrGaw8FJ2GHTKwJWA3TA7oSIMsnZ6sRamLhIX3dEk+CadGhy++1fJLMDiJu+PSpSbhKGbqWLDrW7cxKYob6Io+UnnrOm7dZPbwTNdQxDr0kY0E2nCkDICtdkQsdEhPt+7I3JjPm5pXetj/0hkQgMDdSlnYIxRrX4HRsJevzkfium+Ir93Z8zuQzm1w/i2Wij0a5/Oauapo9jtefInUzyzl/SnhjJStiW9rYOH/yKrNZEqXUmMeIzj9/BvNrPCg7Ec+Ghc9jtkm+EI/H0vt0nRV6COOr4A80w5Ws6lW8A9c0sBGadYk4xtyTZCJ2MgQ/KAzv8nlsGquqcXPJ8I5vpZIsxXmDLs0Bq+KHrTMyCxJx5QTBMukIgdkwri35B85vOCOv3Pmh1C83I2L7OQUcdWdq+I0a3KGih5sAr/XSsSQ83CrY6LC05S2GKEs1FF7HYX4OvPlrgjmRaIeY+vC5uwj/MzlWNC2AYaiQ4GhwYPc"
+          },
+          {
+            "o": 1,
+            "c": "rt9IiUO1tvYkYUinNw1W8IZd3olFAd4vIH+tYUMMNL3T3DNNsLNi6tYApuB1E41PBfVhXeTCp9PPt51DBhEfdkgOwmBeTaJxn95bjEAFj0I+7Yg7+EA7ghaIgWdbapUhSRhIHhvevX8vlJWW5uuF5iafcx0JIGGLdUEZl6mRgXHJK8whr/jRgQBdvT4zwtIMpnQWB8poo0d2CwB4zmtiPxy0Cywp4QMd4N/muqVBqyE3/jUHOfmGEiDcJJ8UA3YgnUpdnB+z+4vh4ciT4pvcShly0AmjcJKVHq9Hup23e9ZfYOdMDuhkZlxESfAWl3JjkX8MHnAN/ryZe2tSNOSxRgqJWP7IFj9kFSkUk1aOrBUwOiFphqyHHBNVhTQwtKmcUSUyo9MruZ0BtLWozbE7sIIsIg0kUrKXLpdaDOfjSRpR5lf+gRE8nzA9yRaKw6qPHLlGliT+cFJYPuDqAtWx4Nt1NkGMHxwg00naonQKpzj90fzIVRGp1FoDIG0WLmFeZdb9bBvUpqxiuP+XbdfxaLilt1iWRb5vxlNRt66mVYkKw1xocBneT3zvCWWVvhWu34cgrmQMZtTBpZcSS51fm4irW/quWt8bg1D58pS0eoisjeDA=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.return-receipt.registry": {
+      "kind": "topic",
+      "role": "return-receipt schema registry (HCS-2)",
+      "id": "0.0.10448518",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989772.544515454",
+      "consensusTimestamp": "1788989779.437755660",
+      "confirmedFrom": "GET /topics/0.0.10448518",
+      "confirmedAt": "2026-09-09T21:36:25.794Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.return-receipt.register": {
+      "kind": "message",
+      "role": "return-receipt schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989781.298160536",
+      "consensusTimestamp": "1788989786.619766130",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:29.304Z",
+      "policy": {
+        "name": "return-receipt",
+        "topic": "0.0.10448518",
+        "fileTopic": "0.0.10448514",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODUxNCIsIm1ldGFkYXRhIjp7Im5hbWUiOiJyZXR1cm4tcmVjZWlwdCIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgcmV0dXJuLXJlY2VpcHQgc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "d4a25c5f64e91adbe3dba0686c05c5e9cae0ac19209fc4fcc50d27b948a512a8"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.attempted-delivery-slip.file": {
+      "kind": "topic",
+      "role": "attempted-delivery-slip schema file (HCS-1)",
+      "id": "0.0.10448526",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989781.570686045",
+      "consensusTimestamp": "1788989790.310399269",
+      "confirmedFrom": "GET /topics/0.0.10448526",
+      "confirmedAt": "2026-09-09T21:36:36.046Z",
+      "policy": {
+        "name": "attempted-delivery-slip",
+        "memo": "f87178d4c4683ecd5495ec69ad437cedaf5c61d46d0dca778fac1e68746facca:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "f87178d4c4683ecd5495ec69ad437cedaf5c61d46d0dca778fac1e68746facca",
+        "blobSha": "3c4fc8063374c96ee9063c69870505fbbbb4b171",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.attempted-delivery-slip.chunks": {
+      "kind": "message",
+      "role": "attempted-delivery-slip schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989794.456637575",
+      "consensusTimestamp": "1788989798.838732163",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:41.741Z",
+      "policy": {
+        "name": "attempted-delivery-slip",
+        "topic": "0.0.10448526",
+        "memoDigest": "f87178d4c4683ecd5495ec69ad437cedaf5c61d46d0dca778fac1e68746facca",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G7ESAKwKeDITnlKMMwvP/KHKdApaE7ZB8zJCktlF25rWvEkPGWFynbxPAwRJ75vg+4ZZcylbwk0OUKgq1ji+9t3HaYOIdPVNBRadVKAS9vtfez2JJxcdIWNM2Kq5c/+c895uiAqAit+fnS2TAxaqRgG5OlGhK2WMahQ2+vZ7pX7Zl9TAwqVx1h29qv6l5z2fkqlYXGV6QdCwhpSA1L5RSBonN4EFciPvPgbOGJII/ONMEibuuXTG8HTUyJ7iEUGgvMzkhqyLj9nBo+QiNrTEPTl/ZTnP49+aH2upMP8lb4PPwcMggE6qCtPKVkkpdvn+I5HSJaZwBRJgryC077U7CxaoZlF3O3tQBVqdhdZtzdNMC4dhCX8i6NDB5xJy8BAMMygb2+IfNnW5VPxnbRbSnxVtbMGeZxnsUn2YfsdQa1c3kxBBfZ1pMBzlowTsSeQgvAaEhIPB4LvPRdpe4YrackXw+YFqYWCEiiTGZSImlshEymHzgIDDAiRwBCGhzDg7r3ENox58XQcv0O3FAd7q95eQWYEZszu8IavAgFPOtKG7j0cCz5O1fUxtElyn098egTitUHp1wkArJi9jCZiQjGwjjYx18Ro/lBntXkBt5PPuSHtfdCAM7fpRTkDdT6/2G0Y+Hupxt3+ZNugw2IyiKKM+9yqA7+Wj3lA+UnKTljlQmhPlLb6Qi6DoxJAxbdGzNy4ezAqrLMAFpaz52XGY1SeyrKnMy3LUJRbFC4tCwU5h4ciQh0QYw4IQGMZ8zuAT7n28U7otuVxRP/JuGdk1ewafI4GjRGxYhfWzl218DLA9Akf+0a0XAu4CVQVY/bnOVwZ15oxCb3k1VPzSUlJas885lk4fs2VnNf94fq/uosLLVM5fQycFHQjW6lw92l87ZDvCIihds1Ax1fZg0yrUk14RWrByb6NYCJkQ+fTD4t8sYqrNnisHRSNtG08utmi5IDzvp6Xd58GDpP"
+          },
+          {
+            "o": 1,
+            "c": "6Kb2IXKw6nCdtQ+7eBzDWzHLJBbCK52WkzvtFPqLGuYRtgf0Z+GeQLszGP4TWr6d3qfzFos2zOG0w5I40d1hKQVv32DV7QTFVQHTadFx4DUfexZ+yszPA5DBbX2COhOWtRVE4N23yAhGTDM4YKLltQhVZtYDnDMlT7TbVqPJFOXNSmYMc+FcRzd3azXFIVVhE/hFzxE0BvjwSG3xLc9duA6+a9xLZdN1WXzg+bhnvn1VDiU4qW/9OqOfvwsf2ps59Mom8e+/VZvblqJX8JyEp6BWIXhzz0oyQYM/zbMtlJsDRHacUra1eBJ+ZePTdJzf52kDNT3gEoRZEaVVRLFm8HqK4pdSx+Oyo8nXyPifbOUnaPfUvEcctz713BSBLxpoiWor1voWiVFra/uoBNu58V0ImIaSQbL+XLpIve16UNZejCWkFo625stJedtQak2CDlgXjL6Eqj5+ojxigtEmBWNbYN8J/qMCZ8HNhErSZi21ldcSG05537DC/YWILw5PH5f+/9WhGw4zME2WF43uqP6osB2wairrSoo3O3WZYC6Zvr/g48MrRUMprTSnIbF6kd7UEXIWsrI9Rcasypr8vG3BWg1b9hn5OGM5CdD1KcI7FmZSP0ec96zBl/1FGz0V1MN3tWy3K8LCbSkndhHQZQEAulSTrG4OilSQKZF2rlgRYO"
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.attempted-delivery-slip.registry": {
+      "kind": "topic",
+      "role": "attempted-delivery-slip schema registry (HCS-2)",
+      "id": "0.0.10448529",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989798.701647270",
+      "consensusTimestamp": "1788989802.619273204",
+      "confirmedFrom": "GET /topics/0.0.10448529",
+      "confirmedAt": "2026-09-09T21:36:48.923Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.attempted-delivery-slip.register": {
+      "kind": "message",
+      "role": "attempted-delivery-slip schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989804.559105499",
+      "consensusTimestamp": "1788989809.773835104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:36:52.765Z",
+      "policy": {
+        "name": "attempted-delivery-slip",
+        "topic": "0.0.10448529",
+        "fileTopic": "0.0.10448526",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODUyNiIsIm1ldGFkYXRhIjp7Im5hbWUiOiJhdHRlbXB0ZWQtZGVsaXZlcnktc2xpcCIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgYXR0ZW1wdGVkLWRlbGl2ZXJ5LXNsaXAgc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "f87178d4c4683ecd5495ec69ad437cedaf5c61d46d0dca778fac1e68746facca"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.evidence-bundle.file": {
+      "kind": "topic",
+      "role": "evidence-bundle schema file (HCS-1)",
+      "id": "0.0.10448532",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989807.272511015",
+      "consensusTimestamp": "1788989813.608013104",
+      "confirmedFrom": "GET /topics/0.0.10448532",
+      "confirmedAt": "2026-09-09T21:36:58.554Z",
+      "policy": {
+        "name": "evidence-bundle",
+        "memo": "248fdaae31aeb761aa5474f497d2219804b0e41569eb0120356d91e3a7e0f912:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "248fdaae31aeb761aa5474f497d2219804b0e41569eb0120356d91e3a7e0f912",
+        "blobSha": "44f4178a58f8c38db21036e88227c550c4e662a7",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.evidence-bundle.chunks": {
+      "kind": "message",
+      "role": "evidence-bundle schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989821.321363779",
+      "consensusTimestamp": "1788989825.697759104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:37:07.016Z",
+      "policy": {
+        "name": "evidence-bundle",
+        "topic": "0.0.10448532",
+        "memoDigest": "248fdaae31aeb761aa5474f497d2219804b0e41569eb0120356d91e3a7e0f912",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G8wqACwKbGPS6LEYN6H4V2lsFmN7SKPCh/a16U+r+oEP5sunAoJ6lhMFpHuWHOq+9WxOX6Mq8e4JXAnHEuOXOaA4bRCRrr6twAKi06+W36pOUdhTCqERBuFRrnvedvHn31zYC4kQ8852NyFnl4JLSSGc3wJhKBRoljG126zsXZCTQwgBtVvnLaBPoL/qw304JFPCuHbxJy5oxoZWRVLzgXESJraBPg6B5+QkDSJRga9oalQ+wesWr1nCmAJwwsgV5kx7rnmoJlvxRjUcHakyHdHxj51367o8P+qzwluAd4WMYpIAFdpKuDmEp9dVyArjN99Hxl48fDcKYOuaACUAFuwdhiJOZ4PCWBvO94cCQ0pqWdQXEt5junhPK/zTs0o4ujssyMVC5uyf3il3wIRnHbVVx2IH+1D1G88TsMSADXbPQymTnG21h7UDmfm+y5FYziKZMtq/buFLDGCLv44yFCpWxtXYCKj5zj6YrEuHo8+fL+qAuWvy65iARWYP6Q0b5qqQDr2fMJUl/ensJUaUi24JmQm/r+DxpB/uLYA+5DfVsIGs44c/9T//rTFTaCXLQTUUT++Xumdig199+/wBN4skT5ZO93BrDihQwiajM4T8Lv87kWqHLGk+FbSPBxnoAb8CXwFQ4mToQAIL4vbOmM8Ue7ErKjY4YAaysgcosBflwNGglAwlRr2gLbE0oKxSCmYxjeYq2aojL8a3kjHKpJjWkimNtZtUbmx1tUIB+pAW1R7jLJ7JBvvlmAPoYF89gN0+vOYaZDn16r5ELCyVxbj3gR4YogDSgFrHBb1wTywTv3WgAhy4Onl5w9M9BXdMHx7KH9In3zqIRZcuA/Rx7JwrBUUN9IIyU/qfyjWt+5LmVOUDwslKvCZf+0Ice1Tn73UCN65kcwTgurxZ1K4XnlaKpjXuUH+CPZzMXQCLXcEcbnHcEF9RI8Xlw4LaNWKAPZd6OmDHCFlTmn"
+          },
+          {
+            "o": 1,
+            "c": "FiG0ptBZZLSDispnXLdpBlBHWm+GlDY2OUiRP7djc2m0SbEwQLZhwTmbfocwo1OriCxWR/A186f6IogkgweczIiRzLRXjyO70iwN/41nLeZ8vDnO/zeV1XTo5HXXG42ayVu5HV9fFBFiEbIzGnTdbM+SUgjVgUi61cGPQZCOx4pwLaDyCSWElU7VCdnqFy7a39Aq6Z8zKmMQ4t+Am5uccxFjOffCdLUnUKvwAlwNkTBXCk5kCDWONA4n6A5gR1Xmtv8raWTqUpsasIqhLQ+BaaWE/YGbXE3fZD2LJIV2scaNC4EdRa/Ehjgi3GhkMSg2MmuNfLsOwjXmAQFWu4ipZkNFy8QIoSEl4Us/NFJ3eEnyJdx9kNdz7Otnuqvt+IStACfdwXNU48Wlx5hV52F2xe4JculiYWZV6Cu18E87+Hxv4uyJe21YMRiy7s6QjqBO0ugJAxn/Kg1pF+8VKyamSjl2rMHZPLd+GSCuVOLLZiiwPtoBLHEXmZhX/dd6NFlL872ZDHwbH6jDWWk/c7u6glfkgtifCaK5RhrUJlZvRaaNpusLio6wV6dtk/A540ZHOSNxsYsRqQ6Hg7jjzz7ojZ5VA8c4Mmq5CVovbVi/46yQ8wvxMHlS6edPfAU+xn8kTqasJh69uNm+N4O8RVHzgUmv2NVKykX9XBTQ6LD2S6XF6FIatQyIaTu8qkM3G6ESHKljE6Tj7QPu+6A1zBccmAPu66IefdHpp2ouP+kcWu58B6ooU3NpaLFWr/Rq/Z+X9b8fmiy+KPq0TzMzRpu49xpdWyT1BEOEiCIqF3wt9l+QWSh2dOB9puh0wxPHSU2EAiNe92H6tPgaJVgRpKF4Il1jQ3niAq/Tu/TlcTNv/qYxVa4c19/6s923oR2I4e0TVt9FaydAUaX/8/RIVw8V/ybKuiOvOmOm/RWEUFM+M0kYCuY/VnD97VHjOpRaHH24HmLVEwyMh68G0NjHf4QXvNSimpdacD2+2HXbU9wBEtlZ3OIsxd"
+          },
+          {
+            "o": 2,
+            "c": "gpJbHk1YWi8AMirjDdkeqWQPCPtF9MIdn73axivedIDp+ntNAa/qnw26XIM60NB0zrtb/eDTe2GeQE3dAKWDaZerUw/o3TjVQT3h/261UdQEoogyBizGqnO/NSDUkZWTxWBU0jSUmSo9y3pmuuLoWdUTnq5bNO2rSnu7BIYzQB+ZxccquMXmTTkdqrqyV93mJXCfzF8QuDC5wf9NYzrKoiNjSBNhIBuvU2c2wPIYu3uFP5zMqvem6nj+hE84JU2hV4bE0RcdpfTnzOJoV2+CbabK3dAhaL+z9wnzaKV+jfYqUWLVmT5Tze74iBYjrfi8x3GILlGstuvnjjhWgl2eyEEUhO6MZQ5ZBpzU2o2yo7TpHaURTXVToN5ZwqoAno43wMgyzdbzgOgS8KqNiYPhDQx++YQIpZxzvT3WBqnikCnHM9DJJ7ftrcD1S1R+aSp18AtTd55SV7aAmkzQiEpeysqQ791UVSuqV63SXmMDmOJoVTVPg8i+378yzEB3w5zEvoCFxxJCZ0YKk6lnHiaugPu9x8UDPwVmmPBB767Y7lrExzct/49qvbRRlwNXegoC4QPBCOwt0bYpQ2usimc7DyaAzNeF1fOy10ttM/IC+JszxXvhmNdUmIdUWgyb6QIYX2BpBfDpPK3oYUmmWIrVmBLV2JYY7DHqZAS17qyBRoSlXhEyJu4DeiJ6N9fGZfwC1k+p6KZyiSY8qDUkD6JpBimAHkMRxlFaE0NYh20Yee450WwY3Xa6OnyouyXLbVUURFFGCjZk3+hbBdbGkKevfQc="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.evidence-bundle.registry": {
+      "kind": "topic",
+      "role": "evidence-bundle schema registry (HCS-2)",
+      "id": "0.0.10448537",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989821.071684636",
+      "consensusTimestamp": "1788989827.879320630",
+      "confirmedFrom": "GET /topics/0.0.10448537",
+      "confirmedAt": "2026-09-09T21:37:12.759Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.evidence-bundle.register": {
+      "kind": "message",
+      "role": "evidence-bundle schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989826.326376789",
+      "consensusTimestamp": "1788989833.581032641",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:37:16.402Z",
+      "policy": {
+        "name": "evidence-bundle",
+        "topic": "0.0.10448537",
+        "fileTopic": "0.0.10448532",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODUzMiIsIm1ldGFkYXRhIjp7Im5hbWUiOiJldmlkZW5jZS1idW5kbGUiLCJkZXNjcmlwdGlvbiI6IldJU0hNYWlsIGV2aWRlbmNlLWJ1bmRsZSBzY2hlbWEsIHNwZWNpZmljYXRpb24gbWlub3IgdmVyc2lvbiAwLjUgKMKnMTguNSkifX0=",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "248fdaae31aeb761aa5474f497d2219804b0e41569eb0120356d91e3a7e0f912"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.narrative.file": {
+      "kind": "topic",
+      "role": "narrative schema file (HCS-1)",
+      "id": "0.0.10448540",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989830.693222646",
+      "consensusTimestamp": "1788989837.277768104",
+      "confirmedFrom": "GET /topics/0.0.10448540",
+      "confirmedAt": "2026-09-09T21:37:23.341Z",
+      "policy": {
+        "name": "narrative",
+        "memo": "b06588bbb9c6b44c0ef960cdfa0437372924ed87d4d0c0ce4c3253da4ca361d6:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "b06588bbb9c6b44c0ef960cdfa0437372924ed87d4d0c0ce4c3253da4ca361d6",
+        "blobSha": "0b9a0ceb894dc79a3343c73d3e33e7a160c1fc61",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.narrative.chunks": {
+      "kind": "message",
+      "role": "narrative schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989838.106080324",
+      "consensusTimestamp": "1788989844.237921718",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:37:26.924Z",
+      "policy": {
+        "name": "narrative",
+        "topic": "0.0.10448540",
+        "memoDigest": "b06588bbb9c6b44c0ef960cdfa0437372924ed87d4d0c0ce4c3253da4ca361d6",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,Gz8EAJwDbtOMTuQnquPxjihP813SRJN61Qp7VKc/XeomCgSCVAXFbBJ7P8/PjvTtz9sCrUSP8A7X1inpMNnepKLpnST+5kOsF/y+/faEXLkzi4ruo4mdLh46JdkXndF8m1sPCunMWkI6rr9oudZLMgXjTGgnMjSxwUCFVBoxLHUYIx2BY+rAidvLVCLB4FWVsaD6hPdKkDBYoO0mY1XuA4zGB9OKV3D8v4NtzPdwp1PA6RX+12JoDEF4AUfAH3+we36/fGba9+7Q5WDfKYPTheTVBs8VvD5/vethOKyh8M1sZz0YIsdQn/Q+1sNFz6xCm55hWk7g5RIZSJn8B6upjRhOVRfuhbowq7G95f0abQCFGsIano4HyLQlGxoyFMRPrDcrIaVMifRJmPEnein+sD54KZziHtXETaMqSJVP7kFhbCRiE2DCOQGmNobnxIUw0+iMl46YlC9eaj+YSco+HBLMA+er6LgwPJd4q+7AyHfkfMuuiTsb363JLvJxcDirNDMRZhi92Acj5YR6l/E/3NtsqsFqxutpiDvlaeKLza0VFAg4oS+1O0BIBfLM/eRgwbSkNJZ8YuB8E5shWegb4eRNH8WjIe6zOLOxGoxUI1FYm3/YSkRj2l5kHpxbEaC0MMygWJIN1INlG2vLcHFo4/ORlH7nDG9Rvgs0Pg=="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.narrative.registry": {
+      "kind": "topic",
+      "role": "narrative schema registry (HCS-2)",
+      "id": "0.0.10448544",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989840.160726958",
+      "consensusTimestamp": "1788989847.862767414",
+      "confirmedFrom": "GET /topics/0.0.10448544",
+      "confirmedAt": "2026-09-09T21:37:34.204Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.narrative.register": {
+      "kind": "message",
+      "role": "narrative schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989848.467161735",
+      "consensusTimestamp": "1788989855.075099125",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:37:37.778Z",
+      "policy": {
+        "name": "narrative",
+        "topic": "0.0.10448544",
+        "fileTopic": "0.0.10448540",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODU0MCIsIm1ldGFkYXRhIjp7Im5hbWUiOiJuYXJyYXRpdmUiLCJkZXNjcmlwdGlvbiI6IldJU0hNYWlsIG5hcnJhdGl2ZSBzY2hlbWEsIHNwZWNpZmljYXRpb24gbWlub3IgdmVyc2lvbiAwLjUgKMKnMTguNSkifX0=",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "b06588bbb9c6b44c0ef960cdfa0437372924ed87d4d0c0ce4c3253da4ca361d6"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.conformance-claim.file": {
+      "kind": "topic",
+      "role": "conformance-claim schema file (HCS-1)",
+      "id": "0.0.10448547",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989852.733301699",
+      "consensusTimestamp": "1788989858.697741104",
+      "confirmedFrom": "GET /topics/0.0.10448547",
+      "confirmedAt": "2026-09-09T21:37:46.042Z",
+      "policy": {
+        "name": "conformance-claim",
+        "memo": "430d4e2fc0d7a1d04e1fea2b47734fc5d84249031c19f5b435a053e4249493cc:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "430d4e2fc0d7a1d04e1fea2b47734fc5d84249031c19f5b435a053e4249493cc",
+        "blobSha": "abe80e152035cefc1cce1a46c8317a35a0777cf9",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.conformance-claim.chunks": {
+      "kind": "message",
+      "role": "conformance-claim schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989861.080402189",
+      "consensusTimestamp": "1788989868.683979836",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:37:51.992Z",
+      "policy": {
+        "name": "conformance-claim",
+        "topic": "0.0.10448547",
+        "memoDigest": "430d4e2fc0d7a1d04e1fea2b47734fc5d84249031c19f5b435a053e4249493cc",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G0sTACwK7IZjUZsvDCc8hqgmRAl4y7VNm06rSvA0NpkAybWVjwJ6HwS7bzXX1i3p63A7/97t5VeCCGYR6VabcdogIl19U4FK2H/c7yeW6JRKydR2zu7bV8UkmSTd2xDzSCiioVss5KQxcUmXdSpGC+XO8x31h55Jf+kxPe6SKTgu4v2JiCY3hAKR6ja2pUxYK0iRKtxxMpxiJCC8LxUi0hb1CJboEUkVYdeQFuTyLMjdmV13ZoSdw/4qY7+OP7Y624Xc6gvvwKvgP8CKjgltUE86Yx/xSdduBS45nZPZb8CECP1ITWyB3IEVje7RAVnivSzhOeF9IgQXudRsIX9xa2ZnNkr6oOMEg5AuMY14rJZVwPrw8QTjI/X6g6xfxDVkITtJSTZgc3Mu/Ok2XzNxcEPne9J8vKKc63lck9UoA01sfSKbecO9DoQsorANIPbMg2xc3vFjrr6PDjn262GefjN1GjHlv+SHuzIq47g8IB56wf4tilB3hJ2HGyZ0R0E8htPvAYE4MFD9ZcV0t7F//xAHhhPN5HymS9/0nQJG/d4QlrqP6Q/40L8xyyrdUb4NXOpAhTjgogI1t4SrJfLKojGgs1XqIOOOGkHyzrh/TOOQT8fHNPutpHHDQrdSrBS6eXVqzrW6Z/b5iEKz/2e9G9WWP8GGqEsOb3V0P63oOBIJxEkWbWy2+ltV5R2DULrLnmbHalOgxASBZL0ro7AVkyK9xoub6O7OGQOkXk2abM0aTSfZhwMuqMpTtzBTbPvHIIBhLJdss/nMGM2VZpfcialnK23kj2Y6UrH99bUsWInUsk0OEDLpLLOn4dIwg1LI0C40FLQMx9tnjmlBWNvk+HqQAeQe1hFSLnVhvhsASr4TbHtYt3DiHhNzIdUHDE4Lo5qVQq2AQaxDJC07jGbAjqHuxIlGruGSTTJ6rBNHPZP0rNNKNLe87AOqGE1fxIwxDBUakYIvxdi8Mw"
+          },
+          {
+            "o": 1,
+            "c": "d8mrI5YYJwvY/d4ERsd8UwIeyTcFsm1zA6bHSXxArLdvs4dxa9rYE0CIZNzovZlyEchRQ7iwjzLNwUxVb4IYpmIbowbGssn/GQaNSBTZlM3uPA33UEuuAA5CGysFGcBuFgcZSs0Js8DNqiPFL1lEGPz8e5pqjTd96zikrixSLLJy1n1cY1z+f+Dzt+fiRXuEzlEEhoj7sB8Yw2HSTFYWSqP0TFTskZdf5/aFDYk7nd29Wz54pTQlyC5qKTEwPy61VN7TMg8WsGWtp5Uwri3Mzm1U1AuLxzXlYFQTcsTzFaR/wneLzN4q/7T/BxvXLGa9F1Ji0MqpzTFq8U1lizYmMmUM4Xgc2Ycq4dWUxdlsjI3Dt9b+Qazy0B98XqaedCEu0gll9RESkNHOvjID3aTjpcvz9ak1WrSf5+FD+hnS89oD2YLxBZzi668/lMGNzEjOVZAcfArpybFLk5VcVfGk2V90gEEnlsy4U0ic1tgbM1AvT54g4/2G8DXTrTosccCA1PFJkVNVIH"
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.conformance-claim.registry": {
+      "kind": "topic",
+      "role": "conformance-claim schema registry (HCS-2)",
+      "id": "0.0.10448551",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989866.189110035",
+      "consensusTimestamp": "1788989872.843034104",
+      "confirmedFrom": "GET /topics/0.0.10448551",
+      "confirmedAt": "2026-09-09T21:38:04.693Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.conformance-claim.register": {
+      "kind": "message",
+      "role": "conformance-claim schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989878.031674370",
+      "consensusTimestamp": "1788989885.603077378",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:38:06.759Z",
+      "policy": {
+        "name": "conformance-claim",
+        "topic": "0.0.10448551",
+        "fileTopic": "0.0.10448547",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODU0NyIsIm1ldGFkYXRhIjp7Im5hbWUiOiJjb25mb3JtYW5jZS1jbGFpbSIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgY29uZm9ybWFuY2UtY2xhaW0gc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "430d4e2fc0d7a1d04e1fea2b47734fc5d84249031c19f5b435a053e4249493cc"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.declaration.file": {
+      "kind": "topic",
+      "role": "declaration schema file (HCS-1)",
+      "id": "0.0.10448556",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989880.098680112",
+      "consensusTimestamp": "1788989887.599793055",
+      "confirmedFrom": "GET /topics/0.0.10448556",
+      "confirmedAt": "2026-09-09T21:38:08.745Z",
+      "policy": {
+        "name": "declaration",
+        "memo": "59c6a779e1bc57377a63ed85cd0dae102dec61fa05fb3c00f617ee68fd469dcc:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "59c6a779e1bc57377a63ed85cd0dae102dec61fa05fb3c00f617ee68fd469dcc",
+        "blobSha": "5794e09ace9ff3267750f998690482a27c801d2f",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.declaration.chunks": {
+      "kind": "message",
+      "role": "declaration schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989886.783939271",
+      "consensusTimestamp": "1788989891.543985406",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:38:12.615Z",
+      "policy": {
+        "name": "declaration",
+        "topic": "0.0.10448556",
+        "memoDigest": "59c6a779e1bc57377a63ed85cd0dae102dec61fa05fb3c00f617ee68fd469dcc",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,G9IJABwHuUnzSn3/TgSHTfdz+rvLdL8ViCSdTL+0DtHTDj6P9H37cdogIl19LVq6JMgXBqmxip+5uS+0Ul29X+iqe+IowtKFQUUatAIhMRnO9i5IL9pUYbZt6dG66KtWpdUumULjmlkSGU1tyBsmNcNEs1Gmab+CzjQsPDmujVQkMPyh9HlHssVlJig8XXicGuK18kCvcfK0oh/HNf093Z8c/U38vw4vQ/gfcMFxSBSo4f6dQRg+N7YSE4cItgt37ci4qhaVBCTaClyCcH70xIQAxvjIUc0mwriwOuxQYePfzyjWt3IutKkK0E3MpuFfyyo0pIpm5rdLWoHj/HaqnY63ft+tRQXp9xB0KUXuxBE23NvhFwDVnpPjGpDY1KE4HCXu0AZ04GyNxSt+TwiGiIhT8t/q6fnlkIPzeBGC/w7YSChsXIZ/AfwDB3N0kTD57nj9dUuiCoNGlRriKhfmbXoCsEiQErRIRGSesh3P7H7A2vt+bxl4leJYgc6gef9EzdR19ocdK9VcZZpnk4zJi+2b0JM1uXgbYEasA2PdnI4KhNRMpji8rJjBP45tAIyTEzcjqeOG0DWv7h0x7v+BDsWpMMoZmvzJJ0KK/xmJ7u9nywv3V1U/6zi7H4bzeHX8mEAzLt+jL35uTjDEWkvAnQbRmKnwMRXdtyyXbbJN11jawT1I4yQSuF8t9ZLf5ETakJta/VP7WVxLgpqdDzU0afrZueFE9x3xWHTbbUg3QCIQdIquJYggyzlQXzqFcCsczhYzwcJW+8EbOjg4FiG+konAMwWB8U2hYYpB7WCV8B5dNTuWUVEeW+zOGve6ej6pyZcc+11jDiT/0O+XzwY/e9/f/I9bra+KBSJIxoUI+5vO5eq9mYXNu7Zf/jZ84cgDjPiQMozdcdCqs99qOL+4Z4OBgAgRbKQ9B61BIKfLakPfsAWSzTVqGtdzNehuc99Q32PtC7Ka/2NjMh"
+          },
+          {
+            "o": 1,
+            "c": "ufz7s3v7azBc1ec48rJv8BkH6wDt0BCSWWFtQ43GfZJYXaR7boddhQjvNu2EK5NEol11Px0GDr7c6anY4Y3I9HtG04YJ+aLZ7v9Mco8gFkO5rUaA6wFpr4v8+eVDZIwGgqPrhV5Flu9itq8SprLaKiQ5W7tp2yZfOmqR0ue5tpJvYWzw+fKSIOTvQRRcmD3j0="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.declaration.registry": {
+      "kind": "topic",
+      "role": "declaration schema registry (HCS-2)",
+      "id": "0.0.10448560",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989886.207009986",
+      "consensusTimestamp": "1788989893.500915652",
+      "confirmedFrom": "GET /topics/0.0.10448560",
+      "confirmedAt": "2026-09-09T21:38:20.886Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.declaration.register": {
+      "kind": "message",
+      "role": "declaration schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989895.404543708",
+      "consensusTimestamp": "1788989901.763694104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:38:24.373Z",
+      "policy": {
+        "name": "declaration",
+        "topic": "0.0.10448560",
+        "fileTopic": "0.0.10448556",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODU1NiIsIm1ldGFkYXRhIjp7Im5hbWUiOiJkZWNsYXJhdGlvbiIsImRlc2NyaXB0aW9uIjoiV0lTSE1haWwgZGVjbGFyYXRpb24gc2NoZW1hLCBzcGVjaWZpY2F0aW9uIG1pbm9yIHZlcnNpb24gMC41ICjCpzE4LjUpIn19",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "59c6a779e1bc57377a63ed85cd0dae102dec61fa05fb3c00f617ee68fd469dcc"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.price-list.file": {
+      "kind": "topic",
+      "role": "price-list schema file (HCS-1)",
+      "id": "0.0.10448565",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989897.372075179",
+      "consensusTimestamp": "1788989905.220975642",
+      "confirmedFrom": "GET /topics/0.0.10448565",
+      "confirmedAt": "2026-09-09T21:38:31.473Z",
+      "policy": {
+        "name": "price-list",
+        "memo": "f772d558cf738f041fc129a9640139d62a4f13f9d7a3c9b31640cd3258efef77:brotli:base64",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": null,
+        "sha256": "f772d558cf738f041fc129a9640139d62a4f13f9d7a3c9b31640cd3258efef77",
+        "blobSha": "9491f875240880e87eded74eac38d0e52e04ea26",
+        "warrant": "hcs-13.md:136 step 1 · hcs-1.md:48-49 forbids an admin key on a file topic (D-150)"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.price-list.chunks": {
+      "kind": "message",
+      "role": "price-list schema, as an HCS-1 file",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989911.388352296",
+      "consensusTimestamp": "1788989916.440439104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:38:39.236Z",
+      "policy": {
+        "name": "price-list",
+        "topic": "0.0.10448565",
+        "memoDigest": "f772d558cf738f041fc129a9640139d62a4f13f9d7a3c9b31640cd3258efef77",
+        "chunks": [
+          {
+            "o": 0,
+            "c": "data:application/schema+json;base64,GzkeAKwKeDI0nqhNCzDs0p9V2OlECXgFGA8jJOn0fVVzWv/1MtnTpbRKWIRsvFAAHwnF4ZV98TRGqTmVfVdMnsB1TI6E2VVtefpIGCCtwKIztxWiqIT51dpn1Sl30kW4KP379ftdtXu4P0Qws9NzQKiiSKEikpEm2kXaRLHJlnNmhsWbNAX67HbLDVjfZP2m9a13yVQkruNoFAgNaShOVOo0tJHzlC2gkjjzibHoRJCE4Bcnp/QFxOIIfp0WMMmAtkvdL8aFwMZTiEjLmWmVLhz/2ft6mk/f/9O35zdiRTtawkA2yAKOvFbu6MVeU+fV+vvPw6maLjYmaPptt+/O0ffr+mz/AFrphlc4d9Iyu7S8UlpK2Qq00b2MuwYeDIEsKuyPTM4+fbXUjaNl/nBbGv0Zunk/pMIgRM7J2sDq2/EeUHPfMFYGwHJyVwQMfpNpGn7ASWu4/odDhuI8Ee+ez8pGQfqFnropBeeXSUGdWwFphHrsjlBXXT+l5Kb3t/uEGcb3UrHihfX8wyFo8NPrjl+NjsbuL6PIu/nJ9AptC443nGTReiyY4bS6w7ILFVJx3CKBzDA7HU4Z98MZ2fbEJEPGELJAfPif/YPul7LuGRfiB557SQIGe9dydMtfOEOVvlFmiSEazCi85WH3QLH4CpLAhw90WPxYX1ot3wEZvgcK3rgT1W0Mgo/9JpxX+zuHUbvvmv6k05BbTtpcjrXNAFgjxhXJ5m4oH2h+l179oMa3s45D+f33Nnx4wZELTZyrK98mpxBD1xbeDfg5dcKElC9g7IFTsMl5KQuYgqMRR8R40Jcm5jyYF5pswARfnYIUx6HWmJBxnRJF8siFttUQlAWCYzowxsjFFguiWWlt7LCum/QvJ8s75jt4dTWTFvmwqHRAQrJxHR0p4wA52qjvpnwctJMVo1587arwbmBJTMqGMVCe5+xp5CuLNpnkL/36rpCf3Y8fxz/MeH"
+          },
+          {
+            "o": 1,
+            "c": "OdXeUTLnfhOCAnG0Sz7yekoxSuXj2l4oGTHuD/DwtTHUu757Vh0bVePlND6hUtxackBYaiHQPWnabgvIDQkYotAz2W5CNcoeAOjgmn9RoQ/2ArjZ59g3vg8Oi/S2Xwq7F7jwds88oRCeORGi6vBNqCX8pJZnLq21U2u6274aijbB6o8lO7xhhQBDjEkkXPLJMeftAfuT+sTzBi936kzTr1EFlZD85FPM9M7YMBPMwHx8nCBiavDB32mWG3qWVWCWq88CemGHlRWYONgndbScdLgDxw16WbsQ3EChfT3zjbElnlRbgpJwcTz3cFUJnuHjWXnxLKwF3ubyDRmFiAgKtwCKJnGxWsggDddgiqoKYZ2q0a4IbJMAMrVwVSFHGoLJFosiVdv4n4e/hI9Hfr+XTkaiYENxMKOR8B3BlfvUR6djZqTCbIb+I8hi7L3GUaPd4iuLTRnhWwMtHu4wnZGc4jO3tJo29QJSQkV++ttHKuJF16pVH2QcZHh3HOL8MMuAwRb13hSJkldfCJnfKysK+g0Lgu+MOzylIY4jH1t0i86ggukRMuVFytBh2ypT5bWkf/ng8I9ind3YddiA7nZAAbqUJf2TW5pUTkiXb+Q8d6vQLvMmXML1GyO/j+XxqpZ8D1nS7nDBxmSMO93wj3kzE2zLzPXoFIE83rHfQ/UgnQpXvc3KdJeCpAHMC6DV2+JQrZ5UWcj16DlD+kYSfc+TCbTjn0wynrfj/XD32G+Tz6aCyuFqRTa4Zs3UF6WjlM1yU0odzsLMywdQf35VSYBsTLELsWAdsyBL6oGamrHPsCClOsIMdekZke7w7AdYeG2CoCpyCOaucaGxlFlTlcstgl7cSnPO2BmNKXDHmFdUrpdQ9Dre1eTNoms0n7VE3o2qdUIWFt+3d1oTecu9Ia2Y5vnMTZ6aYcu9n/AIHENvYfZWKxS9Y5qWq2qtd6SdYLtZtQrbDPfKKQKEfYmvKm5aIdB3FZiFte/iRAKp6+mu7u1/Vj7u+r"
+          },
+          {
+            "o": 2,
+            "c": "JWAjZp7h+S6ciijkler0e7idWDDMEenaUX1+AqSI/JvWCRncveItRwYFGLWyPEixMiopF3YMujTw2C61cFtIAbUdH36ptYcgpCRobe9LRyoolKnU8i1MNRgy5AE8QjnpzC/urcwkVqAgw2aqBt/V11iGat1E5/W4ikvOe9pAGqn6fAFR9mmVj5ir7fzuxVL/W47QECnukYtdnF/0HHbisa0ExpEnEYSSoGEaTsOCwSEfVPksphdY4ziECemQuJMra4fYebVqDauHhnefxkYD69M981TsrGyLEZTMIANqbiXALiKsFOI10MwM6bVqYJEJMlTgVRk2pdJkBc8dMhsec5SVzKi57uuqT8pmUub6sJaTEyZkJ0U+Mvly00v/19ob+EbdDkMqiZugcz4RiO18bEi2Ttndq5/JlEONExcp403Yr77+KySew3pCD7krjMz4lGidojMzRomMUF1tcInSWY5vdQc="
+          }
+        ]
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.price-list.registry": {
+      "kind": "topic",
+      "role": "price-list schema registry (HCS-2)",
+      "id": "0.0.10448570",
+      "builtBy": "TopicCreateTransaction",
+      "signedBy": [
+        "operator",
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989913.181111243",
+      "consensusTimestamp": "1788989920.098971628",
+      "confirmedFrom": "GET /topics/0.0.10448570",
+      "confirmedAt": "2026-09-09T21:38:45.903Z",
+      "policy": {
+        "memo": "hcs-2:0:60",
+        "submitKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+        "feeScheduleKey": null,
+        "fee": null,
+        "feeExemptKeys": [],
+        "autoRenewAccount": "0.0.8641261",
+        "warrant": "hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number"
+      },
+      "specTag": "v0.5.9"
+    },
+    "schema.price-list.register": {
+      "kind": "message",
+      "role": "price-list schema registration",
+      "id": null,
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989922.497332672",
+      "consensusTimestamp": "1788989926.762700104",
+      "confirmedFrom": "GET /topics/null",
+      "confirmedAt": "2026-09-09T21:38:49.407Z",
+      "policy": {
+        "name": "price-list",
+        "topic": "0.0.10448570",
+        "fileTopic": "0.0.10448565",
+        "bytes": "eyJwIjoiaGNzLTIiLCJvcCI6InJlZ2lzdGVyIiwidF9pZCI6IjAuMC4xMDQ0ODU2NSIsIm1ldGFkYXRhIjp7Im5hbWUiOiJwcmljZS1saXN0IiwiZGVzY3JpcHRpb24iOiJXSVNITWFpbCBwcmljZS1saXN0IHNjaGVtYSwgc3BlY2lmaWNhdGlvbiBtaW5vciB2ZXJzaW9uIDAuNSAowqcxOC41KSJ9fQ==",
+        "txMemo": "hcs-2:op:register:0",
+        "sha256": "f772d558cf738f041fc129a9640139d62a4f13f9d7a3c9b31640cd3258efef77"
+      },
+      "specTag": "v0.5.9"
+    },
+    "prices.second": {
+      "kind": "message",
+      "role": "the second PriceList — the provisioned path priced (D-159 addendum)",
+      "id": "0.0.10426551",
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "operator"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1788989976.210208773",
+      "consensusTimestamp": "1788989981.685451648",
+      "confirmedFrom": "GET /topics/0.0.10426551/messages",
+      "confirmedAt": "2026-09-09T21:39:42.730Z",
+      "policy": {
+        "sequenceNumber": 2,
+        "sha256": "14d1ee1b6fec4d5e4eeed466a009c328c5fd04445193d498dd42adf5dc76547c",
+        "bytes": 637,
+        "provisioning": {
+          "method": "hbar",
+          "unitPrice": "2",
+          "registrationFee": "0.05"
+        },
+        "warrant": "§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase"
+      },
+      "specTag": "v0.5.9"
     }
   },
   "residue": [

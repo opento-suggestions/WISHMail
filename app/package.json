@@ -26,7 +26,9 @@
     "check:letter": "tsx src/tools/letter.check.ts",
     "check:freeze": "tsx src/ops/freeze.check.ts",
     "probe:542": "tsx src/ops/probe542.ts",
-    "check:prefreeze": "tsx src/ops/prefreeze.check.ts"
+    "check:prefreeze": "tsx src/ops/prefreeze.check.ts",
+    "prices:2": "tsx src/ops/pricelist2.ts",
+    "prices:2:plan": "tsx src/ops/pricelist2.ts --dry-run"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

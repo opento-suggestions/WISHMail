@@ -1,0 +1,885 @@
+{
+  "_readme": "A conformance-suite report. §5.10 ConformanceClaim.suite.reportDigest names the `digest` below, which is SHA-256 over the canonical JSON (RFC 8785) of this object with `digest` and `generated` absent (§5.1). `generated` is excluded for the reason §11.6 excludes observations: two runs at two clocks cannot agree on it. A claim naming a class whose row here is not `passed in full` is refused (T-P15-3).",
+  "spec": "0.5.9",
+  "minorVersion": "0.5",
+  "scope": "all",
+  "register": {
+    "total": 86,
+    "core": 81,
+    "extension": 5,
+    "source": "spec/CONFORMANCE_TESTS_v0_5.md §A"
+  },
+  "counts": {
+    "registered": 86,
+    "selected": 86,
+    "passed": 0,
+    "failed": 86,
+    "notRun": 0
+  },
+  "passedInFull": false,
+  "pins": {
+    "standards": {
+      "hcs-10": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "0cb5d2eb6b98e12e4b44fa8c4fea6e10937b615a"
+      },
+      "hcs-14": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "969de3aa2fccaea10f50165f82620ae6172b017d"
+      },
+      "hcs-11": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "aa5ba9ede21b31cb84dde93e119302fd5ae127a9"
+      },
+      "hcs-13": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "07f1ac67b344d6655b98ce8196b3053fe1b4f566"
+      },
+      "hcs-1": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "0d8cca5f0adac613a149244e769672ea3060328a"
+      },
+      "hcs-2": {
+        "commit": "7046156c85eaaf29e149fa10232964d33a58d34e",
+        "blobSha": "dc0ad9a1a052f4a9f2ee750161d61f7f8d28ef07"
+      },
+      "x402-v2-core": {
+        "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+        "blobSha": "3b4631af0684748966eafcdf6a6a90a8cbbf7198"
+      },
+      "x402-v2-http": {
+        "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+        "blobSha": "a21213c02706208b2268a5fdab7dc6d5b468edbd"
+      },
+      "x402-scheme-exact": {
+        "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+        "blobSha": "fe27f3c2a971fcc8325c9f65c85bc19f8f93271f"
+      },
+      "x402-scheme-exact-hedera": {
+        "commit": "0c04a84eeceace349397274c5785c9ca7fcf9474",
+        "blobSha": "ee3860ccdf351b22a1186c08660cf6929a54d0f6"
+      }
+    },
+    "unfilled": 0
+  },
+  "results": [
+    {
+      "test": "T-P1-1",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-10",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-11",
+      "invariant": "P-1",
+      "classes": [
+        "CORRESPONDENT",
+        "RECIPIENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-2",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-3",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-4",
+      "invariant": "P-1",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-5",
+      "invariant": "P-1",
+      "classes": [
+        "CORRESPONDENT",
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-6",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT",
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-7",
+      "invariant": "P-1",
+      "classes": [
+        "VERIFIER",
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-8",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P1-9",
+      "invariant": "P-1",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P10-1",
+      "invariant": "P-10",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P10-2",
+      "invariant": "P-10",
+      "classes": [
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-1",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-2",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-3",
+      "invariant": "P-11",
+      "classes": [
+        "RECIPIENT",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-4",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-5",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-6",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P11-7",
+      "invariant": "P-11",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": true,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-1",
+      "invariant": "P-12",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-2",
+      "invariant": "P-12",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-3",
+      "invariant": "P-12",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-4",
+      "invariant": "P-12",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-5",
+      "invariant": "P-12",
+      "classes": [
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-6",
+      "invariant": "P-12",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P12-7",
+      "invariant": "P-12",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": true,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P13-1",
+      "invariant": "P-13",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P13-2",
+      "invariant": "P-13",
+      "classes": [
+        "CORRESPONDENT",
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P13-3",
+      "invariant": "P-13",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P13-4",
+      "invariant": "P-13",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P14-1",
+      "invariant": "P-14",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P15-1",
+      "invariant": "P-15",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P15-2",
+      "invariant": "P-15",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P15-3",
+      "invariant": "P-15",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P15-4",
+      "invariant": "P-15",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P15-5",
+      "invariant": "P-15",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P16-1",
+      "invariant": "P-16",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P16-2",
+      "invariant": "P-16",
+      "classes": [
+        "RECIPIENT",
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P17-1",
+      "invariant": "P-17",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT",
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P17-2",
+      "invariant": "P-17",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P17-3",
+      "invariant": "P-17",
+      "classes": [
+        "CORRESPONDENT",
+        "RECIPIENT",
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P2-1",
+      "invariant": "P-2",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P2-2",
+      "invariant": "P-2",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P2-3",
+      "invariant": "P-2",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": true,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P2-4",
+      "invariant": "P-2",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-1",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER",
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-2",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER",
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-3",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-4",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-5",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P3-6",
+      "invariant": "P-3",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P4-1",
+      "invariant": "P-4",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P4-2",
+      "invariant": "P-4",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P4-3",
+      "invariant": "P-4",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P5-1",
+      "invariant": "P-5",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P5-2",
+      "invariant": "P-5",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P5-3",
+      "invariant": "P-5",
+      "classes": [
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P5-5",
+      "invariant": "P-5",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": true,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-1",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-2",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-3",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-4",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-5",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-6",
+      "invariant": "P-6",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": true,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P6-7",
+      "invariant": "P-6",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P7-1",
+      "invariant": "P-7",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P7-2",
+      "invariant": "P-7",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P7-3",
+      "invariant": "P-7",
+      "classes": [
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P7-4",
+      "invariant": "P-7",
+      "classes": [
+        "RECIPIENT",
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P7-5",
+      "invariant": "P-7",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P8-1",
+      "invariant": "P-8",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P8-2",
+      "invariant": "P-8",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P8-3",
+      "invariant": "P-8",
+      "classes": [
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P8-4",
+      "invariant": "P-8",
+      "classes": [
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-1",
+      "invariant": "P-9",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-10",
+      "invariant": "P-9",
+      "classes": [
+        "RECIPIENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-11",
+      "invariant": "P-9",
+      "classes": [
+        "CORRESPONDENT",
+        "POSTMASTER",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-2",
+      "invariant": "P-9",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-3",
+      "invariant": "P-9",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-4",
+      "invariant": "P-9",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-5",
+      "invariant": "P-9",
+      "classes": [
+        "POSTMASTER",
+        "CORRESPONDENT",
+        "RECIPIENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-6",
+      "invariant": "P-9",
+      "classes": [
+        "CORRESPONDENT",
+        "VERIFIER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-7",
+      "invariant": "P-9",
+      "classes": [
+        "CORRESPONDENT",
+        "POSTMASTER"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-8",
+      "invariant": "P-9",
+      "classes": [
+        "CORRESPONDENT"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    },
+    {
+      "test": "T-P9-9",
+      "invariant": "P-9",
+      "classes": [
+        "all"
+      ],
+      "extension": false,
+      "outcome": "failed"
+    }
+  ],
+  "generated": "2026-09-09T21:43:14.585Z",
+  "digest": "f635da3fa47dab8caf0f186f73e7ca7b69a5f6ac3642bbe6003628b56c5c18dd"
+}

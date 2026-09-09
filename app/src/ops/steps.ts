@@ -394,14 +394,14 @@ const topicStep = (
  * the source of truth for per-network constants, so the file and the table
  * cannot drift apart unnoticed.
  */
-export function priceListPath(ctx: Ctx): string {
-  return path.join(ctx.env.repoRoot, 'app', `price-list.${ctx.env.constants.ledgerTag.replace(':', '-')}.json`);
+export function priceListPath(ctx: Ctx, suffix = ''): string {
+  return path.join(ctx.env.repoRoot, 'app', `price-list${suffix}.${ctx.env.constants.ledgerTag.replace(':', '-')}.json`);
 }
 
 interface PLMethod { method: string; asset: string; payTo: string | null; facilitator?: string; rate?: { source: string; pair: string } }
 
-export function buildPriceList(ctx: Ctx): Record<string, unknown> {
-  const raw = JSON.parse(fs.readFileSync(priceListPath(ctx), 'utf8')) as Record<string, unknown>;
+export function buildPriceList(ctx: Ctx, suffix = ''): Record<string, unknown> {
+  const raw = JSON.parse(fs.readFileSync(priceListPath(ctx, suffix), 'utf8')) as Record<string, unknown>;
   delete raw['_readme'];
 
   const stampToken = raw['stampToken'] as { ledgerTag: string; tokenId: string | null; treasury: string | null };
