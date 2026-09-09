@@ -633,6 +633,8 @@ Two kinds of object appear below. **Authored** objects are produced by an actor 
 
 Every proof in WISHMail has one shape. §10 fixes what each part contains for each kind.
 
+<!-- CHANGED: D-163 -->
+
 ```
 Proof
   rule          {id, revision}           what fired: a profile at its pin, or a
@@ -1439,6 +1441,7 @@ Consumption is by hash: a proof's inputs name the prior proof's hash, so forging
 
 ### 10.2 The resolution proof
 
+<!-- CHANGED: D-163 -->
 Its parts are fixed by its profile (§9): the rule is the profile at its pin; the inputs are what the registry answered, located or snapshotted; the output is the coordinates; the meaning names the profile, its trust class, its endorsements, and the sender's manifest topic, which is the proof's canonical location (§5.2). It is the only proof in the chain whose manifest is published before the envelope exists, because the AAD needs its hash.
 
 ### 10.3 The proof of posting and the postmark
@@ -1451,10 +1454,12 @@ No separate manifest is published for the proof of posting. Chunk 0 is its manif
 
 A return receipt is the recipient's signed statement that a specific envelope opened with its AAD verified, witnessed by consensus so that it can neither be denied nor re-worn.
 
+<!-- CHANGED: D-163 -->
 **Parts.** Rule: receipt at this specification's version. Inputs: the envelope identifier, chunk 0's postmark, and the key epoch the envelope opened under. Output: the statement `opened`, over exactly those inputs. Meaning: the recipient's account, the recipient's manifest topic as the receipt's canonical location, `trustClass: math`, no endorsements. Witness: the executed schedule (below) and the manifest message's postmark.
 
 What a receipt proves, a Verifier recomputes: that the account whose key executed it is the recipient's, that it names this envelope and this postmark and no other, and that it was witnessed after delivery. What a receipt states, only the recipient could know: that the envelope opened. The proof is `math` for what it proves; `opened` is the signer's testimony, as a signature on a return-receipt card is the signer's testimony that the letter was received.
 
+<!-- CHANGED: D-163 -->
 **Mechanism.** A receipt is produced by a long-term scheduled transaction (HIP-423) whose inner transaction is a submission of the receipt's manifest to the recipient's manifest topic — a topic only the recipient's key can write to. The sender, after SETTLED, creates the schedule with the manifest pre-filled, the payer designated by the sender (D-47: the Postmaster), `waitForExpiry` false, and an expiration no later than the network's maximum; it then posts HCS-10's `transaction` operation on the lane naming the schedule. The receipt's manifest is complete before the recipient has signed anything, so its meaning names the topic it will land on and no sequence number: the sequence is assigned by the execution the recipient's signature triggers, and the manifest is inside the transaction that triggers it (§5.2). The recipient's `ack` is a ScheduleSign. The instant the recipient signs, the network executes the submission: the manifest lands on the recipient's manifest topic, the schedule's record carries the recipient's signature and the execution timestamp, and the lane already carries the request. The recipient pays nothing at any step.
 
 ```
@@ -1484,6 +1489,7 @@ The recipient MUST NOT be charged for a receipt.
 
 A slip is a proof of absence: first contact was attempted, and no lane had answered when the sender's window closed.
 
+<!-- CHANGED: D-163 -->
 **Parts.** Rule: slip at this specification's version. Inputs: the resolution proof's hash, the doorbell, the connection request's postmark on the doorbell and its record on the sender's log, and the window. Output: `unanswered` at the request's consensus timestamp plus the window — a fact any Verifier recomputes by reading the doorbell for a `connection_created` naming that request with a consensus timestamp inside the window and finding none. Meaning: the address and profile, the endorsement `timed-out`, the statement that expiry is not silence and that nothing is claimed about the recipient, and the sender's manifest topic as the slip's canonical location (§5.2). Witness: the connection request's postmark.
 
 `send` MUST publish the slip's manifest on the sender's manifest topic before returning a slip.
@@ -1517,6 +1523,7 @@ Reconciliation is the reconstruction of a correspondence from public consensus d
 
 Two properties govern everything below. Reconciliation is keyless and brokerless: it reads what Consensus recorded and needs nothing that any party holds (P-3, P-4). And it is deterministic: the same scope and window yield the same evidence from any Verifier, at any time, byte for byte, so that no Verifier's reading stands above another's and the Postmaster's stands above no one's (P-3, §3.7).
 
+<!-- CHANGED: D-163 -->
 Appraisal is two verifications performed together on each proof. **Replay** is the syntactic half: from the proof's rule and inputs, recompute its output, and from its four parts recompute its hash, and compare both to what the proof claims. **Lookup** is the semantic half: read the topic the proof's canonical location names for a message whose body recomputes to the proof's hash, and confirm that it is there under a postmark. The read is content-addressed, because a location names a topic and not a message (§5.2). A proof that passes both is appraised *verified*. A proof that cannot be replayed, or whose manifest cannot be found or does not hash to the proof, is appraised *unverified*: a downgrade, never an error (P-12). Appraisal never asks whether what a proof states is true. It asks whether the proof recomputes, and whether Consensus recorded it.
 
 <!-- CHANGED: D-163 -->
@@ -1609,6 +1616,7 @@ The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's re
 
 **The postage.** The settlement is read by `hdr.st` and counted by §8.5: it exists, its memo is `wishmail:<id>`, its `to` is the treasury, its consensus timestamp precedes chunk 0's, and it is in the stamp token; its amount covers the envelope's postage — weight plus one when `hdr.rr` is true; and no envelope with an earlier canonical chunk 0 names the same settlement. Any of these failing: the envelope is unstamped. A settlement that counts for no envelope in scope is an orphan and is reported under `orphans` (F-3).
 
+<!-- CHANGED: D-163 -->
 **The resolution proof.** A Verifier looks it up: dereferences `hdr.rp.u` on the sender's manifest topic, reads the message there as a manifest, and compares the manifest's hash to `hdr.rp.h`; the manifest's postmark must precede chunk 0's. It then performs the lookup §11.1 fixes against the manifest's own canonical location: the topic `meaning.uri` names is read for a message whose body recomputes to that hash, and a proof whose location holds no such message is unverified (T-P6-7). The reference took the Verifier to a message; the location is what the proof itself said, and only the second is inside the hash. A Verifier replays it under the profile the manifest names, if that profile is one the Verifier claims (§9.6): from the locator for a profile whose inputs are on consensus, from the snapshot for one whose inputs are not; the recomputed output must be the coordinates the manifest carries and the recomputed hash must be `hdr.rp.h`. Where the profile is not claimed, or the snapshot is absent and the input cannot be re-obtained, or the chunk's `schemaRef` does not resolve, the resolution is appraised unverified.
 
 The manifest's meaning carries what the sender declared: the profile, its trust class, and its endorsements. A Verifier reports these as declared and adds its own standing beside them. It does not raise a trust class, and it does not remove an endorsement: a `social-committee` proof that replays perfectly is a verified `social-committee` proof, and a `withheld` input that the Verifier happens to be able to see was still withheld from the proof (P-12).
@@ -1628,6 +1636,7 @@ Standing is what an envelope's evidence binds to, on one axis; state is how far 
    verified  >  unverified  >  unstamped  >  unbound
 ```
 
+<!-- CHANGED: D-163 -->
 An envelope's standing is the lowest that any check of §11.4 yields; every check that yields a standing below verified contributes its test to `reasons`; an envelope with no reasons is verified. The order is read as: a bound and stamped envelope whose resolution could not be replayed is still certified mail whose address is unappraised; an unstamped envelope is not certified mail; an unbound envelope does not open.
 
 ```
