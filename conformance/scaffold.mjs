@@ -1,7 +1,7 @@
 /**
  * Write a stub for every test in §A that has no file yet.
  *
- * `conformance/README.md`: "85 tests — 80 core and 5 extension. Every one of
+ * `conformance/README.md`: "86 tests — 81 core and 5 extension. Every one of
  * them becomes one test file, keyed by its identifier." This writes the ones
  * that are missing and NEVER touches one that exists, so a test that has been
  * expanded can never be reverted to a stub by running this again.

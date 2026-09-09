@@ -8,7 +8,7 @@ The suite. One test per `T-<P-ID>-<n>`, keyed to the invariant in its `P-ID` (§
 
 ## The register
 
-`spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: **85 tests — 80 core and 5 extension.** Every one of them becomes one test file, keyed by its identifier. A test is not expanded in scope beyond its sketch in §A without a decision (`D-nnn`).
+`spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: **86 tests — 81 core and 5 extension.** Every one of them becomes one test file, keyed by its identifier. A test is not expanded in scope beyond its sketch in §A without a decision (`D-nnn`).
 
 The five extension tests — **T-P2-3** (§16.2 `attest`), **T-P5-5** (§16.5 `document` profile), **T-P6-6** (§16.6 `find`), **T-P11-7** (§16.4 spending cap), **T-P12-7** (§16.3 key custody) — bind only a release that names that extension in its claim (§16.1, D-111). They are built last, or not at all.
 
@@ -67,7 +67,7 @@ Because of that, nothing in an ordinary run reaches `report.mjs`, so the report 
 **What a run prints today:**
 
 ```
-  register        85 tests (80 core + 5 extension), §A
+  register        86 tests (81 core + 5 extension), §A
   files           83 present, 0 missing, 0 unregistered
   selected        83
   passed          0

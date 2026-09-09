@@ -58,7 +58,7 @@
         },
         "uri": {
           "type": "object",
-          "description": "A structured locator naming one HCS message (§5.2). Not an HRL: the HCS-1 HRL grammar names files, not messages.",
+          "description": "The canonical location: the topic the proof's manifest is published on (§5.2, D-163). A LOCATION and not a locator — it names a topic and no message, because a proof's hash covers its meaning and its manifest is published after the hash is fixed (§6.4). The manifest at a location is the message on that topic whose body recomputes to the proof's hash; the precise message locator lives in a reference, never here.",
           "properties": {
             "ledgerTag": {
               "type": "string",
@@ -73,18 +73,14 @@
               "type": "string",
               "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
               "description": "Hedera entity in canonical form 0.0.N (§5.1)."
-            },
-            "sequenceNumber": {
-              "type": "integer",
-              "minimum": 1
             }
           },
           "required": [
             "ledgerTag",
-            "topicId",
-            "sequenceNumber"
+            "topicId"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "$comment": "T-P6-7 — a proof whose location holds no message recomputing to its hash appraises no higher than unverified (§11.1, §11.5). Not an HRL: the HCS-1 HRL grammar names files, not topics on which messages are published."
         },
         "trustClass": {
           "type": "string",

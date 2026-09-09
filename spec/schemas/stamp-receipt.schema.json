@@ -103,6 +103,11 @@
           "additionalProperties": false,
           "description": "What the provisioned path cost, under the price list current at the purchase (§14.3)."
         },
+        "registrationFee": {
+          "type": "string",
+          "description": "The ℏ the purchase funded into the agent's own account for the agent to pay for its own registration (§4.6, §5.4, D-159 addendum). A decimal string in the ledger's natural unit, as every amount in a price is (§14.3) — never atomic units, never a JSON number. Present exactly where the Postmaster funds that fee; where present it equals what the price list's `provisioning` entry names.",
+          "$comment": "T-P11-4 is the court: the fee a Verifier reads in the receipt is the fee the price message current at the purchase published. T-P13-4 is why it exists at all — the registration is paid by the agent, so the agent must hold the fee, and the receipt is where a Verifier sees it arrived as a leg of the purchase rather than from an account the receipt does not name."
+        },
         "account": {
           "type": "string",
           "pattern": "^[0-9]+.[0-9]+.[0-9]+$",

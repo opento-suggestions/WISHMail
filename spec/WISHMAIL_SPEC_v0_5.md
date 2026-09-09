@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.5
+# WISHMail — Specification v0.5.6
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -285,9 +285,11 @@ A term defined here carries that meaning everywhere it appears in this document.
 
 **attempted-delivery slip** — a proof of absence: the consensus-timestamped connection request together with the sender's log entry, attesting that first contact was attempted and no lane answered within the window. Expiry is not silence. A slip carries no negative claim about the recipient.
 
-**canonical location** — the structured locator, recorded in a proof's meaning, at which the proof's manifest is found on consensus data.
+<!-- CHANGED: D-163 -->
+**canonical location** — the location, recorded in a proof's meaning, at which the proof's manifest is found on consensus data: the message, on the topic that location names, that recomputes to the proof's hash. It names a topic and not a message, because a proof's hash covers its meaning and its manifest is published after the hash is fixed (§5.2, §6.4).
 
-**manifest** — the full four-part proof, published where its canonical location says; what an object naming a proof by `{hash, uri}` dereferences to.
+<!-- CHANGED: D-163 -->
+**manifest** — the full four-part proof, published on the topic its canonical location names; what an object naming a proof by `{hash, uri}` dereferences to. A manifest is found by its hash and not by its position: whichever message on that topic recomputes to the proof's hash is the manifest, and no other message there is.
 
 **manifest topic** — an agent's own HCS topic, keyed to the agent alone, on which it publishes the manifests of the proofs it makes (§9.1).
 
@@ -311,7 +313,8 @@ A term defined here carries that meaning everywhere it appears in this document.
 
 **replay** — the recomputation of a proof from its rule and inputs, from public data. The syntactic half of appraisal.
 
-**lookup** — the dereference of a proof's canonical location to confirm what consensus recorded. The semantic half of appraisal.
+<!-- CHANGED: D-163 -->
+**lookup** — the dereference of a proof's canonical location to confirm what consensus recorded: the read of the topic that location names for a message whose body recomputes to the proof's hash. Content-addressed, so that a proof need not name a sequence number it cannot know. The semantic half of appraisal.
 
 **reconciliation** — the reconstruction, from public consensus data alone, of who posted which envelope to whom and when, with every proof appraised. Reconciliation reconstructs which envelope, never what it said. Output: an evidence bundle and a narrative. Tool: `verify`.
 
@@ -585,6 +588,9 @@ Where a registry anchor admits submissions from any account (§9.5), provisionin
 **The order, and two affordances.** The acts above have one order, and it is HCS-10's rather than this document's: the topics, then the profile, then the account memo, then the registration. A `register` operation names an account, and a reader that follows an anchor reaches the agent through that account's memo (§9.5); a registration submitted before the topics exist lists a box that is not there. An implementation MAY offer the self-provisioned path as affordances of its own beside the six tools — the reference implementation offers `generate_mailbox`, which creates the doorbell, the log, the manifest topic and, under the native profile, the declaration registry and the profile file, and sets the account memo; and `register_agent`, which submits the agent's own `register` operation on an anchor that admits it. Neither is a verb of §6.1 and neither is on the conformance surface: §6.1 fixes six verbs on one noun, and T-P15-4 requires those six to be identical across a release's transports, not that a release offer only those six.
 
 An agent that registers itself pays for that one submission from its own account, so that the registration's payer and its `account_id` are the same account and `hol` resolves it without `blurred` (§9.5). Where the agent holds no balance of its own, whoever pays for its provisioning MAY fund exactly that one fee and no more; funding is a payment and not a party (§3.9).
+
+<!-- CHANGED: D-159 -->
+Where one purchase both buys stamps and provisions the agent, that funding is a leg of the purchase's own transfer rather than a transfer beside it, and the price list prices it under the provisioned path (§14.3). The receipt then records the amount funded (§5.4), so that a Verifier reading the receipt sees the fee as part of what was bought and not as a gift arriving from somewhere the receipt does not name. A Postmaster that does not fund the fee prices none and records none; the agent's account holds the fee once, spends it on its own registration, and holds no balance after (§3.5).
 `Conformance:` T-P13-4.
 
 <!-- CHANGED: D-146, D-150 -->
@@ -637,12 +643,23 @@ Proof
                                           consensus, a snapshot of the bytes read (§9.1)
   output        {digest} | value         what the rule produced
   meaning       {statement, uri,         the reasoner's statement of what the output
-                 trustClass,              means; the canonical location; what its
-                 endorsements[]}          verification rests on; what it could not see
+                 trustClass,              means; the canonical location, which is a
+                 endorsements[]}          location and not a locator; what its
+                                          verification rests on; what it could not see
   hash          sha256                    over rule, inputs, output, meaning
 ```
 
-A proof travels by reference: an object that names a proof carries `{hash, uri}`, and the full proof — its manifest — is dereferenced at `uri`, never carried in-band (D-26). Locators and canonical locations are structured, not strings: on Hedera, `{ledgerTag, topicId, sequenceNumber}` names one message and `{ledgerTag, txRef}` names one transaction. The HRL grammar of HCS-1 (`hcs://<standard>/<topicId>`) names files, not messages, and is used only where a standard uses it.
+<!-- CHANGED: D-163 -->
+A proof travels by reference: an object that names a proof carries `{hash, uri}`, and the full proof — its manifest — is dereferenced at `uri`, never carried in-band (D-26). Neither is a string, and they are two shapes:
+
+```
+location   {ledgerTag, topicId}                   where a manifest is published; a
+                                                   proof's own meaning.uri
+locator    {ledgerTag, topicId, sequenceNumber}   one message
+           {ledgerTag, txRef}                      one transaction
+```
+
+A **location** names where a manifest is found, not which message it is: the manifest at a location is the message on that topic whose body recomputes to the proof's hash, and the read is content-addressed. A proof's `meaning.uri` is a location, because a proof's hash covers its meaning and its manifest is published after the hash is fixed — no proof can name the message it is about to become (§6.4). A **locator** names one thing on consensus and is what a reference to a proof carries — `rp.u` in the AAD (§7.2), `resolutionProof.uri` in coordinates (§5.3), the executed submission for a receipt (§10.4) — and what a proof's `inputs.locator` carries. A reference is a shortcut through the lookup and never a substitute for it: what a reference reaches is the manifest only if it recomputes to the proof's hash and lies on the topic the proof's own location names (§11.1). The HRL grammar of HCS-1 (`hcs://<standard>/<topicId>`) names files, not messages, and is used only where a standard uses it.
 
 ### 5.3 MailCoordinates
 
@@ -681,9 +698,9 @@ StampReceipt                            Settlement (observed)
   holder        string    account or
                           public-key
                           alias
-  provisioning? {price, account,
-                 doorbell, log?,
-                 manifestTopic,
+  provisioning? {price, registrationFee?,
+                 account, doorbell,
+                 log?, manifestTopic,
                  declRegistry?,
                  profileFile?}
 ```
@@ -692,6 +709,9 @@ StampReceipt                            Settlement (observed)
 
 <!-- CHANGED: D-161 -->
 `provisioning` is present exactly when the purchase also bought the provisioned path (§4.6, §6.3). `price` is what that path cost, under the `provisioning` entry of the price list current at the purchase (§14.3); the fields after it are the entities the Postmaster created for the holder, which is what the agent receives — coordinates, and no secret (P-13). `declRegistry` and `profileFile` are present exactly where the native profile was provisioned.
+
+<!-- CHANGED: D-159 -->
+`registrationFee` is the amount the purchase funded into the agent's own account for it to pay for its own registration (§4.6), written as a decimal string in the ledger's natural unit as every other amount in a price is (§14.3). It is present exactly where the Postmaster funds that fee and absent where it does not; where present it equals what the price list's `provisioning` entry names, so that the fee a Verifier reads in the receipt is the fee the schedule published (T-P11-4).
 
 ### 5.5 Envelope
 
@@ -1281,7 +1301,8 @@ The native profile takes `account`, `doorbell`, and `log` from the HCS-11 profil
 **Inputs on consensus and inputs off it.** Where a profile's inputs are on consensus, its locator re-obtains them forever and its trust class is `math`. Where they are not — a DNS answer, an HTTPS document — the manifest MUST carry a snapshot of the bytes the rule read, so that the proof's hash is recomputable from the manifest alone and what was read is witnessed; a Verifier that can re-obtain the input now reports agreement or drift (F-5), and one that cannot appraises from the snapshot and reports the proof unverified.
 `Conformance:` T-P6-2 — for each profile, a fixture resolution's manifest recomputes to its hash from its locator (consensus profiles) or its snapshot (the others); a manifest for a non-consensus profile with no snapshot is rejected at `send`.
 
-**The manifest topic.** Every agent has a manifest topic: an HCS topic of its own, created at provisioning, whose memo is `wishmail:manifest:1` and whose sole submit key is the agent's. A sender publishes the resolution proof's manifest there before assembly, as a message whose body is the manifest, `{p: "wishmail", t: "manifest", ...proof}`; the message's `{ledgerTag, topicId, sequenceNumber}` is the proof's canonical location. Nothing but manifests goes on a manifest topic, and no HCS-10 topic carries a manifest. A Verifier need not attribute a manifest: its hash is bound into the AAD, and a manifest that recomputes to that hash is the one the envelope meant, whoever published it.
+<!-- CHANGED: D-163 -->
+**The manifest topic.** Every agent has a manifest topic: an HCS topic of its own, created at provisioning, whose memo is `wishmail:manifest:1` and whose sole submit key is the agent's. A sender publishes the resolution proof's manifest there before assembly, as a message whose body is the manifest, `{p: "wishmail", t: "manifest", ...proof}`; the manifest topic `{ledgerTag, topicId}` is the proof's canonical location, and the message's `{ledgerTag, topicId, sequenceNumber}` is the locator a reference to the proof carries (§5.2). Nothing but manifests goes on a manifest topic, and no HCS-10 topic carries a manifest. A Verifier need not attribute a manifest: its hash is bound into the AAD, and a manifest that recomputes to that hash is the one the envelope meant, whoever published it. That sentence is the lookup rule and not a remark beside it: an agent knows its own manifest topic before it resolves anything, and knows the sequence number of nothing it has not yet submitted.
 
 A manifest topic MUST have the agent's key as its sole submit key, and a manifest MUST be one HCS message on the sender's manifest topic; where a snapshot would not fit, the manifest carries the snapshot's digest and the coordinates read, and the proof is replayable only while its source stands.
 `Conformance:` T-P17-3 — every fixture manifest topic has the agent's key as its sole submit key and the memo `wishmail:manifest:1`; T-P9-8 — every fixture manifest is one HCS message at or under `CHUNK_WIRE_MAX` bytes on the sender's manifest topic, with a consensus timestamp earlier than chunk 0's.
@@ -1418,7 +1439,7 @@ Consumption is by hash: a proof's inputs name the prior proof's hash, so forging
 
 ### 10.2 The resolution proof
 
-Its parts are fixed by its profile (§9): the rule is the profile at its pin; the inputs are what the registry answered, located or snapshotted; the output is the coordinates; the meaning names the profile, its trust class, its endorsements, and the manifest's canonical location on the sender's manifest topic. It is the only proof in the chain whose manifest is published before the envelope exists, because the AAD needs its hash.
+Its parts are fixed by its profile (§9): the rule is the profile at its pin; the inputs are what the registry answered, located or snapshotted; the output is the coordinates; the meaning names the profile, its trust class, its endorsements, and the sender's manifest topic, which is the proof's canonical location (§5.2). It is the only proof in the chain whose manifest is published before the envelope exists, because the AAD needs its hash.
 
 ### 10.3 The proof of posting and the postmark
 
@@ -1430,11 +1451,11 @@ No separate manifest is published for the proof of posting. Chunk 0 is its manif
 
 A return receipt is the recipient's signed statement that a specific envelope opened with its AAD verified, witnessed by consensus so that it can neither be denied nor re-worn.
 
-**Parts.** Rule: receipt at this specification's version. Inputs: the envelope identifier, chunk 0's postmark, and the key epoch the envelope opened under. Output: the statement `opened`, over exactly those inputs. Meaning: the recipient's account, the canonical location of the receipt's manifest on the recipient's manifest topic, `trustClass: math`, no endorsements. Witness: the executed schedule (below) and the manifest message's postmark.
+**Parts.** Rule: receipt at this specification's version. Inputs: the envelope identifier, chunk 0's postmark, and the key epoch the envelope opened under. Output: the statement `opened`, over exactly those inputs. Meaning: the recipient's account, the recipient's manifest topic as the receipt's canonical location, `trustClass: math`, no endorsements. Witness: the executed schedule (below) and the manifest message's postmark.
 
 What a receipt proves, a Verifier recomputes: that the account whose key executed it is the recipient's, that it names this envelope and this postmark and no other, and that it was witnessed after delivery. What a receipt states, only the recipient could know: that the envelope opened. The proof is `math` for what it proves; `opened` is the signer's testimony, as a signature on a return-receipt card is the signer's testimony that the letter was received.
 
-**Mechanism.** A receipt is produced by a long-term scheduled transaction (HIP-423) whose inner transaction is a submission of the receipt's manifest to the recipient's manifest topic — a topic only the recipient's key can write to. The sender, after SETTLED, creates the schedule with the manifest pre-filled, the payer designated by the sender (D-47: the Postmaster), `waitForExpiry` false, and an expiration no later than the network's maximum; it then posts HCS-10's `transaction` operation on the lane naming the schedule. The recipient's `ack` is a ScheduleSign. The instant the recipient signs, the network executes the submission: the manifest lands on the recipient's manifest topic, the schedule's record carries the recipient's signature and the execution timestamp, and the lane already carries the request. The recipient pays nothing at any step.
+**Mechanism.** A receipt is produced by a long-term scheduled transaction (HIP-423) whose inner transaction is a submission of the receipt's manifest to the recipient's manifest topic — a topic only the recipient's key can write to. The sender, after SETTLED, creates the schedule with the manifest pre-filled, the payer designated by the sender (D-47: the Postmaster), `waitForExpiry` false, and an expiration no later than the network's maximum; it then posts HCS-10's `transaction` operation on the lane naming the schedule. The receipt's manifest is complete before the recipient has signed anything, so its meaning names the topic it will land on and no sequence number: the sequence is assigned by the execution the recipient's signature triggers, and the manifest is inside the transaction that triggers it (§5.2). The recipient's `ack` is a ScheduleSign. The instant the recipient signs, the network executes the submission: the manifest lands on the recipient's manifest topic, the schedule's record carries the recipient's signature and the execution timestamp, and the lane already carries the request. The recipient pays nothing at any step.
 
 ```
    sender (after SETTLED)                         recipient
@@ -1463,7 +1484,7 @@ The recipient MUST NOT be charged for a receipt.
 
 A slip is a proof of absence: first contact was attempted, and no lane had answered when the sender's window closed.
 
-**Parts.** Rule: slip at this specification's version. Inputs: the resolution proof's hash, the doorbell, the connection request's postmark on the doorbell and its record on the sender's log, and the window. Output: `unanswered` at the request's consensus timestamp plus the window — a fact any Verifier recomputes by reading the doorbell for a `connection_created` naming that request with a consensus timestamp inside the window and finding none. Meaning: the address and profile, the endorsement `timed-out`, the statement that expiry is not silence and that nothing is claimed about the recipient, and the canonical location of the slip's manifest on the sender's manifest topic. Witness: the connection request's postmark.
+**Parts.** Rule: slip at this specification's version. Inputs: the resolution proof's hash, the doorbell, the connection request's postmark on the doorbell and its record on the sender's log, and the window. Output: `unanswered` at the request's consensus timestamp plus the window — a fact any Verifier recomputes by reading the doorbell for a `connection_created` naming that request with a consensus timestamp inside the window and finding none. Meaning: the address and profile, the endorsement `timed-out`, the statement that expiry is not silence and that nothing is claimed about the recipient, and the sender's manifest topic as the slip's canonical location (§5.2). Witness: the connection request's postmark.
 
 `send` MUST publish the slip's manifest on the sender's manifest topic before returning a slip.
 `Conformance:` T-P12-5 — a fixture first contact whose window elapses yields a slip whose manifest is on the sender's manifest topic, whose output recomputes from the doorbell, and whose appraisal is unchanged by a `connection_created` that lands after the window.
@@ -1496,13 +1517,18 @@ Reconciliation is the reconstruction of a correspondence from public consensus d
 
 Two properties govern everything below. Reconciliation is keyless and brokerless: it reads what Consensus recorded and needs nothing that any party holds (P-3, P-4). And it is deterministic: the same scope and window yield the same evidence from any Verifier, at any time, byte for byte, so that no Verifier's reading stands above another's and the Postmaster's stands above no one's (P-3, §3.7).
 
-Appraisal is two verifications performed together on each proof. **Replay** is the syntactic half: from the proof's rule and inputs, recompute its output, and from its four parts recompute its hash, and compare both to what the proof claims. **Lookup** is the semantic half: dereference the proof's canonical location and confirm that what is found there is the manifest the proof names, under a postmark. A proof that passes both is appraised *verified*. A proof that cannot be replayed, or whose manifest cannot be found or does not hash to the proof, is appraised *unverified*: a downgrade, never an error (P-12). Appraisal never asks whether what a proof states is true. It asks whether the proof recomputes, and whether Consensus recorded it.
+Appraisal is two verifications performed together on each proof. **Replay** is the syntactic half: from the proof's rule and inputs, recompute its output, and from its four parts recompute its hash, and compare both to what the proof claims. **Lookup** is the semantic half: read the topic the proof's canonical location names for a message whose body recomputes to the proof's hash, and confirm that it is there under a postmark. The read is content-addressed, because a location names a topic and not a message (§5.2). A proof that passes both is appraised *verified*. A proof that cannot be replayed, or whose manifest cannot be found or does not hash to the proof, is appraised *unverified*: a downgrade, never an error (P-12). Appraisal never asks whether what a proof states is true. It asks whether the proof recomputes, and whether Consensus recorded it.
+
+<!-- CHANGED: D-163 -->
+A Verifier MUST appraise no higher than unverified a proof whose manifest it does not find at the proof's canonical location: where no message on the topic that location names recomputes to the proof's hash, the proof's manifest is not on consensus where the proof says it is, and the reason is reported. A reference reaching a manifest on some other topic does not answer the lookup; it is the location the proof itself carries that must hold it.
+`Conformance:` T-P6-7 — a fixture manifest whose `meaning.uri` names a topic on which no message recomputes to its hash appraises unverified with T-P6-7 among its reasons; a fixture manifest reached through a reference whose locator names a message on the topic that manifest's own `meaning.uri` names, and which recomputes there, appraises verified.
 
 ```
                      replay (syntactic)              lookup (semantic)
-   proof {hash,uri}  --> rule(inputs) == output ?    --> uri -> manifest ?
-                         h(rule,inputs,output,          manifest.hash == hash ?
-                           meaning) == hash ?           postmark present ?
+   proof {hash,uri}  --> rule(inputs) == output ?    --> meaning.uri -> a message
+                         h(rule,inputs,output,          on that topic whose body
+                           meaning) == hash ?           hashes to hash, under a
+                                                        postmark ?
                                   \                        /
                                    '--> both: verified  --'
                                         either fails: unverified
@@ -1583,7 +1609,7 @@ The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's re
 
 **The postage.** The settlement is read by `hdr.st` and counted by §8.5: it exists, its memo is `wishmail:<id>`, its `to` is the treasury, its consensus timestamp precedes chunk 0's, and it is in the stamp token; its amount covers the envelope's postage — weight plus one when `hdr.rr` is true; and no envelope with an earlier canonical chunk 0 names the same settlement. Any of these failing: the envelope is unstamped. A settlement that counts for no envelope in scope is an orphan and is reported under `orphans` (F-3).
 
-**The resolution proof.** A Verifier looks it up: dereferences `hdr.rp.u` on the sender's manifest topic, reads the message there as a manifest, and compares the manifest's hash to `hdr.rp.h`; the manifest's postmark must precede chunk 0's. A Verifier replays it under the profile the manifest names, if that profile is one the Verifier claims (§9.6): from the locator for a profile whose inputs are on consensus, from the snapshot for one whose inputs are not; the recomputed output must be the coordinates the manifest carries and the recomputed hash must be `hdr.rp.h`. Where the profile is not claimed, or the snapshot is absent and the input cannot be re-obtained, or the chunk's `schemaRef` does not resolve, the resolution is appraised unverified.
+**The resolution proof.** A Verifier looks it up: dereferences `hdr.rp.u` on the sender's manifest topic, reads the message there as a manifest, and compares the manifest's hash to `hdr.rp.h`; the manifest's postmark must precede chunk 0's. It then performs the lookup §11.1 fixes against the manifest's own canonical location: the topic `meaning.uri` names is read for a message whose body recomputes to that hash, and a proof whose location holds no such message is unverified (T-P6-7). The reference took the Verifier to a message; the location is what the proof itself said, and only the second is inside the hash. A Verifier replays it under the profile the manifest names, if that profile is one the Verifier claims (§9.6): from the locator for a profile whose inputs are on consensus, from the snapshot for one whose inputs are not; the recomputed output must be the coordinates the manifest carries and the recomputed hash must be `hdr.rp.h`. Where the profile is not claimed, or the snapshot is absent and the input cannot be re-obtained, or the chunk's `schemaRef` does not resolve, the resolution is appraised unverified.
 
 The manifest's meaning carries what the sender declared: the profile, its trust class, and its endorsements. A Verifier reports these as declared and adds its own standing beside them. It does not raise a trust class, and it does not remove an endorsement: a `social-committee` proof that replays perfectly is a verified `social-committee` proof, and a `withheld` input that the Verifier happens to be able to see was still withheld from the proof (P-12).
 
@@ -1617,6 +1643,7 @@ settlement exists, memo = id, to = treasury,               unstamped    T-P7-1, 
 settlement amount covers postage                           unstamped    T-P7-3
 settlement claimed by no earlier envelope                  unstamped    T-P7-2
 manifest at rp.u hashes to rp.h; postmark precedes chunk 0 unverified   T-P6-2, T-P9-8
+a message at the manifest's location hashes to the proof    unverified   T-P6-7
 resolution replays under a claimed profile                 unverified   T-P6-1, T-P12-4
 schemaRef resolves                                         unverified   T-P9-3
 ```
@@ -1712,7 +1739,7 @@ The class matrix of §1.4 says which classes are tested against which invariants
 *Stated in:* §1.4, §3.4, §9.1, §9.6. *Tests:* T-P5-1 – T-P5-3.
 
 **P-6 — Resolution witnessed, not trusted.** An envelope names the profile it resolved through and commits its resolution proof's hash into the AAD; the proof's manifest is on consensus before the envelope, and a non-consensus profile's inputs are snapshotted into it. A registry's answer is an input, never an authority; a disagreement between registries is a recorded fact; nothing in WISHMail adjudicates between them.
-*Stated in:* §3.4, §6.2, §7.2, §9.1, §9.2, §9.3, §9.5, §9.6, §10.2, §11.6. *Tests:* T-P6-1 – T-P6-5.
+*Stated in:* §3.4, §6.2, §7.2, §9.1, §9.2, §9.3, §9.5, §9.6, §10.2, §11.1, §11.6. *Tests:* T-P6-1 – T-P6-5, T-P6-7.
 
 **P-7 — Stamp precedes send.** A doorbell charges one stamp to ring, under a HIP-991 fee collected by the treasury. An envelope is affixed before any chunk of it is submitted — one settlement, signed by the sender, carrying the envelope's identifier, preceding chunk 0 — and one settlement stamps one envelope. Postage due is unstamped, and nothing unstamped is certified mail. A retried `send` never affixes twice.
 *Stated in:* §4.2, §4.3, §4.4, §8.3, §8.7. *Tests:* T-P7-1 – T-P7-5.
@@ -1849,10 +1876,14 @@ PriceList
   methods        [{method, network, asset, payTo?, facilitator?,
                    unitPrice? | rate? {source, pair, reference {amount, asset}},
                    bundles? [{count, price}]}]
-  provisioning?  {method, unitPrice}         the provisioned path (§4.6), if offered
+  provisioning?  {method, unitPrice,         the provisioned path (§4.6), if offered
+                  registrationFee?}
 ```
 
 `unitPrice` is the price of one stamp in the method's asset, written as a decimal string in that asset's natural unit — not in atomic units, which bake a network's decimals into a document a Verifier reads, and not as a JSON number, because the message is canonical JSON (§5.1) and a float is a hazard. A bundle is a price for a count, offered to everyone alike. A method priced by reference to another asset carries `rate` in place of `unitPrice`: `reference` is the price of one stamp in the reference asset, and `source` and `pair` name what the Postmaster reads at purchase to convert it into the amount it quotes. A method carries `unitPrice` or `rate`, never both. A bundle's price follows its method's pricing basis — the method's own asset where the method is fixed-priced, the reference asset where it is rate-priced — so that the rate converts a bundle at purchase exactly as it converts `reference`. A method names where the money goes: `payTo`, the Postmaster's receiving address, and `facilitator` where one settles the leg (§14.2); at least one is present. An `x402-usdc` method carries both, because the requirements it issues name the receiving address (§14.2). The buyer signs that amount and no other, the quote stands for the transaction's valid duration, and the receipt records the rate used and when (§5.4). Every number is the Postmaster's; this document fixes that there is one schedule, that it is on consensus before it is charged, and that it is the same for everyone (§4.5).
+
+<!-- CHANGED: D-159 -->
+`provisioning` prices the provisioned path of §4.6. `registrationFee` is the amount the Postmaster funds into the provisioned agent's account for the agent's own registration submission — a decimal string in the ledger's natural unit, like every other amount here. It is present exactly where the Postmaster funds that fee, it is priced into the path and not charged beside it, and a receipt's `registrationFee` equals what the message current at the purchase names.
 
 The Postmaster MUST publish a price message before charging under it, MUST charge exactly what the price message current at the purchase yields, and MUST NOT charge under a price it has not published.
 `Conformance:` T-P11-4 — for every method the fixture Postmaster offers, `buy_stamp` charges what the price message current at the receipt's consensus timestamp yields — `count × unitPrice`, a bundle's price at its count, or the referenced rate applied to the reference price — for each of two buyers and each of three counts; a purchase attempted with no price message on the topic, or at an amount the current message does not yield, is rejected; two buyers at the same consensus time are charged the same. T-P11-2.
@@ -2201,9 +2232,10 @@ D-146  Provisioned topics: the admin key is the agent's               §4.6
 D-150  Except where the standard forbids an admin key                 §4.6
 D-152  Agent identifiers compared under both canonical orders         §9.1, §9.2, §9.5, §5.10, §11.6
 D-157  The sender signs the ring; the payer is the sender's choice     §4.4, §6.1, §6.4, §13.2, §15.3
-D-159  Provisioning has one order; two affordances, not two verbs      §4.6
+D-159  Provisioning has one order; two affordances, not two verbs      §4.6, §5.4, §14.3
 D-160  Orphans are read from the treasury, filtered to senders in scope §11.2
 D-161  buy_stamp takes provision; the receipt records it              §5.4, §6.3
+D-163  A proof's location is a topic; lookup is content-addressed      §2.2, §5.2, §9.1, §10.2, §10.4, §10.5, §11.1, §11.4, §11.5
 ```
 
 ### 18.3 Concordance of identifiers (informative)

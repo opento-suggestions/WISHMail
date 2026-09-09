@@ -2,7 +2,7 @@
  * The register, read from §A — one parser, used by the runner and by the
  * extract-and-diff.
  *
- * `spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: 85 tests, 80 core and 5
+ * `spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: 86 tests, 81 core and 5
  * extension. `conformance/README.md`: "Every one of them becomes one test file,
  * keyed by its identifier." Nothing here is normative — the specification and
  * §A are — but everything that reads §A reads it through this file, so that two
@@ -10,7 +10,7 @@
  *
  * §A is read AS ROWS and never by grepping the ledger, because §A's own footer
  * names `T-P5-4`, the test D-112 dropped: a grep of the whole file finds 84
- * identifiers where the register holds 85.
+ * identifiers where the register holds 86.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,7 @@ export const LEDGER = path.join(REPO_ROOT, 'spec', 'CONFORMANCE_TESTS_v0_5.md');
 export const SPEC = path.join(REPO_ROOT, 'spec', 'WISHMAIL_SPEC_v0_5.md');
 
 /** §A's own tally, and `conformance/README.md`'s. */
-export const EXPECTED_TOTAL = 85;
+export const EXPECTED_TOTAL = 86;
 export const EXPECTED_EXTENSION = 5;
 
 /**

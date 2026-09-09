@@ -176,6 +176,11 @@
         },
         "unitPrice": {
           "type": "string"
+        },
+        "registrationFee": {
+          "type": "string",
+          "description": "The ℏ the Postmaster funds into a provisioned agent's account for the agent's own registration submission (§4.6, §14.3, D-159 addendum). A decimal string in the ledger's natural unit. Present exactly where the Postmaster funds that fee; priced into the provisioned path, never charged beside it.",
+          "$comment": "T-P11-4 — a receipt's `registrationFee` equals what the message current at the purchase names."
         }
       },
       "required": [
@@ -183,7 +188,7 @@
         "unitPrice"
       ],
       "additionalProperties": false,
-      "description": "The provisioned path (§4.6), if offered. Provisioning is never required (§4.6, D-57)."
+      "description": "The provisioned path (§4.6), if offered. Provisioning is never required (§4.6, D-57). `registrationFee` is present where the Postmaster funds the agent’s one registration fee as a leg of the purchase (D-159 addendum)."
     }
   },
   "required": [

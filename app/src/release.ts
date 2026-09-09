@@ -9,7 +9,7 @@
  * and pins it names. **Silence claims nothing.**"
  *
  * So this declares the specification version and claims nothing else. Not
- * modesty — accuracy. `conformance/` holds 85 test files and none is expanded;
+ * modesty — accuracy. `conformance/` holds 86 test files and none is expanded;
  * `spec/pins.json` carries thirty unfilled pins, and T-P9-2 refuses a report
  * while any is null. A class named here would be a claim §1.5 forbids
  * (T-P15-3), and the tool bodies all return NOT_IMPLEMENTED.
@@ -37,7 +37,7 @@ export interface Release {
 }
 
 export const RELEASE: Release = {
-  spec: '0.5.5',
+  spec: '0.5.6',
   minorVersion: '0.5',
   classes: [],
   profiles: {},

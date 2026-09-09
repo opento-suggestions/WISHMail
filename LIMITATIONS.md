@@ -11,7 +11,7 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 | Field | Value |
 |---|---|
 | Release | wishmail-reference `[fill at deployment]` |
-| Specification | 0.5.5 |
+| Specification | 0.5.6 |
 | Classes claimed | `[fill at claim]` (VERIFIER, CORRESPONDENT, RECIPIENT, POSTMASTER — only suites that passed in full, T-P15-3). **POSTMASTER is deferred at this release on T-P16-1** — see the note under L-11 |
 | Profiles claimed | `[fill at claim]` of `hcs14`, `dns`, `nanda`, `hol` |
 | Extensions claimed | none |
@@ -90,7 +90,7 @@ Postage is spent when affixed and consumed when the envelope settles; an envelop
 
 ## L-14 — There is no Sponsor, no refund, no credit, and no subscription
 
-No party is named as a funder (§3.9); a stamp is not refunded, extended on credit, or subscribed to (§14.4). This release's price list carries a unit price, bundle prices, and a provisioning price, and nothing that is not a purchase.
+No party is named as a funder (§3.9); a stamp is not refunded, extended on credit, or subscribed to (§14.4). This release's price list carries a unit price, bundle prices, and a provisioning price, and nothing that is not a purchase. The provisioning price includes `registrationFee` — the ℏ the Postmaster funds into a provisioned agent's account so the agent can pay for its own registration (D-159 addendum). **That is a leg of the purchase and not a sponsorship**: it is priced on consensus before it is charged, it is a line of the receipt the buyer holds, and §3.9 fixes that funding is a payment and not a party. The agent holds ℏ exactly once, spends it on one submission of its own, and holds none after.
 
 ---
 
