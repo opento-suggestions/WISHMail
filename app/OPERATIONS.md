@@ -636,7 +636,7 @@ Every submission the fixture owns — its `connection_created`, its side of the 
 
 **The affix**: one settlement, `to` the treasury, `amount` equal to the envelope's weight, `memo` exactly `wishmail:<aadHash>`, and a consensus timestamp **strictly earlier** than chunk 0's (T-P7-1). And the fourth weld: every chunk's `operator_id` names the settlement's `from` account (T-P1-6).
 
-**The submission**: every message ≤1000 bytes, **no `chunkInfo`**, `data` parsing as a Chunk (T-P9-7); the transaction memo `hcs-10:op:6:1` that HCS-10's table gives a `message` on a connection topic (T-P9-5).
+**The submission**: every message ≤1000 bytes, **no `chunkInfo`**, `data` parsing as a Chunk (T-P9-7); the transaction memo `hcs-10:op:6:3` that HCS-10's table gives a `message` on a connection topic — operation 6, topic type 3 (T-P9-5).
 
 **The readers, on what `send` produced.** `inbox` reassembles by the chain, rebuilds the AAD from the header and the lane, checks it against `id`, fetches the settlement and checks memo and amount, and decrypts — and the payload comes back byte-identical. `verify` replays **from the mirror with no key, stamp, account or broker configured** (T-P4-1) and emits an `EvidenceBundle` whose digest is stable across two runs, plus a `Narrative` whose `bundleDigest` equals it (T-P3-4).
 
