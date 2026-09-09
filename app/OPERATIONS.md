@@ -742,7 +742,7 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 ## The HIP-542 probe — gate report, written before any signature. NOTHING IS SIGNED.
 
-**Status at the time of writing: prepared, not run.** No transaction has been built, signed, or submitted for this probe. It waits on Sonic's approval, which is what CLAUDE.md §11's disposable-probe rule asks for.
+**Status: RUN 2026-09-09.** This report was written and committed before any signature (`562fd10`); the run of record follows it below. Nothing in this section was edited after the run except the marked amendments, which were made before it.
 
 **Approved to run, 2026-09-09 (Sonic), with act 2 extended — and one thing in this report turned out to be wrong before it ran.** The amendments are marked below and the original wording is left where it stood, because a gate report that is quietly corrected after approval is not a gate. The run of record follows this section.
 
@@ -787,6 +787,62 @@ Two questions, and the second is the one D-159 actually rests on.
 **Cost.** Five transactions and four mirror reads, all on the operator's account *(amended: the treasury and token have to be created, per the correction above)*. **No stamp is spent, because no `$POSTAGE` is involved** — the units moved here are a token minted for this run and worth nothing.
 
 **Where the runner is.** `app/src/ops/probe542.ts`, `npm run probe:542` inside `app/`. It writes its raw observations to `probe542-observations.json` and its findings here.
+
+---
+
+## The HIP-542 probe — the run of record, 2026-09-09
+
+**Run and answered. Both questions are yes, and the second is the one D-159 rests on.** `npm run probe:542`, five transactions, four mirror reads, **9 of 9 predicates held**. Every predicate below was read from the mirror node and none from an SDK receipt. The raw JSON for each read is in `probe542-observations.json` (gitignored, as the 09-08 probe's was); what it establishes is here.
+
+**Entities of the run.** Probe treasury `0.0.10446531`; probe token `0.0.10446532` ("WISHMail HIP-542 probe stamp", P542, decimals 0, born at 0 and minted 10); the account the probe was written to find, **`0.0.10446534`**, which nobody created — it was bought. Operator `0.0.8641261` paid every transaction. No `$POSTAGE` was involved: the units moved here are a token minted for this run and worth nothing.
+
+**Act 2, and it is one transaction.** `0.0.8641261@1788983188.790484982` — a single `TransferTransaction` carrying two legs to a public key that had no account: one unit of the probe token from the probe treasury, and 5,000,000 tinybar (0.05 ℏ) from the operator. It landed as **two consensus records**, and that pair is the finding:
+
+```
+name                  nonce  consensus              entity        charged_tx_fee
+CRYPTOCREATEACCOUNT   1      1788983195.458822103   0.0.10446534   64,073,264
+  transfers      0.0.8641261 -64,073,264   0.0.802 +64,073,264
+  token_transfers (none)
+
+CRYPTOTRANSFER        0      1788983195.458822104   —              65,611,021
+  transfers      0.0.8641261 -70,611,021   0.0.802 +65,611,021
+                 0.0.10446534 +5,000,000
+  token_transfers 0.0.10446531 -1   0.0.10446534 +1
+```
+
+The network created the account **as a child transaction of the transfer**, one nanosecond before the transfer itself, and charged the whole creation fee — 0.64 ℏ — to the operator. The new account appears in the creation record not at all and in the transfer record only as a credit. **The account is bought, not funded**, and D-159's sentence is now watched rather than inferred.
+
+**Predicates after act 2, each from `GET /accounts?account.publickey=<raw hex>&balance=true`** — which asserts "an account exists under the generated key" directly, rather than assuming an id and then checking it:
+
+| Predicate | Read |
+|---|---|
+| an account exists at the alias | `0.0.10446534`, `alias` `CIQPXHNLJEIWPDGRTDWAGGMX6N66GWUJBPBHEMARGG6BW6H7R52NYEQ` |
+| its `key` is the generated public key | `ED25519 fb9dab4911678cd198ec031997f37de35a890bc272301131bc1b78ff8f74dc12`, byte for byte the key born in the probe's process |
+| its ℏ balance equals the tinybars sent | `balance.balance` **5,000,000** |
+| its token balance is 1 | `tokens[0.0.10446532].balance` **1** |
+| the creation fee was charged to the operator, not the new account | `transfers` above: only `0.0.8641261` is debited |
+
+**And one thing nobody asked for, which matters more than some of the above.** The auto-created account came back with `max_automatic_token_associations: -1` — **unlimited automatic token associations**. That is why the token leg needed no `TokenAssociateTransaction` and why one transaction sufficed. It also means a provisioned agent can receive a second token it never associated with, which is a fact about the mechanism and not a hazard here (§4.1 fixes that only the pinned stamp is postage, and T-P11-1 rejects a settlement in any other token). Recorded because it was not predicted.
+
+**Act 4 — the affix shape under D-157's seam.** `0.0.8641261@1788983193.276018844`: the new account signs a transfer of its one unit back to the probe treasury; the operator is the payer. `SUCCESS`, consensus `1788983197.659886619`.
+
+| Predicate | Read |
+|---|---|
+| the new account can sign as a non-payer | `SUCCESS` — no `INSUFFICIENT_PAYER_BALANCE`, and none was expected against a payer holding a real balance |
+| `token_transfers` shows the movement | `0.0.10446534 -1`, `0.0.10446531 +1` |
+| the fee was paid by the operator, not the signer | `transfers`: `0.0.8641261 -1,409,610`, `0.0.802 +1,409,610` — the signer is not in the list |
+| its ℏ balance is unchanged | **5,000,000**, at birth and after signing |
+
+**What this settles, and for which decision.**
+
+- **D-159's step 2, as its addendum amends it.** A single transaction creates the account, credits the stamps, and credits the registration fee. The three-leg purchase is buildable exactly as written; nothing has to be split into two acts and nothing has to be resumed if the second half fails, because there is no second half.
+- **D-157's payer seam.** An agent holding only its own fee signs for itself while someone else pays, and its balance is untouched by that submission. *Agent signs, payer signs* is a network fact and not an arrangement of ours. The seam can therefore take a remote signature later without the agent's balance being part of the design.
+- **D-156's "an agent's account never holds ℏ, with one exception".** The exception is enough. The 0.05 ℏ the account was born with is still there after it signed; only its own registration will spend it.
+- **What it does NOT settle**, said plainly: the probe's signer held 0.05 ℏ, not zero. A **strictly** zero-balance account signing as a non-payer was not tested, because D-159's addendum means we never build one — the fee arrives in the same transaction as the stamps. If that ever changes, this is the untested corner.
+
+**Cost.** 0.64 ℏ for the auto-creation, 0.66 ℏ for act 2's transfer, 0.014 ℏ for act 4, plus the treasury account and the token and its mint. All on the operator.
+
+**What it left on `hedera:testnet`.** A second permanently inert probe token, `0.0.10446532`, held by a treasury `0.0.10446531` whose key was born in this process and discarded — the same posture as the 09-08 probe's, for the same reason, and with the same consequence: nobody can ever move those units, including us. The account `0.0.10446534` likewise: its key is gone, it holds 0.05 ℏ and no token, and it will expire on its own. **None of the three is in `app/deployment/hedera-testnet.json` and none is in `spec/pins.json`**; a probe is not an entity of record.
 
 ---
 
