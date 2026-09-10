@@ -121,10 +121,17 @@ written to by any code in this repository.
 From `app/deployment/demo-agents.hedera-testnet.json`, snapshotted from each home’s own `record.json`. Every id
 below is public and nothing here is a key: a home’s config and keystore are never read (P-13).
 
-| Agent | Status | Account | Purchase reference |
-|---|---|---|---|
-| a | **stopped** | `0.0.10451893` | `0.0.8641261@1789006030.569861064` |
-| b | **provisioned** | `0.0.10452127` | `0.0.8641261@1789007373.238805114` |
+| Agent | Status | Account | Operator wallet | Purchase reference |
+|---|---|---|---|---|
+| a | **stopped** | `0.0.10451893` | — | `0.0.8641261@1789006030.569861064` |
+| a2 | **provisioned** | `0.0.10462700` | `0.0.10450879` | `0.0.8641261@1789058834.851527600` |
+| b | **provisioned** | `0.0.10452127` | `0.0.10450880` | `0.0.8641261@1789007373.238805114` |
+
+**An operator may own many agents** (D-165): the wallet is the operator’s, the home is the agent’s, and a fresh
+home is a new agent. The operator wallet above is read from **consensus** and never from a home’s config, which is
+never opened (P-13) — every topic a mailbox owns names its operator as the auto-renew account, because the
+Postmaster sells a mailbox once and does not undertake to renew it. An agent whose purchase stopped owns no topic,
+so no row on consensus names its operator and the column is `—`; its wallet is known only to its own home.
 
 **`stopped` means the account was bought and paid for and the mailbox was never finished.** The transfer is on
 consensus, the account holds its stamps and its registration fee, and nothing was charged twice — a transaction
@@ -138,6 +145,16 @@ of record.
 | Agent | What | Id | Payer of record |
 |---|---|---|---|
 | a | the provisioning purchase this agent was bought by | `0.0.10451893` | `0.0.8641261` |
+| a2 | the provisioning purchase this agent was bought by | `0.0.10462700` | `0.0.8641261` |
+| a2 | doorbell (HCS-10 inbound) | [`0.0.10462704`](https://hashscan.io/testnet/topic/0.0.10462704) | `0.0.8641261` |
+| a2 | log (HCS-10 outbound) | [`0.0.10462708`](https://hashscan.io/testnet/topic/0.0.10462708) | `0.0.8641261` |
+| a2 | manifest | [`0.0.10462713`](https://hashscan.io/testnet/topic/0.0.10462713) | `0.0.8641261` |
+| a2 | declaration registry (HCS-2) | [`0.0.10462719`](https://hashscan.io/testnet/topic/0.0.10462719) | `0.0.8641261` |
+| a2 | HCS-11 profile file (HCS-1) | [`0.0.10462723`](https://hashscan.io/testnet/topic/0.0.10462723) | `0.0.8641261` |
+| a2 | HCS-11 profile, as HCS-1 chunks | `0.0.10462723` | `0.0.8641261` |
+| a2 | HCS-2 register entry naming the profile file | `0.0.10462719` | `0.0.8641261` |
+| a2 | §9.2’s account memo, the first link in the chain | `0.0.10462700` | `0.0.8641261` |
+| a2 | the agent’s own registration on the HOL anchor (§9.5, T-P13-4) | `0.0.6913983` | `0.0.10462700` |
 | b | the provisioning purchase this agent was bought by | `0.0.10452127` | `0.0.8641261` |
 | b | doorbell (HCS-10 inbound) | [`0.0.10452149`](https://hashscan.io/testnet/topic/0.0.10452149) | `0.0.8641261` |
 | b | log (HCS-10 outbound) | [`0.0.10452150`](https://hashscan.io/testnet/topic/0.0.10452150) | `0.0.8641261` |

@@ -2,6 +2,84 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [A2] — 2026-09-10 — the second Correspondent, and a dry run that was not one
+
+**No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** ruled the label, the
+funding and the fail-safe; **[CC]** ran it and wrote the record.
+
+### On consensus
+
+**A2 — bought, carried, receipted, registered, in one pass.** Account `0.0.10462700`, home `a2`, `displayName`
+`DemoAgentA2`, under C1OPERATOR's wallet `0.0.10450879` — the same wallet A's home names, because an operator may own
+many agents (D-165). **It is the demo's first Correspondent from here on**, superseding both A (stopped, unchanged)
+and the plan's "A′".
+
+```
+purchase 0.0.8641261@1789058834.851527600 — 43.23883804 ℏ at PriceList sequence 4
+account 0.0.10462700   doorbell 0.0.10462704   log 0.0.10462708   manifest 0.0.10462713
+declaration registry 0.0.10462719   profile file 0.0.10462723   registration 0.0.6913983#382
+```
+
+- **The eight fixes Gate One found are proven.** A2 crossed the submit→learn window nine times and stopped at none.
+  Six are proven by the happy path; defects 3 and 5 by their artefacts — the purchase reference survived the run, and
+  a receipt exists at all, which is what A lost. **The resume path is NOT proven**: every stop was live and none
+  fired, and that is said rather than left to be assumed.
+- **The first receipt issued under sequence 4.** `provisioning.price.amount` `"30"`, `registrationFee` `"0.05"`,
+  validated against the registered `StampReceipt` schema. Its `rate.at` replays: a stranger's
+  `GET /network/exchangerate?timestamp=1789056062.817630056` yields `0.07553533`, the receipt's own value (D-170).
+- **The registration is paid by `0.0.10462700` itself** — the one fact §9.5 reads for `blurred`, and both resolutions
+  come back `math`, endorsements `[]`, **no `blurred`**.
+- **The reprice is answered by the ledger.** A2 cost the Postmaster 29.43736563 ℏ and sold for 43.23883804 ℏ: net
+  **+13.80 ℏ**, where B at sequence 3 was **−12.69 ℏ**. The doorbell came in at 26.61271103 ℏ against B's
+  26.31542199 ℏ — the same topic, half a percent apart in a day, which is ledger §G-20 in one number.
+- **Idempotent, tested LIVE**, because a dry run submits nothing and so cannot show that a submitting run declines to
+  submit. Second run: created nothing, exited 0, *mailbox existing, registration existing* — confirmed on consensus,
+  balances unchanged and the anchor still at 382.
+- **Funding, not sales.** Both operator wallets and A2's own account were funded from **Sonic's own accounts**, not
+  the Postmaster's payer: 40 ℏ each from `0.0.6748221`, 400 ℏ each from `0.0.10331158`, and 150 ℏ to `0.0.10462700`.
+  An operator funding its own wallet is truer to the demo's story than the Postmaster doing it.
+
+### Fixed
+
+- **Every driver that can sign now defaults to DRY RUN** and goes live only when `--live` arrives in its own argv,
+  which it prints along with the arguments it actually received before it reads a key (`app/src/ops/mode.ts`). Root
+  forwarding scripts pass appended arguments through instead of losing them to a nested npm; live scripts bake
+  `--live` into the script string where no forwarding can eat it; plan twins added for every signing driver that
+  lacked one; `probe.ts` and `probe542.ts` had no dry-run mode at all and have one now. **CLAUDE.md §12** carries the
+  rule: a flag's name is not proof it arrived.
+- **`ack` is not built, and three places said it was** — Step 6 §8, the Correspondent MCP's refusal text, and the
+  09-10 plan's §4. Corrected in the first two; the plan is history and the correction is in `plans/README.md`, which
+  is where that file's own convention puts amendments. What §10.4 needs is now written down: a ScheduleCreate at
+  `send` whose inner submission carries the receipt manifest to the recipient's manifest topic, announced as an
+  HCS-10 `transaction` on the lane, and `ack` as the ScheduleSign — **paid by the sender's own operator wallet**
+  (D-157 over D-47), with `check:freeze` having already measured the inner submission at 676 bytes.
+
+### Amended
+
+- **Step 6 is rewritten for what will actually happen**: both ends are Correspondents (A2 → B, not the
+  Postmaster-agent); the step creates **three** entities and not eleven, because the account and the six mailbox
+  topics are Step 5's; the `fixture.*` naming and the funding row are deleted rather than corrected, the row having
+  inverted what happens; `check:letter` is 63 assertions; **§G-14 is closed by D-157** and "parameterised, not
+  decided" goes with it; and the `send` refusal at `send.ts:322` is named as the thing Gate Two lifts.
+- **The predicted appraisal is written before the letter**, derived from §11 rather than asserted: `unverified`, with
+  the reason being the profile-not-claimed row (T-P6-1, T-P12-4) and **not** T-P9-3, which Step 4's signing retired.
+  `RELEASE.profiles` is `{}`, so no profile this letter binds is one this release claims to replay — and claiming one
+  to get a better number is a claim eighty-six unexpanded tests cannot back, so the honest answer is predicted in
+  advance instead.
+- **Step 5 gains a dated ADDENDUM for A2** — the price, the declared maximum, the balances — placed last and marked
+  as written after the run. The gate report itself and B's run of record are **left exactly as they stood**, including
+  one sentence in §7 that is wrong, because a gate report amended after the fact is not a gate report.
+
+### DIVERGENCE — the run went live under the invocation documented as the dry run
+
+`npm run correspondent:provision -- <home> --dry-run`, the form Step 5 §8 documents as the dry run, **signed**. The
+root script forwards as `npm run <name> --workspace app`, so the appended flag landed on a second npm invocation and
+npm consumed it as its own option; the positional home survived because it is positional. The driver read `dryRun` as
+`false`, printed `LIVE` on its first line, and provisioned. Nothing offline could have caught it. **Everything on
+consensus is correct and nothing was repaired** — the mirror was read before anything else was done. It is a
+divergence of our process, not of the protocol, and it appears in `app/OPERATIONS.md` and here and nowhere
+judge-facing.
+
 ## [Sequence 4] — 2026-09-10 — the provisioned path priced at what it costs
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. A price is a deployment fact

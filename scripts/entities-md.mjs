@@ -23,8 +23,8 @@
  *         npm run check:entities     assert the committed file equals its sources
  *
  *         npm run entities:md -- --homes <parent>
- *                                    after Gate One: snapshot the two homes'
- *                                    own records into
+ *                                    after Gate One: snapshot the record of
+ *                                    every home under <parent> into
  *                                    `app/deployment/demo-agents.hedera-testnet.json`,
  *                                    then write this file from it. Only each
  *                                    home's `record.json` is read — what that
@@ -293,7 +293,7 @@ function residue(record) {
 const DEMO_SNAPSHOT = path.join(ROOT, 'app', 'deployment', 'demo-agents.hedera-testnet.json');
 
 /**
- * Copy what the two homes have on consensus into a committed snapshot.
+ * Copy what each home has on consensus into a committed snapshot.
  *
  * A home lives outside the repository and its path is this machine's, so
  * generating DEMO AGENTS straight from it would make ENTITIES.md reproducible
@@ -312,7 +312,18 @@ function snapshotHomes(homesParent) {
     if (!fs.existsSync(rp)) continue;
     const rec = JSON.parse(fs.readFileSync(rp, 'utf8'));
     const entities = [];
+    // Which OPERATOR's wallet stands behind this agent, taken from consensus
+    // rather than from the home's config, which is never opened (P-13). Every
+    // topic a mailbox owns names the operator as its auto-renew account — the
+    // Postmaster sells a mailbox once and does not undertake to renew it — so
+    // the readback of any one of them says whose wallet it is. An operator may
+    // own many agents (D-165): the wallet is the operator's and the home is the
+    // agent's, and this column is where two agents show as one operator's.
+    let operatorWallet = null;
     for (const [key, e] of Object.entries(rec.entities ?? {})) {
+      if (operatorWallet === null && typeof e?.policy?.autoRenewAccount === 'string') {
+        operatorWallet = e.policy.autoRenewAccount;
+      }
       if (!e || e.id === null || e.id === undefined) continue;
       entities.push({
         key,
@@ -332,7 +343,7 @@ function snapshotHomes(homesParent) {
           : {}),
       });
     }
-    if (entities.length > 0) agents.push({ slug, ledgerTag: rec.ledgerTag ?? LEDGER, entities });
+    if (entities.length > 0) agents.push({ slug, ledgerTag: rec.ledgerTag ?? LEDGER, operatorWallet, entities });
   }
   // An EMPTY snapshot is never written. Pointed at the wrong parent, or run
   // before Gate One, this would otherwise replace a real snapshot with nothing
@@ -360,7 +371,7 @@ function snapshotHomes(homesParent) {
   return agents.length;
 }
 
-/** The two Correspondents, from the committed snapshot. Public facts only. */
+/** The demo Correspondents, from the committed snapshot. Public facts only. */
 function demoAgents() {
   const L = [];
   L.push('## DEMO AGENTS');
@@ -369,12 +380,12 @@ function demoAgents() {
     ? JSON.parse(fs.readFileSync(DEMO_SNAPSHOT, 'utf8'))
     : { agents: [] };
   if ((snapshot.agents ?? []).length === 0) {
-    L.push('**Empty until Gate One.** The two Correspondents do not exist yet: their accounts are *bought* rather than');
+    L.push('**Empty until Gate One.** No demo Correspondent exists yet: an agent’s account is *bought* rather than');
     L.push('funded (§4.6, HIP-542), so nothing here exists until the counter’s first two sales. Their **Operators’** wallets');
     L.push('do — `app/OPERATIONS.md`, "Demo-operator funding" — and that was funding and not a sale, which is why those two');
     L.push('accounts are not entities of this deployment and are not listed above.');
     L.push('');
-    L.push('Filled by `npm run entities:md -- --homes <parent>` once the two homes carry records. **A home is read for its');
+    L.push('Filled by `npm run entities:md -- --homes <parent>` once a home carries a record. **A home is read for its');
     L.push('`record.json` only** — what that agent has on consensus, which is public — and never for its config or its');
     L.push('keystore, which stay outside the repository (P-13).');
     L.push('');
@@ -383,17 +394,24 @@ function demoAgents() {
   L.push('From `app/deployment/demo-agents.hedera-testnet.json`, snapshotted from each home’s own `record.json`. Every id');
   L.push('below is public and nothing here is a key: a home’s config and keystore are never read (P-13).');
   L.push('');
-  L.push('| Agent | Status | Account | Purchase reference |');
-  L.push('|---|---|---|---|');
+  L.push('| Agent | Status | Account | Operator wallet | Purchase reference |');
+  L.push('|---|---|---|---|---|');
   for (const a of snapshot.agents) {
     const purchase = a.entities.find((e) => e.key === 'purchase');
     const provisioned = a.entities.some((e) => e.key === 'doorbell');
     const status = provisioned ? '**provisioned**' : '**stopped**';
     L.push(
       `| ${a.slug} | ${status} | ${purchase ? `\`${purchase.id}\`` : '—'} | ` +
+        `${a.operatorWallet ? `\`${a.operatorWallet}\`` : '—'} | ` +
         `${purchase?.reference ? `\`${purchase.reference}\`` : '—'} |`,
     );
   }
+  L.push('');
+  L.push('**An operator may own many agents** (D-165): the wallet is the operator’s, the home is the agent’s, and a fresh');
+  L.push('home is a new agent. The operator wallet above is read from **consensus** and never from a home’s config, which is');
+  L.push('never opened (P-13) — every topic a mailbox owns names its operator as the auto-renew account, because the');
+  L.push('Postmaster sells a mailbox once and does not undertake to renew it. An agent whose purchase stopped owns no topic,');
+  L.push('so no row on consensus names its operator and the column is `—`; its wallet is known only to its own home.');
   L.push('');
   if (snapshot.agents.some((a) => !a.entities.some((e) => e.key === 'doorbell'))) {
     L.push('**`stopped` means the account was bought and paid for and the mailbox was never finished.** The transfer is on');

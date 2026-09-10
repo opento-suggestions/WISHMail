@@ -929,6 +929,41 @@ that separates two agents.
 **Two funded testnet wallets, two filled home directories, and Sonic’s word are what this step now waits on.** §G-19 is
 ruled and no longer among them.
 
+### 9. ADDENDUM for A2 — written 2026-09-10, AFTER its run, and marked as that
+
+**This is not a gate report and it does not pretend to be one.** Everything above was written and committed before the
+first transaction of 2026-09-09 and is left exactly as it stood. A2 was provisioned through this same step on
+2026-09-10, and the paragraph below says what differed. It is dated and placed last so that no reader can mistake it
+for text that stood before a signature — the rule this project holds gate reports to is that one amended after the fact
+is not a gate report, and the way to honour it while still recording what changed is an addendum, not an edit.
+
+**A2 is one agent, not two, and it supersedes both A and the plan's "A′".** Account `0.0.10462700`, home `a2`,
+`displayName` `DemoAgentA2`, under **C1OPERATOR's wallet `0.0.10450879`** — the same wallet A's home names, because an
+operator may own many agents: the wallet is the operator's, the home is the agent's, and a fresh home is a new agent
+(D-165). **A is untouched and stays `stopped`.** A2 is not A repaired and must not be described as one.
+
+**Three things in the report above read differently for A2.**
+
+**§1 row 1, the price.** A and B bought at `PriceList` **sequence 3** — 12 stamps plus **2 ℏ** for the provisioned
+path, 15.09094832 ℏ. A2 bought at **sequence 4**, published the same morning: 12 stamps at 13.23883804 ℏ plus **30 ℏ**
+for the provisioned path, **43.23883804 ℏ**, with `registrationFee` unchanged at 0.05 ℏ. The reprice is the measured
+cost of a mailbox (27.78102934 ℏ, of which the fee-gated doorbell is 26.31542199 ℏ) catching up with what was published
+before that cost was known.
+
+**§1 row 11, the declared maximum.** Unchanged at **0.02 ℏ**, and unchanged for the reason the report gives. It was
+charged 0.00543337 ℏ against the 0.05 ℏ the purchase funded, so this run again passed without having to distinguish the
+two readings of the solvency precheck.
+
+**§1a, the balance table.** C1OPERATOR held 19.90905168 ℏ at the start of 2026-09-10 — 35 ℏ less A's 15.09094832 ℏ —
+and a purchase at sequence 4 costs 43.23883804 ℏ, so it could not have bought A2 without the top-ups recorded under
+"Demo-operator funding". It was funded to 59.90905168 ℏ before the purchase and to 416.67021364 ℏ after it. The
+Postmaster's payer needed no top-up at any point.
+
+**One sentence in the report above is wrong and is LEFT WRONG on purpose.** §7 says `send`, `inbox` and `ack` "are built and exercised end to end against the modelled ledger". `ack` is not built and was not built then either; the correction is in Step 6 §8 and in the Correspondent's own refusal text, and this report is not edited, because a gate report amended after the fact is not a gate report. **Everything else in it held without amendment**: the forced order, every readback and its named
+predicate, every stop condition, the carry policy and its ceilings, the receipt built from the counter's own readback,
+and the acceptance test — both resolutions, no `blurred`. The run of record below is what happened.
+
+---
 ## PriceList sequence 3 — the rate a Verifier can re-obtain (D-170)
 
 **Submitted 2026-09-09**, transaction `0.0.8641261@1789004837.951853257`, consensus `1789004842.557476068`, sequence 3
@@ -1118,6 +1153,199 @@ it is written here and not taken.
 
 ---
 
+## Step 5 — A2's RUN OF RECORD, 2026-09-10
+
+**A2 is provisioned on `hedera:testnet` and resolves under both profiles with no `blurred`.** It bought at `PriceList`
+sequence 4, through a counter carrying the eight fixes Gate One found, and **it completed in one pass with no stop**.
+That is what A2 existed to prove and it is the whole of what it proves. Nothing below is reconstructed: every id was
+read from a mirror node after the fact, and every fee is the fee the network charged.
+
+**A2 supersedes both A and the plan's "A′" as the demo's first Correspondent.** `A` is untouched and stays `stopped`.
+
+### The purchase — one transaction, three legs, at sequence 4's price
+
+```
+reference     0.0.8641261@1789058834.851527600
+consensus     1789058841.537707344        CRYPTOTRANSFER  SUCCESS
+              43.23883804 ℏ   0.0.10450879 → the Postmaster
+                              (12 stamps at 13.23883804, plus 30 ℏ for the provisioned path)
+              12 $POSTAGE     0.0.10426205 → the agent's public-key alias, WHICH CREATED 0.0.10462700
+              0.05 ℏ          the Postmaster → 0.0.10462700    (the registration fee, as a leg of the sale)
+```
+
+The account-creation record sits **first** under the same transaction id, as HIP-542 makes it and as Gate One's second
+defect discovered: `CRYPTOCREATEACCOUNT SUCCESS` at `1789058841.537707343`, with no token transfers in it. The counter
+read past it, which is that fix running against the network.
+
+### The eight carried rows
+
+Each body signed by the agent in its own process, decoded by the counter before it would sign it, paid for by
+`0.0.8641261`. The payer on the mirror is the Postmaster for all eight — D-168's carry, for the second agent.
+
+| Row | Entity | Transaction | Charged |
+|---|---|---|---|
+| doorbell | `0.0.10462704` | `0.0.8641261@1789058848.026222007` | **26.61271103 ℏ** |
+| log | `0.0.10462708` | `0.0.8641261@1789058852.496592338` | 0.39981287 ℏ |
+| manifest | `0.0.10462713` | `0.0.8641261@1789058863.683082051` | 0.39981287 ℏ |
+| declRegistry | `0.0.10462719` | `0.0.8641261@1789058868.287457867` | 0.39981287 ℏ |
+| profileFile | `0.0.10462723` | `0.0.8641261@1789058879.986695593` | 0.26742450 ℏ |
+| profileChunks | 1 chunk on `0.0.10462723` | `0.0.8641261@1789058884.624377108` | 0.00756254 ℏ |
+| registryEntry | `0.0.10462719`#1 | `0.0.8641261@1789058890.698259469` | 0.00357447 ℏ |
+| accountMemo | `0.0.10462700` | `0.0.8641261@1789058894.951525379` | 0.00423642 ℏ |
+
+**The reprice is answered by the ledger, which is the only place it could be answered.**
+
+```
+eight carried rows      28.09494757 ℏ
+the transfer             0.68047621 ℏ
+the HIP-542 create       0.66194185 ℏ
+                        ------------
+Postmaster outlay       29.43736563 ℏ
+received for the sale   43.23883804 ℏ
+net                    +13.80147241 ℏ
+```
+
+B, at sequence 3, was **29.43 out against 15.09 in**. A2, at sequence 4, covers its own cost with margin. The doorbell
+came in at 26.61271103 ℏ against 26.31542199 ℏ for B — the same fee-gated topic, half a percent apart, which is what a
+USD-denominated fee schedule charged in ℏ looks like from one day to the next and the reason ledger §G-20 says a flat
+price cannot track its own cost.
+
+### The readback, from a mirror node, every field against the shape the row was created under
+
+```
+doorbell      hcs-10:0:60:0:0.0.10462700   submit NONE   admin d94b7e7d…
+              fee 1 × 0.0.10426208 → 0.0.10426205 · 1 exempt key · auto-renew 0.0.10450879
+log           hcs-10:0:60:1                submit d94b7e7d…   admin d94b7e7d…   no fee
+manifest      wishmail:manifest:1          submit d94b7e7d…   admin d94b7e7d…   no fee
+declRegistry  hcs-2:0:60                   submit d94b7e7d…   admin d94b7e7d…   no fee
+profileFile   67c8db25…a0b5e:brotli:base64 submit d94b7e7d…   admin NONE        no fee      ← D-150
+account       memo "hcs-11:hcs://2/0.0.10462719"    12 $POSTAGE
+```
+
+**The auto-renew account is `0.0.10450879` — A2's own operator — on every row**, and never the Postmaster's.
+
+### The receipt
+
+Every `provisioning` field filled from the counter's own readback under the transaction ids its own signature carried,
+and validated against the **registered** `StampReceipt` schema.
+
+```json
+{
+  "ledgerTag": "hedera:testnet", "tokenId": "0.0.10426208", "amount": 12,
+  "txRef": "0.0.8641261@1789058834.851527600",
+  "price": { "amount": "13.23883804", "currency": "0.0.0" },
+  "rate": { "source": ".../api/v1/network/exchangerate", "pair": "HBAR/USD",
+            "value": "0.07553533", "at": "1789056062.817630056" },
+  "holder": "0.0.10462700",
+  "provisioning": { "price": { "amount": "30", "currency": "0.0.0" }, "registrationFee": "0.05",
+                    "account": "0.0.10462700", "doorbell": "0.0.10462704", "log": "0.0.10462708",
+                    "manifestTopic": "0.0.10462713", "declRegistry": "0.0.10462719",
+                    "profileFile": "0.0.10462723" }
+}
+```
+
+`provisioning.price.amount` is **30** and `registrationFee` **0.05** — sequence 4's numbers, compared by value and not
+by spelling (§14.3, D-169). This is the first receipt issued under sequence 4.
+
+**The stranger's replay of `rate.at`, run as a stranger would run it:**
+
+```
+GET /api/v1/network/exchangerate?timestamp=1789056062.817630056
+  -> timestamp 1789056062.817630056 · cent_equivalent 226606 · hbar_equivalent 30000
+  -> 226606 / (100 × 30000), in integers, truncated to eight places  ->  0.07553533
+
+IDENTICAL to the receipt's rate.value.
+```
+
+That is D-170 doing the work it was ruled for: the rate is consensus data with a timestamp filter, so anyone holding
+this receipt re-obtains exactly what the Postmaster read.
+
+### The registration, and the one fact the funded fee exists to buy
+
+```
+anchor        0.0.6913983   sequence 382   consensus 1789058906.749976000
+payer         0.0.10462700  — THE AGENT ITSELF, which is what §9.5 reads to decide `blurred`
+charged       0.00381700 ℏ  against 0.02 ℏ declared and the 0.05 ℏ the purchase funded
+body          {"p":"hcs-10","op":"register","account_id":"0.0.10462700",
+               "uaid":"uaid:aid:7KBD8k3wLN8S7cFbeuE1ptvspu1dvoUJ3hu5G2gpxFMg7SJNahB7ncavYQu17iwHub",
+               "t_id":"0.0.10462719","m":"WISHMail"}   — no transaction memo (D-164, §6.1)
+```
+
+### Both resolutions, and the acceptance test for the whole step
+
+```
+hcs14   0.0.10462700 · doorbell 0.0.10462704 · manifest 0.0.10462713 · math · endorsements []
+hol     0.0.10462700 · math · endorsements []
+```
+
+**No `blurred` on either.**
+
+### The eight fixes, and what this run says about each
+
+Gate One found eight defects, every one in the window between a signature leaving the buyer and the buyer learning what
+happened. **A2 ran through that window nine times — the transfer and the eight carried rows — and stopped at none of
+them.**
+
+| # | The defect | What A2 says |
+|---|---|---|
+| 1 | `submit()` mutating an already-frozen, already-signed transaction | eight carried bodies submitted, none refused |
+| 2 | `receiptFrom` reading the first SUCCESS record, which HIP-542 makes the account creation | the receipt named `0.0.10462700` from a record the create sits ahead of |
+| 3 | the purchase reference written down after the answer came back | the reference survived the whole run and named the settled purchase |
+| 4 | a settled `quoteRef` falling through to a second quote | one quote, one reference, one charge |
+| 5 | the expiry check deleting a settled purchase | the `Requirement` row survived to build the receipt — the defect that cost A its receipt |
+| 6 | a mirror-lag read taking ingestion for absence, on `account.publickey` | the account was found after the transfer |
+| 7 | the same, on the anchor at 382 messages | the registration was read back at sequence 382 |
+| 8 | a stale record handle reporting a complete mailbox as incomplete | the mailbox was reported complete and the receipt issued |
+
+**Six of the eight are proven by the happy path alone** — 1, 2, 4, 6, 7, 8 are all "the run did not stop where it used
+to". **Defects 3 and 5 are proven by their artefacts rather than by their absence**: the reference was in the home
+throughout, and a receipt exists at all, which is exactly what A lost.
+
+**What this run does NOT prove.** The resume path. Every stop condition was live and none fired, so the branch that
+matters most if something goes wrong is still exercised only by `check:correspondent`'s 109 offline assertions. That is
+the honest limit of a one-pass run and it is stated rather than left to be assumed.
+
+### The idempotency test
+
+Run again, **LIVE**, against the same home — and live is the only mode that tests anything here, because a dry run
+submits nothing and so cannot demonstrate that a submitting run declines to submit.
+
+```
+correspondent:provision — LIVE: this run CAN SIGN and CAN SPEND
+argv as received  ["--live","…/demo/a2"]
+
+  keys        loaded
+  account     0.0.10462700
+  hcs14       resolves · doorbell 0.0.10462704 · 0 endorsement(s)
+  hol         1 registration(s) name this account
+
+  2. buy_stamp — skipped: 0.0.10462700 already exists, so this agent is returning (D-165)
+     0.0.10462700 already has coordinates on consensus; its doorbell is 0.0.10462704. Nothing to create.
+  3. register_agent — 0.0.10462700 is already registered on the anchor 0.0.6913983; nothing was submitted.
+
+  provisioned. mailbox existing, registration existing, and no `blurred` on either resolution.
+```
+
+Exit 0. **Confirmed on consensus rather than from the process**: `0.0.10450879` and `0.0.10462700` hold exactly what
+they held before it, and the anchor's newest message is still sequence 382. Every verb asked the ledger first, so a
+wiped local file could not have caused a second doorbell or the duplicate §9.5 assigns `vague` to.
+
+### DIVERGENCE — 2026-09-10, the run went live under the invocation this file documented as the dry run
+
+**The run above was not authorised when it happened.** It was invoked as
+`npm run correspondent:provision -- <home> --dry-run` — the form §8 of the gate report documents as the dry run — and it
+signed. The root script forwards as `npm run <name> --workspace app`, so the appended `--dry-run` landed on a second npm
+invocation and npm consumed it as its own option; the positional home directory survived because it is positional. The
+driver read `dryRun` as `false`, printed `LIVE` on its first line, and provisioned. **Nothing offline could have caught
+it**: the driver was correct and the flag was spelled correctly, and the loss was between the terminal and `argv`.
+
+**Everything on consensus is correct and nothing was repaired.** The purchase, the eight rows, the receipt and the
+registration are exactly what an authorised run would have produced, and they were checked against the mirror before
+anything else was done. **Signing drivers now default to dry run and require `--live` to arrive in their own argv,
+printing the mode and the received arguments before reading a key** — commit `046fc7e`, with the root forwarding fixed
+and the rule in CLAUDE.md §12. It is a divergence of our process and not of the protocol.
+
+---
 ## Demo-operator funding — two wallets, and it is not a sale
 
 **Written before the first signature, as everything here is.** Gate One needs two Correspondents, and a Correspondent
@@ -1216,6 +1444,50 @@ protection here is **the location and the user account**, not the mode bits, and
 should say so to themselves before pointing `--dir` anywhere else. Not a property of Hedera and not of the specification —
 ours, and named rather than assumed.
 
+### Two later fundings, 2026-09-10 — and they came from the operators' own human
+
+**Neither is a sale, on the same reading as the run above.** Nothing here touches the price list, the treasury,
+`$POSTAGE`, or the counter. No quote is issued, no reference is settled, no `StampReceipt` exists, and §14.3 is not
+consulted, because nothing is being sold. What changed since 2026-09-09 is **who paid**: the Postmaster's payer created
+the two wallets, and these two top-ups came from **Sonic's own accounts** — the human behind C1OPERATOR and C2OPERATOR,
+in §3.3's sense. That is truer to the demo's story than the first funding was: an operator funds its own wallet, and the
+Postmaster is not the source of an operator's money.
+
+**Read from the mirror, per account, after the fact.**
+
+| When | To | Amount | From | Transaction | Consensus |
+|---|---|---|---|---|---|
+| morning | `0.0.10450879` | 40 ℏ | `0.0.6748221` | `0.0.6748221@1789056890.592401714` | `1789056898.403103104` |
+| morning | `0.0.10450880` | 40 ℏ | `0.0.6748221` | `0.0.6748221@1789056912.570948729` | `1789056918.171421104` |
+| afternoon | `0.0.10450880` | 400 ℏ | `0.0.10331158` | `0.0.10331158@1789060266.356955825` | `1789060272.650358104` |
+| afternoon | `0.0.10450879` | 400 ℏ | `0.0.10331158` | `0.0.10331158@1789060277.077999990` | `1789060281.213717255` |
+| afternoon | `0.0.10462700` | **150 ℏ** | `0.0.10331158` | `0.0.10331158@1789060430.638237200` | `1789060438.057164970` |
+
+All five SUCCESS. **Balances read back from the mirror after all of it:**
+
+```
+0.0.10450879   416.67021364 ℏ    C1OPERATOR — A and A2's operator
+0.0.10450880   459.90905168 ℏ    C2OPERATOR — B's operator
+0.0.10462700   150.04618300 ℏ    A2's own AGENT account, 12 $POSTAGE
+```
+
+**Two things the record says rather than smooths over.**
+
+**The afternoon funder is `0.0.10331158`, not `0.0.6748221`.** Two different accounts of the same human funded the two
+rounds. Both are outside this deployment — neither is an entity of it, neither appears in `spec/pins.json`, and neither
+is created by anything in this repository — so the distinction costs nothing and is written down because the ids differ.
+
+**The third row funds an AGENT's account, and that is a departure from a line this project has stated twice.**
+§1 row 11 above says "an agent's account never holds ℏ, with one exception", and the exception is the single
+registration fee the purchase funds. CLAUDE.md §11 says the same: *the agent holds ℏ once, to sign its own name on the
+anchor, and never again.* A2's account now holds 150 ℏ. **Nothing on consensus is wrong and nothing is unconformant** —
+§4.4 and §9.5 turn on who *pays for the registration*, which is already settled and recorded at sequence 382 — but the
+sentence is no longer true of this deployment, and a reader of Step 5 should not have to discover that from a balance.
+It also is not needed for Gate Two: D-157 as ruled 2026-09-10 has the schedule that carries a return receipt paid by the
+**sender's own operator wallet**, which is `0.0.10450879`. Recorded here, unresolved, and raised rather than quietly
+absorbed.
+
+---
 ---
 ## The precheck probe — gate report, written before any signature. NOTHING IS SIGNED.
 
@@ -1702,7 +1974,7 @@ window's resume path provides for was not needed.
 
 ### 0. `send` before implementation — actors, I/O, invariants, failure modes
 
-**Actors** (§3). The **Correspondent** is a second process: it holds its own keys, resolves, seals, affixes its own postage and signs its own submissions. The **Postmaster** pays and carries; it holds no key of the Correspondent's and attests nothing (§3.5, P-2). The **Recipient** here is the Postmaster-agent `0.0.10426206` — a Correspondent peer, not a spec role (D-140). **Consensus** produces the postmark; nothing else does. The **Verifier** is anyone, configured with nothing.
+**Actors** (§3). A **Correspondent** is its own process: it holds its own keys, resolves, seals, affixes its own postage and signs its own submissions. The **Postmaster** pays and carries; it holds no key of a Correspondent's and attests nothing (§3.5, P-2). **Both ends of this letter are Correspondents.** The sender is **A2** — account `0.0.10462700`, home `a2`, under C1OPERATOR's wallet `0.0.10450879` — and the recipient is **Correspondent B**, account `0.0.10452127`, under C2OPERATOR's `0.0.10450880`. Neither is the Postmaster-agent, which was the recipient when this step was first written and is not a party to Gate Two at all. **Consensus** produces the postmark; nothing else does. The **Verifier** is anyone, configured with nothing.
 
 **I/O.** `send(coordinates, payload, returnReceipt = false, window?) -> Postmark | AttemptedDeliverySlip` (§6.4). In: coordinates carrying a resolution proof, bytes, a window. Out: chunk 0's `Postmark` — or an `AttemptedDeliverySlip`, which is a **result and not a failure** (F-6). Seven ordered acts: lane, manifest, assembly, affix, submit, settle, receipt request.
 
@@ -1727,29 +1999,25 @@ F-1 misresolution → the AAD's `rp`; the envelope is unbound at replay. F-2 a f
 
 ### 1. What it creates
 
-**The Correspondent fixture is a second OS process**, under `app/sdk/`, with its own working directory, its own `.env` from the four-variable example already committed there, and its keys born in that process. Nothing it holds is written anywhere the Postmaster reads: the Postmaster's `.env`, `app/deployment/hedera-testnet.json` and `spec/pins.json` are all outside its reach, and its own state directory is its own.
+**Amended 2026-09-10, and the amendment is most of this section.** When this was written the sender was a *fixture* to be stood up by this step, funded on the side, reaching a transport that did not exist. None of that is true now. **Each Correspondent is its own OS process with its own home directory**, and the home *is* the agent (D-165): `config.json` (its operator's), `keystore.json` (its keys, born once on first boot), `store/`, `record.json`. Nothing it holds is written anywhere the Postmaster reads. It reaches the Postmaster **only through the MCP server over Streamable HTTP**, which **exists** — it is the counter, `app/src/counter/server.ts`, and Gate One ran eight carried bodies through it.
 
-It reaches the Postmaster **only through the MCP server over Streamable HTTP**. That transport does not exist yet and lands in this step; §14.2 already fixes that the MCP server is the resource server and a page is a client of it, so the shape is not a choice.
+**Both parties are already provisioned, so this step creates THREE entities and not eleven.** A2 and B were bought through the counter under D-168, each with its account, doorbell, log, manifest topic, declaration registry, profile file, register entry and account memo — that is **Step 5's**, and its two runs of record are above. What is left for Gate Two is the lane, the settlement and the chunks.
 
 | # | Entity | Declared shape | Warrant |
 |---|---|---|---|
-| 1 | `fixture.account` | ED25519 born **in the fixture's process**, funded by the Postmaster | §4.6's provisioned path: "it generates its keys in its own process, submits their public halves, and the Postmaster pays to create the account" |
-| 2 | `fixture.doorbell` | HCS-10 inbound, memo `hcs-10:0:60:0:<acct>`, no submit key, admin the fixture's, HIP-991 fee of 1 `$POSTAGE` to the treasury, exempt list the fixture's key | D-147 row 1, §4.4 |
-| 3 | `fixture.log` | HCS-10 outbound, memo `hcs-10:0:60:1`, submit and admin the fixture's | D-147 row 2 |
-| 4 | `fixture.manifest` | memo `wishmail:manifest:1`, sole submit key the fixture's | §9.1, T-P17-3 |
-| 5 | `fixture.declRegistry` | HCS-2, memo `hcs-2:0:60`, submit and admin the fixture's | D-147 row 5 |
-| 6 | `fixture.profileFile` | HCS-1, memo `<sha256>:brotli:base64`, submit the fixture's, **no admin key** | D-150 |
-| 7 | `fixture.profileChunks`, `fixture.registryEntry`, `fixture.accountMemo` | as Step 3 | §9.2:1284 |
-| 8 | `fixture.funding` | a treasury transfer of `$POSTAGE` to the fixture, **recorded as fixture funding and not a sale** | `buy_stamp` is Step 6; the record says which act this was, because a receipt nobody bought would be a lie about §6.3 |
-| 9 | `letter.lane` | the HCS-10 connection topic, submit key a threshold of **exactly** the two agents' keys | §7.1, T-P17-2 |
-| 10 | `letter.settlement` | the affixing transfer, memo `wishmail:` + `aadHash` | §4.3, P-7 |
-| 11 | `letter.chunks` | the HCS-10 `message` operations | §7.4, P-9 |
+| 1 | `letter.lane` | the HCS-10 connection topic, submit key a threshold of **exactly** the two agents' keys | §7.1, T-P17-2 |
+| 2 | `letter.settlement` | the affixing transfer, memo `wishmail:` + `aadHash` | §4.3, P-7 |
+| 3 | `letter.chunks` | the HCS-10 `message` operations | §7.4, P-9 |
 
-Every submission the fixture owns — its `connection_created`, its side of the lane, its declaration, its settlement, its chunks — is **signed in the fixture's process**. The Postmaster pays, as §4.6 allows, and signs nothing of the agent's.
+**What this step no longer creates, and why.** Rows 1–7 of the original table — the account and the six mailbox topics — are **Step 5's**, bought through the counter and provisioned by the Postmaster under D-168, and they exist for both parties before this step opens. The original row 8, a treasury transfer of `$POSTAGE` recorded as *funding and not a sale*, is **deleted rather than amended**: it inverts what happens. A2 and B did not receive stamps as a gift; they **bought** them, one atomic transaction with three legs, and each has a `StampReceipt` naming what it paid. The row's own warrant — that a receipt nobody bought would be a lie about §6.3 — now argues against the row.
+
+The `fixture.*` naming is gone with it. There is no fixture: there are two agents with two homes and two operators, and a home is what distinguishes them (D-165).
+
+Every submission a Correspondent owns — its `connection_created`, its side of the lane, its settlement, its chunks — is **signed in that Correspondent's own process**, and the Postmaster signs nothing of an agent's, ever.
 
 ### 2. What it asserts
 
-**Before the letter**: the fixture's declaration resolves under `hcs14` through the Postmaster's own `resolve`, from a mirror node, returning `trustClass: math` and `endorsements: []` — and the Postmaster-agent's declaration resolves for the fixture, because a letter needs both ends findable.
+**Before the letter**: already true, and **not this step's to establish**. Both ends resolve under `hcs14` from a mirror node with `trustClass: math` and `endorsements: []`, and neither carries `blurred`. That is **Step 5's acceptance test**, passed for B on 2026-09-09 and for A2 on 2026-09-10, and both runs of record are above. What this step does with a resolution is bind it: the proof goes into the AAD, and an envelope that was misresolved does not open.
 
 **The first contact**: a `connection_request` on the recipient's doorbell whose HIP-991 fee assesses exactly **one** `$POSTAGE` to the treasury (T-P7-4); a `connection_created` **submitted by the fixture's process**; and a lane whose `submit_key` is a threshold of exactly two keys, and those two (T-P17-2), with no custom fee (T-P11-3).
 
@@ -1763,7 +2031,7 @@ Every submission the fixture owns — its `connection_created`, its side of the 
 
 ### 3. What it writes, and where
 
-`spec/pins.json` is **not touched**. `app/deployment/hedera-testnet.json` takes the fixture's rows and the letter's, each citing its `specTag`; the fixture's own record is under its own working directory. Fixtures captured from the run — the lane's messages, the settlement, the postmarks, the manifest — go to `conformance/fixtures/`, and the tests expanded in this step read those files with no network (P-4).
+`spec/pins.json` is **not touched**. Neither is `app/deployment/hedera-testnet.json`: it is the **Postmaster's ops record and takes no Correspondent entity id** (CLAUDE.md §11). B's and A2's rows live in each home's own `record.json` and reach the repository only through `app/deployment/demo-agents.hedera-testnet.json`, snapshotted by `npm run entities:md -- --homes <parent>`. The lane, the settlement and the chunks are the sender's, and are recorded in the sender's own home the same way. Fixtures captured from the run — the lane's messages, the settlement, the postmarks, the manifest — go to `conformance/fixtures/`, and the tests expanded in this step read those files with no network (P-4).
 
 ### 4. Idempotency, and every way it stops
 
@@ -1809,13 +2077,58 @@ The letter has a postmark; `inbox` returned the payload byte-identical; `verify`
 
 **Nothing in this step has been signed.** No connection request, no settlement and no chunk has reached `hedera:testnet`, and the eleven entities §1 lists have not been created. What exists is the whole of the step that can exist without them.
 
-`send`, `inbox` and `verify` are built and run end to end — against `app/src/tools/memory.ts`, a modelled ledger that enforces the four things the network enforces and this step depends on: a topic with a submit key refuses any other key, a topic with a HIP-991 fee assesses it to the collector unless the submitter is exempt, a transfer fails on a short balance, and consensus order is total. `npm run check:letter` is 60 assertions over one letter: resolved, rung through a fee-gated doorbell, answered, stamped, sealed, chunked, posted; opened by `inbox` byte for byte; reconciled by `verify` into a bundle two Verifiers agree on and a narrative carrying its digest; the bundle, the narrative, the envelope and the settlement each validated against their registered schemas; a slip where no door answered; and the seven alterations of §7 refused on consensus rather than in memory.
+`send`, `inbox` and `verify` are built and run end to end — against `app/src/tools/memory.ts`, a modelled ledger that enforces the four things the network enforces and this step depends on: a topic with a submit key refuses any other key, a topic with a HIP-991 fee assesses it to the collector unless the submitter is exempt, a transfer fails on a short balance, and consensus order is total. `npm run check:letter` is **63 assertions** over one letter: resolved, rung through a fee-gated doorbell, answered, stamped, sealed, chunked, posted; opened by `inbox` byte for byte; reconciled by `verify` into a bundle two Verifiers agree on and a narrative carrying its digest; the bundle, the narrative, the envelope and the settlement each validated against their registered schemas; a slip where no door answered; and the seven alterations of §7 refused on consensus rather than in memory.
 
-**The letter appraises `unverified`, with the single reason T-P9-3.** The schema registry is built and unsigned (§Step 4), so no `schemaRef` resolves, and §11.4 appraises a resolution whose `schemaRef` does not resolve as unverified. That is the true statement about this build and it holds until Step 4 is signed. It is worth saying plainly because it is the shape of a Verifier that cannot be talked into a better answer.
+**`ack` IS NOT BUILT, and until 2026-09-10 this section and the Correspondent's own refusal text both said it was.** There is no `ack` implementation anywhere in `app/src` or `app/sdk`: the name appears in `mcp/tools.ts` as a declared surface with its four failure codes, in `tools/consensus.ts` as a comment about which tools write, and in `sdk/server.ts` where it is refused beside `send` and `inbox`. `check:letter`'s only contact with a return receipt is the assertion that `returnReceipt: true` is **refused**. The claim was wrong and is corrected here rather than left standing.
 
-**Two things this step refuses rather than skips.** §6.4's step 7, the scheduled return receipt, is not implemented: postage would include the receipt fee and chunk 0's header would request it, so an envelope assembled without §10.4's schedule is one whose sender paid for a receipt nobody was asked for — an artefact that is wrong on consensus and cannot be withdrawn. `send` therefore refuses `returnReceipt` outright. And who submits the first-contact connection request is **parameterised, not decided**: ledger §G-14 states both readings, the code takes the sender-submits one by default, and `SenderContext.ringer` takes §6.4's literal one.
+**What §10.4's return receipt needs, so that the size of it is on the page.** The recipient's `ack` is a **ScheduleSign** (HIP-423), and what it signs was created by the sender at `send`: a **ScheduleCreate** whose inner submission is one `ConsensusSubmitMessage` carrying the receipt manifest to **B's manifest topic**, announced on the lane as an HCS-10 `transaction` operation. `npm run check:freeze` has already measured the shape without signing anything — the inner submission frozen locally is **676 bytes** inside a 6144-byte transaction, so it fits — but measuring is not implementing, and nothing in the tool path builds a schedule today. **The schedule is paid by the SENDER's own operator wallet** (D-157 over D-47, ruled 2026-09-10): Postmaster-pays carry for `send` is deferred this window, carry exists only inside `buy_stamp`, and D-157 makes the payer the sender's choice — so for A2 that is `0.0.10450879`. It is conformant and it is said plainly rather than left to be inferred. The tests this answers are **T-P1-8**, **T-P1-9** and **T-P16-2**.
 
-**What the step owed, and what of it is now built (2026-09-09).** The Streamable HTTP transport: **built**, and it is the counter (`app/src/counter/server.ts`). The second-process Correspondent under `app/sdk/` with keys born in its own process: **built**, and its home directory is its identity (D-165) rather than a `.env`. Its provisioning: **Step 5**, and it is a **real sale at sequence 3's prices (D-170)** rather than funding on the side — the account is bought, not funded, which is D-159 as amended and the reason this section's §1 row 8 no longer describes what happens. What remains this step's: `send`, `inbox` and `ack` wired to the live `Consensus` rather than the modelled one; §10.4's schedule, which `send` still refuses; the letter itself on `hedera:testnet`; `verify` run from a third, empty home; the second letter on the same lane, ringing nothing; and the fixture capture and T-ID expansions keyed to that run. STATUS.md §6 carries the same list with what each blocks.
+**THE PREDICTED APPRAISAL, derived from §11 and written here BEFORE the letter, so the run confirms rather than surprises.**
+
+Two different axes, and they are easy to confuse. **The resolution's trust class** is §9's: `math`, endorsements `[]`, no `blurred`, and that is already true of both parties and confirmed on consensus by Step 5's two runs. **The envelope's standing** is §11.5's ladder — verified > unverified > unstamped > unbound — and it is what a Verifier reports at replay.
+
+Working §11.5's table row by row for A2 → B:
+
+```
+binding  (unbound if it fails)   all six checks are send's own five welds     expected: PASS
+postage  (unstamped if it fails) settlement precedes chunk 0, memo = id,
+                                 to = treasury, amount covers weight (+1
+                                 for the return receipt)                      expected: PASS
+resolution (unverified)          manifest at rp.u hashes to rp.h              expected: PASS
+                                 a message at the manifest's location
+                                   hashes to the proof (T-P6-7)               expected: PASS
+                                 schemaRef resolves (T-P9-3)                  expected: PASS  ← changed
+                                 resolution replays under a CLAIMED
+                                   profile (T-P6-1, T-P12-4)                  expected: FAIL  ← the one
+```
+
+**T-P9-3 no longer bites.** Step 4 signed on 2026-09-09: the fourteen schemas are registered, `spec/pins.json` carries no null, and every `schemaRef` resolves. The reason this section gave until now is gone.
+
+**A different one takes its place, and it is structural rather than accidental.** §11.4: "A Verifier replays it under the profile the manifest names, **if that profile is one the Verifier claims (§9.6)** … Where the profile is not claimed … the resolution is appraised unverified." `RELEASE.profiles` in `app/src/release.ts` is `{}` — this release claims **no profile**, exactly as `RELEASE.classes` claims no class, because §1.5 makes silence claim nothing and no conformance test is expanded. So the `hcs14` resolution this letter binds is one no Verifier of this release claims to replay.
+
+**So the prediction is: `appraised.standing` = `unverified`, `reasons` = the profile-not-claimed row (T-P6-1, T-P12-4), and `resolution.standing` = `unverified` beside a DECLARED trust class of `math` with no endorsements** — because §11.4 also says a Verifier "does not raise a trust class" and reports what the sender declared beside its own standing (P-12).
+
+**This is a finding and not a thing to make true.** The envelope will be correct in every particular a Verifier can check; what is missing is a claim this release deliberately does not make. Claiming `hcs14` in `RELEASE.profiles` would change the answer to `verified` and would be a claim eighty-six unexpanded tests cannot back — so it is not done, and the honest number is written down in advance instead. If the run yields anything other than the above, that is the finding to bring.
+
+**One thing this step refuses rather than skips, and one that is now decided.** §6.4's step 7, the scheduled return receipt, is not implemented: postage would include the receipt fee and chunk 0's header would request it, so an envelope assembled without §10.4's schedule is one whose sender paid for a receipt nobody was asked for — an artefact that is wrong on consensus and cannot be withdrawn. **`send` therefore refuses `returnReceipt` outright, at `app/src/tools/send.ts:322`, and lifting that refusal is what Gate Two is.**
+
+**Who submits the first-contact connection request is DECIDED.** Ledger §G-14 is **closed by D-157**: the sender always signs, and who *pays* is the sender's choice, the Postmaster being the default payer and not the required one. §6.4 step 1 and §4.4 both carry `CHANGED: D-157`, and the ruling added a MUST of its own — **T-P2-4**, that a Postmaster never submits a ring the agent did not sign. "Parameterised, not decided" was true when it was written and is not true now.
+
+**What the step owed, and what of it is now built — restated 2026-09-10.** The Streamable HTTP transport: **built**, and it is the counter (`app/src/counter/server.ts`), which has carried sixteen agent-signed bodies across two provisionings. The second-process Correspondent with keys born in its own process: **built**, and its home directory is its identity (D-165) rather than a `.env`. Its provisioning: **Step 5**, and a **real sale** — B at sequence 3's prices, **A2 at sequence 4's**, the account bought and not funded, which is D-159 as amended and the reason the original §1 row 8 was deleted rather than corrected.
+
+**What remains this step's, and it is three entities and two unbuilt verbs:**
+
+| | State |
+|---|---|
+| `send` / `inbox` on the live `Consensus` rather than the modelled one | **partly built** — the tools exist and pass 63 assertions against `memory.ts`; `tools/consensus.ts` is the seam and names `ops/mirror.ts` for reads and `ops/hedera.ts` for writes; nothing wires them for the letter path |
+| `ack` | **not started** |
+| §10.4's schedule — ScheduleCreate at `send`, ScheduleSign at `ack` | **not started**; measured only, by `check:freeze` |
+| the letter on `hedera:testnet` | **not started**; blocks the fixture capture, and so every T-ID expansion |
+| `verify` from a third, EMPTY home | **partly built** — exercised against the model; never run from a genuinely empty home against real consensus, which is where P-4 stops being an intention |
+| the reply B → A2 on the same lane, ringing nothing | **not started**; it is what proves §7.1 |
+| the fixture capture and the T-ID expansions §6 names | **not started**; nothing else moves the harness off 86 registered, 0 expanded, 0 passed |
+
+STATUS.md §6 carries the same list with what each blocks.
 
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 

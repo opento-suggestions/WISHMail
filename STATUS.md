@@ -179,6 +179,41 @@ fee-gated topic was known. Repricing is a new `PriceList` message and touches no
 
 ---
 
+## A2 — the register, 2026-09-10
+
+**A2 is provisioned on `hedera:testnet` and it is the demo's first Correspondent from here on**, superseding both A
+(stopped, unchanged) and the plan's "A′". Where an earlier section or a plan says `A′`, it means A2. Bought at
+sequence 4's price, through a counter carrying Gate One's eight fixes, **in one pass with no stop**. The run of record
+is `app/OPERATIONS.md` under Step 5.
+
+```
+account 0.0.10462700   doorbell 0.0.10462704   log 0.0.10462708   manifest 0.0.10462713
+declaration registry 0.0.10462719   profile file 0.0.10462723   registration 0.0.6913983#382
+home a2 · displayName DemoAgentA2 · operator wallet 0.0.10450879 (C1OPERATOR, the same wallet A's home names)
+purchase 0.0.8641261@1789058834.851527600 — 43.23883804 ℏ, twelve stamps and the provisioned path at 30 ℏ
+```
+
+**Both resolutions `math`, endorsements `[]`, no `blurred`.** The receipt validates against the registered schema and
+its `rate.at` replays: `GET /network/exchangerate?timestamp=1789056062.817630056` yields `0.07553533`, which is what
+the receipt says (D-170). A second run against the same home created nothing and exited 0.
+
+**The eight fixes are proven, with one honest gap.** A2 passed through the submit→learn window nine times — the
+transfer and eight carried rows — and stopped at none. Six of the eight are proven by the happy path; defects 3 and 5
+are proven by their artefacts, the surviving purchase reference and the existence of a receipt at all. **What is NOT
+proven is the resume path**: every stop condition was live and none fired, so the branch that matters most when
+something goes wrong is still exercised only by `check:correspondent`'s 109 offline assertions.
+
+**The reprice is answered by the ledger.** A2 cost the Postmaster 29.43736563 ℏ and sold for 43.23883804 ℏ — **net
++13.80 ℏ**, where B at sequence 3 was **−12.69 ℏ**.
+
+**DIVERGENCE.** The run went live under the invocation `app/OPERATIONS.md` documented as the dry run: the root
+script's nested `npm run … --workspace app` consumed the appended `--dry-run`, the driver read `false` and printed
+`LIVE`. Everything on consensus is correct and nothing was repaired. Signing drivers now default to dry run and
+require `--live` to arrive in their own argv, printing the mode and the received arguments before reading a key
+(`046fc7e`, CLAUDE.md §12).
+
+---
+
 ## TOMORROW — 2026-09-10, ruled (Sonic, 2026-09-09)
 
 Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it without this conversation.
@@ -189,23 +224,25 @@ Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it wit
 schedule every purchase from that timestamp quotes at. Sequence 3 is history and Correspondent B is not repriced.
 Run of record in `app/OPERATIONS.md`.**
 
-1. **Sequence 4, before A′.** A new `PriceList` on `0.0.10426551`, identical to sequence 3 except
-   `provisioning.unitPrice`; `registrationFee` unchanged at 0.05. No schema, no wire string. **Prepared and validated
-   tomorrow; signed on your word. The number is OPEN — 30 ℏ was your lean, against 27.78 ℏ measured.**
-2. **Wallet top-ups, before A′.** `0.0.10450879` and `0.0.10450880` topped up from the Postmaster's payer to ~100 ℏ
-   each — a purchase at the new price with stamps is ~43 ℏ, and the ring and the letter cost more on top. Recorded as
-   funding, not sales, as the first two were.
-3. **A′.** A fresh home under C1OPERATOR's wallet `0.0.10450879` — an operator may own many agents; the wallet is the
-   operator's, the home is the agent's — provisioned through the fixed counter at the new price. **That run is the
-   end-to-end proof of the eight fixes, and nothing else is.**
-4. **Gate Two, after A′.** The first letter A′ → B with `returnReceipt`, B's `inbox` and `ack`, the receipt on B's
-   manifest topic, `verify` from an empty home, and a reply B → A′ on the same lane ringing nothing. Its gate report is
-   already written as Step 6; it is amended for A′ and sequence 4 tomorrow.
+1. ~~**Sequence 4, before A2.**~~ **DONE 2026-09-10.** `PriceList` sequence 4 on `0.0.10426551`, 667 bytes, sha256
+   `03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`, consensus `1789055861.123389104`.
+   `provisioning.unitPrice` **30 ℏ**, `registrationFee` unchanged at 0.05. Sequence 3 is history.
+2. ~~**Wallet top-ups, before A2.**~~ **DONE 2026-09-10, and not by the Postmaster.** Both operator wallets were
+   funded from **Sonic's own accounts** — 40 ℏ each from `0.0.6748221`, then 400 ℏ each from `0.0.10331158` — and
+   A2's own agent account received 150 ℏ from the same. Recorded as funding and not a sale. `0.0.10450879` holds
+   416.67021364 ℏ and `0.0.10450880` holds 459.90905168 ℏ.
+3. ~~**A′.**~~ **DONE 2026-09-10 — and it is A2.** See the register below.
+4. **Gate Two, after A2.** The first letter **A2 → B** with `returnReceipt`, B's `inbox` and `ack`, the receipt on B's
+   manifest topic, `verify` from an empty home, and a reply B → A2 on the same lane ringing nothing. Its gate report is
+   Step 6, **amended 2026-09-10** for A2, sequence 4, and what is actually built.
 5. **Provisioning happens before recording, not on video.** The demo shows provisioning as facts already on consensus —
    the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger's
    verify. Friday is goose by hand.
 
-**Open for Sonic:** ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · which classes
+**Open for Sonic:** ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · whether `ack`
+and §10.4's schedule are in this window at all, since they are the two genuinely unbuilt things Gate Two needs ·
+ledger §G-20 (the provisioned path cannot be rate-priced under a frozen schema) · the 150 ℏ now sitting in A2's own
+agent account, against "an agent's account never holds ℏ, with one exception" · which classes
 the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
 submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
 

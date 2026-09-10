@@ -13,10 +13,12 @@
  * provisioned through the counter, both resolving under `hcs14` and `hol`, both
  * watchers up. So `resolve`, `verify`, `buy_stamp`, `generate_mailbox` and
  * `register_agent` have bodies. `send`, `inbox` and `ack` are Gate Two's — they
- * are built and exercised end to end against `tools/memory.ts`, and what they
- * still need is the live wiring and a letter to carry — so they refuse here,
- * naming the gate, rather than half-working. A refusal that says which gate is
- * a fact; a tool that returns a plausible empty object is not.
+ * refuse here, naming the gate, rather than half-working. A refusal that says
+ * which gate is a fact; a tool that returns a plausible empty object is not.
+ * `send` and `inbox` are built and exercised end to end against
+ * `tools/memory.ts` and need the live wiring and a letter to carry; **`ack` is
+ * not built at all**, because §10.4's schedule it witnesses is not. Saying so
+ * costs nothing and saying otherwise was wrong until 2026-09-10.
  *
  * THE DOORBELL WATCHER RUNS BESIDE THE TOOLS. §6.1's verbs must stay answerable
  * while the door is being watched, so the watcher is a timer and not a loop.
@@ -254,9 +256,13 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
         case 'ack':
           return refuse(
             'NOT_IN_THIS_BUILD',
-            `${name} lands with the first letter (Gate Two). It is built and exercised end to end against the ` +
-              'modelled ledger — `npm run check:letter` — and what it still needs is the live wiring and a letter ' +
-              'to carry. This release claims no conformance class (§1.5: silence claims nothing).',
+            `${name} lands with the first letter (Gate Two). ` +
+              (name === 'ack'
+                ? 'It is NOT BUILT: §10.4 makes a return receipt a ScheduleSign over a schedule `send` creates, and ' +
+                  'neither half exists yet — which is also why `send` refuses `returnReceipt`.'
+                : 'It is built and exercised end to end against the modelled ledger — `npm run check:letter` — and ' +
+                  'what it still needs is the live wiring and a letter to carry.') +
+              ' This release claims no conformance class (§1.5: silence claims nothing).',
           );
 
         default:

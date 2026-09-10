@@ -1,11 +1,12 @@
 {
   "_readme": "The demo Correspondents’ own entities on consensus, snapshotted from each home’s record.json by `npm run entities:md -- --homes <parent>`. It is here and NOT in hedera-testnet.json because that file is the Postmaster’s ops record and takes no Correspondent entity id (CLAUDE.md §11). Every field is public: an id, a role, and the account that paid. No key, no config, no keystore — those stay in the home, outside the repository, and are never read by the generator (P-13). ENTITIES.md is generated from this file and is never hand-edited; `npm run check:entities` is what holds that.",
   "ledgerTag": "hedera:testnet",
-  "takenAt": "2026-09-10T03:29:23.703Z",
+  "takenAt": "2026-09-10T17:24:31.524Z",
   "agents": [
     {
       "slug": "a",
       "ledgerTag": "hedera:testnet",
+      "operatorWallet": null,
       "entities": [
         {
           "key": "purchase",
@@ -21,8 +22,108 @@
       ]
     },
     {
+      "slug": "a2",
+      "ledgerTag": "hedera:testnet",
+      "operatorWallet": "0.0.10450879",
+      "entities": [
+        {
+          "key": "purchase",
+          "kind": "transfer",
+          "role": "the provisioning purchase this agent was bought by",
+          "id": "0.0.10462700",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058834.851527600",
+          "consensusTimestamp": "",
+          "state": "settled",
+          "reference": "0.0.8641261@1789058834.851527600"
+        },
+        {
+          "key": "doorbell",
+          "kind": "topic",
+          "role": "doorbell (HCS-10 inbound)",
+          "id": "0.0.10462704",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058848.026222007",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "log",
+          "kind": "topic",
+          "role": "log (HCS-10 outbound)",
+          "id": "0.0.10462708",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058852.496592338",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "manifest",
+          "kind": "topic",
+          "role": "manifest",
+          "id": "0.0.10462713",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058863.683082051",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "declRegistry",
+          "kind": "topic",
+          "role": "declaration registry (HCS-2)",
+          "id": "0.0.10462719",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058868.287457867",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileFile",
+          "kind": "topic",
+          "role": "HCS-11 profile file (HCS-1)",
+          "id": "0.0.10462723",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058879.986695593",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileChunks",
+          "kind": "message",
+          "role": "HCS-11 profile, as HCS-1 chunks",
+          "id": "0.0.10462723",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789058891.697683943"
+        },
+        {
+          "key": "registryEntry",
+          "kind": "message",
+          "role": "HCS-2 register entry naming the profile file",
+          "id": "0.0.10462719",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789058894.793827104"
+        },
+        {
+          "key": "accountMemo",
+          "kind": "account-update",
+          "role": "§9.2’s account memo, the first link in the chain",
+          "id": "0.0.10462700",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789058894.951525379",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "holRegistration",
+          "kind": "message",
+          "role": "the agent’s own registration on the HOL anchor (§9.5, T-P13-4)",
+          "id": "0.0.6913983",
+          "payer": "0.0.10462700",
+          "transactionId": "(submitted by an earlier run of this agent; the anchor is the record)",
+          "consensusTimestamp": "1789058906.749976000"
+        }
+      ]
+    },
+    {
       "slug": "b",
       "ledgerTag": "hedera:testnet",
+      "operatorWallet": "0.0.10450880",
       "entities": [
         {
           "key": "purchase",

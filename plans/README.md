@@ -61,3 +61,19 @@ repository; their substance is in those reports and in the commit messages that 
 All three were written inside the submission window (ETHOnline 2026, opened 2026-09-04). Plan artifacts
 belonging to other projects, and any predating the window, are not in this repository; what came
 before WISHMail's own window is in `provenance/`, which binds nothing and is labelled as such.
+
+## Two corrections to `2026-09-10-gate-two.md`, dated 2026-09-10, and not made in the file
+
+Recorded here because a plan is what was approved, and because both are the kind of thing a reader
+of that file would otherwise carry away as true.
+
+**Its §4 says `send`, `inbox` and `ack` are "built and exercised end to end against the modelled
+ledger". `ack` is not built.** There is no implementation of it anywhere in `app/`; the name appears
+as a declared MCP surface and as a refusal. The assertion count beside the claim — 63 — is right, and
+`check:letter`'s only contact with a return receipt is the assertion that `send` **refuses** one. The
+correction is in `app/OPERATIONS.md` Step 6 §8 and in the Correspondent's own refusal text.
+
+**Its "A′" is the agent now called A2** — account `0.0.10462700`, home `a2`, `displayName`
+`DemoAgentA2` — provisioned 2026-09-10 under C1OPERATOR's wallet. Where the plan says A′, read A2.
+The plan also has the top-ups coming from the Postmaster's payer; they came from Sonic's own
+accounts, which is truer to the demo's story, and `app/OPERATIONS.md` records what happened.

@@ -38,8 +38,13 @@ and are wholly disposable. **If a stop fires, report what is true at the stop an
 never repair past it, never infer.
 
 **What this session waits on Sonic for**: sequence 4’s `provisioning.unitPrice` (30 ℏ was the lean; 27.78 ℏ is
-the measured cost of a mailbox); the two wallet top-ups; his word to run A′; and his word for Gate Two. Prepare
+the measured cost of a mailbox); the two wallet top-ups; his word to run A2; and his word for Gate Two. Prepare
 all of it and sign none of it.
+
+**Superseded 2026-09-10.** Sequence 4 is on consensus at 30 ℏ, the wallets are funded from Sonic's own accounts, and
+**A2** — account `0.0.10462700`, home `a2`, `displayName` `DemoAgentA2` — is provisioned and is the demo's first
+Correspondent, superseding both A and the plan's "A′". Where a plan or an earlier record says `A′`, it means A2.
+What remains is Gate Two.
 
 ## 1. The documents, and their order
 
@@ -149,7 +154,7 @@ Do not reopen: broadcast; a broker dependency; Solidity; a Postmaster that attes
 
 This section is the 2026-09-09 rulings (D-156 – D-170). It governs `app/` for this window. **What HAPPENED under them is STATUS §6 and `app/OPERATIONS.md`, not here** — this section is the rules and they are the record. Where it and the spec appear to differ, the spec is what binds and this is what we ship.
 
-**Roles, and the vocabulary.** Three human roles: **OPERATOR** — us, running the Postmaster: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, the counter. **C1OPERATOR** and **C2OPERATOR** — the Correspondents' operators, each bringing a funded testnet wallet. Beside them the agents: **Correspondent B**, provisioned; **A**, whose purchase stopped and which stays as it is; and **A′**, provisioned under C1OPERATOR's wallet. **An operator may own many agents** — the wallet is the operator's, the home is the agent's, and a fresh home is a new agent (D-165). *The agent signs; the operator pays.* Use these words consistently in ADRs, STATUS, README, LIMITATIONS, plans, and commit messages.
+**Roles, and the vocabulary.** Three human roles: **OPERATOR** — us, running the Postmaster: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, the counter. **C1OPERATOR** and **C2OPERATOR** — the Correspondents' operators, each bringing a funded testnet wallet. Beside them the agents: **Correspondent B**, provisioned; **A**, whose purchase stopped and which stays as it is; and **A2** (`0.0.10462700`, home `a2`, `displayName` `DemoAgentA2`, provisioned 2026-09-10 under C1OPERATOR's wallet `0.0.10450879` — the same wallet A's home names), which the plans call **A′** and which supersedes both A and that name. **An operator may own many agents** — the wallet is the operator's, the home is the agent's, and a fresh home is a new agent (D-165). *The agent signs; the operator pays.* Use these words consistently in ADRs, STATUS, README, LIMITATIONS, plans, and commit messages.
 
 **"Operator" is a word of §3.3 and survives in prose only.** §3.3 fixes an *Operator* as "the human or organization behind an agent", and all three roles above are Operators in that sense — we are the Postmaster-agent's. What is **not** an Operator is an account, and the repository used to call the Postmaster's payer account one: `OPERATOR_ID`, `OPERATOR_DER_KEY`, `env.operatorId`, `ctx.operator`. Two roles under one word, in a codebase where a Correspondent's payer now appears in the same call, is how a key gets read from the wrong side. **Identifiers name the role**: `POSTMASTER_PAYER_ID` and `POSTMASTER_PAYER_DER_KEY` in the environment, `postmasterPayerId` / `postmasterPayer` in the Postmaster's code, `homePayerId` / `homePayer` in the Correspondent's, and `payer` in a Correspondent's config — which is what §3.5 has always called it. **HCS-10's `operator_id` keeps its name**: it is a pinned standard's field and it names the agent, not a person, which §2.2 already says in as many words.
 
