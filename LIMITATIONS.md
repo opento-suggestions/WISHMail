@@ -96,6 +96,13 @@ purchase the latest message before it, so every purchase from sequence 3 onward 
 messages are not edited and cannot be** — a schedule is the sequence of messages — so this release states plainly
 that any receipt issued under them is unreplayable on its rate. No such receipt exists: the counter has made no sale.
 
+**The DEX source was an ecosystem-partner integration, and it quoted correctly.** SaucerSwap is Hedera’s own
+DEX, and `api.saucerswap.finance` was the initial intent for exactly that reason — a WISHMail price quoted through a
+partner already in the ecosystem. **The API did not fail.** It answered every call, and the quotes it produced were
+right. What it cannot do — what no DEX spot feed can do — is let a Verifier re-obtain the rate at a receipt’s `at`,
+which is what T-P11-4 requires and what P-12 downgrades the absence of; the network’s own exchange rate can, because
+it is consensus data. **The partner integration is out of MVP scope for time, and the intent stands.**
+
 ## L-6 — Refusal leaves no mark
 
 A Postmaster that will not sell, a doorbell that does not answer, a registry that delists, a recipient that does not sign: none is on consensus as a refusal (§15.3). This release records what happened and never what was intended; it produces slips for unanswered first contact and reports unsigned receipts as `unclaimed`, and nothing else.
