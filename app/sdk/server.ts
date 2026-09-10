@@ -32,7 +32,7 @@ import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
 import { ack } from '../src/tools/ack.js';
 import { inbox } from '../src/tools/inbox.js';
-import { send } from '../src/tools/send.js';
+import { lanesFromDoorbell, send } from '../src/tools/send.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
 import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
@@ -270,7 +270,17 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 
           // §4.4's first hop, where the payer is not the sender's own account:
           // the fee is debited from the PAYER, so the payer must hold a stamp.
-          const hop = await ringStamp(s);
+          // Only where a doorbell will actually be rung — a reused lane charges
+          // no fee (§7.1), and a hop with no fee to pay strands a stamp.
+          //
+          // Asked by §7.1's OWN rule, the one `send` is about to use: the lane is
+          // found on the RECIPIENT's doorbell, not on this agent's. A second
+          // spelling of that rule here would be a second place for it to be
+          // wrong, and the two would disagree on exactly the case that matters.
+          const willRing =
+            (await lanesFromDoorbell(liveReader(s.home.mirrorNodeUrl, s.ledgerTag), r.coordinates.doorbell, s.account))
+              .length === 0;
+          const hop = await ringStamp(s, willRing);
           if (hop !== null) console.error(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
 
           const out = await send(senderContext(s), {

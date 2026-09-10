@@ -328,10 +328,24 @@ export function liveConsensus(ctx: WriterContext): Consensus {
       // The predicate is NAMED by what it is waiting for — the message's own
       // bytes on the topic — and not `() => true`, which is the probe's second
       // bug and accepts a pre-ingest answer (`ops/step.ts`).
+      //
+      // AND IT IS BOUNDED BELOW BY THIS TRANSACTION'S OWN VALID START, which
+      // 2026-09-10 is why. Checkpoint two published a resolution manifest whose
+      // bytes were IDENTICAL to one already on the topic — the same recipient,
+      // the same epoch, the same proof — and the predicate was satisfied by the
+      // older message before the new one had been ingested. The locator returned
+      // named sequence 1, a message this submission did not write. It was
+      // harmless there, because a manifest is content-addressed and both
+      // recompute to the same hash; it would not be harmless on a topic where a
+      // sequence number means something. A consensus timestamp is always at or
+      // after its transaction's valid start, so anything older than that is not
+      // this submission's, whatever its bytes say.
       const want = r.transactionId;
       const b64 = bytes.toString('base64');
+      const validStart = /@([0-9]+.[0-9]+)$/.exec(want)?.[1];
+      const notBefore = validStart === undefined ? '' : `&timestamp=gte:${validStart}`;
       const page = await mirror.poll<MMessages>(
-        `/topics/${topicId}/messages?limit=25&order=desc`,
+        `/topics/${topicId}/messages?limit=25&order=desc${notBefore}`,
         (m) => (m.messages ?? []).some((x) => x.message === b64),
       );
       const mine = (page?.messages ?? []).find((m) => m.message === b64);

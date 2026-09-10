@@ -51,7 +51,8 @@
     "capture": "tsx sdk/capture.cli.ts",
     "ack": "tsx sdk/ack.cli.ts --dry-run",
     "ack:live": "tsx sdk/ack.cli.ts --live",
-    "check:captured": "tsx src/tools/captured.check.ts"
+    "check:captured": "tsx src/tools/captured.check.ts",
+    "check:receipt": "tsx src/tools/receipt.check.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

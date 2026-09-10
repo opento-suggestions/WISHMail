@@ -176,16 +176,26 @@ export function inboxContext(s: Session): InboxContext {
  * (§3.5), so the operator is the account HIP-991 debits, and an account cannot
  * be debited a token it does not hold.
  *
- * **It moves exactly one stamp and only when the payer holds none.** A ring
- * costs the sender one stamp either way; what this decides is which account it
- * leaves from on its way to the treasury. Where the payer IS the sender's own
- * account — a sender paying for itself, which §4.4 calls the one-hop ring —
- * nothing moves and this returns null.
+ * **It moves exactly one stamp, only when a doorbell is about to be rung, and
+ * only when the payer holds none.** A ring costs the sender one stamp either
+ * way; what this decides is which account it leaves from on its way to the
+ * treasury. Where the payer IS the sender's own account — a sender paying for
+ * itself, which §4.4 calls the one-hop ring — nothing moves and this returns
+ * null.
+ *
+ * **`willRing` IS NOT OPTIONAL POLITENESS, and 2026-09-10 is why.** Checkpoint
+ * two's letter went out on a lane that already existed, so nothing was rung —
+ * and this ran anyway, because it asked only whether the payer held a stamp. One
+ * of A2's ten stamps left its account for an operator wallet that had no fee to
+ * pay, where it sits: not consumed, not lost, and not where §4.2 says the
+ * letter's postage went. §4.4's hop exists FOR a ring; without one there is
+ * nothing for bearer custody to be in transit to.
  *
  * Returns the transfer's reference where one happened, so a gate report can
  * name it, and null where none was needed.
  */
-export async function ringStamp(s: Session): Promise<string | null> {
+export async function ringStamp(s: Session, willRing: boolean): Promise<string | null> {
+  if (!willRing) return null;
   if (s.payerId === s.account) return null;
   if ((await payerStamps(s)) >= 1) return null;
   const ref = s.consensus.pinTransferRef();

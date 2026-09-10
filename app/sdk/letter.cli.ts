@@ -241,7 +241,9 @@ async function main(): Promise<void> {
     }
 
     // LIVE — §6.4 in order, through the tool.
-    const hop = await ringStamp(s);
+    // The hop happens only where the doorbell will actually be rung: §4.4's
+    // first hop is for a fee, and a reused lane charges none (§7.1).
+    const hop = await ringStamp(s, lanes.length === 0);
     if (hop !== null) console.log(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
     const out = await send(ctx, {
       coordinates: c,
