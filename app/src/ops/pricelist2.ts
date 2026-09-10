@@ -26,6 +26,7 @@ import { pathToFileURL } from 'node:url';
 import { TopicMessageSubmitTransaction } from '@hashgraph/sdk';
 import { Client } from '@hashgraph/sdk';
 import { loadEnv } from './env.js';
+import { runMode } from './mode.js';
 import { fromEnv } from './identity.js';
 import { Mirror } from './mirror.js';
 import { Record_, SPEC_TAG } from './record.js';
@@ -34,7 +35,10 @@ import { buildPriceList, canonicalBytes, sha256hex, validatePriceList } from './
 import type { Ctx } from './step.js';
 import type { EntityKey } from './record.js';
 
-const dryRun = process.argv.includes('--dry-run');
+// Dry run is the DEFAULT (ops/mode.ts): --live must arrive to submit. Each
+// live price-list script bakes --live into its script string in package.json,
+// where a nested npm cannot eat it.
+const dryRun = !runMode('prices').live;
 
 export interface PublishOptions {
   /** The suffix of app/price-list<suffix>.<network>.json — '' for the first. */

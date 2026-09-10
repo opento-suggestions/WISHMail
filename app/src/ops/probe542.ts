@@ -51,6 +51,7 @@ import {
   TransferTransaction,
 } from '@hashgraph/sdk';
 import { loadEnv } from './env.js';
+import { runMode } from './mode.js';
 import { bornHere, fromEnv, publicHex, type Signer } from './identity.js';
 import { Mirror, toMirrorTxId, FRESH } from './mirror.js';
 import { clientFor, submit, type Submitted } from './hedera.js';
@@ -118,6 +119,14 @@ interface MirrorTx {
 }
 
 async function main(): Promise<void> {
+  // A probe signs. Dry run is the DEFAULT (ops/mode.ts): --live must ARRIVE,
+  // and a probe that is not told to go live reports what it would do and stops.
+  if (!runMode('probe:542').live) {
+    console.log('  DRY RUN: this probe signs when it runs, and it was not told to. Nothing was submitted.');
+    console.log('  to run it for real, pass --live — and read the argv line above to see that it arrived.');
+    console.log('');
+    return;
+  }
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
   const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');

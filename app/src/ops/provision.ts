@@ -13,6 +13,7 @@
  */
 import { Client } from '@hashgraph/sdk';
 import { loadEnv } from './env.js';
+import { runMode } from './mode.js';
 
 import { fromEnv, persistentIdentity, sealIdentity, type Signer } from './identity.js';
 import { Mirror, toMirrorTxId } from './mirror.js';
@@ -23,7 +24,8 @@ import { STEPS, buildPriceList, canonicalBytes, schemaStepsAll, sha256hex, valid
 import type { Ctx, Discrepancy, Outcome, Row } from './step.js';
 
 const flags = {
-  dryRun: process.argv.includes('--dry-run'),
+  // Dry run is the DEFAULT (ops/mode.ts): --live must arrive to submit.
+  dryRun: !runMode('provision').live,
   repin: process.argv.includes('--repin'),
   // Step 4's ordered set, and only under this flag. See the loop below.
   schemas: process.argv.includes('--schemas'),

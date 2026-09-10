@@ -53,6 +53,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { runMode } from './mode.js';
 import { AccountCreateTransaction, Hbar } from '@hashgraph/sdk';
 import { bornPayerWallet } from '../../sdk/keystore.js';
 import { clientFor, submit } from './hedera.js';
@@ -204,8 +205,10 @@ function demoPostmasterUrl(env: ReturnType<typeof loadEnv>): string {
 }
 
 export async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  const dryRun = argv.includes('--dry-run');
+  // Dry run is the DEFAULT (ops/mode.ts): --live must arrive to submit.
+  const mode = runMode('demo:operators');
+  const argv = [...mode.argv];
+  const dryRun = !mode.live;
   const at = argv.indexOf('--dir');
   const parent = at >= 0 && argv[at + 1] !== undefined ? path.resolve(argv[at + 1] as string) : defaultHomesParent();
 

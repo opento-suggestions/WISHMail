@@ -26,10 +26,16 @@
  * machine's files (D-165). That is the acceptance test this project holds every
  * provisioning run to, and it is the last line printed.
  *
- *   --dry-run   read consensus, report what exists and what step 5 would create,
- *               and submit nothing.
+ * DRY RUN IS THE DEFAULT (see ops/mode.ts). This driver submits nothing unless
+ * --live ARRIVES in its own argv, and it prints the mode and the argv it
+ * received before it reads a key. On 2026-09-10 an appended --dry-run was eaten
+ * by the root script's nested npm and this run signed; inverting the default is
+ * what makes a lost flag safe.
  *
- * Usage:  npm run correspondent:provision -- <home directory> [--dry-run]
+ *   npm run correspondent:provision:plan -- <home>   read consensus, submit nothing
+ *   npm run correspondent:provision -- <home>        LIVE; --live is baked into
+ *                                                    the script string, where no
+ *                                                    forwarding can lose it
  */
 import path from 'node:path';
 import { buyStamps, outstanding } from './counter.js';
@@ -43,9 +49,13 @@ import { registrationsFor } from '../src/resolve/hol.js';
 import { HCS10_TTL, type TemplateSubject, type TopicShape } from '../src/ops/template.js';
 import * as template from '../src/ops/template.js';
 import { registryMemo } from '../src/ops/declaration.js';
+import { runMode } from '../src/ops/mode.js';
 
-const dryRun = process.argv.includes('--dry-run');
-const dir = process.argv.slice(2).find((a) => !a.startsWith('--'));
+// FIRST, and before anything reads a key: what mode is this, and what did the
+// process actually receive? A flag that did not arrive leaves this in dry run.
+const mode = runMode('correspondent:provision');
+const dryRun = !mode.live;
+const dir = mode.argv.find((a) => !a.startsWith('--'));
 
 /** Every session this run booted, so the entry point can release them all. */
 const open = new Set<Session>();
@@ -151,7 +161,7 @@ function detail(w: TopicShape): string {
 
 async function main(): Promise<void> {
   if (dir === undefined) {
-    stop('name the home directory: npm run correspondent:provision -- <dir> [--dry-run]. A home IS the agent (D-165).');
+    stop('name the home directory: npm run correspondent:provision:plan -- <dir>. A home IS the agent (D-165).');
   }
   const home = openHome(path.resolve(dir));
   let s = await boot(home);
@@ -163,7 +173,7 @@ async function main(): Promise<void> {
 
   if (dryRun) {
     plan(s);
-    console.log('  --dry-run: nothing was signed and nothing submitted.');
+    console.log('  DRY RUN: nothing was signed and nothing submitted.');
     console.log('');
     return;
   }
