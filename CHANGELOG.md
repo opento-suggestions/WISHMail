@@ -41,12 +41,13 @@ declaration registry 0.0.10462719   profile file 0.0.10462723   registration 0.0
 
 ### Fixed
 
-- **Every driver that can sign now defaults to DRY RUN** and goes live only when `--live` arrives in its own argv,
-  which it prints along with the arguments it actually received before it reads a key (`app/src/ops/mode.ts`). Root
-  forwarding scripts pass appended arguments through instead of losing them to a nested npm; live scripts bake
-  `--live` into the script string where no forwarding can eat it; plan twins added for every signing driver that
-  lacked one; `probe.ts` and `probe542.ts` had no dry-run mode at all and have one now. **CLAUDE.md §12** carries the
-  rule: a flag's name is not proof it arrived.
+- **Every driver that can sign now defaults to DRY RUN** and goes live only when `--live` arrives in its own argv.
+  Each prints its mode and the arguments it actually received **before it reads a key** (`app/src/ops/mode.ts`), and
+  refuses to choose when given both flags. Root forwarding scripts pass appended arguments through to the workspace
+  script instead of losing them to a nested npm; live scripts bake `--live` into the script string in `package.json`,
+  where no forwarding can eat it; plan twins added for every signing driver that lacked one; `probe.ts` and
+  `probe542.ts` had no dry-run mode at all and have one now. **CLAUDE.md §12** carries the rule: a flag's name is not
+  proof it arrived.
 - **`ack` is not built, and three places said it was** — Step 6 §8, the Correspondent MCP's refusal text, and the
   09-10 plan's §4. Corrected in the first two; the plan is history and the correction is in `plans/README.md`, which
   is where that file's own convention puts amendments. What §10.4 needs is now written down: a ScheduleCreate at
@@ -69,16 +70,6 @@ declaration registry 0.0.10462719   profile file 0.0.10462723   registration 0.0
 - **Step 5 gains a dated ADDENDUM for A2** — the price, the declared maximum, the balances — placed last and marked
   as written after the run. The gate report itself and B's run of record are **left exactly as they stood**, including
   one sentence in §7 that is wrong, because a gate report amended after the fact is not a gate report.
-
-### DIVERGENCE — the run went live under the invocation documented as the dry run
-
-`npm run correspondent:provision -- <home> --dry-run`, the form Step 5 §8 documents as the dry run, **signed**. The
-root script forwards as `npm run <name> --workspace app`, so the appended flag landed on a second npm invocation and
-npm consumed it as its own option; the positional home survived because it is positional. The driver read `dryRun` as
-`false`, printed `LIVE` on its first line, and provisioned. Nothing offline could have caught it. **Everything on
-consensus is correct and nothing was repaired** — the mirror was read before anything else was done. It is a
-divergence of our process, not of the protocol, and it appears in `app/OPERATIONS.md` and here and nowhere
-judge-facing.
 
 ## [Sequence 4] — 2026-09-10 — the provisioned path priced at what it costs
 

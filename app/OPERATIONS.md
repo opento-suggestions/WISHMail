@@ -2275,12 +2275,48 @@ There are four windows in this checkpoint and they do not have the same shape.
 | Write | If the signature left and the outcome was not learned | Resume |
 |---|---|---|
 | **the stamp hop** (§4.4) | the payer may hold the stamp | re-read the payer's balance; the hop moves a stamp **only when the payer holds none**, so a re-run that finds one moves nothing |
-| **the ring** (`connection_request`) | the request may be on B's doorbell and one stamp already consumed | re-read the doorbell for a request from this account; **a second ring costs a second stamp and creates a second request**, so a re-run must read before it rings — and the watcher answers by `connection_id`, so a duplicate request would produce a duplicate lane, which §7.1 then resolves by taking the earliest |
+| **the ring** (`connection_request`) | the ring landed and the answer is not yet visible | **a rerun waits, and spends nothing.** Before ringing, `send` reads B's doorbell from consensus for a `connection_request` whose `operator_id` is this agent's and which no `connection_created` answers. Finding one, it waits on it — polling for the lane — instead of ringing again |
+| **the ring**, stale | a standing request older than the whole window, and no lane | **it becomes a slip, which is §10.5's own remedy and costs nothing.** The attempts run out against the standing request, `send` publishes the slip's manifest on the sender's manifest topic and returns the slip. It does **not** ring again |
 | **the settlement** | postage may be consumed with no envelope on the lane | **NEVER retried blindly** (P-7). The settlement is found from consensus by its memo — `wishmail:<id>` names the envelope — and re-used. A second transfer under the same memo would be a second settlement for one envelope, which T-P7-2 exists to reject |
 | **the chunks** | some may be on the lane and some not | resubmittable against the **same** settlement (D-52). The chain is walked from the header, so a reader takes the earliest chunk the chain admits (T-P3-3) and a partial envelope is `INBOX_INCOMPLETE` rather than a wrong one |
 
 **The rule for all four is the one Gate One taught and the a2 run re-taught: read the mirror first, and the process's
 own output second.** If anything stops, report what is true at the stop and wait. Do not repair.
+
+### 8a. The window, as composed — and why a retry is a re-read
+
+**RECORD, Sonic 2026-09-10.** The first-contact window folds in mirror-node lag, and on testnet that lag is real:
+two of Gate One's eight defects were a read that came back empty once and was believed — the account index after a
+transfer, and the anchor at 381 messages. So the window is composed as **attempts**:
+
+```
+  30 seconds per attempt · up to two retries · 90 seconds in all
+  within an attempt, "answered" is read by POLLING, never by a single read
+  A RETRY IS A RE-READ AND NEVER A RE-RING
+```
+
+**The doorbell is rung once per first contact.** Every attempt after the first only widens how long the sender
+watches. A second ring would consume a second stamp at the treasury, give B's watcher a second request to answer, and
+leave §7.1 choosing between two lanes.
+
+**No double-ring, ever, and it is OUR thrift rather than the specification's requirement — say so.** §10.5 is
+explicit the other way: *"A sender that rings again produces a new request, and, if unanswered, a new slip; each is
+its own record."* Ringing twice is **conformant**. What this deployment does is read first anyway, because a second
+ring spends a stamp to learn something a read would have told it. Before ringing, `send` reads B's doorbell from
+consensus for a `connection_request` whose HCS-10 `operator_id` is this agent's — `inboundTopicId@accountId` — and
+which no `connection_created` answers. **Consensus first, then the home's store** (D-165): a wiped local file must not
+be able to cause a second ring.
+
+**The attempt count and the outcome are reported** in the result's text block, per D-162's one-template convention —
+goose renders the final card and not `notifications/progress` — and in the Correspondent's own log live.
+
+**And this now has an offline court, which it did not before.** `tools/memory.ts` gained an ingestion-lag knob: a
+topic's newest message can be withheld from the next N reads, which is exactly what a mirror node does and the one
+thing consensus-as-a-data-structure could not model. `npm run check:letter` is **69 assertions**, up from 63, and the
+six it gained are: a lagged `connection_created` is found by looking again rather than by ringing again; the doorbell
+was rung **exactly once** across every attempt; a standing unanswered request is waited on by a second `send`, which
+finds it on consensus, spends no second stamp at the door, and still leaves exactly one request on the doorbell.
+**This is the class of defect no offline check had reached until now.**
 
 ### 9. What the dry run showed, 2026-09-10, and what it could not
 
@@ -2318,6 +2354,12 @@ this is first contact; and that the agent holds enough stamps while its payer ho
 **What it could not prove, and it is the half that matters**: whether the doorbell answers, whether the fee assesses,
 whether the lane's key list is the threshold that was asked for, and whether a chunk lands without `chunk_info`.
 **There is no offline consensus node**, and every defect Gate One found lived in exactly that gap.
+
+**The envelope identifier above is a composition at dry-run time, and it will NOT be the one on consensus.** §7.2
+requires a fresh nonce for every envelope and §7.3 a fresh ephemeral key, so the live run seals again and reaches a
+different `id` — and the settlement memo, which is `wishmail:` plus that id, differs with it. **Its absence from the
+ledger is not a defect and nobody should go looking for it.** What the dry run fixed is the shape: the weight, the
+postage, the chunk count, and that the memo is the identifier and nothing else.
 
 ### 10. Checkpoint TWO — named here, not built here
 

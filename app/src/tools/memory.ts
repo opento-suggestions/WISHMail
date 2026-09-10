@@ -75,6 +75,27 @@ export class MemoryLedger {
   private readonly topics = new Map<string, Topic>();
   private readonly transfers = new Map<string, Settlement>();
   private nextEntity = 1000;
+  /**
+   * INGESTION LAG, modelled — the one thing consensus-as-a-data-structure could
+   * not do until now.
+   *
+   * A real mirror node answers a read about a message that IS on consensus with
+   * "no" for a second or two after it lands, and it uses the same word it would
+   * use for a message that will never exist. Two of Gate One's eight defects
+   * were exactly that read believed once. A knob here gives the offline court a
+   * way to exercise the retry — a reader that must look again — without a
+   * network.
+   *
+   * topicId -> how many further reads of that topic still hide its newest
+   * message. Decremented per read, so `lag(t, 2)` hides it from the next two
+   * reads and shows it on the third.
+   */
+  private readonly lagging = new Map<string, number>();
+
+  /** Hide a topic's newest message from the next `reads` reads of it. */
+  lag(topicId: string, reads: number): void {
+    this.lagging.set(topicId, reads);
+  }
   /** Nanoseconds since an arbitrary epoch; every event takes the next tick. */
   private clock = 1_788_900_000_000_000_000n;
 
@@ -236,7 +257,15 @@ export class MemoryLedger {
   reader(): Reader {
     return {
       ledgerTag: this.ledgerTag,
-      messages: async (topicId) => this.topics.get(topicId)?.messages.slice() ?? [],
+      messages: async (topicId) => {
+        const all = this.topics.get(topicId)?.messages.slice() ?? [];
+        const left = this.lagging.get(topicId) ?? 0;
+        if (left <= 0) return all;
+        this.lagging.set(topicId, left - 1);
+        // The newest message is on consensus and this read does not show it,
+        // which is the whole of what ingestion lag is.
+        return all.slice(0, -1);
+      },
       topic: async (topicId) => {
         const t = this.topics.get(topicId);
         if (t === undefined) return null;

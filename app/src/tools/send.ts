@@ -225,12 +225,68 @@ async function publishManifest(
 }
 
 /**
- * How long `send` waits at first contact, and how often it looks. §6.4 gives
- * `window` in seconds; nothing in the specification fixes the polling interval,
- * which is why it is here and not in `spec/pins.json`.
+ * How long `send` waits at first contact, how often it looks, and how many
+ * times it goes back to look again.
+ *
+ * §6.4 gives `window` in seconds and fixes neither the polling interval nor any
+ * notion of an attempt, which is why both are here and not in `spec/pins.json`.
+ *
+ * THE WINDOW FOLDS IN MIRROR-NODE LAG, BECAUSE ON TESTNET THAT LAG IS REAL.
+ * Two of Gate One's eight defects were a read that came back empty once and was
+ * believed — the account index after a transfer, and the anchor at 381 messages
+ * — so a single read is never how this decides. One ATTEMPT is a poll under a
+ * wait policy for `DEFAULT_WINDOW_SECONDS`; the sender makes up to
+ * `MAX_ATTEMPTS` of them, 90 seconds in all, before it gives up and publishes a
+ * slip.
+ *
+ * **A RETRY IS A RE-READ AND NEVER A RE-RING.** The doorbell is rung once per
+ * first contact. Every attempt after the first only widens how long the sender
+ * watches for the answer, and costs nothing: a second ring would be a second
+ * stamp consumed at the treasury and a second request for the watcher to answer,
+ * and §7.1 would then have to pick between two lanes.
  */
 export const DEFAULT_WINDOW_SECONDS = 30;
+export const MAX_ATTEMPTS = 3;
 const POLL_INTERVAL_MS = 1000;
+
+/** What a first contact did, for the caller to report (D-162's one template). */
+export interface ContactAttempts {
+  /** How many watching attempts were made, 1 … MAX_ATTEMPTS. */
+  readonly attempts: number;
+  /** True where an existing pending request was waited on instead of ringing. */
+  readonly reusedRequest: boolean;
+  readonly totalSeconds: number;
+}
+
+/**
+ * A connection request from THIS agent on that doorbell that no lane answers.
+ *
+ * HCS-10 identifies the requester by `operator_id`, which is
+ * `inboundTopicId@accountId` — so this is the sender's own ring and not
+ * somebody else's. Read from CONSENSUS and never from the home's store: a wiped
+ * local file must not be able to cause a second ring (D-165).
+ */
+async function pendingRequestOf(
+  reader: Reader,
+  doorbell: string,
+  operatorId: string,
+): Promise<TopicMessage | null> {
+  const messages = await reader.messages(doorbell);
+  const answered = new Set<number>();
+  let mine: TopicMessage | null = null;
+  for (const m of messages) {
+    const op = operationOf(m);
+    if (op === null || op['p'] !== 'hcs-10') continue;
+    if (op['op'] === 'connection_created') {
+      const id = op['connection_id'];
+      if (typeof id === 'number') answered.add(id);
+      continue;
+    }
+    if (op['op'] === 'connection_request' && op['operator_id'] === operatorId) mine = m;
+  }
+  if (mine === null) return null;
+  return answered.has(mine.sequenceNumber) ? null : mine;
+}
 
 /**
  * §6.4 step 1's first contact. Returns the lane if one is created inside the
@@ -241,29 +297,72 @@ async function firstContact(
   coordinates: Coordinates,
   windowSeconds: number,
 ): Promise<
-  | { readonly lane: Lane }
-  | { readonly unanswered: { readonly request: TopicMessage; readonly logEntry: TopicMessage } }
+  | { readonly lane: Lane; readonly contact: ContactAttempts }
+  | {
+      readonly unanswered: { readonly request: TopicMessage; readonly logEntry: TopicMessage };
+      readonly contact: ContactAttempts;
+    }
 > {
   const operator = operatorIdOf(ctx.doorbell, ctx.account);
   const body = connectionRequestBody(operator);
 
-  // The ringer, where one is given, is the Postmaster paying the doorbell's fee
-  // from its own stamp (§6.4 step 1); otherwise the sender pays it (§4.4).
-  const ringer: Writer = ctx.ringer ?? ctx.consensus;
-  const request = await ringer.submitMessage(coordinates.doorbell, body, TRANSACTION_MEMO.connection_request);
+  // NO DOUBLE-RING, EVER. Before the doorbell is rung, consensus is asked
+  // whether this agent already has a request standing on it that no lane
+  // answers. §10.5 permits ringing again — "a sender that rings again produces a
+  // new request, and, if unanswered, a new slip; each is its own record" — so
+  // this is OUR thrift and not the specification's requirement: a second ring
+  // costs a second stamp, gives the watcher a second request to answer, and
+  // leaves §7.1 choosing between two lanes. Consensus first, then the store
+  // (D-165).
+  const standing = await pendingRequestOf(ctx.consensus, coordinates.doorbell, operator);
 
-  // §5.9: the slip binds the request on the doorbell to the sender's own record
-  // of it. The log entry is the sender's, always — it is the sender's topic.
-  const logEntry = await ctx.consensus.submitMessage(ctx.log, body, TRANSACTION_MEMO.connection_request);
+  let request: TopicMessage;
+  let logEntry: TopicMessage;
+  let reusedRequest = false;
 
-  const deadline = Date.now() + windowSeconds * 1000;
-  for (;;) {
-    const lanes = await lanesFromDoorbell(ctx.consensus, coordinates.doorbell, ctx.account);
-    const answered = lanes.find((l) => !before(l.createdAt, request.consensusTimestamp));
-    if (answered !== undefined) return { lane: answered };
-    if (Date.now() >= deadline) return { unanswered: { request, logEntry } };
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  if (standing !== null) {
+    reusedRequest = true;
+    request = standing;
+    // The sender's own record of its own ring (§5.9). Where the ring is being
+    // re-read rather than re-rung, the log entry this run would have written is
+    // already there; the slip's inputs name it, so it is found the same way.
+    const own = await ctx.consensus.messages(ctx.log);
+    logEntry = own.find((m) => operationOf(m)?.['operator_id'] === operator) ?? standing;
+  } else {
+    // The ringer, where one is given, is the Postmaster paying the doorbell's fee
+    // from its own stamp (§6.4 step 1); otherwise the sender pays it (§4.4).
+    const ringer: Writer = ctx.ringer ?? ctx.consensus;
+    request = await ringer.submitMessage(coordinates.doorbell, body, TRANSACTION_MEMO.connection_request);
+
+    // §5.9: the slip binds the request on the doorbell to the sender's own record
+    // of it. The log entry is the sender's, always — it is the sender's topic.
+    logEntry = await ctx.consensus.submitMessage(ctx.log, body, TRANSACTION_MEMO.connection_request);
   }
+
+  // ATTEMPTS, and every one of them is a re-READ. The ring above happened at
+  // most once; what repeats is looking for the answer, because a mirror node
+  // that has not ingested a message yet answers "no" in exactly the words it
+  // uses for "never".
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const deadline = Date.now() + windowSeconds * 1000;
+    for (;;) {
+      const lanes = await lanesFromDoorbell(ctx.consensus, coordinates.doorbell, ctx.account);
+      const answered = lanes.find((l) => !before(l.createdAt, request.consensusTimestamp));
+      if (answered !== undefined) {
+        return {
+          lane: answered,
+          contact: { attempts: attempt, reusedRequest, totalSeconds: attempt * windowSeconds },
+        };
+      }
+      if (Date.now() >= deadline) break;
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    }
+  }
+
+  return {
+    unanswered: { request, logEntry },
+    contact: { attempts: MAX_ATTEMPTS, reusedRequest, totalSeconds: MAX_ATTEMPTS * windowSeconds },
+  };
 }
 
 /** §10.5's slip proof, as a manifest to publish. */

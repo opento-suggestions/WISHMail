@@ -34,6 +34,7 @@ import { resolveHcs14 } from '../resolve/hcs14.js';
 import { readerSource } from './verify.js';
 import { inbox, type Delivery } from './inbox.js';
 import { MemoryLedger } from './memory.js';
+import { operationOf } from './consensus.js';
 import { send, type Coordinates, type SenderContext } from './send.js';
 import { verify } from './verify.js';
 import { repoRoot } from '../ops/env.js';
@@ -357,6 +358,69 @@ async function main(): Promise<void> {
 
   // === Every refusal the readers owe ======================================
   await refusals();
+
+  // === Ingestion lag: a retry is a RE-READ, and never a RE-RING ===========
+  //
+  // The class of defect no offline check had reached until 2026-09-10. A mirror
+  // node answers a read about a message that IS on consensus with the same word
+  // it uses for one that will never exist, and two of Gate One's eight defects
+  // were that read believed once. `MemoryLedger.lag` withholds a topic's newest
+  // message from the next N reads, so the retry can be exercised with no
+  // network.
+  {
+    const s = await stand();
+    const operator = operatorIdOf(s.sender.doorbell, s.sender.account);
+    // The door IS answered — but the answer is invisible to the next two reads.
+    const flight = send(s.ctx, {
+      coordinates: s.coordinates,
+      manifest: s.manifest,
+      payload: PAYLOAD,
+      windowSeconds: 1,
+    });
+    // Let the ring land before the door is answered: `connection_created` names
+    // the `connection_id` of the request it answers.
+    await new Promise((r) => setTimeout(r, 50));
+    answerTheDoor(s);
+    s.ledger.lag(s.recipient.doorbell, 2);
+    const out = await flight;
+    is('a lagged answer is found by looking again, not by ringing again', out.kind, 'postmark');
+
+    const rings = (await s.ctx.consensus.messages(s.recipient.doorbell)).filter((m) => {
+      const op = operationOf(m);
+      return op?.['op'] === 'connection_request' && op['operator_id'] === operator;
+    });
+    is('the doorbell was rung EXACTLY ONCE across every attempt (§4.4)', rings.length, 1);
+  }
+
+  // === No double-ring: a standing request is waited on, not re-rung =========
+  {
+    const s = await stand();
+    const operator = operatorIdOf(s.sender.doorbell, s.sender.account);
+    // A first contact that timed out leaves a request standing and unanswered.
+    const slipped = await send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, windowSeconds: 1 });
+    is('the first contact timed out', slipped.kind, 'slip');
+
+    // A second `send` finds it on CONSENSUS and waits on it rather than paying
+    // for a second ring. §10.5 PERMITS ringing again — "each is its own record"
+    // — so this is our thrift and not the specification's requirement, and the
+    // assertion is that we spend one stamp where we are allowed to spend two.
+    const before = await s.ctx.consensus.stampBalance();
+    const second = send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, windowSeconds: 1 });
+    await new Promise((r) => setTimeout(r, 50));
+    answerTheDoor(s);
+    const out = await second;
+    is('the standing request is answered, and the letter goes', out.kind, 'postmark');
+
+    const rings = (await s.ctx.consensus.messages(s.recipient.doorbell)).filter((m) => {
+      const op = operationOf(m);
+      return op?.['op'] === 'connection_request' && op['operator_id'] === operator;
+    });
+    is('still exactly one request on the doorbell — no second ring', rings.length, 1);
+    const after = await s.ctx.consensus.stampBalance();
+    // One ring's stamp was already spent by the first contact; what this run
+    // spends is the envelope's postage and nothing at the door.
+    ok('and no second stamp was consumed at the door', before - after <= 2);
+  }
 
   // === The slip: a door nobody answers (F-6, T-P12-5) =====================
   {
