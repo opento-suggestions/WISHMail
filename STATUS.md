@@ -12,7 +12,7 @@ The Excalidraw map is the ratified scope: **green/blue = BUILD, orange = STRETCH
 
 **Hard deliverables.** Core (resolve / postage / consensus) · resolvers `hcs14` (§9.2), `dns` (§9.3), `nanda` (§9.4) · HCS-11 declaration + HCS-2 profile registry (§9.2) · HCS-13 schema registration (§5.11) · WebMCP page · MCP server · MCP-B bridge (judges cannot be assumed to have the Chrome flag) · TypeScript SDK + CLI · demo: two agents corresponding, Claude as outside Verifier · `AGENTS.md` footnote · HOL Guard scan if feasible.
 
-**Stretch, in Sonic's order.** HOL registration once registrable (now: `hol` profile §9.5 reads consensus; self-registration on the testnet anchor §4.6, D-110 — whether the profile is BUILD or STRETCH is the map's call, not this file's) → HCS-25 reputation signals (**closed**: refused in §16.8; a score off consensus never touches a standing). Mandate lineage is held (§16.8).
+**Stretch, in Sonic's order.** ~~HOL registration once registrable~~ **`hol` is BUILD, and it LANDED 2026-09-10** (RECORD, Sonic): the §9.5 profile reads consensus, self-registration on the testnet anchor is done under §4.6 and D-110, and **A2 and B both resolve under it with no `blurred`** — which is the acceptance test, because §9.5 assigns `blurred` where the registration's payer is not the address's own account. → HCS-25 reputation signals (**closed**: refused in §16.8; a score off consensus never touches a standing). Mandate lineage is held (§16.8).
 
 **Spec-only.** A2A AgentCard (held, §16.8) · Q-10 NANDA attestation slot (§19.4) · Q-11 postage classes (§19.3) · other ledgers / CLPR (§16.7, §19.3) · AAIF and NANDA-Town mappings (in the 09-04 research, not in the spec) · USPS/PES grounding (§17, done).
 
@@ -362,9 +362,11 @@ require `--live` to arrive in their own argv, printing the mode and the received
 
 ---
 
-## TOMORROW — 2026-09-10, ruled (Sonic, 2026-09-09)
+## TOMORROW — 2026-09-10, ruled (Sonic, 2026-09-09) — **ALL FOUR ITEMS CLOSED 2026-09-10**
 
-Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it without this conversation.
+**This list is spent.** Its four items are signed and recorded — sequence 4, the wallet top-ups, A2, and Gate Two in
+all three acts — and the Open-for-Sonic list beneath it is ruled through. What follows it is the record of the day,
+not instructions for the next one. `plans/2026-09-10-gate-two.md` carried it and is now history.
 
 **SIGNED 2026-09-10 — item 1 is done. `PriceList` sequence 4 is on `0.0.10426551`, 667 bytes, sha256
 `03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`, consensus `1789055861.123389104`, transaction
@@ -387,19 +389,39 @@ Run of record in `app/OPERATIONS.md`.**
    §G-21 and **D-172** closed §G-22 and the specification moved to **0.5.11** — nothing rung, no second lane, and
    A2's doorbell still holding zero messages.
 
-**Open for Sonic:** ~~§G-21 — the reply's lane~~ **ruled and closed by D-171, 2026-09-10** ·
-~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · ~~whether `ack`
-and §10.4's schedule are in this window at all~~ **both built and on consensus 2026-09-10** ·
-~~ledger §G-22 (T-P1-8 asks for one signature and HIP-423 records three)~~ **ruled and closed by D-172** ·
-**§G-25 — the evidence bundle's digest is a function of the release's PATCH version, so §11.7's MUST and T-P3-1
-hold only between Verifiers at one patch, and a recorded digest reproduces only from its own tag** ·
-**§G-24 — the pinned HCS-10 contradicts itself about which party writes the Outbound Connection Created record** ·
-§G-23 (§11.4 requires a reason no test names) ·
-ledger §G-20 (the provisioned path cannot be rate-priced under a frozen schema) · §G-18 (§5.3's gloss on
-`resolvedAt`, spec text only) · the 150 ℏ now sitting in A2's own
-agent account, against "an agent's account never holds ℏ, with one exception" · which classes
-the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
-submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
+**RULED, and the list is closed (Sonic, 2026-09-10).** Every item that stood here is answered. What each ruling
+obliges is named beside it; where the obligation is a spec change it lands in the **0.5.12 patch**, whose version
+number is itself the one thing still to be settled — **§G-25's ruling holds either way, and only the probe of the
+frozen `evidence-bundle` schema decides whether it is 0.5.12 or 0.6.**
+
+- ~~**§G-25** — the bundle digest is a function of the release's PATCH version~~ → **the bundle's `spec` carries the
+  MINOR version, `0.5`**; the patch a Verifier ran at moves to `observations`, which §11.6 already keeps out of the
+  digest. Every recorded digest moves once and then never again for a patch. **0.5.12 vs 0.6 decided by the
+  frozen-schema probe.**
+- ~~**§G-24** — the pinned HCS-10 contradicts itself about who writes the Outbound Connection Created record~~ →
+  **written on BOTH parties' logs**, satisfying both readings at one message each, so an agent enumerates the lanes it
+  requested from consensus alone and needs no address book. The contradiction is **recorded FETCHED**, not resolved.
+- ~~**§G-23** — §11.4 requires a reason no test names~~ → **the test row is added in the 0.5.12 patch.** A MUST does
+  not stay without a court (§1.3).
+- ~~**§G-20** — the provisioned path cannot be rate-priced under a frozen schema~~ → **a 0.6 candidate, and no version
+  event follows it.** Shown as ruled rather than open: it waits on a minor version, not on a decision.
+- ~~**§G-18** — §5.3's gloss on `resolvedAt`~~ → **folded into the 0.5.12 patch by reading (a)**, because one sentence
+  closes it: "query time, reported beside the coordinates".
+- ~~**the 150 ℏ in A2's own agent account**~~ → **intentional operator funding of a test deployment.** The invariant
+  was mis-stated as the agent's and **it is the Postmaster's: the Postmaster never funds an agent's account beyond the
+  single registration fee.** What an operator puts into its own agent is that operator's affair. `CLAUDE.md` §11
+  carries the amended sentence; the two earlier phrasings stand where they are as the record of what was believed.
+- ~~**which classes the first claim names**~~ → **none, until test bodies pass.** The `hcs14` path is **45 bodies**,
+  and it follows Gate Three.
+- ~~**whether `hol` is BUILD on the map**~~ → **BUILD, and landed 2026-09-10**: A2 and B both resolve under it with no
+  `blurred`.
+- ~~**the running-hash integrity check (L-10)**~~ → **not in this window.** LIMITATIONS names our timing, as it does
+  everywhere else we defer.
+- ~~**the HCS-14 proposal for the NANDA email `nativeId` (D-112)**~~ → **a repo item, outside this window.**
+- ~~**demo shape**~~ → **Friday's own pass.**
+
+**Still open and not on this list:** ledger **§G-8**, the P-16 seam on a Hedera network — ruled 2026-09-07 a spec
+question and not a build item, and deliberately not patched since.
 
 **What is not done, and is not pretended to be:** the `dns` and `nanda` resolvers. The CLI and the
 WebMCP page. **The claim**: eighty-six tests are registered, none is expanded, zero pass, and `RELEASE.classes` is

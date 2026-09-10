@@ -1487,6 +1487,15 @@ It also is not needed for Gate Two: D-157 as ruled 2026-09-10 has the schedule t
 **sender's own operator wallet**, which is `0.0.10450879`. Recorded here, unresolved, and raised rather than quietly
 absorbed.
 
+**RULED 2026-09-10 (Sonic), and the record above is left exactly as it stood.** The 150 ℏ is **intentional operator
+funding of a test deployment** — C1OPERATOR's own money into C1OPERATOR's own agent — and it is neither a sale, nor a
+gift from the Postmaster, nor a departure. **The invariant was mis-stated as the agent's and it is the Postmaster's:
+the Postmaster never funds an agent's account beyond the single registration fee.** What an operator puts into its own
+agent is that operator's affair. Nothing on consensus changes and nothing is repriced; §4.4 and §9.5 still turn on who
+*pays for the registration*, settled at anchor sequence 382. `CLAUDE.md` §11 carries the amended sentence; the two
+earlier phrasings — "an agent's account never holds ℏ, with one exception" in §1 row 11 above and "the agent holds ℏ
+once … and never again" — stand where they are as the record of what was believed on the day.
+
 ---
 ---
 ## The precheck probe — gate report, written before any signature. NOTHING IS SIGNED.
