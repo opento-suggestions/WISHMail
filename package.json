@@ -1,6 +1,6 @@
 {
   "name": "wishmail",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "private": true,
   "description": "WISHMail — certified mail for agents on Hedera. Monorepo root; the specification in spec/ is the normative document.",
   "license": "Apache-2.0",
@@ -39,6 +39,7 @@
     "demo:operators": "npm run demo:operators --workspace app",
     "entities:md": "node scripts/entities-md.mjs",
     "check:entities": "node scripts/entities-md.mjs --check",
-    "check:exchange": "npm run check:exchange --workspace app"
+    "check:exchange": "npm run check:exchange --workspace app",
+    "pricelist3": "npm run pricelist3 --workspace app"
   }
 }

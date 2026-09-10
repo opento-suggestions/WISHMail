@@ -1,0 +1,75 @@
+{
+  "_readme": [
+    "The THIRD PriceList (D-170), as it will be submitted to the price topic 0.0.10426551.",
+    "",
+    "It is sequence 2 with ONE field changed: the hbar method's rate.source. §14.3 makes the",
+    "schedule the SEQUENCE of messages and the price current at a purchase the latest message",
+    "before it, so this supersedes sequence 2 by landing after it, and sequence 2 is not edited.",
+    "",
+    "WHY IT CHANGED, AND IT IS ABOUT REPLAY RATHER THAN ABOUT PRICE. Sequence 2 read HBAR/USD",
+    "from api.saucerswap.finance — a DEX spot price. T-P11-4 is the court for what was charged:",
+    "'buy_stamp charges what the price message current at the receipt's consensus timestamp",
+    "yields'. A Verifier re-running that arithmetic on a rate-priced method needs the rate the",
+    "Postmaster read, at the instant it read it — and a DEX spot price cannot be re-obtained at",
+    "a past timestamp by anyone. So every rate-priced receipt this deployment produced would be",
+    "unreplayable, and P-12 downgrades what cannot be replayed: appraised never exceeds declared,",
+    "and non-replayable evidence downgrades, never upgrades. The price would have been right and",
+    "unprovable.",
+    "",
+    "Hedera's own exchange rate is CONSENSUS DATA and is on the mirror node, with a timestamp",
+    "filter. FETCHED 2026-09-09: GET /api/v1/network/exchangerate?timestamp=<t> returns the rate",
+    "record in force at t — {current_rate {cent_equivalent, hbar_equivalent, expiration_time},",
+    "next_rate, timestamp} — deterministically, and querying at the returned record's own",
+    "timestamp returns that same record. Any stranger with a mirror node and the receipt's",
+    "rate.at can obtain exactly what the Postmaster read. That is what makes T-P11-4 checkable.",
+    "",
+    "rate.value is USD per hbar, computed in integers as cent_equivalent / (100 x hbar_equivalent)",
+    "and truncated to the scale §14.3's arithmetic uses, so the number in the receipt is the",
+    "number the price was divided by and a replay reaches the same tinybar.",
+    "",
+    "rate.at is the CONSENSUS TIMESTAMP of the rate record, not a wall clock — the thing a",
+    "Verifier passes back to the mirror. §5.4 types it as a string and constrains it no further,",
+    "so no schema moves.",
+    "",
+    "Everything else is sequence 2's, byte for byte: the same stampToken, the same payTo, the",
+    "same bundles, the same provisioning {method, unitPrice, registrationFee}. The x402-usdc",
+    "method is fixed-priced and reads no rate, so it is untouched.",
+    "",
+    "spec is 0.5.10 because that is the text this message is published under (D-169). _readme is",
+    "stripped before canonicalization, exactly as it is for sequences 1 and 2."
+  ],
+  "spec": "0.5.10",
+  "stampToken": {
+    "ledgerTag": "hedera:testnet",
+    "tokenId": "0.0.10426208",
+    "treasury": "0.0.10426205"
+  },
+  "methods": [
+    {
+      "method": "x402-usdc",
+      "network": "hedera:testnet",
+      "asset": "0.0.429274",
+      "payTo": "0.0.8641261",
+      "facilitator": "https://x402.org/facilitator",
+      "unitPrice": "0.10",
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    },
+    {
+      "method": "hbar",
+      "network": "hedera:testnet",
+      "asset": "0.0.0",
+      "payTo": "0.0.8641261",
+      "rate": {
+        "source": "https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate",
+        "pair": "HBAR/USD",
+        "reference": { "amount": "0.10", "asset": "USD" }
+      },
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    }
+  ],
+  "provisioning": {
+    "method": "hbar",
+    "unitPrice": "2",
+    "registrationFee": "0.05"
+  }
+}

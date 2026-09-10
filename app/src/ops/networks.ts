@@ -25,8 +25,27 @@ export interface NetworkConstants {
   readonly usdc: { readonly assetId: string; readonly decimals: number; readonly cite: string } | null;
   /** Where the USDC leg settles (§14.2, D-132). */
   readonly facilitator: { readonly url: string; readonly feePayer: string; readonly scheme: string; readonly cite: string } | null;
-  /** What a rate-priced method reads at purchase (§14.3, D-136, D-143). */
-  readonly rateSource: { readonly url: string; readonly pair: string; readonly hbarId: string; readonly cite: string } | null;
+  /**
+   * What a rate-priced method reads at purchase (§14.3, D-136, D-143, D-170).
+   *
+   * `superseded` is not decoration. A price schedule is the SEQUENCE of messages
+   * on the price topic and a published message is never edited (§14.3), so the
+   * messages already on consensus name the source they named — and
+   * `priceListStep.confirm` rebuilds sequence 1 and compares it byte-for-byte on
+   * every provisioning run. A constants file that could describe only the
+   * current source would make that comparison fail the moment the source moved,
+   * and the fix would be to edit a message that cannot be edited.
+   */
+  readonly rateSource:
+    | {
+        readonly url: string;
+        readonly pair: string;
+        readonly hbarId: string;
+        readonly cite: string;
+        /** Sources earlier messages on the price topic name, and still name. */
+        readonly superseded?: readonly { readonly url: string; readonly pair: string; readonly why: string }[];
+      }
+    | null;
   /**
    * Transaction-fee caps, in hbar. A cap is not a charge: the network charges
    * what it charges and the cap only has to be above it.
@@ -56,14 +75,27 @@ export const NETWORKS: Readonly<Record<string, NetworkConstants>> = {
       cite: 'D-132 (Sonic 2026-09-07); /supported returned x402Version 2, scheme exact, network hedera:testnet, extra.feePayer 0.0.9185802',
     },
     rateSource: {
-      url: 'https://api.saucerswap.finance/tokens',
+      url: 'https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate',
       pair: 'HBAR/USD',
       hbarId: '0.0.0',
       cite:
-        'D-143; FETCHED 2026-09-07 — /tokens returns HBAR as id "0.0.0" with priceUsd, so the price list ' +
-        'inherits that identifier rather than inventing one. The singular /tokens/{id} endpoint rejects 0.0.0, ' +
-        'so the read is the list filtered to id === "0.0.0". The pair is HBAR/USD and not a testnet USDC pool ratio, ' +
-        'which prices at pool noise.',
+        'D-170; FETCHED 2026-09-09 — GET /api/v1/network/exchangerate?timestamp=<t> returns the rate record in ' +
+        'force at t as {current_rate {cent_equivalent, hbar_equivalent, expiration_time}, next_rate, timestamp}, ' +
+        'deterministically, and a query at the returned record’s own timestamp returns that same record. It is the ' +
+        'NETWORK’s rate and therefore consensus data: any stranger holding a receipt’s rate.at can obtain exactly what ' +
+        'the Postmaster read, which is what makes T-P11-4 checkable on a rate-priced method. Value is USD per ℏ = ' +
+        'cent_equivalent / (100 × hbar_equivalent), computed in integers and truncated to the arithmetic’s own scale.',
+      superseded: [
+        {
+          url: 'https://api.saucerswap.finance/tokens',
+          pair: 'HBAR/USD',
+          why:
+            'D-143, sequences 1 and 2 on 0.0.10426551. A DEX spot price cannot be re-obtained at a past ' +
+            'timestamp by anyone, so a receipt priced under it is right and unprovable and P-12 downgrades what ' +
+            'cannot be replayed (D-170, LIMITATIONS). Those two messages are on consensus and are never edited: ' +
+            'a schedule is the sequence of messages, and sequence 3 supersedes them by landing after them.',
+        },
+      ],
     },
     feeCaps: {
       feeGatedTopicCreate: 100,

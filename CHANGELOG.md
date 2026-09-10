@@ -2,6 +2,50 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.10] — 2026-09-09 — decimal strings compare by value; the rate a Verifier can re-obtain
+
+**A patch under §1.7.** No wire string moves, no schema changes, no test is added, and the register stays at 86. §1.7
+permits it after the freeze precisely because it touches neither a wire string nor a registered schema.
+
+### Specification — D-169
+
+- **§14.3.** An amount written as a decimal string is compared **by numeric value and never by spelling**: `1`, `1.0`
+  and `1.00` are one amount, and a receipt need not echo the schedule’s spelling of one. It holds for every
+  decimal-string amount the document defines, and §5.4 reaches them by its own existing pointer. **§A’s T-P11-4 sketch
+  gains the same note with the worked example**, where whoever writes the body will read it — written the obvious way,
+  comparing strings, that test would fail every receipt this implementation produces.
+
+### Deployment — D-170, and it is about replay rather than about price
+
+- **The `hbar` rate source moves from a DEX spot price to Hedera’s own exchange rate.** T-P11-4 is the court for what
+  was charged, and on a rate-priced method a Verifier must obtain **the rate the Postmaster read, at the instant it read
+  it**. `api.saucerswap.finance` cannot be queried at a past timestamp by anyone, so every rate-priced receipt would be
+  right and **unprovable** — and P-12 downgrades what cannot be replayed. FETCHED 2026-09-09:
+  `GET /api/v1/network/exchangerate?timestamp=<t>` returns the rate record in force at `t`, deterministically, and a
+  query at the returned record’s own timestamp returns that same record. It is consensus data any stranger can read.
+- **`PriceList` sequence 3** on `0.0.10426551` — sequence 2 with one field changed. `rate.value` is USD per ℏ computed
+  in integers as `cent_equivalent / (100 × hbar_equivalent)` and truncated to the arithmetic’s own scale, so the number
+  in the receipt is the number the price was divided by; `rate.at` is the rate record’s **consensus timestamp**, which
+  is what a Verifier passes back. §5.4 types both as strings and constrains them no further, so **no schema moves**.
+- **Sequences 1 and 2 are never edited** — a schedule is the sequence of messages (§14.3) — so `networks.ts` now records
+  the superseded source beside the current one, and `buildPriceList` accepts either. Without that, rebuilding sequence 1
+  for its byte-for-byte confirm would have failed the moment the source moved.
+- `pricelist2.ts` is generalised into `publishPriceList(options)` and `pricelist3.ts` calls it: what makes a message
+  sequence N — that the topic holds exactly N−1 now — is the one stop that keeps it idempotent, and a second spelling of
+  it would be a second place for it to be wrong.
+
+### The Correspondent’s surface — what goose sees
+
+- **One `buy_stamp` card, one `StampReceipt`, or one §6 refusal.** §14.2’s intermediate legs — `PAYMENT_REQUIRED`,
+  `PAYMENT_CARRYING`, `PAYMENT_CARRIED` — live on the counter’s MCP and are consumed inside `buyStamps`. **Two gaps
+  found and closed**: every thrown error used to reach goose as `REFUSED`, a code the specification does not define, and
+  a resumed purchase used to be refused with `STAMP_HOLDER_INVALID` saying "a returning agent keeps the one it has" —
+  true of a returning agent and **false** of a purchase that stopped after the transfer.
+- **A resume is now a resume.** The purchase reference is written to the home when the transfer lands, and a second call
+  with the same arguments continues from it: it creates only what is missing and never buys twice. The reference is the
+  one thing in the exchange that is not on consensus in a form the agent could find again; losing it costs money and
+  never correctness, because `generate_mailbox` finishes the mailbox at the operator’s own expense and still asks the
+  resolver first. The tool description says all of this.
 ## [Before Gate One, second pass] — 2026-09-09 — the fee an agent can afford, and the first socket
 
 **Not a specification version.** Nothing signed.

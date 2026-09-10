@@ -435,8 +435,18 @@ export function buildPriceList(ctx: Ctx, suffix = ''): Record<string, unknown> {
       }
     }
     if (m.rate && k.rateSource) {
-      if (m.rate.source !== k.rateSource.url || m.rate.pair !== k.rateSource.pair) {
-        throw new Error(`price list rate ${m.rate.source} ${m.rate.pair} disagrees with networks.ts`);
+      // The CURRENT source, or one an already-published message names. A schedule
+      // is the sequence of messages and a published one is never edited (§14.3),
+      // so this assertion has to be able to pass over sequence 1 forever.
+      const known = [
+        { url: k.rateSource.url, pair: k.rateSource.pair },
+        ...(k.rateSource.superseded ?? []).map((r) => ({ url: r.url, pair: r.pair })),
+      ];
+      if (!known.some((r) => m.rate?.source === r.url && m.rate?.pair === r.pair)) {
+        throw new Error(
+          `price list rate ${m.rate.source} ${m.rate.pair} is neither the current rate source nor one ` +
+            `networks.ts records as superseded (${known.map((r) => r.url).join(', ')})`,
+        );
       }
       if (m.asset !== k.rateSource.hbarId) {
         throw new Error(`price list hbar asset ${m.asset} disagrees with networks.ts ${k.rateSource.hbarId}`);

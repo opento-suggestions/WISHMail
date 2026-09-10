@@ -1,6 +1,6 @@
 {
   "name": "@wishmail/app",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "private": true,
   "type": "module",
   "description": "The reference implementation. Provisioning scripts under src/ops/ stand up the Postmaster's entities on hedera:testnet.",
@@ -34,7 +34,8 @@
     "correspondent:provision": "tsx sdk/provision.cli.ts",
     "check:correspondent": "tsx sdk/correspondent.check.ts",
     "demo:operators": "tsx src/ops/demo-operators.ts",
-    "check:exchange": "tsx src/counter/exchange.check.ts"
+    "check:exchange": "tsx src/counter/exchange.check.ts",
+    "pricelist3": "tsx src/ops/pricelist3.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

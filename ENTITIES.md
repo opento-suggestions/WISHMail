@@ -4,7 +4,7 @@
      Written by `npm run entities:md` from `app/deployment/hedera-testnet.json` and `spec/pins.json`.
      `npm run check:entities` asserts that this file is what those sources produce; a hand-edit fails it. -->
 
-**Ledger** `hedera:testnet` · **specification** 0.5.9 · **minor version** 0.5 · testnet only at this version (§15.5).
+**Ledger** `hedera:testnet` · **specification** 0.5.10 · **minor version** 0.5 · testnet only at this version (§15.5).
 
 This file is generated and is never hand-edited. Two records already say what is on the ledger — the ops record,
 written one entity at a time from mirror-node reads, and `spec/pins.json`, which is §1.6 in machine-readable form —
@@ -32,7 +32,8 @@ Step 2 were provisioned against a different text from the fourteen of Step 4, an
 | **PriceList, sequence 1** | `0.0.10426551` #1 | 752 bytes, sha256 `20aa3b010709d9ffc686ed8b42882e0c8f66366fff79dc5855298646bb0d00b5`. The first schedule; `provisioning` omitted. | [`0.0.8641261@1788895947.603820976`](https://hashscan.io/testnet/transaction/0.0.8641261@1788895947.603820976) |
 | **PriceList, sequence 2** | `0.0.10426551` #2 | 637 bytes, sha256 `14d1ee1b6fec4d5e4eeed466a009c328c5fd04445193d498dd42adf5dc76547c`. Prices the provisioned path: 2 ℏ, registration fee 0.05 ℏ (D-159’s addendum). **This is the schedule Gate One buys at.** | [`0.0.8641261@1788989976.210208773`](https://hashscan.io/testnet/transaction/0.0.8641261@1788989976.210208773) |
 
-§14.3 makes the schedule the *sequence* of messages, so a new schedule is a new message and sequence 1 is never edited.
+§14.3 makes the schedule the *sequence* of messages, so a new schedule is a new message and no published one is
+ever edited. **The price current at a purchase is the latest message before it**, so the last row above governs.
 
 ### The Postmaster-agent
 

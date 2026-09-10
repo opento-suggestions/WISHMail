@@ -22,6 +22,7 @@
  *
  *   --dry-run   build, fill, validate, print, and sign nothing.
  */
+import { pathToFileURL } from 'node:url';
 import { TopicMessageSubmitTransaction } from '@hashgraph/sdk';
 import { Client } from '@hashgraph/sdk';
 import { loadEnv } from './env.js';
@@ -31,8 +32,19 @@ import { Record_, SPEC_TAG } from './record.js';
 import { submit } from './hedera.js';
 import { buildPriceList, canonicalBytes, sha256hex, validatePriceList } from './steps.js';
 import type { Ctx } from './step.js';
+import type { EntityKey } from './record.js';
 
 const dryRun = process.argv.includes('--dry-run');
+
+export interface PublishOptions {
+  /** The suffix of app/price-list<suffix>.<network>.json — '' for the first. */
+  readonly suffix: string;
+  /** Which sequence this message must be. The topic must hold exactly one less. */
+  readonly sequence: number;
+  readonly key: EntityKey;
+  readonly role: string;
+  readonly why: string;
+}
 
 interface MMessages {
   readonly messages?: readonly {
@@ -48,7 +60,7 @@ function stop(reason: string): never {
   process.exit(1);
 }
 
-async function main(): Promise<void> {
+export async function publishPriceList(o: PublishOptions): Promise<void> {
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
   const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
@@ -72,12 +84,12 @@ async function main(): Promise<void> {
     treasuryId: () => treasuryId,
   } as unknown as Ctx;
 
-  const msg = buildPriceList(ctx, '-2');
+  const msg = buildPriceList(ctx, o.suffix);
   const bytes = canonicalBytes(msg);
   const digest = sha256hex(bytes);
 
   console.log('');
-  console.log('  the second PriceList (§14.3), for sequence 2 on the price topic');
+  console.log(`  ${o.role} (§14.3), for sequence ${o.sequence} on the price topic`);
   console.log('');
   console.log(`  topic       ${topic}`);
   console.log(`  canonical   ${bytes.length} bytes (RFC 8785), sha256 ${digest}`);
@@ -99,21 +111,26 @@ async function main(): Promise<void> {
   if (bytes.length > 1024) stop(`the message is ${bytes.length} bytes and a single HCS message caps at 1024`);
   console.log('  fits one HCS message');
 
-  // The stop that makes this idempotent: this message is sequence 2, and it is
-  // sequence 2 only if the topic holds exactly one message now. Two runs cannot
-  // publish two second messages.
+  // The stop that makes this idempotent: this message is sequence N, and it is
+  // sequence N only if the topic holds exactly N-1 messages now. Two runs cannot
+  // publish two of it.
   const before = await mirror.get<MMessages>(`/topics/${topic}/messages?limit=25&order=asc`);
   const count = before?.messages?.length ?? 0;
-  if (count === 0) stop('the price topic holds no message; sequence 1 must be published first');
-  if (count > 1) {
-    const existing = before?.messages?.[1];
+  if (count < o.sequence - 1) {
+    stop(`the price topic holds ${count} message(s) and this is sequence ${o.sequence}; publish the earlier ones first`);
+  }
+  if (count > o.sequence - 1) {
+    const existing = before?.messages?.[o.sequence - 1];
     if (existing && existing.message === bytes.toString('base64')) {
       console.log(`\n  already published: sequence ${existing.sequence_number}, byte-for-byte identical. Nothing to do.`);
       return;
     }
-    stop(`the price topic already holds ${count} messages, and sequence 2 is not this message. Publishing would make a third.`);
+    stop(
+      `the price topic already holds ${count} messages and sequence ${o.sequence} is not this message. ` +
+        'Publishing would make one more, and a schedule is the sequence of messages (§14.3).',
+    );
   }
-  console.log('  the topic holds exactly one message, so this is sequence 2');
+  console.log(`  the topic holds exactly ${count} message(s), so this is sequence ${o.sequence}`);
 
   if (dryRun) {
     console.log('\n  --dry-run: nothing signed, nothing submitted.');
@@ -140,21 +157,21 @@ async function main(): Promise<void> {
   // read is not a published price list.
   const after = await mirror.poll<MMessages>(
     `/topics/${topic}/messages?limit=25&order=asc`,
-    (m) => (m.messages ?? []).some((x) => x.sequence_number === 2),
+    (m) => (m.messages ?? []).some((x) => x.sequence_number === o.sequence),
   );
-  const second = after?.messages?.find((x) => x.sequence_number === 2);
-  if (!second) stop('the mirror does not hold a sequence 2 on the price topic');
-  if (second.message !== bytes.toString('base64')) stop('sequence 2 is not the message that was submitted, byte-for-byte');
-  if (second.payer_account_id !== env.postmasterPayerId) stop(`sequence 2 was paid by ${second.payer_account_id}`);
+  const second = after?.messages?.find((x) => x.sequence_number === o.sequence);
+  if (!second) stop(`the mirror does not hold a sequence ${o.sequence} on the price topic`);
+  if (second.message !== bytes.toString('base64')) stop(`sequence ${o.sequence} is not the message that was submitted, byte-for-byte`);
+  if (second.payer_account_id !== env.postmasterPayerId) stop(`sequence ${o.sequence} was paid by ${second.payer_account_id}`);
 
   const first = after?.messages?.find((x) => x.sequence_number === 1);
-  console.log(`  confirmed   sequence 2, payer ${second.payer_account_id}, consensus ${second.consensus_timestamp}`);
+  console.log(`  confirmed   sequence ${o.sequence}, payer ${second.payer_account_id}, consensus ${second.consensus_timestamp}`);
   console.log(`  byte-for-byte identical to what was signed`);
   console.log(`  sequence 1 is untouched: ${first ? 'still present' : 'MISSING — investigate'}`);
 
-  record.put('prices.second', {
+  record.put(o.key, {
     kind: 'message',
-    role: 'the second PriceList — the provisioned path priced (D-159 addendum)',
+    role: o.role,
     id: topic,
     builtBy: 'TopicMessageSubmitTransaction',
     signedBy: ['postmaster payer'],
@@ -164,18 +181,27 @@ async function main(): Promise<void> {
     confirmedFrom: `GET /topics/${topic}/messages`,
     confirmedAt: new Date().toISOString(),
     policy: {
-      sequenceNumber: 2,
+      sequenceNumber: o.sequence,
       sha256: digest,
       bytes: bytes.length,
       provisioning: (msg as { provisioning?: unknown }).provisioning,
-      warrant: '§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase',
+      warrant: `§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase. ${o.why}`,
     },
     specTag: SPEC_TAG,
   });
-  console.log('\n  recorded as prices.second');
+  console.log(`\n  recorded as ${o.key}`);
 }
 
-main().catch((e: unknown) => {
-  console.error('\nSTOPPED\n' + (e instanceof Error ? e.message : String(e)));
-  process.exitCode = 3;
-});
+const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  publishPriceList({
+    suffix: '-2',
+    sequence: 2,
+    key: 'prices.second',
+    role: 'the second PriceList — the provisioned path priced (D-159 addendum)',
+    why: 'Sequence 2 priced the provisioned path.',
+  }).catch((e: unknown) => {
+    console.error('\nSTOPPED\n' + (e instanceof Error ? e.message : String(e)));
+    process.exitCode = 3;
+  });
+}

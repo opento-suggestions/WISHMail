@@ -134,6 +134,60 @@ export interface Purchase {
 }
 
 /**
+/**
+ * WHAT A PURCHASE LEAVES IN THE HOME WHILE IT IS STILL RUNNING, and why a
+ * local file is allowed to hold it.
+ *
+ * D-165: every provisioning verb is idempotent against CONSENSUS, and a local
+ * file is a cache of consensus and never an authority over it. A purchase
+ * reference is the one thing in this exchange that is NOT on consensus in a
+ * form the agent can find — the account is, the topics are, the registration is,
+ * but the reference is a handle the counter issued and only the two parties
+ * know. So it is written here when the transfer lands, and read back on a resume.
+ *
+ * **Losing it costs money and never correctness.** An agent whose home was wiped
+ * between the transfer and the mailbox finds an account with no mailbox, cannot
+ * name the reference, and finishes the mailbox at its OWN operator’s expense
+ * through `generate_mailbox` — which is the self-provisioned path, and is what
+ * `provision.cli.ts` already does in that case. Nothing is created twice,
+ * because `generate_mailbox` still asks the resolver first.
+ */
+interface OutstandingPurchase {
+  readonly reference: string;
+  readonly node: string;
+  readonly carriedBy: string;
+  readonly account: string;
+  readonly state: 'carrying' | 'settled';
+}
+
+function outstanding(s: Session, record: AgentRecord): OutstandingPurchase | undefined {
+  const row = record.get('purchase');
+  const policy = row?.policy as unknown as OutstandingPurchase | undefined;
+  if (policy === undefined || policy.state !== 'carrying') return undefined;
+  // A record naming another account is a record of another agent’s purchase,
+  // which a home that is an agent should never hold — but if it does, it is not
+  // this one’s to resume.
+  return policy.account === s.account ? policy : undefined;
+}
+
+function remember(s: Session, record: AgentRecord, purchase: OutstandingPurchase, txRef: string): void {
+  record.put('purchase', {
+    kind: 'transfer',
+    role: 'the provisioning purchase this agent was bought by',
+    id: purchase.account,
+    builtBy: 'TransferTransaction',
+    signedBy: ['operator'],
+    payer: purchase.carriedBy,
+    transactionId: txRef,
+    consensusTimestamp: '',
+    confirmedFrom: 'buy_stamp at the counter',
+    confirmedAt: new Date().toISOString(),
+    policy: { ...purchase },
+    specTag: s.specTag,
+  });
+}
+
+/**
  * THE RECEIPT WAIT HAS A CEILING, AND WHAT HAPPENS AT IT IS NAMED.
  *
  * The counter will not issue a receipt until it can read every row it paid for
@@ -172,109 +226,147 @@ const RECEIPT_PAUSE_MS = 2_000;
 export async function buyStamps(s: Session, options: BuyOptions): Promise<Purchase> {
   const push = options.onLine ?? ((): void => {});
   const method = options.method ?? 'hbar';
+  const record = options.record ?? s.record;
+
+  // --- 0. Is this a resume? Decided HERE, before the counter is asked. -------
+  //
+  // A provisioning purchase that stopped after the transfer leaves an account
+  // with no mailbox. Asking for a quote in that state gets back
+  // STAMP_HOLDER_INVALID — "the holder already has an account; buy without
+  // `provision`" — which is TRUE of a returning agent and FALSE here, and a
+  // caller cannot tell the two apart from the answer. So the Correspondent
+  // decides which case it is from what it holds, and never asks a question whose
+  // answer would mislead the agent that reads it.
+  let resuming: OutstandingPurchase | undefined;
+  if (options.provision === true && s.account !== '') {
+    resuming = outstanding(s, record);
+    if (resuming === undefined) {
+      throw new CounterUnavailable(
+        'STAMP_HOLDER_INVALID',
+        `${s.account} already exists and this home holds no outstanding purchase, so there is nothing here to resume. ` +
+          'If this agent has no mailbox, finish it with `generate_mailbox` — that is the self-provisioned path and YOUR ' +
+          'operator pays for it. If it has one, buy stamps without `provision`: a returning agent keeps the mailbox it ' +
+          'has, and a second one is the duplicate §9.5 assigns `vague` to (D-165).',
+      );
+    }
+    push(line('purchase.resuming', { reference: resuming.reference, account: s.account }));
+  }
+
   const client = await connect(s.home.config.postmasterUrl);
   try {
     const holder = s.account === '' ? { publicKey: s.agent.publicKey.toStringDer() } : { account: s.account };
 
-    // --- 1. Quote. Nothing is signed and nothing is charged. -----------------
-    const quoted = await call(client, 'buy_stamp', {
-      count: options.count,
-      payment: { method, from: s.homePayerId },
-      holder,
-      ...(options.provision === true ? { provision: true } : {}),
-    });
-    const requirement = quoted._meta?.['wishmail/requirement'] as Requirement | undefined;
-    if (requirement === undefined) {
-      const code = (quoted._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
-      throw new CounterUnavailable(code, textOf(quoted));
-    }
-    push(
-      line('purchase.quoted', {
+    /** Every leg after the quote names the reference it answers. */
+    let reference = resuming?.reference ?? '';
+    let node = resuming?.node ?? '';
+    let carriedBy = resuming?.carriedBy ?? '';
+    let account = resuming?.account ?? '';
+
+    if (resuming === undefined) {
+      // --- 1. Quote. Nothing is signed and nothing is charged. ---------------
+      const quoted = await call(client, 'buy_stamp', {
         count: options.count,
-        price: requirement.quote.amount,
-        currency: requirement.quote.currency,
-        provisioning:
-          requirement.quote.provisioning === undefined
-            ? ''
-            : ` plus ${requirement.quote.provisioning.amount} for the provisioned path`,
-        reference: requirement.reference,
-      }),
-    );
-
-    // --- 2. Sign, HERE. ------------------------------------------------------
-    // The body is the counter’s; the signature is this process’s. The agent’s
-    // key signs because the agent is the party whose account the price leaves —
-    // and where the holder is a bare public key, the operator’s key signs,
-    // because the agent has no account for the price to leave.
-    const frozen = Transaction.fromBytes(Buffer.from(requirement.body, 'base64'));
-    const signer = s.account === '' ? s.homePayer : s.agent;
-    const bodies = frozen.signableNodeBodyBytesList;
-    if (bodies.length !== 1) {
-      throw new CounterUnavailable(
-        'STAMP_PAYMENT_FAILED',
-        `the counter quoted ${bodies.length} bodies and a purchase is one; refusing to sign what cannot be one transaction`,
+        payment: { method, from: s.homePayerId },
+        holder,
+        ...(options.provision === true ? { provision: true } : {}),
+      });
+      const requirement = quoted._meta?.['wishmail/requirement'] as Requirement | undefined;
+      if (requirement === undefined) {
+        const code = (quoted._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
+        throw new CounterUnavailable(code, textOf(quoted));
+      }
+      push(
+        line('purchase.quoted', {
+          count: options.count,
+          price: requirement.quote.amount,
+          currency: requirement.quote.currency,
+          provisioning:
+            requirement.quote.provisioning === undefined
+              ? ''
+              : ` plus ${requirement.quote.provisioning.amount} for the provisioned path`,
+          reference: requirement.reference,
+        }),
       );
-    }
-    // These are the bytes the SDK’s own `signWith` hands a signer — the
-    // TransactionBody, not the serialized transaction. Signing the wrong bytes
-    // would produce a signature the network rejects, which is a refusal rather
-    // than a hazard, but it is worth being exact about which bytes a key touched.
-    const signature = await signer.sign((bodies[0] as { signableTransactionBodyBytes: Uint8Array }).signableTransactionBodyBytes);
-    push(line('purchase.signed'));
 
-    // --- 3. Settle the transfer. ---------------------------------------------
-    const settled = await call(client, 'buy_stamp', {
-      count: options.count,
-      payment: {
-        method,
-        from: s.homePayerId,
-        quoteRef: requirement.reference,
-        signature: { publicKey: signer.publicKey.toStringDer(), value: Buffer.from(signature).toString('base64') },
-      },
-      holder,
-      ...(options.provision === true ? { provision: true } : {}),
-    });
-    const receipt = settled.structuredContent?.['receipt'] as StampReceipt | undefined;
-    const carrying = settled._meta?.['wishmail/carrying'] as { readonly account: string } | undefined;
-    if (receipt === undefined && carrying === undefined) {
-      const code = (settled._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
-      throw new CounterUnavailable(code, textOf(settled));
-    }
-    if (receipt !== undefined) {
-      push(line('purchase.settled', { txRef: receipt.txRef, consensusTimestamp: receipt.txRef.split('@')[1] ?? '', holder: receipt.holder }));
-      return { receipt, session: s };
+      // --- 2. Sign, HERE. ----------------------------------------------------
+      // The body is the counter's; the signature is this process's. The agent's
+      // key signs because the agent is the party whose account the price leaves
+      // — and where the holder is a bare public key, the operator's key signs,
+      // because the agent has no account for the price to leave.
+      const frozen = Transaction.fromBytes(Buffer.from(requirement.body, 'base64'));
+      const signer = s.account === '' ? s.homePayer : s.agent;
+      const bodies = frozen.signableNodeBodyBytesList;
+      if (bodies.length !== 1) {
+        throw new CounterUnavailable(
+          'STAMP_PAYMENT_FAILED',
+          `the counter quoted ${bodies.length} bodies and a purchase is one; refusing to sign what cannot be one transaction`,
+        );
+      }
+      // These are the bytes the SDK's own `signWith` hands a signer — the
+      // TransactionBody, not the serialized transaction. Signing the wrong bytes
+      // would produce a signature the network rejects, which is a refusal rather
+      // than a hazard, but it is worth being exact about which bytes a key touched.
+      const signature = await signer.sign((bodies[0] as { signableTransactionBodyBytes: Uint8Array }).signableTransactionBodyBytes);
+      push(line('purchase.signed'));
+
+      // --- 3. Settle the transfer. -------------------------------------------
+      const settled = await call(client, 'buy_stamp', {
+        count: options.count,
+        payment: {
+          method,
+          from: s.homePayerId,
+          quoteRef: requirement.reference,
+          signature: { publicKey: signer.publicKey.toStringDer(), value: Buffer.from(signature).toString('base64') },
+        },
+        holder,
+        ...(options.provision === true ? { provision: true } : {}),
+      });
+      const receipt = settled.structuredContent?.['receipt'] as StampReceipt | undefined;
+      const carrying = settled._meta?.['wishmail/carrying'] as { readonly account: string } | undefined;
+      if (receipt === undefined && carrying === undefined) {
+        const code = (settled._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
+        throw new CounterUnavailable(code, textOf(settled));
+      }
+      if (receipt !== undefined) {
+        push(line('purchase.settled', { txRef: receipt.txRef, consensusTimestamp: receipt.txRef.split('@')[1] ?? '', holder: receipt.holder }));
+        return { receipt, session: s };
+      }
+      if (requirement.carriedBy === undefined) {
+        throw new CounterUnavailable('STAMP_PAYMENT_FAILED', 'the counter is carrying this purchase and named no payer for it');
+      }
+      reference = requirement.reference;
+      node = requirement.node;
+      carriedBy = requirement.carriedBy;
+      account = (carrying as { readonly account: string }).account;
+      push(line('purchase.account', { account }));
+
+      // The reference is the one thing in this exchange that is not on
+      // consensus in a form this agent could find again. Written down the
+      // moment the transfer lands, so a run that stops here can be resumed
+      // rather than paid for twice.
+      remember(s, record, { reference, node, carriedBy, account, state: 'carrying' }, reference);
     }
 
     // --- 4. The mailbox, signed here and paid for there. ---------------------
-    const account = (carrying as { readonly account: string }).account;
-    push(line('purchase.account', { account }));
-    if (requirement.carriedBy === undefined) {
-      throw new CounterUnavailable('STAMP_PAYMENT_FAILED', 'the counter is carrying this purchase and named no payer for it');
-    }
     // From CONSENSUS, not from the counter: a payer whose key the ledger does
     // not agree with would have this agent spend its own signature on bodies
     // that cannot pay for themselves.
-    const payerKey = await payerKeyFromConsensus(s.mirror, requirement.carriedBy);
-    const legs = borrowedPayer(
-      requirement.carriedBy,
-      payerKey,
-      [AccountId.fromString(requirement.node)],
-      async (bodyBase64) => {
-        const answer = await call(client, 'buy_stamp', {
-          count: options.count,
-          payment: { method, from: s.homePayerId, quoteRef: requirement.reference, carry: { body: bodyBase64 } },
-          holder,
-          provision: true,
-        });
-        const decision = answer._meta?.['wishmail/carried'] as { readonly publicKey: string; readonly signature: string; readonly statement?: string } | undefined;
-        if (decision === undefined) {
-          const code = (answer._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
-          throw new CounterUnavailable(code, textOf(answer));
-        }
-        if (decision.statement !== undefined) push(line('purchase.carried', { statement: decision.statement }));
-        return { publicKey: decision.publicKey, signature: decision.signature };
-      },
-    );
+    const payerKey = await payerKeyFromConsensus(s.mirror, carriedBy);
+    const legs = borrowedPayer(carriedBy, payerKey, [AccountId.fromString(node)], async (bodyBase64) => {
+      const answer = await call(client, 'buy_stamp', {
+        count: options.count,
+        payment: { method, from: s.homePayerId, quoteRef: reference, carry: { body: bodyBase64 } },
+        holder,
+        provision: true,
+      });
+      const decision = answer._meta?.['wishmail/carried'] as { readonly publicKey: string; readonly signature: string; readonly statement?: string } | undefined;
+      if (decision === undefined) {
+        const code = (answer._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
+        throw new CounterUnavailable(code, textOf(answer));
+      }
+      if (decision.statement !== undefined) push(line('purchase.carried', { statement: decision.statement }));
+      return { publicKey: decision.publicKey, signature: decision.signature };
+    });
 
     // The account is on consensus now and the session that bought it predates it.
     const carried = await boot(s.home, { payer: legs });
@@ -284,23 +376,26 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
         `the counter says this purchase created ${account} and the mirror says this key owns ${carried.account || 'nothing'}`,
       );
     }
-    const mailbox = await generateMailbox(carried, options.record ?? carried.record, { onLine: push });
+    // Idempotent against consensus: on a resume this creates only what is
+    // missing, and nothing at all if the whole mailbox already landed (D-165).
+    const mailbox = await generateMailbox(carried, record, { onLine: push });
 
     // --- 5. The receipt, when the counter can read back what it paid for. ----
     for (let attempt = 1; attempt <= RECEIPT_ATTEMPTS; attempt += 1) {
       const asked = await call(client, 'buy_stamp', {
         count: options.count,
-        payment: { method, from: s.homePayerId, quoteRef: requirement.reference, receipt: true },
+        payment: { method, from: s.homePayerId, quoteRef: reference, receipt: true },
         holder,
         provision: true,
       });
       const issued = asked.structuredContent?.['receipt'] as StampReceipt | undefined;
       if (issued !== undefined) {
+        remember(s, record, { reference, node, carriedBy, account, state: 'settled' }, issued.txRef);
         push(line('purchase.settled', { txRef: issued.txRef, consensusTimestamp: issued.txRef.split('@')[1] ?? '', holder: issued.holder }));
         return { receipt: issued, mailbox, session: carried };
       }
-      const outstanding = asked._meta?.['wishmail/outstanding'] as readonly string[] | undefined;
-      if (outstanding === undefined) {
+      const open = asked._meta?.['wishmail/outstanding'] as readonly string[] | undefined;
+      if (open === undefined) {
         const code = (asked._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
         throw new CounterUnavailable(code, textOf(asked));
       }
@@ -308,10 +403,10 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
         throw new CounterUnavailable(
           'STAMP_PAYMENT_UNSETTLED',
           `the receipt is not issued after ${(RECEIPT_ATTEMPTS * RECEIPT_PAUSE_MS) / 1000}s: the counter still ` +
-            `reports ${outstanding.join(', ')} outstanding. NOTHING IS LOST AND NOTHING WILL BE CHARGED TWICE. ` +
-            `The transfer settled, the mailbox is on consensus, and the reference ${requirement.reference} is ` +
-            'OUTSTANDING — ask for the receipt again with the same quoteRef, or have the counter issue it; a ' +
-            'replayed reference returns the receipt it already bought (T-P11-5). The two sides reconcile from ' +
+            `reports ${open.join(', ')} outstanding. NOTHING IS LOST AND NOTHING WILL BE CHARGED TWICE. ` +
+            `The transfer settled, the mailbox is on consensus, and the reference ${reference} is OUTSTANDING — ` +
+            'ask again with the provision flag, which resumes from the record this home kept, or have the counter issue it; ' +
+            'a replayed reference returns the receipt it already bought (T-P11-5). The two sides reconcile from ' +
             'consensus and never from each other, so neither has to be restarted for the other to catch up.',
         );
       }

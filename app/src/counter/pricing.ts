@@ -124,16 +124,81 @@ interface SaucerToken {
  * returns and why the read is the list filtered to id `0.0.0` — the singular
  * endpoint rejects it.
  */
+/**
+ * Hedera's own exchange rate, as a mirror node serves it (HIP-1 / the network's
+ * `ExchangeRateSet`): `cent_equivalent` cents buy `hbar_equivalent` ℏ, and the
+ * record is in force until `expiration_time`.
+ */
+interface ExchangeRate {
+  readonly current_rate?: { readonly cent_equivalent: number; readonly hbar_equivalent: number; readonly expiration_time: number };
+  /** The consensus timestamp of the record. What a Verifier passes back to re-obtain it. */
+  readonly timestamp?: string;
+}
+
+/** A source that is the network's own rate rather than somebody's market view. */
+function isNetworkExchangeRate(source: string): boolean {
+  return source.includes('/network/exchangerate');
+}
+
+/**
+ * THE RATE A VERIFIER CAN RE-OBTAIN, AND WHY THAT DECIDES WHICH SOURCE IS READ.
+ *
+ * T-P11-4 is the court for what was charged — "`buy_stamp` charges what the price
+ * message current at the receipt’s consensus timestamp yields" — and on a
+ * rate-priced method that means a Verifier must obtain **the rate the Postmaster
+ * read, at the instant it read it**. A DEX spot price cannot be re-obtained at a
+ * past timestamp by anyone, so a receipt priced from one is right and unprovable,
+ * and P-12 downgrades what cannot be replayed. Hedera’s own exchange rate is
+ * consensus data with a timestamp filter, so it can (D-170).
+ *
+ * **The value is computed in integers and truncated to the scale the arithmetic
+ * uses**, and the receipt carries that number — so the figure a Verifier reads is
+ * the figure the price was divided by, and a replay reaches the same tinybar
+ * rather than one off. Truncating rather than rounding is a choice with a
+ * direction: a smaller divisor makes the price higher, so the rounding that
+ * remains is against the Postmaster and never against the buyer.
+ *
+ * **`at` is the rate record’s own consensus timestamp**, not a wall clock: it is
+ * what a Verifier passes back to the mirror, and querying at it returns that same
+ * record (verified 2026-09-09). §5.4 types `at` as a string and constrains it no
+ * further, so nothing in a frozen schema moves.
+ *
+ * The market source is still read where a schedule names one — sequences 1 and 2
+ * on `0.0.10426551` do, and they are on consensus and cannot be edited. What a
+ * receipt under them says is true; what it is not is replayable, and LIMITATIONS
+ * says so.
+ */
 export async function readRate(m: PriceMethod): Promise<RateReading> {
   if (m.rate === undefined) throw new Error(`pricing: the ${m.method} method is not rate-priced`);
-  const r = await fetch(m.rate.source, { signal: AbortSignal.timeout(15_000) });
-  if (!r.ok) throw new Error(`pricing: the rate source ${m.rate.source} returned ${r.status}`);
+  const source = m.rate.source;
+
+  if (isNetworkExchangeRate(source)) {
+    const r = await fetch(source, { signal: AbortSignal.timeout(15_000) });
+    if (!r.ok) throw new Error(`pricing: the rate source ${source} returned ${r.status}`);
+    const body = (await r.json()) as ExchangeRate;
+    const rate = body.current_rate;
+    if (rate === undefined || body.timestamp === undefined) {
+      throw new Error(`pricing: ${source} returned no current_rate with a timestamp`);
+    }
+    if (!(rate.hbar_equivalent > 0) || !(rate.cent_equivalent > 0)) {
+      throw new Error(`pricing: ${source} returned ${rate.cent_equivalent} cents for ${rate.hbar_equivalent} ℏ`);
+    }
+    // USD per ℏ = cents / (100 × ℏ), at SCALE, truncated. Integers throughout:
+    // a float here would put a rounding error inside the number the receipt
+    // publishes as the divisor.
+    const perHbar = (BigInt(rate.cent_equivalent) * ONE) / (100n * BigInt(rate.hbar_equivalent));
+    if (perHbar <= 0n) throw new Error(`pricing: ${source} yields a non-positive rate for ${m.rate.pair}`);
+    return { source, pair: m.rate.pair, value: unscaled(perHbar), at: body.timestamp };
+  }
+
+  const r = await fetch(source, { signal: AbortSignal.timeout(15_000) });
+  if (!r.ok) throw new Error(`pricing: the rate source ${source} returned ${r.status}`);
   const tokens = (await r.json()) as readonly SaucerToken[];
   const hbar = tokens.find((t) => t.id === m.asset);
   if (hbar?.priceUsd === undefined) {
     throw new Error(`pricing: the rate source carries no price for ${m.asset} on the pair ${m.rate.pair}`);
   }
-  return { source: m.rate.source, pair: m.rate.pair, value: String(hbar.priceUsd), at: new Date().toISOString() };
+  return { source, pair: m.rate.pair, value: String(hbar.priceUsd), at: new Date().toISOString() };
 }
 
 export interface Quote {

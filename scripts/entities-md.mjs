@@ -151,9 +151,22 @@ function operating(record, pins) {
     L.push(
       `| **PriceList, sequence 2** | \`${topic.id}\` #${second.policy?.sequenceNumber ?? '?'} | ${byteCount(second.policy?.bytes)} bytes, sha256 \`${second.policy?.sha256 ?? '?'}\`. Prices the provisioned path: ${prov.unitPrice ?? '?'} ℏ, registration fee ${prov.registrationFee ?? '?'} ℏ (D-159’s addendum). **This is the schedule Gate One buys at.** | ${txLink(second.transactionId)} |`,
     );
+    // A third message renders where the record holds one. The schedule is the
+    // sequence, so this table grows by a row and never by an edit.
+    const third = record.entities?.['prices.third'];
+    if (third !== undefined) {
+      const n = third.policy?.sequenceNumber ?? 3;
+      L.push(
+        `| **PriceList, sequence ${n}** | \`${topic.id}\` #${n} | ${byteCount(third.policy?.bytes)} bytes, ` +
+          `sha256 \`${third.policy?.sha256 ?? '?'}\`. The hbar rate is read from the NETWORK's own exchange rate, which ` +
+          `a mirror node serves with a timestamp filter — so a Verifier holding a receipt's \`rate.at\` obtains exactly ` +
+          `what the Postmaster read (D-170). **This is the schedule current now.** | ${txLink(third.transactionId)} |`,
+      );
+    }
   }
   L.push('');
-  L.push('§14.3 makes the schedule the *sequence* of messages, so a new schedule is a new message and sequence 1 is never edited.');
+  L.push('§14.3 makes the schedule the *sequence* of messages, so a new schedule is a new message and no published one is');
+  L.push('ever edited. **The price current at a purchase is the latest message before it**, so the last row above governs.');
   L.push('');
 
   L.push('### The Postmaster-agent');

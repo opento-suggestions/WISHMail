@@ -32,6 +32,7 @@
   "purchase.signed": "the purchase body was signed in this process; the counter never held a key of this agent's.",
   "purchase.settled": "the purchase settled as {txRef} at {consensusTimestamp}; the holder is {holder}.",
   "purchase.account": "the transfer created account {account}, owned by this agent's key.",
+  "purchase.resuming": "{account} was bought under reference {reference} and that purchase is still open; resuming it rather than starting another.",
   "purchase.carried": "the counter {statement}.",
 
   "register.existing": "{account} is already registered on the anchor {anchor}; nothing was submitted.",

@@ -293,7 +293,7 @@ interface ToolResult {
 async function main(): Promise<void> {
   seed();
   const server = await listen();
-  const mcp = new McpClient({ name: 'wishmail-exchange-check', version: '0.5.9' }, { capabilities: {} });
+  const mcp = new McpClient({ name: 'wishmail-exchange-check', version: '0.5.10' }, { capabilities: {} });
   await mcp.connect(new StreamableHTTPClientTransport(new URL(server.url)) as unknown as Parameters<typeof mcp.connect>[0]);
 
   const call = async (args: Record<string, unknown>): Promise<ToolResult> =>

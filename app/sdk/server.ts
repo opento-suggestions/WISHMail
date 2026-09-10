@@ -34,11 +34,12 @@ import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
-import { buyStamps } from './counter.js';
+import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
+import { CounterUnavailable, buyStamps } from './counter.js';
 import { openHome } from './home.js';
 import { liveReader } from './live.js';
-import { generateMailbox } from './mailbox.js';
-import { registerAgent } from './registration.js';
+import { MailboxRefusal, generateMailbox } from './mailbox.js';
+import { RegistrationRefusal, registerAgent } from './registration.js';
 import { boot, type Session } from './session.js';
 import { affordances, six } from './tools.js';
 import { watchDoorbell, type Watcher } from './watcher.js';
@@ -53,6 +54,48 @@ function ok(payload: unknown, structured?: Record<string, unknown>): Record<stri
   };
 }
 
+/**
+ * THE CODE goose SEES, AND THE TWO THINGS IT MUST NEVER BE.
+ *
+ * §6.3 fixes a tool’s failures as `STAMP_*` and §6 fixes the rest the same way,
+ * so a caller can act on a code without reading prose. This handler used to map
+ * every thrown error to `REFUSED`, which is a code the specification does not
+ * define and a caller cannot do anything with.
+ *
+ * **And it must never be an exchange state.** `PAYMENT_REQUIRED`,
+ * `PAYMENT_CARRYING` and `PAYMENT_CARRIED` are legs of §14.2’s exchange between
+ * the Correspondent and the counter (LIMITATIONS L-5): they live on the
+ * counter’s MCP, they are consumed inside `buyStamps`, and an agent talking to
+ * THIS server has no business seeing one. If one ever reaches here it is a
+ * defect in the client half, so it is translated rather than passed on — and
+ * the message says so, because a code that lies about where a fault is costs
+ * more than one that admits it.
+ */
+function codeFor(name: string, e: unknown): string {
+  const carried = e instanceof CounterUnavailable ? e.code : '';
+  if (carried.startsWith('STAMP_')) return carried;
+  if (carried.startsWith('PAYMENT_')) return 'STAMP_PAYMENT_FAILED';
+  if (e instanceof MailboxRefusal) return 'MAILBOX_REFUSED';
+  if (e instanceof RegistrationRefusal) return 'REGISTER_REFUSED';
+  // The tool’s own first failure, from §6’s table — the same fallback the
+  // counter uses, and never a code this project invented.
+  const known = (TOOL_NAMES as readonly string[]).includes(name);
+  return known ? (tool(name as ToolName).failures[0] ?? 'REFUSED') : 'REFUSED';
+}
+
+/** An exchange state that reached the agent’s own surface is a defect, and says so. */
+function detailFor(e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e);
+  if (e instanceof CounterUnavailable && e.code.startsWith('PAYMENT_')) {
+    return (
+      `${message} — reported as STAMP_PAYMENT_FAILED because ${e.code} is a leg of the exchange between this ` +
+      'Correspondent and the counter and is not a state this surface has. Seeing it here is a defect in the client ' +
+      'half of the purchase, not in your call.'
+    );
+  }
+  return message;
+}
+
 function refuse(code: string, message: string): Record<string, unknown> {
   return {
     isError: true,
@@ -60,6 +103,30 @@ function refuse(code: string, message: string): Record<string, unknown> {
     _meta: { 'wishmail/code': code, 'wishmail/spec': RELEASE.spec },
   };
 }
+
+/**
+ * WHAT `buy_stamp` DOES ON *THIS* SURFACE, BEYOND §6.3'S SIGNATURE.
+ *
+ * §6.3 defines `buy_stamp` as buying stamps. On the Correspondent's MCP it is
+ * also the whole of §4.6's provisioned path (D-168), and §14.2's exchange with
+ * the counter happens INSIDE one call: the quote, the buyer's signature, the
+ * transfer, the mailbox the Postmaster pays for, and the receipt. **The agent
+ * calling this sees one result — a `StampReceipt`, or one §6 refusal.** None of
+ * the exchange's intermediate states is a state of this tool.
+ *
+ * The sentence a caller most needs is about the SECOND call. A purchase that
+ * stopped after the transfer leaves an account with no mailbox, and calling
+ * again is the right move; the tool has to say so, because the alternative is
+ * an agent that reads "the holder already has an account" and concludes there
+ * is nothing to do.
+ */
+const BUY_STAMP_NOTE =
+  ' On this surface it is also the whole of §4.6’s provisioned path when `provision` is set: the purchase, the mailbox ' +
+  'the Postmaster pays for, and the receipt naming what it created — one call, one StampReceipt. **If a run stops part ' +
+  'way, call it again with the same arguments**: it resumes the purchase this home already made, creates only what is ' +
+  'missing, and never buys twice. It refuses with STAMP_HOLDER_INVALID only where this agent has an account and NO ' +
+  'purchase is outstanding — which means either it already has a mailbox (buy without `provision`) or it brought its own ' +
+  'account (use `generate_mailbox`, and your own operator pays).';
 
 /**
  * The session, and the one moment it changes.
@@ -85,7 +152,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
       ...six().map((t) => ({
         name: t.name,
         description:
-          `${t.summary} Used by ${t.usedBy.join(', ')}. ` +
+          `${t.summary}${t.name === 'buy_stamp' ? BUY_STAMP_NOTE : ''} Used by ${t.usedBy.join(', ')}. ` +
           `Reads consensus: ${t.reads ? 'yes' : 'no'}; writes: ${t.writes ? 'yes' : 'no'}; pays: ${t.pays}. ` +
           `Failures: ${t.failures.join(', ')}.` +
           (GATE_TWO.has(t.name) ? ' NOT AVAILABLE IN THIS BUILD: it lands with the first letter (Gate Two).' : ''),
@@ -200,7 +267,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           );
       }
     } catch (e) {
-      return refuse('REFUSED', e instanceof Error ? e.message : String(e));
+      return refuse(codeFor(String(request.params.name), e), detailFor(e));
     }
   });
 

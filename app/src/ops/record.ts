@@ -20,11 +20,11 @@ import path from 'node:path';
  * The specification tag entities are provisioned against from here on. It is
  * per-ENTITY and not per-record: the eleven of Step 2 were provisioned against
  * `v0.5.2`, and the declaration against `v0.5.4`, and Step 4 onward against
- * `v0.5.9`, so a single top-level field
+ * `v0.5.10`, so a single top-level field
  * would be false about one of them the moment the second landed. The record's
  * own `specTag` is the tag it was opened under and stays what it was.
  */
-export const SPEC_TAG = 'v0.5.9';
+export const SPEC_TAG = 'v0.5.10';
 
 export type EntityKind = 'account' | 'token' | 'mint' | 'association' | 'topic' | 'message' | 'account-update';
 
@@ -41,6 +41,10 @@ export type EntityKey =
   // addendum). §14.3's schedule is the sequence of messages, so a new schedule
   // is a new message and sequence 1 is never edited.
   | 'prices.second'
+  // The third, sequence 3: the hbar rate read from the NETWORK's exchange rate
+  // rather than a DEX spot price, so a Verifier can re-obtain it at the receipt's
+  // `at` and T-P11-4 is checkable on a rate-priced method (D-170).
+  | 'prices.third'
   | 'agent.doorbell'
   | 'agent.log'
   | 'agent.manifest'

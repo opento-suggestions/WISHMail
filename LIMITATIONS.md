@@ -87,6 +87,15 @@ exchange state from a §6.3 failure by the fact that §6.3’s all begin `STAMP_
 holds and the specification does not require. Nothing in WISHMail is at fault and nothing in MCP is wrong: a transport
 that types a tool’s output has to say what a result that is not that output is, and "error" is the word it has.
 
+**A receipt priced under sequences 1 or 2 of the price topic is right and not replayable, and that is ours.** Those
+two messages price `hbar` by a rate read from `api.saucerswap.finance`, and a DEX spot price cannot be re-obtained at
+a past timestamp by anyone — so T-P11-4’s court, "the price charged is the price the schedule yields", cannot be run
+against a receipt under them, and P-12 downgrades what cannot be replayed. **Sequence 3 fixes it forward** (D-170):
+the rate is Hedera’s own, which a mirror node serves with a timestamp filter, and §14.3 makes the price current at a
+purchase the latest message before it, so every purchase from sequence 3 onward is replayable. **The two earlier
+messages are not edited and cannot be** — a schedule is the sequence of messages — so this release states plainly
+that any receipt issued under them is unreplayable on its rate. No such receipt exists: the counter has made no sale.
+
 ## L-6 — Refusal leaves no mark
 
 A Postmaster that will not sell, a doorbell that does not answer, a registry that delists, a recipient that does not sign: none is on consensus as a refusal (§15.3). This release records what happened and never what was intended; it produces slips for unanswered first contact and reports unsigned receipts as `unclaimed`, and nothing else.
