@@ -11,6 +11,16 @@
 # always committed; `eol=lf` is what stops the working tree from diverging.
 * text=auto eol=lf
 
+# The Emancipation Proclamation is the payload Gate Two checkpoint two sealed,
+# and what was sealed was its bytes: 4408 of them, 27 CRLF line endings, sha256
+# a5998644f8a86e1993244d6fb6ace1695f3f4264208c0912d5fbeaabd6f31f2a. That digest
+# is in the run of record, in the envelope's ciphertext, and in what `inbox`
+# returned at the other end. Under `* text=auto eol=lf` above, git would
+# normalize those 27 CRLF away on commit and hand a judge 4381 different bytes
+# that hash to something else — so the file would no longer be the file the
+# ledger describes. `-text` turns normalization off for this one path.
+emancipation_proclamation.md -text
+
 # Anything that is not text is left alone, so nothing is corrupted by
 # normalization it should never have had.
 *.png binary
