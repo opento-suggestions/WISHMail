@@ -83,7 +83,7 @@ async function main(): Promise<number> {
   let preflight = 'no USDC asset declared for this network';
 
   // ---- pre-flight -------------------------------------------------------
-  // Row 8 publishes the postmasterPayer as payTo for the x402-usdc method, and a payTo
+  // Row 8 publishes the Postmaster’s payer as payTo for the x402-usdc method, and a payTo
   // that cannot receive the asset is a false publication: §14.3 has the price
   // list say where the money goes, and §14.2's PAYMENT-REQUIRED carries that
   // address to the buyer. On Hedera an account must be associated with an HTS

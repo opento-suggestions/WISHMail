@@ -182,7 +182,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     // --- 2. Sign, HERE. ------------------------------------------------------
     // The body is the counter’s; the signature is this process’s. The agent’s
     // key signs because the agent is the party whose account the price leaves —
-    // and where the holder is a bare public key, the homePayer’s key signs,
+    // and where the holder is a bare public key, the operator’s key signs,
     // because the agent has no account for the price to leave.
     const frozen = Transaction.fromBytes(Buffer.from(requirement.body, 'base64'));
     const signer = s.account === '' ? s.homePayer : s.agent;

@@ -917,7 +917,32 @@ npm run demo:operators -- [--dir <parent>] [--dry-run]
 
 ### The run of record
 
-<!-- RUN -->
+**Run 2026-09-09, and it is the only thing in this section that was signed.**
+
+| Operator | Account | Balance | maxAutomaticTokenAssociations | Transaction |
+|---|---|---|---|---|
+| A | `0.0.10450879` | 35 ℏ | `-1` | `0.0.8641261@1789000480.971118350` |
+| B | `0.0.10450880` | 35 ℏ | `-1` | `0.0.8641261@1789000484.775578285` |
+
+Both read back from the mirror under the named predicate before either key was written. Two `AccountCreate`
+transactions, 70 ℏ of initial balance and about 0.1 ℏ of fees, paid by `0.0.8641261`. **No token moved, no topic was
+created, and the counter was not running.**
+
+Both homes boot: `npm run correspondent:provision -- ~/.wishmail/demo/a --dry-run` reports `keys born`, the payer
+`0.0.10450879`, no account yet, and prints the provisioning plan; `b` the same under `0.0.10450880`. Their agents’ keys
+were born on that first boot, in that process, and are in each home’s `keystore.json` — which is a **different key from**
+**the operator’s**, and the whole of what §3.5 separates.
+
+**The account ids above are the whole of what this run disclosed.** `npm run p13:check` passes unchanged and `git status`
+is clean: the two configs are under `~/.wishmail/demo/`, which is outside the repository, and no key reached `.env`,
+`app/deployment/<network>.json`, the terminal, or any tracked file.
+
+**One thing this run asks for and does not get on Windows, said plainly.** The config is written with mode `0600`, which
+is what a POSIX filesystem enforces. This machine is NTFS: `chmod` is advisory there and the file inherits the
+directory’s ACL, which for a path under the user’s own profile means the user and the administrators group. So the
+protection here is **the location and the user account**, not the mode bits, and an operator on a shared Windows machine
+should say so to themselves before pointing `--dir` anywhere else. Not a property of Hedera and not of the specification —
+ours, and named rather than assumed.
 
 ---
 ## Step 6 — the first letter: GATE TWO, written before any signature

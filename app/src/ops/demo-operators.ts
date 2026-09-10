@@ -7,8 +7,13 @@
  * exist. In the demo we are all three parties, so the Postmaster's payer creates
  * them — and **that is funding, not a purchase**. Nothing here touches the price
  * list, the treasury, `$POSTAGE` or the counter; no `StampReceipt` is issued and
- * no reference is settled. The ops record files it under `residue` beside the
- * probes, for exactly that reason.
+ * no reference is settled.
+ *
+ * **It is recorded in `app/OPERATIONS.md` and NOT in `app/deployment/<network>.json`.**
+ * That file is the Postmaster's ops record of what the Postmaster owns, and
+ * these two accounts belong to the demo's two Operators — they are inputs to
+ * the demo the way `0.0.8641261` was an input to Step 2 (D-140), not entities
+ * the Postmaster holds. CLAUDE.md §11's rule points the same way.
  *
  * WHAT IT CREATES, per operator:
  *

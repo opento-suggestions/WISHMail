@@ -36,6 +36,8 @@
     "correspondent": "npm run correspondent --workspace app",
     "correspondent:provision": "npm run correspondent:provision --workspace app",
     "check:correspondent": "npm run check:correspondent --workspace app",
-    "demo:operators": "npm run demo:operators --workspace app"
+    "demo:operators": "npm run demo:operators --workspace app",
+    "entities:md": "node scripts/entities-md.mjs",
+    "check:entities": "node scripts/entities-md.mjs --check"
   }
 }

@@ -58,7 +58,10 @@ app/            the reference implementation: MCP server, WebMCP page, SDK, CLI,
 recon/          dated fetches of the standards, and the pins drafted from them
 provenance/     where the design came from. Binds nothing; the specification governs
 plans/          the plans this build was directed by. Binds nothing; artifacts, not rules
+ENTITIES.md     every entity on hedera:testnet, and which of them operate. Generated
 ```
+
+**What is actually on the ledger:** [`ENTITIES.md`](ENTITIES.md) — the treasury and `$POSTAGE`, the price topic and both published schedules, the Postmaster-agent's six topics, and the fourteen registered schemas, each with a HashScan link. It has a second table headed **RESIDUE — NOT OPERATING**: three `$POSTAGE`-shaped tokens exist on this testnet and exactly one is the stamp token, so every probe leftover and every superseded entity is listed with the reason it is there and the reason it is not ours. The file is **generated** from `app/deployment/hedera-testnet.json` and `spec/pins.json` by `npm run entities:md`, and `npm run check:entities` fails if it is ever hand-edited.
 
 **Start here:** `spec/WISHMAIL_SPEC_v0_5.md`. Read §1 (scope, classes, pins), §2 (vocabulary — the names in code are these names), then §5 through §12.
 

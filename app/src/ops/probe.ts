@@ -105,7 +105,7 @@ async function main(): Promise<void> {
         ),
         `create ${s.label}`,
       );
-      record(`account:${s.label}`, 'created, postmasterPayer paying', {
+      record(`account:${s.label}`, 'created, the Postmaster’s payer paying', {
         accountId: r.entityId,
         transactionId: r.transactionId,
         publicKey: publicHex(s),
@@ -192,9 +192,9 @@ async function main(): Promise<void> {
         env.postmasterPayerId,
         new TokenAssociateTransaction().setAccountId(env.postmasterPayerId).setTokenIds([tokenId]),
       ),
-      'associate the postmasterPayer',
+      'associate the Postmaster’s payer',
     );
-    record('associate', 'owner, stranger and the postmasterPayer; the treasury is associated by construction', {
+    record('associate', 'owner, stranger and the Postmaster’s payer; the treasury is associated by construction', {
       operatorAssociationTx: opAssoc.transactionId,
     });
 
@@ -209,9 +209,9 @@ async function main(): Promise<void> {
           .addTokenTransfer(tokenId, env.postmasterPayerId, 3),
         [treasury],
       ),
-      'fund owner, stranger and postmasterPayer',
+      'fund owner, stranger and the Postmaster’s payer',
     );
-    record('fund', 'owner 1, stranger 1, postmasterPayer 3 — so a failed exemption reads as a charge, not an inability to pay', {
+    record('fund', 'owner 1, stranger 1, the Postmaster’s payer 3 — so a failed exemption reads as a charge, not an inability to pay', {
       transactionId: fund.transactionId,
     });
 
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
     }
     must(topicCreate, 'create the probe topic');
     topicId = topicCreate.entityId!;
-    record('topic:create', 'no submit key, admin key the postmasterPayer, no fee schedule key, 1 unit to the probe treasury', {
+    record('topic:create', 'no submit key, admin key the Postmaster’s payer, no fee schedule key, 1 unit to the probe treasury', {
       topicId,
       transactionId: topicCreate.transactionId,
       collectorSignatureRequired,
@@ -356,7 +356,7 @@ async function main(): Promise<void> {
       });
     }
     if (tokenId && treasuryId) {
-      // Return whatever units the postmasterPayer still holds, then dissociate, so the
+      // Return whatever units the Postmaster’s payer still holds, then dissociate, so the
       // one account the deployment keeps carries nothing of the probe afterwards.
       const bal = await mirror.get<{ tokens?: { token_id: string; balance: number }[] }>(
         `/accounts/${env.postmasterPayerId}/tokens?token.id=${tokenId}`,
@@ -380,7 +380,7 @@ async function main(): Promise<void> {
         env.postmasterPayerId,
         new TokenDissociateTransaction().setAccountId(env.postmasterPayerId).setTokenIds([tokenId]),
       );
-      record('cleanup:dissociate', 'the postmasterPayer is dissociated from the probe token', {
+      record('cleanup:dissociate', 'the Postmaster’s payer is dissociated from the probe token', {
         status: dis.status,
         transactionId: dis.transactionId,
       });

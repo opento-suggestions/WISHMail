@@ -45,7 +45,7 @@
  *     a ceiling is the only thing between a published policy and an unbounded
  *     one. The ceiling is read from `networks.ts`, which is where the agent
  *     read the cap it built with — a second spelling of a cap would refuse a
- *     body the agent had every reason to build — and an postmasterPayer may set a
+ *     body the agent had every reason to build — and an the Postmaster’s payer may set a
  *     lower absolute maximum beside it.
  *   - an account update that sets ANY field besides the memo. The same
  *     transaction type that writes §9.2's first link can rotate the account's
@@ -55,7 +55,7 @@
  *     mailbox once, at the price on consensus; it does not undertake to renew
  *     it forever, and a topic that named it would say otherwise on consensus
  *     where every reader can see it. The row must name the BUYER, which is the
- *     Correspondent's own postmasterPayer — the party §3.5 already has paying.
+ *     Correspondent's own the Postmaster’s payer — the party §3.5 already has paying.
  *   - a row already carried under this reference. Each row is created once; a
  *     second doorbell cannot be undone and §9.5 assigns `vague` where more than
  *     one registration names an address (D-165).

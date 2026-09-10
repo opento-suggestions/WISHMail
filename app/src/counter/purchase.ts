@@ -92,7 +92,7 @@ export interface Requirement {
   readonly quote: Quote;
   readonly count: number;
   readonly holder: Holder;
-  /** The account the price is debited from — the Correspondent's postmasterPayer (§3.5). */
+  /** The account the price is debited from — the Correspondent's own operator (§3.5). */
   readonly buyer: string;
   readonly provision: boolean;
   /**
@@ -293,7 +293,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
  * public key has no account to pay from — the purchase is what creates one —
  * so the buyer and the holder are different parties and the buyer must be
  * named. In this window that is the Correspondent's OPERATOR, which is the same
- * relation §3.5 fixes everywhere else: the agent signs, the postmasterPayer pays.
+ * relation §3.5 fixes everywhere else: the agent signs, the operator pays.
  */
 function buyerOf(req: PurchaseRequest): string {
   if (req.buyer !== undefined) return req.buyer;

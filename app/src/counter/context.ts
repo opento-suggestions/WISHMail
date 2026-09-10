@@ -43,7 +43,7 @@ export interface CounterContext {
   readonly priceTopic: string;
   /**
    * An ABSOLUTE ceiling on what a single carried body may authorise, in
-   * tinybars (D-168) — the postmasterPayer’s own limit, over and above the per-row one.
+   * tinybars (D-168) — the Postmaster’s payer’s own limit, over and above the per-row one.
    *
    * A body the counter signs names the maximum fee it authorises and the
    * Postmaster is the account it comes out of, so a ceiling is the only thing
@@ -55,7 +55,7 @@ export interface CounterContext {
    * and that is worth saying plainly: a fee-gated topic creation on testnet was
    * observed to fail at a 20 ℏ cap and to succeed at 100 ℏ, charged far less
    * (`networks.ts`, FETCHED 2026-09-08). So the counter authorises up to 100 ℏ
-   * per doorbell and is charged what the network charges. An postmasterPayer who has
+   * per doorbell and is charged what the network charges. An the Postmaster’s payer who has
    * measured the real cost can set `WISHMAIL_CARRY_MAX_HBAR` lower; one who sets
    * it too low will see the sale refused before anything is signed, which is the
    * failure that costs nothing.

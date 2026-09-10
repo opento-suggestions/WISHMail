@@ -21,7 +21,7 @@
  *      the balance credited, and — as D-159's addendum now requires — the ℏ leg
  *      credited in the same transaction?
  *   2. Can that account, holding only the fee it was given, sign a transfer OUT
- *      with the postmasterPayer as payer, and end with its ℏ untouched?
+ *      with the Postmaster’s payer as payer, and end with its ℏ untouched?
  *
  * If (2) fails with INSUFFICIENT_PAYER_BALANCE against the new account, that is
  * the finding and not a failure: it means a nearly-empty account cannot be a
@@ -149,7 +149,7 @@ async function main(): Promise<void> {
       ),
       'create the probe treasury',
     ).entityId!;
-    record('act 0', 'probe treasury created, postmasterPayer paying', { treasuryId });
+    record('act 0', 'probe treasury created, the Postmaster’s payer paying', { treasuryId });
 
     // ---- act 1: the probe token, born at zero and minted -----------------
     // D-141's posture and D-149's birth-then-mint, so the probe mirrors the
@@ -247,14 +247,14 @@ async function main(): Promise<void> {
     const parent2 = act2Tx?.transactions?.find((t) => t.name === 'CRYPTOTRANSFER') ?? act2Tx?.transactions?.[0];
     const paidBy2 = (parent2?.transfers ?? []).filter((t) => t.amount < 0).map((t) => t.account);
     predicate(
-      'the account-creation fee was charged to the postmasterPayer, not to the new account',
+      'the account-creation fee was charged to the Postmaster’s payer, not to the new account',
       paidBy2.includes(env.postmasterPayerId) && !paidBy2.includes(newAccountId),
       `debited: ${paidBy2.join(', ')}`,
     );
 
-    // ---- act 4: the new account signs OUT, with the postmasterPayer paying -------
+    // ---- act 4: the new account signs OUT, with the Postmaster’s payer paying -------
     // The affix shape under D-157's seam: the agent signs as the stamps' owner
-    // (§4.3), the postmasterPayer pays. Everything after step 2 of D-159 depends on it.
+    // (§4.3), the Postmaster’s payer pays. Everything after step 2 of D-159 depends on it.
     const act4 = await submit(
       client,
       env.postmasterPayerId,
@@ -264,7 +264,7 @@ async function main(): Promise<void> {
         .setMaxTransactionFee(new Hbar(5)),
       [alias],
     );
-    record('act 4', 'the new account signs a transfer out; the postmasterPayer is the payer', {
+    record('act 4', 'the new account signs a transfer out; the Postmaster’s payer is the payer', {
       transactionId: act4.transactionId,
       status: act4.status,
     });
@@ -295,7 +295,7 @@ async function main(): Promise<void> {
     );
     const paidBy4 = (parent4?.transfers ?? []).filter((t) => t.amount < 0).map((t) => t.account);
     predicate(
-      'the fee was paid by the postmasterPayer and not by the signer',
+      'the fee was paid by the Postmaster’s payer and not by the signer',
       paidBy4.includes(env.postmasterPayerId) && !paidBy4.includes(newAccountId),
       `debited: ${paidBy4.join(', ')}`,
     );

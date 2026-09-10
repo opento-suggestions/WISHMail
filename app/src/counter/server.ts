@@ -330,7 +330,7 @@ export async function serve(cfg: CounterConfig, bind: string, port: number): Pro
 }
 
 /**
- * The postmasterPayer’s ABSOLUTE ceiling on a single carried body, in tinybars.
+ * The the Postmaster’s payer’s ABSOLUTE ceiling on a single carried body, in tinybars.
  *
  * It defaults to the network’s own largest cap, because that is what a
  * fee-gated topic creation needs: 20 ℏ was observed to return
@@ -341,7 +341,7 @@ export async function serve(cfg: CounterConfig, bind: string, port: number): Pro
  * expensive rather than free.
  *
  * The effective limit for any body is the lower of this and the cap the
- * template declares for its row, so this exists for an postmasterPayer who has
+ * template declares for its row, so this exists for an the Postmaster’s payer who has
  * measured what these actually cost and wants to say so.
  */
 export function carryFeeCapTinybars(defaultHbar: number): number {

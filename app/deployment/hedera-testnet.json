@@ -1,5 +1,5 @@
 {
-  "_readme": "The provisioning script’s idempotency ledger and the result of app/OPERATIONS.md’s method. Every field below was written from a mirror-node REST read, never from an SDK receipt (D-144). specTag names the specification text these entities were provisioned against — a tag, not a commit hash, because a conformance claim names a version (§1.7, §5.10). No private-key material appears here or ever will (P-13); signedBy and payer are role names.",
+  "_readme": "The provisioning script’s idempotency ledger and the result of app/OPERATIONS.md’s method. Every field below was written from a mirror-node REST read, never from an SDK receipt (D-144). specTag names the specification text these entities were provisioned against — a tag, not a commit hash, because a conformance claim names a version (§1.7, §5.10). No private-key material appears here or ever will (P-13); signedBy and payer are role names. RESIDUE, amended 2026-09-09: entities that are on hedera:testnet and are NOT the deployment’s. It began as the superseded rows of Steps 2-4 and now also carries the two probes’ leftovers. Nothing here operates, nothing here is pinned, and each row says why it is on the ledger and why it is not ours. ENTITIES.md is generated from this file and spec/pins.json and is never hand-edited; npm run check:entities is what holds that.",
   "ledgerTag": "hedera:testnet",
   "network": "testnet",
   "specTag": "v0.5.2",
@@ -1925,6 +1925,79 @@
       "consensusTimestamp": "1788989243.440798527",
       "supersededBy": null,
       "why": "Step 4's first run, 2026-09-09. This topic was created correctly — the memo carries the proof schema's digest and the agent is its sole submit key, with no admin key per D-150 — and then the chunk step wrote an unreadable file into it and the run stopped. The defect was ours and it is fixed in the same change: `ops/hcs1.ts` bounded an HCS-1 chunk's CONTENT at 1024 bytes where the bound belongs on the whole message, so `{\"o\":N,\"c\":\"…\"}` came to 1037 bytes, and the SDK silently split each chunk across two consensus messages. Neither half is parseable JSON on its own, which is what the run's own readback reported: \"Unterminated string in JSON at position 1024\". This topic therefore holds five messages that are three half-chunks and cannot be reassembled by any reader. It carries no admin key, because HCS-1 forbids one (hcs-1.md:48-49, D-150), so it can never be deleted and its messages can never be withdrawn. It is recorded here so that `entities` holds exactly one proof schema file and no reader is left wondering what an orphan topic is. A new file topic was created for the corrected chunks. Nothing was pinned from this one: `spec/pins.json` was still fully unfilled when the run stopped, so no `schemaRef` names it and no claim could ever have cited it."
+    },
+    {
+      "kind": "account",
+      "role": "probe treasury (HIP-991, first attempt)",
+      "id": "0.0.10425722",
+      "why": "The 2026-09-08 HIP-991 probe stopped at the topic create on INSUFFICIENT_TX_FEE — a 20 ℏ cap, too low for a fee-gated topic, and not a rejection of the fee configuration — leaving this run behind. It holds the float of token 0.0.10425725, which has no admin key and therefore cannot be deleted, so its treasury cannot be removed either. Inert: its key was born in that process and discarded."
+    },
+    {
+      "kind": "account",
+      "role": "probe owner (HIP-991, first attempt)",
+      "id": "0.0.10425723",
+      "why": "A throwaway identity of the same stopped run. Its key was born in that process and discarded."
+    },
+    {
+      "kind": "account",
+      "role": "probe stranger (HIP-991, first attempt)",
+      "id": "0.0.10425724",
+      "why": "A throwaway identity of the same stopped run. Its key was born in that process and discarded."
+    },
+    {
+      "kind": "token",
+      "role": "probe stamp (HIP-991, first attempt)",
+      "id": "0.0.10425725",
+      "why": "A $POSTAGE-shaped token minted for the stopped run and worth nothing. It carries NO ADMIN KEY, by the posture under test — the real token has none either — and TokenDelete requires one, so it is on testnet permanently. It is not $POSTAGE: §1.6 pins the stamp token and 0.0.10426208 is what it pins."
+    },
+    {
+      "kind": "account",
+      "role": "probe treasury (HIP-991, run of record)",
+      "id": "0.0.10425740",
+      "why": "Holds the 10,000 units of probe token 0.0.10425743, which has no admin key and cannot be deleted; a token’s treasury cannot be removed while the token exists. Key born in the run and discarded."
+    },
+    {
+      "kind": "account",
+      "role": "probe owner (HIP-991, run of record)",
+      "id": "0.0.10425741",
+      "why": "A throwaway identity of the run that proved D-137’s exemption. Key born in the run and discarded."
+    },
+    {
+      "kind": "account",
+      "role": "probe stranger (HIP-991, run of record)",
+      "id": "0.0.10425742",
+      "why": "A throwaway identity of the run that proved D-137’s exemption. Key born in the run and discarded."
+    },
+    {
+      "kind": "token",
+      "role": "probe stamp (HIP-991, run of record)",
+      "id": "0.0.10425743",
+      "why": "The token the 2026-09-08 probe proved §4.4’s doorbell fee against, 10,000 units, no admin key by the posture under test and therefore undeletable. Permanently on testnet, and written down here so that nobody reading a mirror node has to wonder what the second $POSTAGE-shaped token is."
+    },
+    {
+      "kind": "topic",
+      "role": "probe doorbell (HIP-991, run of record)",
+      "id": "0.0.10425746",
+      "deleted": true,
+      "why": "The fee-gated topic the probe created and DELETED under its admin key, in a finally, on every path. It reads deleted: true, with its final fee_exempt_key_list still visible — the amendment, after deletion."
+    },
+    {
+      "kind": "account",
+      "role": "probe treasury (HIP-542)",
+      "id": "0.0.10446531",
+      "why": "Holds the float of probe token 0.0.10446532. Its key was born in the 2026-09-09 run and discarded, so nobody can ever move those units, including us."
+    },
+    {
+      "kind": "token",
+      "role": "probe stamp (HIP-542)",
+      "id": "0.0.10446532",
+      "why": "\"WISHMail HIP-542 probe stamp\", P542, decimals 0, born at 0 and minted 10, for the run that established that a token transfer to a public-key alias creates the account. Inert and undeletable, and not $POSTAGE."
+    },
+    {
+      "kind": "account",
+      "role": "the account the HIP-542 probe was written to find",
+      "id": "0.0.10446534",
+      "why": "Nobody created it — it was BOUGHT, by a token transfer to a public-key alias, which is the mechanism D-159 step 2 and T-P16-1 rest on. Its key was born in that run and discarded; it holds 0.05 ℏ and no token and will expire on its own."
     }
   ]
 }

@@ -155,7 +155,9 @@ shape before any signature, in the form Steps 2-4 follow.
   for a row of `ops/template.ts` naming this holder’s key, a chunk on the file topic it paid for, the register entry on the
   registry it paid for, or the account-memo update on the holder’s account. Every field number in the decoder was probed off
   a body the SDK froze, and `check:correspondent` re-probes them on every run.
-- **What Gate One waits on:** two funded testnet wallets, two filled home directories, and Sonic’s word. The purchases are
+- **What Gate One waits on: Sonic’s word.** The two Operators’ wallets exist — `0.0.10450879` and `0.0.10450880`, 35 ℏ
+  each, unlimited auto-associations, recorded in `app/OPERATIONS.md` as funding and not a sale — and their two homes are
+  filled and boot. The purchases are
   **real sales at sequence 2’s prices** and will be the counter’s first; nothing in the demo is a fixture funded on the side.
 - **What Gate Two owes.** `send`, `inbox` and `ack` refuse on the Correspondent’s MCP, naming the gate. They are built and
   run end to end against the modelled ledger (`check:letter`, 63 assertions); what they need is the live wiring, §10.4’s

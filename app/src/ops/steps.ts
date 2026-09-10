@@ -812,7 +812,7 @@ function schemaSteps(source: SchemaSource): readonly AnyStep[] {
     },
   };
 
-  // The registry is an ordinary HCS-2 topic under the postmasterPayer's keys, so it
+  // The registry is an ordinary HCS-2 topic under the Postmaster’s payer's keys, so it
   // reuses topicStep rather than restating its readback: the same nine field
   // assertions run on it as on every other topic this build creates.
   const registry = topicStep(`schema.${n}.registry`, `${n} schema registry (HCS-2)`, [], (ctx) => ({

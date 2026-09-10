@@ -2,6 +2,48 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Before Gate One] — 2026-09-09 — the payer role named, two demo wallets, and ENTITIES.md
+
+**Not a specification version.** No sentence, no schema, no wire string and no test changed. Two `AccountCreate`
+transactions were signed on `hedera:testnet`, and they are **funding and not a sale**.
+
+### Renamed — the payer role, not the Operator (§3.3)
+
+§3.3 fixes an *Operator* as "the human or organization behind an agent". The repository was calling the Postmaster’s
+payer **account** one, and since D-168 a Correspondent’s own payer appears in the same call. Two roles under one word is
+how a key gets read from the wrong side. `POSTMASTER_PAYER_ID` / `POSTMASTER_PAYER_DER_KEY` in the environment,
+`postmasterPayerId` / `postmasterPayer` in the Postmaster’s code, `homePayerId` / `homePayer` / `homeClient` in the
+Correspondent’s, `payer` in a Correspondent’s config — which is what §3.5 always called it — and `postmaster payer` as
+the role label in the ops record. **HCS-10’s `operator_id` keeps its name**: it is a pinned standard’s field and it names
+the agent, not a person. *Operator* survives in prose, in §3.3’s sense, and CLAUDE.md §11 carries the rule.
+
+No consensus impact — identifiers, environment names, and a role label in our own record of who paid.
+
+### Signed — two demo Operators’ wallets, and it is not a sale
+
+`npm run demo:operators` creates one testnet account per demo Operator: a fresh ED25519 key born in the run, an
+`AccountCreate` paid by the Postmaster’s payer, 35 ℏ, and `maxAutomaticTokenAssociations = -1` so D-157’s two-hop ring
+needs no association transaction. **Nothing touches the price list, the treasury, `$POSTAGE` or the counter**, no receipt
+exists, and `app/OPERATIONS.md` records it under "Demo-operator funding". The purchases at Gate One remain the counter’s
+first sales.
+
+**The key never leaves its closure.** `bornPayerWallet()` returns a `Signer` and an `install`; the runner holds neither
+the key nor its DER string and therefore cannot print, log or persist one (P-13). The key is written **only after** the
+mirror readback passes — a run that dies before that leaves an abandoned account rather than a config naming an account
+nobody verified. Run of record: `0.0.10450879` and `0.0.10450880`.
+
+### Added — `ENTITIES.md`, generated
+
+Every entity on `hedera:testnet` with a HashScan link, in three sections: **what operates** — treasury and `$POSTAGE`, the
+price topic with both published schedules, the Postmaster-agent’s six topics, and the fourteen registered schemas with
+their `schemaRef` and digest; **RESIDUE — NOT OPERATING** — fifteen rows, every probe leftover and every superseded
+entity, each with the reason it is on the ledger and the reason it is not ours; and **DEMO AGENTS**, empty until Gate One.
+
+**It is generated and never hand-edited**, from `app/deployment/hedera-testnet.json` and `spec/pins.json`, and
+`npm run check:entities` names the first line that differs. Three `$POSTAGE`-shaped tokens exist on this testnet and
+exactly one is the stamp token; a reader should not have to guess which, and a guess about that is a guess about what a
+receipt means. The probes’ leftovers moved into the ops record’s `residue` to make the table generable — their reports had
+said they were written to no record at all, which was true when there was nowhere to put them.
 ## [Gate One, re-armed] — 2026-09-09 — §G-19 ruled: the counter pays for the mailbox it sells
 
 **Not a specification version.** No sentence, no schema, no wire string and no test changed; §1.7 has fired and the fourteen
