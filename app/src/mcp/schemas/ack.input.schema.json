@@ -9,6 +9,11 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$",
       "description": "The AAD hash of §7.2, lowercase hex."
+    },
+    "lane": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Narrow the search to one lane. Optional: §6.6 reads the pending schedule from the lane's transaction operation, and the caller's lanes are found from consensus by §7.1's rule when this is absent."
     }
   },
   "required": ["envelopeId"],

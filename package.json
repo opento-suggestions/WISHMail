@@ -58,6 +58,8 @@
     "inbox": "npm run inbox --workspace app --",
     "verify": "npm run verify --workspace app --",
     "capture": "npm run capture --workspace app --",
+    "ack": "npm run ack --workspace app --",
+    "ack:live": "npm run ack:live --workspace app --",
     "check:captured": "npm run check:captured --workspace app --"
   }
 }

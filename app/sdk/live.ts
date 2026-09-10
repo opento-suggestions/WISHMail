@@ -22,7 +22,18 @@
  *
  * Conformance: T-P4-1, T-P4-2, T-P4-3, T-P9-5, T-P9-7, T-P17-2.
  */
-import { Hbar, TransactionId, TransferTransaction, type AccountId, type Client } from '@hashgraph/sdk';
+import {
+  AccountId as SdkAccountId,
+  Hbar,
+  ScheduleCreateTransaction,
+  ScheduleSignTransaction,
+  Timestamp,
+  TopicId,
+  TransactionId,
+  TransferTransaction,
+  type AccountId,
+  type Client,
+} from '@hashgraph/sdk';
 import { flattenMirrorKey } from '../src/core/protokey.js';
 import { submit } from '../src/ops/hedera.js';
 import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
@@ -32,6 +43,8 @@ import type {
   Consensus,
   CustomFee,
   Reader,
+  ScheduleRecord,
+  ScheduleSignature,
   Settlement,
   TopicInfo,
   TopicMessage,
@@ -80,6 +93,24 @@ interface MAccount {
   readonly key?: MKey | null;
   readonly balance?: { readonly tokens?: readonly { readonly token_id: string; readonly balance: number }[] };
 }
+/** `/schedules/{id}` — HIP-423's record, as a mirror node returns it. */
+interface MSchedule {
+  readonly schedule_id: string;
+  readonly creator_account_id: string;
+  readonly payer_account_id: string;
+  readonly consensus_timestamp: string;
+  readonly executed_timestamp?: string | null;
+  readonly expiration_time?: string | null;
+  readonly wait_for_expiry?: boolean | null;
+  readonly deleted?: boolean | null;
+  readonly transaction_body?: string | null;
+  readonly signatures?: readonly {
+    readonly consensus_timestamp: string;
+    readonly public_key_prefix: string;
+    readonly type: string;
+  }[];
+}
+
 interface MTransactions {
   readonly transactions?: readonly {
     readonly transaction_id: string;
@@ -186,6 +217,33 @@ export function liveReader(mirrorNodeUrl: string, ledgerTag: string): Reader {
       if (a === null) return null;
       return flattenMirrorKey(a.key)[0] ?? null;
     },
+
+    async schedule(scheduleId): Promise<ScheduleRecord | null> {
+      const s = await mirror.get<MSchedule>(`/schedules/${scheduleId}`);
+      return s === null ? null : scheduleRecordOf(s, ledgerTag);
+    },
+  };
+}
+
+/** A mirror row to §10.4's record. No field is inferred; absent is null. */
+function scheduleRecordOf(s: MSchedule, ledgerTag: string): ScheduleRecord {
+  const signatures: ScheduleSignature[] = (s.signatures ?? []).map((x) => ({
+    publicKeyPrefix: x.public_key_prefix,
+    consensusTimestamp: x.consensus_timestamp,
+    type: x.type,
+  }));
+  return {
+    ledgerTag,
+    scheduleId: s.schedule_id,
+    creator: s.creator_account_id,
+    payer: s.payer_account_id,
+    consensusTimestamp: s.consensus_timestamp,
+    executedTimestamp: s.executed_timestamp ?? null,
+    expirationTime: s.expiration_time ?? null,
+    waitForExpiry: s.wait_for_expiry === true,
+    deleted: s.deleted === true,
+    signatures,
+    transactionBody: s.transaction_body ?? '',
   };
 }
 
@@ -327,6 +385,100 @@ export function liveConsensus(ctx: WriterContext): Consensus {
       const a = await mirror.get<MAccount>(`/accounts/${ctx.account}?limit=1`);
       const held = a?.balance?.tokens?.find((t) => t.token_id === ctx.stampToken);
       return held?.balance ?? 0;
+    },
+
+    /**
+     * §6.4 step 7's ScheduleCreate (HIP-423, §10.4).
+     *
+     * WHO SIGNS IT, and it is the one place this file departs from *agent signs,
+     * payer signs* on purpose. A ScheduleCreate's signatures are offered to the
+     * INNER transaction's required keys, and the inner transaction here requires
+     * exactly two: the topic's submit key, which is the RECIPIENT's and is the
+     * whole point of §10.4, and the inner payer's, which is
+     * `request.payerAccountId`. The sender's agent key is required by neither,
+     * so adding it would put a signature on the schedule's record that stands
+     * for nothing and makes T-P1-8's reading of that record harder. The payer's
+     * signature is added by `submit` through the client's operator, which is
+     * what makes the fee payable when the recipient signs.
+     *
+     * `waitForExpiry` is FALSE and is not a parameter: §10.4 fixes it, because
+     * a receipt that waited for the window's end would arrive up to sixty-two
+     * days after the hand that signed for it.
+     */
+    async scheduleSubmission(request): Promise<ScheduleRecord> {
+      // The base-class freeze, so no `chunkInfo` — the same override every
+      // submission here uses. A scheduled submission cannot be transport-chunked
+      // at all, and the SDK refuses to schedule one that would need to be.
+      const inner = new UnchunkedTopicMessageSubmitTransaction()
+        .setTopicId(TopicId.fromString(request.topicId))
+        .setMessage(request.message);
+      if (inner.getRequiredChunks() !== 1) {
+        throw new Error(
+          `scheduleSubmission: the receipt manifest is ${request.message.length} bytes and needs ` +
+            `${inner.getRequiredChunks()} chunks; §10.4's inner submission is one message (check:freeze)`,
+        );
+      }
+
+      const expiresAt = Math.floor(Date.now() / 1000) + request.expirationSeconds;
+      const tx = new ScheduleCreateTransaction()
+        .setScheduledTransaction(inner)
+        .setPayerAccountId(SdkAccountId.fromString(request.payerAccountId))
+        .setWaitForExpiry(false)
+        .setExpirationTime(new Timestamp(expiresAt, 0));
+
+      const r = await submit(client, ctx.payerId, tx, [], nodePin);
+      // The network's own idempotence, and the reason `submit` carries an entity
+      // id on a failed status: an identical inner transaction is refused with
+      // the id of the schedule that already exists, which is the answer and not
+      // an error (§10.4, `tools/send.ts` step 7).
+      const identical = !r.ok && r.status === 'IDENTICAL_SCHEDULE_ALREADY_CREATED';
+      if (!r.ok && !identical) {
+        throw new Error(`the ScheduleCreate returned ${r.status} (tx ${r.transactionId})`);
+      }
+      const scheduleId = r.entityId;
+      if (scheduleId === undefined) {
+        throw new Error(
+          `the ScheduleCreate returned ${r.status} and its receipt named no schedule (tx ${r.transactionId})`,
+        );
+      }
+
+      // Read back from the MIRROR and never from the receipt, for the reason
+      // every other readback here gives: a receipt says what was submitted, and
+      // §11.4 appraises what consensus holds.
+      const seen = await mirror.poll<MSchedule>(
+        `/schedules/${scheduleId}`,
+        (s) => typeof s.schedule_id === 'string' && s.schedule_id === scheduleId,
+      );
+      if (seen === null) {
+        throw new Error(`the mirror does not yet hold the schedule ${scheduleId} created as ${r.transactionId}`);
+      }
+      return scheduleRecordOf(seen, ctx.ledgerTag);
+    },
+
+    /**
+     * §6.6's ScheduleSign — the recipient's whole act.
+     *
+     * The AGENT signs (its key is the topic's submit key, and the network is
+     * waiting for exactly it) and the recipient's own operator PAYS the
+     * ScheduleSign's network fee. The inner transaction's fee is the schedule's
+     * payer's, not this one's, which is how "the recipient pays nothing" holds
+     * for the receipt itself (T-P16-2).
+     */
+    async scheduleSign(scheduleId): Promise<ScheduleRecord> {
+      const tx = new ScheduleSignTransaction().setScheduleId(scheduleId);
+      const r = await submit(client, ctx.payerId, tx, [ctx.agent], nodePin);
+      if (!r.ok) throw new Error(`the ScheduleSign on ${scheduleId} returned ${r.status} (tx ${r.transactionId})`);
+
+      // Wait for the FACT — the execution — rather than for a clock. The
+      // signature and the execution are one act on the network and two reads on
+      // a mirror node, and a read taken between them says "not executed" in
+      // exactly the words it uses for a schedule nobody signed.
+      const seen = await mirror.poll<MSchedule>(
+        `/schedules/${scheduleId}`,
+        (s) => typeof s.executed_timestamp === 'string' && s.executed_timestamp !== '',
+      );
+      if (seen === null) throw new Error(`the mirror does not hold the schedule ${scheduleId} after its ScheduleSign`);
+      return scheduleRecordOf(seen, ctx.ledgerTag);
     },
   };
 

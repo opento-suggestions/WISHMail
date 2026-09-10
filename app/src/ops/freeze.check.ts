@@ -43,6 +43,7 @@ import {
 
 import { canonicalBytes, canonicalDigest } from '../core/canonical.js';
 import { manifestAmong, proofInputs, proofLocation } from '../core/proof.js';
+import { receiptManifest as composeReceiptManifest, returnReceiptOf } from '../core/receipt.js';
 import { CHUNK_WIRE_MAX } from '../core/chunk.js';
 import { repoRoot } from './env.js';
 import { schemas, type SchemaName } from '../schema/loader.js';
@@ -166,50 +167,37 @@ const envelopeId = 'a'.repeat(64);
 const chunk0 = { topicId: FX.lane, sequenceNumber: 41 };
 const keyEpoch = 1;
 
-const receiptManifestParts = {
-  rule: { id: 'wishmail:receipt', revision: '0.5' },
-  // §5.2's three fields. The LOCATOR is chunk 0's postmark, which is where a
-  // Verifier re-obtains every input: chunk 0 carries the envelope identifier as
-  // its `id` and the epoch as `hdr.ke`, and its own postmark is the postmark.
-  // The DIGEST is over what was read there. No snapshot: all of it is on
-  // consensus.
-  inputs: proofInputs(
-    { ledgerTag: LEDGER, topicId: chunk0.topicId, sequenceNumber: chunk0.sequenceNumber },
-    { envelopeId, keyEpoch },
-  ),
-  output: { value: 'opened' },
-  meaning: {
-    // §9.1's budget (N = 70, D-167). What a receipt proves and what it states
-    // is §10.6's paragraph, not this field's.
-    statement: 'The recipient opened this envelope with its AAD verified.',
-    // D-163: a LOCATION — the topic this manifest lands on when the recipient
-    // signs. Honest at ScheduleCreate for the first time: the sender already
-    // targets this topic in the inner submission below, and there is nothing
-    // here that the sender does not know when it pre-fills the bytes.
-    uri: proofLocation(LEDGER, FX.recipientManifest),
-    trustClass: 'math',
-    endorsements: [] as string[],
-  },
-};
-const receiptManifest = { ...receiptManifestParts, hash: canonicalDigest(receiptManifestParts) };
-
-const returnReceipt = {
+// COMPOSED BY `core/receipt.ts` AND NOT BY HAND, since 2026-09-10. This fixture
+// built the manifest itself until Gate Two checkpoint two, and a second spelling
+// of a document that is inside a hash is a second receipt (CLAUDE.md §9): `send`
+// fills the schedule with it, `ack` recomposes it to decide whether to sign, and
+// `verify` recomposes it again from consensus. Two of those three are checks,
+// and neither is possible unless all three call one function.
+//
+// What the hand-built version had wrong, and no schema could have caught: the
+// digest covered `{envelopeId, keyEpoch}` and left chunk 0's POSTMARK in the
+// locator only, though §10.4 makes the output `opened` "over exactly those
+// inputs" and there are three of them; and `meaning.statement` did not name the
+// recipient's account, though §10.4's meaning lists it first and §5.2's
+// `meaning` has no other field it could be in.
+const receiptInput = {
+  ledgerTag: LEDGER,
   envelopeId,
   postmarkRef: chunk0,
-  recipient: `${FX.doorbell}@${FX.agentAccount}`,
   keyEpoch,
+  recipientAccount: FX.agentAccount,
+  manifestTopic: FX.recipientManifest,
+};
+const receiptManifest = composeReceiptManifest(receiptInput);
+
+const returnReceipt = returnReceiptOf(
+  receiptInput,
+  `${FX.doorbell}@${FX.agentAccount}`,
+  { scheduleId: '0.0.7000301', executedTimestamp: '1757400900.000000002' },
   // The REFERENCE, which is a locator and carries the sequence number — filled
   // by `ack` after execution, because only then does the sequence exist (§5.2).
-  proof: {
-    hash: receiptManifest.hash,
-    uri: { ledgerTag: LEDGER, topicId: FX.recipientManifest, sequenceNumber: 7 },
-  },
-  witness: {
-    ledgerTag: LEDGER,
-    scheduleId: '0.0.7000301',
-    executedTimestamp: '1757400900.000000002',
-  },
-};
+  { ledgerTag: LEDGER, topicId: FX.recipientManifest, sequenceNumber: 7 },
+);
 validates('return-receipt', returnReceipt);
 
 // The receipt's manifest is a §5.2 Proof, whole: `inputs` through
@@ -230,7 +218,10 @@ ok(
 // hash and by nothing else, which is what lets a location name a topic.
 is(
   'the lookup finds the manifest among the topic\'s messages by hash alone',
-  manifestAmong([{ p: 'wishmail', t: 'manifest' }, receiptManifest], receiptManifest.hash),
+  manifestAmong(
+    [{ p: 'wishmail', t: 'manifest' }, receiptManifest as unknown as Record<string, unknown>],
+    receiptManifest.hash,
+  ),
   receiptManifest,
 );
 is(

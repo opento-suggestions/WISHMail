@@ -85,10 +85,7 @@ export async function submit(
     const resp = await frozen.execute(client);
     transactionId = resp.transactionId.toString();
     const receipt = await resp.getReceipt(client);
-    const entityId =
-      receipt.topicId?.toString() ??
-      receipt.tokenId?.toString() ??
-      receipt.accountId?.toString();
+    const entityId = entityOf(receipt);
     return {
       ok: true,
       status: receipt.status.toString(),
@@ -102,6 +99,40 @@ export async function submit(
       (err as Error).message ??
       'UNKNOWN';
     const id = (err as { transactionId?: { toString(): string } }).transactionId?.toString();
-    return { ok: false, status, transactionId: id ?? transactionId, payer: payerId };
+    // A FAILED STATUS CAN STILL NAME AN ENTITY, and one of them matters.
+    // `IDENTICAL_SCHEDULE_ALREADY_CREATED` is not a failure to create a
+    // schedule: it is the network refusing to make a SECOND schedule for an
+    // inner transaction that already has one, and its receipt carries the id of
+    // the one that exists (§10.4's resume — see `tools/send.ts` step 7). A
+    // caller that only got a status back would have to go looking for a schedule
+    // it had just been handed.
+    const entityId = entityOf((err as { receipt?: ReceiptLike }).receipt);
+    return {
+      ok: false,
+      status,
+      transactionId: id ?? transactionId,
+      payer: payerId,
+      ...(entityId ? { entityId } : {}),
+    };
   }
+}
+
+/** As much of a receipt as `entityOf` reads. Typed here so the catch can hold one. */
+interface ReceiptLike {
+  readonly topicId?: { toString(): string } | null;
+  readonly tokenId?: { toString(): string } | null;
+  readonly accountId?: { toString(): string } | null;
+  readonly scheduleId?: { toString(): string } | null;
+}
+
+/** The one entity a receipt names, where it names one. */
+function entityOf(receipt: ReceiptLike | undefined | null): string | undefined {
+  if (receipt === undefined || receipt === null) return undefined;
+  return (
+    receipt.topicId?.toString() ??
+    receipt.tokenId?.toString() ??
+    receipt.accountId?.toString() ??
+    receipt.scheduleId?.toString() ??
+    undefined
+  );
 }

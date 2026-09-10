@@ -27,6 +27,7 @@ import { envelopeIdOfMemo, headerPostage, headerWeightAgrees, recoverEnvelope, s
 import { refuse } from '../core/failure.js';
 import { LEDGER_TAGS } from '../core/aad.js';
 import { open } from '../core/seal.js';
+import { envelopeIdOfRequest } from '../core/receipt.js';
 import { accountOf } from '../ops/hcs10.js';
 import { before, compareTimestamps, operationOf, type Reader, type Settlement, type TopicMessage } from './consensus.js';
 
@@ -38,6 +39,28 @@ export type DeliveryReason =
   | 'INBOX_EPOCH_UNKNOWN'
   | 'INBOX_SCHEMA_UNRESOLVED';
 
+/**
+ * §6.5's fourth field, and what a Recipient does with it.
+ *
+ * "For a Recipient, a delivery whose header requests a receipt carries the
+ * pending schedule from the lane's `transaction` operation, so that `ack` can
+ * sign it." So this is not a receipt — it is the REQUEST, read off the lane by
+ * §11.2's own route, and it is what `ack` takes.
+ *
+ * `scheduleId` is present exactly where the lane carries a `transaction`
+ * operation naming this envelope. `hdr.rr` true with no such operation is a
+ * sender that was interrupted inside §6.4 step 7, and it is reported as it is —
+ * requested, not yet requestable — rather than hidden or invented.
+ */
+export interface PendingReceipt {
+  readonly scheduleId: string;
+  /** Where the request sits on the lane, so a reader can go and look at it. */
+  readonly sequenceNumber: number;
+  readonly consensusTimestamp: string;
+  /** True where the envelope's header asked for one (§7.7, `hdr.rr`). */
+  readonly requestedByHeader: boolean;
+}
+
 /** §6.5's `Delivery {envelope, opened, payload?, reason?, returnReceipt?}`. */
 export interface Delivery {
   readonly envelope: Envelope;
@@ -48,6 +71,42 @@ export interface Delivery {
   readonly detail?: string;
   readonly lane: string;
   readonly chunkPostmarks: readonly { readonly sequenceNumber: number; readonly consensusTimestamp: string }[];
+  /** §6.5's pending schedule, where the header requested a receipt (§10.4). */
+  readonly returnReceipt?: PendingReceipt;
+  /** The epoch the envelope OPENED under — what `ack` binds (§10.4, T-P1-9). */
+  readonly openedUnderEpoch?: number;
+}
+
+/**
+ * Every receipt request on a lane, by the envelope its `data` names.
+ *
+ * §10.4 permits a sender to request again — "each request is its own record" —
+ * so the LAST one is the pending schedule: an earlier request whose schedule
+ * expired unsigned is `unclaimed` and is a Verifier's business, not a
+ * recipient's.
+ */
+async function receiptRequests(reader: Reader, lane: string): Promise<Map<string, PendingReceipt>> {
+  const out = new Map<string, PendingReceipt>();
+  let messages: readonly TopicMessage[];
+  try {
+    messages = await reader.messages(lane);
+  } catch (e) {
+    refuse('INBOX_MIRROR_UNREACHABLE', e instanceof Error ? e.message : String(e));
+  }
+  for (const m of messages) {
+    const op = operationOf(m);
+    if (op === null || op['p'] !== 'hcs-10' || op['op'] !== 'transaction') continue;
+    const envelopeId = envelopeIdOfRequest(op['data']);
+    const scheduleId = op['schedule_id'];
+    if (envelopeId === null || typeof scheduleId !== 'string' || scheduleId === '') continue;
+    out.set(envelopeId, {
+      scheduleId,
+      sequenceNumber: m.sequenceNumber,
+      consensusTimestamp: m.consensusTimestamp,
+      requestedByHeader: false,
+    });
+  }
+  return out;
 }
 
 /**
@@ -168,6 +227,8 @@ export async function inbox(ctx: InboxContext, req: InboxRequest): Promise<reado
 
   for (const lane of req.lanes) {
     const observed = await chunksOnLane(ctx.reader, lane);
+    // §6.5's fourth field, read once per lane rather than once per envelope.
+    const requests = await receiptRequests(ctx.reader, lane);
 
     for (const id of envelopeIdsOf(observed)) {
       const binds = (h: ChunkHeader): boolean => bindsTo(h, lane, id);
@@ -260,7 +321,24 @@ export async function inbox(ctx: InboxContext, req: InboxRequest): Promise<reado
       // here is `INBOX_UNBOUND` and never a thrown failure of the tool (P-12).
       try {
         const payload = open(header.ep, key, unb64u(envelope.aad), walk.ciphertext as Buffer);
-        deliveries.push({ envelope, opened: true, payload, lane, chunkPostmarks });
+        // §6.5: "a delivery whose header requests a receipt carries the pending
+        // schedule from the lane's `transaction` operation, so that `ack` can
+        // sign it." Only on a delivery that OPENED: §6.6 refuses an envelope
+        // that did not bind, for every reason in §6.5 (T-P1-3), so a pending
+        // schedule on an unopened delivery would be an invitation to do the one
+        // thing `ack` may not.
+        const pending = requests.get(id);
+        deliveries.push({
+          envelope,
+          opened: true,
+          payload,
+          lane,
+          chunkPostmarks,
+          openedUnderEpoch: header.ke,
+          ...(pending === undefined
+            ? {}
+            : { returnReceipt: { ...pending, requestedByHeader: header.rr === true } }),
+        });
       } catch (e) {
         unopened('INBOX_UNBOUND', `the seal did not open: ${e instanceof Error ? e.message : String(e)} (§7.3)`);
       }

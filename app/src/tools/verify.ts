@@ -17,10 +17,6 @@
  *
  * WHAT THIS RELEASE DOES NOT DO, stated rather than hidden:
  *
- *  - Receipts are read as requests and appraised no further than `unclaimed`.
- *    §10.4's schedule lands with `ack`; until then a request has no schedule
- *    record to read, and inventing an appraisal for one would be inventing
- *    evidence (T-P1-8, T-P1-9, T-P15-5 stay failing).
  *  - `orphans` holds only the settlements this Verifier READ, and every
  *    settlement it reads is named by some chunk 0's `hdr.st`. §11.2's ingestion
  *    table is closed — "Nothing on that list is chosen by the Verifier or
@@ -41,7 +37,9 @@ import { recoverEnvelope, settlementMemo, type Envelope } from '../core/envelope
 import { refuse } from '../core/failure.js';
 import { isProofLocation } from '../core/locator.js';
 import { manifestAmong } from '../core/proof.js';
-import { accountOf } from '../ops/hcs10.js';
+import { envelopeIdOfRequest, receiptManifest, returnReceiptOf, type ReturnReceipt } from '../core/receipt.js';
+import { decodeScheduledSubmission } from '../core/schedulebody.js';
+import { accountOf, operatorId as operatorIdOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
 import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
 import { line } from './narration.js';
@@ -55,6 +53,7 @@ import { lanesFromDoorbell, closedBy } from './send.js';
 import {
   before,
   compareTimestamps,
+  keyMatchesPrefix,
   operationOf,
   postmarkOf,
   type Postmark,
@@ -102,6 +101,8 @@ export interface CorrespondenceEntry {
     readonly consensusTimestamp: string;
     readonly status: string;
   }[];
+  /** §5.8's ReturnReceipt, where this Verifier could name every field of one. */
+  readonly returnReceipt?: ReturnReceipt;
   readonly appraisal: {
     readonly declared: { readonly trustClass: string; readonly endorsements: readonly string[] };
     readonly appraised: { readonly standing: Standing; readonly reasons: readonly string[] };
@@ -360,6 +361,269 @@ async function schemaRefResolves(reader: Reader, schemaRef: string): Promise<boo
   }
 }
 
+/** One `transaction` operation on a lane, paired with the envelope it names. */
+interface LaneRequest {
+  readonly envelopeId: string | null;
+  readonly scheduleId: string;
+  readonly sequenceNumber: number;
+  readonly consensusTimestamp: string;
+}
+
+/** §11.4's four receipt statuses, and nothing else is one. */
+type ReceiptStatus = 'acked' | 'unclaimed' | 'invalid' | 'none';
+
+interface ReceiptAppraisal {
+  readonly status: ReceiptStatus;
+  readonly reasons: readonly string[];
+  /** One row per request, in the shape §5.10's bundle fixes, closed. */
+  readonly requests: readonly {
+    readonly scheduleId: string;
+    readonly sequenceNumber: number;
+    readonly consensusTimestamp: string;
+    readonly status: string;
+  }[];
+  /** §5.8's object, where this Verifier could name every field of one. */
+  readonly returnReceipt?: ReturnReceipt;
+  /** Whether §8.3's transition to ACKED is earned. */
+  readonly acked: boolean;
+}
+
+/** Receipt reasons, in the order they are reported. §11.5's table has no receipt row. */
+const RECEIPT_REASON_ORDER = ['T-P1-7', 'T-P1-8', 'T-P16-2', 'T-P12-2'] as const;
+
+function orderedReceiptReasons(reasons: readonly string[]): readonly string[] {
+  const seen = new Set(reasons);
+  return RECEIPT_REASON_ORDER.filter((r) => seen.has(r));
+}
+
+/**
+ * §11.4's return-receipt paragraph, check by check.
+ *
+ * "A Verifier reads each `transaction` operation on the lane that names a
+ * schedule, and each schedule's record as consensus recorded it: whether it
+ * executed, when, under whose signature, and to which topic its inner submission
+ * wrote. For an executed schedule, the Verifier reads the receipt manifest at
+ * the executed submission's postmark on the recipient's manifest topic and
+ * recomputes the receipt (§10.4)."
+ *
+ * WHO THE RECIPIENT IS, when nothing was replayed. §11.4 words the signature
+ * check as "the key of the account the resolution's coordinates name" — and a
+ * Verifier that claims no profile has no coordinates (§9.6), so on that reading
+ * every receipt this release meets would be unappraisable, which is a status
+ * §11.4 does not have. What it does have is the manifest itself: §10.4 puts the
+ * recipient's ACCOUNT in the receipt's meaning, so the account is inside the
+ * hash, and RECOMPOSING the manifest from the three inputs plus that account is
+ * what confirms it — a manifest naming any other account recomputes to a
+ * different hash. The account is then checked against consensus twice over: its
+ * key must be the submit key of the topic the receipt landed on (§10.4's "a
+ * topic only the recipient's key can write to"), and the prefix on the
+ * schedule's record must be that key (ledger §H). Where a profile IS claimed,
+ * the replayed coordinates are compared to the same account and a disagreement
+ * is `T-P1-8`. MINE, 2026-09-10, raised in the gate report rather than coded
+ * around.
+ */
+async function appraiseReceipt(
+  reader: Reader,
+  args: {
+    readonly envelopeId: string;
+    readonly lane: string;
+    readonly header: ChunkHeader;
+    readonly chunkZero: { readonly topicId: string; readonly sequenceNumber: number };
+    /** The nth chunk's consensus timestamp — what an execution must follow (§10.4). */
+    readonly lastChunkAt: string | null;
+    /** The envelope's standing from binding, postage and resolution (§11.5). */
+    readonly standing: Standing;
+    readonly requests: readonly LaneRequest[];
+    /** The recipient's account, where a claimed profile's replay named one. */
+    readonly replayedAccount?: string;
+    /** The recipient's `operator_id`, for §5.8's object. Only a replay can name it. */
+    readonly replayedOperatorId?: string;
+  },
+): Promise<ReceiptAppraisal> {
+  if (args.requests.length === 0) {
+    return { status: 'none', reasons: [], requests: [], acked: false };
+  }
+
+  const rows: { scheduleId: string; sequenceNumber: number; consensusTimestamp: string; status: string }[] = [];
+  let operative: ReceiptStatus = 'unclaimed';
+  let reasons: string[] = [];
+  let receipt: ReturnReceipt | undefined;
+  let acked = false;
+
+  for (const request of args.requests) {
+    const one = await appraiseOneRequest(reader, args, request);
+    rows.push({
+      scheduleId: request.scheduleId,
+      sequenceNumber: request.sequenceNumber,
+      consensusTimestamp: request.consensusTimestamp,
+      status: one.status,
+    });
+    // §10.4: "A sender MAY request again … each request is its own record." An
+    // envelope with two requests, one of which was signed for, IS acknowledged;
+    // so `acked` wins over every other status and the last one otherwise stands.
+    if (one.status === 'acked') {
+      operative = 'acked';
+      reasons = [...one.reasons];
+      receipt = one.returnReceipt;
+      acked = one.acked;
+    } else if (operative !== 'acked') {
+      operative = one.status;
+      reasons = [...one.reasons];
+    }
+  }
+
+  return {
+    status: operative,
+    reasons: orderedReceiptReasons(reasons),
+    requests: rows,
+    ...(receipt === undefined ? {} : { returnReceipt: receipt }),
+    acked,
+  };
+}
+
+async function appraiseOneRequest(
+  reader: Reader,
+  args: Parameters<typeof appraiseReceipt>[1],
+  request: LaneRequest,
+): Promise<{
+  readonly status: ReceiptStatus;
+  readonly reasons: readonly string[];
+  readonly returnReceipt?: ReturnReceipt;
+  readonly acked: boolean;
+}> {
+  // A request whose `data` names a different envelope never reaches here; one
+  // that names none at all is not a receipt request this rule can pair.
+  const record = await reader.schedule(request.scheduleId);
+
+  // §10.4: "A schedule that expires unsigned is deleted by the network; the
+  // lane's `transaction` operation remains, and reconciliation reports the
+  // envelope as `unclaimed`." A schedule consensus no longer holds is exactly
+  // that, and T-P15-5 forbids reporting it as refused, returned or undelivered.
+  if (record === null || record.deleted) return { status: 'unclaimed', reasons: [], acked: false };
+  if (record.executedTimestamp === null) return { status: 'unclaimed', reasons: [], acked: false };
+
+  const reasons: string[] = [];
+
+  // "to which topic its inner submission wrote" — from the schedule's own body.
+  let inner: { topicId: string; message: Buffer };
+  try {
+    inner = decodeScheduledSubmission(Buffer.from(record.transactionBody, 'base64'));
+  } catch {
+    // A schedule that executed something other than a submission is not a
+    // receipt. Recorded, never thrown (P-12).
+    return { status: 'invalid', reasons: ['T-P1-8'], acked: false };
+  }
+
+  // The manifest the execution published, as bytes. Parsed only to learn which
+  // account it names; every field of it is then confirmed by recomposition.
+  let published: Record<string, unknown>;
+  try {
+    published = JSON.parse(inner.message.toString('utf8')) as Record<string, unknown>;
+  } catch {
+    return { status: 'invalid', reasons: ['T-P1-8'], acked: false };
+  }
+  const meaning = published['meaning'] as Record<string, unknown> | undefined;
+  const statement = typeof meaning?.['statement'] === 'string' ? (meaning['statement'] as string) : '';
+  const account = statement.split(' ')[0] ?? '';
+
+  // RECOMPUTE (§11.4): "its inputs name this `id`, this chunk 0 postmark, and
+  // this epoch; its hash matches". Composed from what this Verifier read off the
+  // lane, never from the manifest — a manifest that names a different
+  // identifier, postmark, epoch, account or topic recomputes to a different hash.
+  const composed = /^[0-9]+\.[0-9]+\.[0-9]+$/.test(account)
+    ? receiptManifest({
+        ledgerTag: reader.ledgerTag,
+        envelopeId: args.envelopeId,
+        postmarkRef: args.chunkZero,
+        keyEpoch: args.header.ke,
+        recipientAccount: account,
+        manifestTopic: inner.topicId,
+      })
+    : null;
+  if (composed === null || published['hash'] !== composed.hash) reasons.push('T-P1-8');
+
+  // "the signature on the schedule's record is by the key of the account the
+  // resolution's coordinates name — the record carries the signing key's prefix,
+  // and the Verifier reads that account's key from consensus and matches it."
+  const recipientKey = await reader.accountKey(account);
+  const signedByRecipient = record.signatures.some((s) => keyMatchesPrefix(recipientKey, s.publicKeyPrefix));
+  if (!signedByRecipient) reasons.push('T-P1-8');
+
+  // §10.4's mechanism, checked rather than assumed: the receipt landed on a
+  // topic only the recipient's key can write to.
+  const topic = await reader.topic(inner.topicId);
+  if (topic === null || !topic.submitKeys.includes(recipientKey ?? ' ')) reasons.push('T-P1-8');
+
+  // Where a profile WAS claimed, the coordinates and the manifest must name one
+  // recipient. Where none was, this check is not made and the gate report says so.
+  if (args.replayedAccount !== undefined && args.replayedAccount !== account) reasons.push('T-P1-8');
+
+  // T-P16-2: the recipient is never charged for a receipt.
+  if (record.payer === account) reasons.push('T-P16-2');
+
+  // "the execution follows the nth chunk" (§8.3, T-P1-7).
+  if (args.lastChunkAt !== null && !before(args.lastChunkAt, record.executedTimestamp)) reasons.push('T-P1-7');
+
+  // §8.3's MUST: "A receipt MUST NOT move an envelope to ACKED unless the
+  // envelope is SETTLED at the receipt's consensus timestamp and its standing is
+  // verified or unverified" (T-P1-7).
+  if (args.standing !== 'verified' && args.standing !== 'unverified') reasons.push('T-P1-7');
+
+  // §11.4/§8.6: "A receipt for an envelope whose header did not request one
+  // counts, and the reason names it." It COUNTS — so this is not `invalid` —
+  // and it is reported with a reason beside it.
+  //
+  // WHICH REASON, and this is a finding rather than a choice. §11.4 requires one
+  // and section A of the ledger names no test for §8.6's unrequested receipt:
+  // T-P1-7 is receipts witnessed too early or on a bad standing, T-P1-8 is the
+  // mechanism, and neither is this. §11.5 gives the one sanctioned answer for a
+  // condition its own table does not name — "reports … with the reason
+  // `T-P12-2`" — so that is what is used, and it flags the gap in the Verifier's
+  // own output rather than borrowing a test id that means something else.
+  // MINE, 2026-09-10, ledger §G.
+  const unrequested = args.header.rr !== true;
+
+  // T-P1-8's last clause: "the executed submission's postmark is on the
+  // recipient's manifest topic". Read the topic and find the message the
+  // execution assigned, content-addressed by the proof's hash (§5.2).
+  let publishedAt: { topicId: string; sequenceNumber: number } | null = null;
+  if (composed !== null) {
+    for (const m of await reader.messages(inner.topicId)) {
+      const body = operationOf(m);
+      if (body === null || body['hash'] !== composed.hash) continue;
+      if (compareTimestamps(m.consensusTimestamp, record.executedTimestamp) < 0) continue;
+      publishedAt = { topicId: m.topicId, sequenceNumber: m.sequenceNumber };
+    }
+    if (publishedAt === null) reasons.push('T-P1-8');
+  }
+
+  if (reasons.length > 0) return { status: 'invalid', reasons, acked: false };
+
+  const returnReceipt =
+    args.replayedOperatorId === undefined || composed === null
+      ? undefined
+      : returnReceiptOf(
+          {
+            ledgerTag: reader.ledgerTag,
+            envelopeId: args.envelopeId,
+            postmarkRef: args.chunkZero,
+            keyEpoch: args.header.ke,
+            recipientAccount: account,
+            manifestTopic: inner.topicId,
+          },
+          args.replayedOperatorId,
+          { scheduleId: record.scheduleId, executedTimestamp: record.executedTimestamp },
+          publishedAt === null ? null : { ledgerTag: reader.ledgerTag, ...publishedAt },
+        );
+
+  return {
+    status: 'acked',
+    reasons: unrequested ? ['T-P12-2'] : [],
+    ...(returnReceipt === undefined ? {} : { returnReceipt }),
+    acked: true,
+  };
+}
+
 /** §6.7. Reads the topics in scope, reassembles, replays, and appraises. */
 export async function verify(
   reader: Reader,
@@ -384,18 +648,21 @@ export async function verify(
     }
 
     // §11.2: the lane also carries the receipt requests and the close.
+    //
+    // EACH REQUEST BELONGS TO ONE ENVELOPE. Until 2026-09-10 this list was
+    // attached whole to every envelope on the lane, which was invisible while a
+    // lane held one letter and wrong the moment it held two: a `transaction`
+    // operation names the envelope it is for in its own `data` (§10.4), and that
+    // is what pairs them — never position, and never the lane.
     const laneMessages = await reader.messages(lane);
-    const requests = laneMessages
+    const laneRequests = laneMessages
       .map((m) => ({ m, op: operationOf(m) }))
       .filter((x) => x.op !== null && x.op['p'] === 'hcs-10' && x.op['op'] === 'transaction')
       .map((x) => ({
+        envelopeId: envelopeIdOfRequest(x.op?.['data']),
         scheduleId: typeof x.op?.['schedule_id'] === 'string' ? (x.op['schedule_id'] as string) : '',
         sequenceNumber: x.m.sequenceNumber,
         consensusTimestamp: x.m.consensusTimestamp,
-        // No schedule record is read in this release; a request whose outcome
-        // is unread is `unclaimed`, which is the one status §11.4 gives a
-        // request that has not been signed for.
-        status: 'unclaimed',
       }));
 
     for (const id of envelopeIdsOf(observed)) {
@@ -430,6 +697,8 @@ export async function verify(
       const header = zero.chunk.hdr as ChunkHeader;
       const { envelope } = recoverEnvelope(zero.chunk, lane);
       const chunkZeroAt = zero.consensusTimestamp;
+      let replayedAccount: string | undefined;
+      let replayedOperatorId: string | undefined;
 
       // §11.2's window bounds what is RECONCILED, not what is read.
       if (options.window !== undefined) {
@@ -538,6 +807,12 @@ export async function verify(
             if (closed !== null) reasons.push('T-P9-6');
           }
           if (typeof output?.['keyEpoch'] === 'number' && output['keyEpoch'] !== header.ke) reasons.push('T-P1-10');
+          // Kept for §11.4's receipt paragraph, which names "the account the
+          // resolution's coordinates name". Only a claimed profile has any.
+          if (typeof account === 'string') replayedAccount = account;
+          if (typeof account === 'string' && typeof doorbell === 'string') {
+            replayedOperatorId = operatorIdOf(doorbell, account);
+          }
         } else {
           resolutionReasons.push('T-P12-4');
         }
@@ -550,21 +825,49 @@ export async function verify(
       const state: EnvelopeState = complete ? 'SETTLED' : 'SUBMITTED';
 
       const all = ordered([...reasons, ...resolutionReasons]);
+      const standing = lowest(all);
+
+      // --- The return receipt (§11.4). ----------------------------------------
+      // Appraised AFTER the standing, because §8.3's MUST reads it: a receipt
+      // moves an envelope to ACKED only where the envelope is SETTLED and its
+      // standing is verified or unverified (T-P1-7).
+      const lastChunk = walk.chain[walk.chain.length - 1];
+      const receipt = await appraiseReceipt(reader, {
+        envelopeId: id,
+        lane,
+        header,
+        chunkZero: { topicId: lane, sequenceNumber: zero.sequenceNumber },
+        lastChunkAt: complete && lastChunk !== undefined ? lastChunk.consensusTimestamp : null,
+        standing,
+        requests: laneRequests.filter((r) => r.envelopeId === id),
+        ...(replayedAccount === undefined ? {} : { replayedAccount }),
+        ...(replayedOperatorId === undefined ? {} : { replayedOperatorId }),
+      });
+      // The recipient's manifest topic is read by §11.2's table only through an
+      // executed schedule, so it joins the bundle's topics only when one did.
+      const receiptTopic = receipt.returnReceipt?.proof.uri?.topicId;
+      if (receiptTopic !== undefined) topicsRead.add(receiptTopic);
+
       entries.push({
         envelope,
-        state,
+        // §8.3: SETTLED -> ACKED, "the receipt is witnessed", dated by the
+        // witness's consensus timestamp. Nothing else moves an envelope here.
+        state: receipt.acked ? 'ACKED' : state,
         chunks: walk.chain.map((o) => postmarkOf(toMessage(o, lane), reader.ledgerTag, id, o.chunk.i)),
         offChain: walk.offChain.map((o) => postmarkOf(toMessage(o, lane), reader.ledgerTag, id, o.chunk.i)),
         ...(settlement === null ? {} : { settlement }),
-        requests,
+        requests: receipt.requests,
+        ...(receipt.returnReceipt === undefined ? {} : { returnReceipt: receipt.returnReceipt }),
         appraisal: {
           declared,
-          appraised: { standing: lowest(all), reasons: all },
+          // §11.5: "the receipt does not lower it — an invalid receipt is a fact
+          // about the receipt — and nothing raises it."
+          appraised: { standing, reasons: all },
           resolution: {
             standing: resolutionReasons.length === 0 ? 'verified' : 'unverified',
             reasons: ordered(resolutionReasons),
           },
-          receipt: { status: requests.length === 0 ? 'none' : 'unclaimed', reasons: [] },
+          receipt: { status: receipt.status, reasons: receipt.reasons },
         },
       });
     }

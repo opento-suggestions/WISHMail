@@ -30,9 +30,11 @@ import path from 'node:path';
 import { repoRoot } from '../src/ops/env.js';
 import { epochKeys } from './keystore.js';
 import { liveReader } from './live.js';
+import { open as openStore } from '../src/state/store.js';
 import { operationOf } from '../src/tools/consensus.js';
+import type { AckContext } from '../src/tools/ack.js';
 import type { InboxContext } from '../src/tools/inbox.js';
-import type { SenderContext } from '../src/tools/send.js';
+import type { SenderContext, SentEnvelope, SentEnvelopes } from '../src/tools/send.js';
 import type { Session } from './session.js';
 
 interface PinsFile {
@@ -90,7 +92,59 @@ export function senderContext(s: Session): SenderContext {
     stampToken: s.stampToken,
     schemaRef: chunkSchemaRef(),
     publicKey: s.agentPublicHex,
+    // §10.4's payer, named rather than defaulted. D-157 over D-47: the sender
+    // chooses, and this deployment's answer is the sender's own operator wallet,
+    // because Postmaster-pays carry outside `buy_stamp` is deferred this window
+    // (CLAUDE.md §11, LIMITATIONS L-5). It is never the recipient (T-P16-2), and
+    // it is never the agent's own account, which holds ℏ for one act and by
+    // §4.6's design should not be spending it on anyone else's mail.
+    receiptPayer: s.payerId,
+    sent: sentEnvelopes(s),
   };
+}
+
+/**
+ * What the acknowledging agent is, for §6.6.
+ *
+ * The same ids `senderContext` reads out of the agent's own record — and it is
+ * the same agent: an agent that receives a letter is one that sent one, and
+ * `manifestTopic` is where §10.4 requires ITS receipt to land, which is the one
+ * topic in the whole mechanism that only this agent's key can write to.
+ */
+export function ackContext(s: Session): AckContext {
+  if (s.account === '') throw new Error('this agent has no account yet; the purchase creates it (§4.6, HIP-542)');
+  return {
+    consensus: s.consensus,
+    ledgerTag: s.ledgerTag,
+    account: s.account,
+    doorbell: mine(s, 'doorbell'),
+    manifestTopic: mine(s, 'manifest'),
+  };
+}
+
+/**
+ * The sent-envelope rows, in the agent's own home (D-165, P-7).
+ *
+ * `store.ts`'s namespace, keyed by envelope identifier, which is 64 hex
+ * characters and therefore already a safe key. Nothing here decides anything: it
+ * is what lets a later run NAME an envelope this agent affixed, so it can go and
+ * ask consensus about it.
+ */
+export function sentEnvelopes(s: Session): SentEnvelopes {
+  const store = openStore(s.home.storeDir, 'envelopes');
+  return {
+    get: (envelopeId) => store.get<SentEnvelope>(envelopeId)?.value,
+    put: (row) => {
+      store.put(row.envelopeId, row, { overwrite: true });
+    },
+  };
+}
+
+/** Every envelope this agent has a row for, newest first — what `--resume` lists. */
+export function sentEnvelopeRows(s: Session): readonly SentEnvelope[] {
+  return openStore(s.home.storeDir, 'envelopes')
+    .entries<SentEnvelope>()
+    .map((e) => e.value);
 }
 
 /**

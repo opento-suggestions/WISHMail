@@ -9,12 +9,28 @@
  *   6. Settle      block until every chunk has a consensus timestamp
  *   7. Receipt     the scheduled submission of §10.4, when one was requested
  *
- * Steps 1 to 6 are here. Step 7 is NOT, and `send` refuses `returnReceipt`
- * rather than skipping it: postage would include the receipt fee (§7.5) and
- * chunk 0's header would request it (§7.7), so an envelope assembled without
- * step 7 is one whose sender paid for a receipt nobody was asked for — an
- * artefact that is wrong on consensus and cannot be withdrawn. §10.4's schedule
- * lands with `ack` (T-P1-8, T-P1-9), and the refusal is what holds the place.
+ * ALL SEVEN ARE HERE as of Gate Two checkpoint two. Step 7 was refused outright
+ * until 2026-09-10, and the refusal was the right shape while it stood: postage
+ * includes the receipt fee (§7.5) and chunk 0's header requests it (§7.7), so an
+ * envelope assembled without step 7 is one whose sender paid for a receipt
+ * nobody was asked for — an artefact that is wrong on consensus and cannot be
+ * withdrawn.
+ *
+ * STEP 7 IS IDEMPOTENT AGAINST CONSENSUS, like every other write this project
+ * makes (D-165). Before it creates anything it reads the lane for a
+ * `transaction` operation whose `data` names this envelope, and reuses the
+ * schedule that operation names. Beneath that the LEDGER itself refuses a
+ * second one: an identical inner transaction returns
+ * `IDENTICAL_SCHEDULE_ALREADY_CREATED` with the existing schedule id, so two
+ * schedules for one envelope is not a state this code has to be careful enough
+ * to avoid.
+ *
+ * THE ORDER INSIDE STEP 7 IS SCHEDULE FIRST, THEN THE LANE. A `transaction`
+ * operation naming a schedule that does not exist is a request a recipient
+ * cannot act on and a Verifier cannot resolve; a schedule with no operation
+ * naming it is invisible to §11.2's ingestion table and expires unsigned, which
+ * is `unclaimed` — a state §11.4 already has a word for. Of the two ways to be
+ * interrupted, only one leaves a fact that says something false.
  *
  * WHO SUBMITS THE FIRST-CONTACT REQUEST is settled, and the seam stays.
  * D-157 (2026-09-09): the sender always signs the request, and who pays for
@@ -39,6 +55,12 @@ import { refuse } from '../core/failure.js';
 import type { MessageLocator } from '../core/locator.js';
 import { messageOperation } from '../core/chunk.js';
 import {
+  envelopeIdOfRequest,
+  receiptManifestBytes,
+  transactionOperation,
+  type ReceiptManifestInput,
+} from '../core/receipt.js';
+import {
   TRANSACTION_MEMO,
   TRANSACTION_OP_MEMO,
   connectionRequestBody,
@@ -52,6 +74,7 @@ import {
   type Consensus,
   type Postmark,
   type Reader,
+  type ScheduleRecord,
   type Settlement,
   type TopicMessage,
   type Writer,
@@ -100,6 +123,65 @@ export interface SenderContext {
    * Absent: the sender rings the doorbell itself and pays the fee itself.
    */
   readonly ringer?: Writer;
+  /**
+   * Who pays for the RECEIPT's inner transaction when the recipient signs it
+   * (§10.4, §6.4 step 7).
+   *
+   * §10.4 makes it "the payer designated by the sender", and its parenthetical
+   * names the Postmaster on D-47. D-157 is later and wider: the sender always
+   * signs and who pays is the sender's choice, for this submission as for every
+   * other one it makes. Postmaster-pays carry outside `buy_stamp` is deferred
+   * this window (CLAUDE.md §11, LIMITATIONS L-5), so this deployment names the
+   * sender's own operator wallet.
+   *
+   * What it must NEVER be is the recipient: "The recipient MUST NOT be charged
+   * for a receipt" (T-P16-2). That is checked below rather than assumed.
+   *
+   * Absent: the sender's own account pays — §10.4's arrangement for a sender
+   * that pays for itself.
+   */
+  readonly receiptPayer?: string;
+  /**
+   * The sender's own durable record of what it has affixed (D-165).
+   *
+   * P-7 is why it exists: one settlement stamps one envelope, and a run that
+   * died between the affix and the last chunk has spent postage on an envelope
+   * that only this process knew the identifier of. Consensus knows it too — the
+   * settlement's memo IS the identifier — but only if someone knows to look, and
+   * a fresh process does not. So the row is written at the affix, before the
+   * transfer is submitted, and updated as the run proceeds.
+   *
+   * It is a CACHE OF CONSENSUS and never an authority over it: nothing in
+   * `send` reads it to decide anything, and `resumeReceipt` below reads it only
+   * to learn which envelope to go and ask consensus about. A wiped store
+   * therefore loses a convenience and not a fact.
+   *
+   * Absent: the tool keeps no record, which is what every offline court and
+   * every dry run wants.
+   */
+  readonly sent?: SentEnvelopes;
+}
+
+/** What `send` writes down about an envelope it is posting, as it posts it. */
+export interface SentEnvelope {
+  readonly envelopeId: string;
+  readonly lane: string;
+  readonly recipientAccount: string;
+  readonly settlementRef: string;
+  readonly postage: number;
+  readonly returnReceipt: boolean;
+  /** `affixed` → `submitted` → `settled` → `requested`; the last only where a receipt was asked for. */
+  readonly stage: 'affixed' | 'submitted' | 'settled' | 'requested';
+  readonly chunkCount: number;
+  readonly chunkZero?: { readonly topicId: string; readonly sequenceNumber: number };
+  readonly keyEpoch: number;
+  readonly scheduleId?: string;
+}
+
+/** The store port. One namespace, keyed by envelope identifier. */
+export interface SentEnvelopes {
+  get(envelopeId: string): SentEnvelope | undefined;
+  put(row: SentEnvelope): void;
 }
 
 export interface SendRequest {
@@ -110,6 +192,15 @@ export interface SendRequest {
   readonly returnReceipt?: boolean;
   /** Seconds to wait for an answer at first contact (§6.4, §10.5). */
   readonly windowSeconds?: number;
+  /**
+   * The ACKNOWLEDGMENT window, in seconds — §10.4's, which is a different
+   * window from the one above and is measured in days rather than seconds.
+   *
+   * "The schedule's expiration is the acknowledgment window: a sender
+   * parameter, in seconds, at most `SCHEDULE_MAX_LIFETIME` (§1.6; sixty-two
+   * days), defaulting to that maximum."
+   */
+  readonly receiptWindowSeconds?: number;
 }
 
 /** §5.9's AttemptedDeliverySlip. */
@@ -127,6 +218,20 @@ export interface AttemptedDeliverySlip {
   readonly endorsement: 'timed-out';
 }
 
+/** What step 7 produced, where one was asked for (§10.4). */
+export interface ReceiptRequested {
+  readonly scheduleId: string;
+  /** The schedule's expiration — the acknowledgment window's end (§10.4). */
+  readonly expirationTime: string | null;
+  /** Where the `transaction` operation announcing it sits on the lane. */
+  readonly requestSequenceNumber: number;
+  readonly requestConsensusTimestamp: string;
+  /** The manifest the schedule carries, by its hash — what `ack` and `verify` recompute. */
+  readonly manifestHash: string;
+  /** True where an existing request on the lane was reused rather than a second schedule made. */
+  readonly reused: boolean;
+}
+
 export interface SendPostmarked {
   readonly kind: 'postmark';
   /** §6.4: "send then returns chunk 0's Postmark" (D-30). */
@@ -136,6 +241,8 @@ export interface SendPostmarked {
   readonly settlement: Settlement;
   readonly manifestLocator: MessageLocator;
   readonly lane: string;
+  /** §6.4 step 7, present exactly when `returnReceipt` was true. */
+  readonly receipt?: ReceiptRequested;
 }
 
 export interface SendSlipped {
@@ -365,6 +472,169 @@ async function firstContact(
   };
 }
 
+/**
+ * §10.4's acknowledgment window, defaulting to `SCHEDULE_MAX_LIFETIME`.
+ *
+ * §1.6 pins the maximum at 5,356,800 seconds — sixty-two days — for every
+ * network (D-77, verified 2026-09-05 against the Hedera documentation and
+ * recorded in ledger §H). §10.4 makes the window "a sender parameter, in
+ * seconds, at most `SCHEDULE_MAX_LIFETIME`, defaulting to that maximum", and
+ * this is both halves of that sentence.
+ */
+export const SCHEDULE_MAX_LIFETIME = 5_356_800;
+
+/**
+ * A `transaction` operation on the lane that names a schedule for this envelope
+ * — §11.2's own route to the schedule, read from consensus.
+ *
+ * Returns the LAST such operation. §10.4 permits a sender to request again —
+ * "each request is its own record" — so more than one is conformant, and the
+ * one that matters to a recipient about to sign is the most recent.
+ */
+async function receiptRequestOn(
+  reader: Reader,
+  lane: string,
+  envelopeId: string,
+): Promise<{ readonly scheduleId: string; readonly message: TopicMessage } | null> {
+  let found: { scheduleId: string; message: TopicMessage } | null = null;
+  for (const m of await reader.messages(lane)) {
+    const op = operationOf(m);
+    if (op === null || op['p'] !== 'hcs-10' || op['op'] !== 'transaction') continue;
+    if (envelopeIdOfRequest(op['data']) !== envelopeId) continue;
+    const scheduleId = op['schedule_id'];
+    if (typeof scheduleId !== 'string' || scheduleId === '') continue;
+    found = { scheduleId, message: m };
+  }
+  return found;
+}
+
+/**
+ * §6.4 step 7 — the scheduled receipt, and the operation that announces it.
+ *
+ * Separated from `send` so that a run interrupted inside step 7's own window
+ * can be resumed without re-affixing anything (P-7): the envelope is SETTLED
+ * either way, and what is missing is a request, not postage.
+ */
+export async function requestReceipt(
+  ctx: SenderContext,
+  args: {
+    readonly coordinates: Coordinates;
+    readonly envelopeId: string;
+    readonly lane: string;
+    readonly chunkZero: { readonly topicId: string; readonly sequenceNumber: number };
+    readonly keyEpoch: number;
+    readonly windowSeconds?: number;
+  },
+): Promise<ReceiptRequested> {
+  const manifestInput: ReceiptManifestInput = {
+    ledgerTag: ctx.ledgerTag,
+    envelopeId: args.envelopeId,
+    postmarkRef: args.chunkZero,
+    keyEpoch: args.keyEpoch,
+    recipientAccount: args.coordinates.account,
+    manifestTopic: args.coordinates.manifestTopic,
+  };
+  const message = receiptManifestBytes(manifestInput);
+  const manifestHash = canonicalDigest(JSON.parse(message.toString('utf8')) as Record<string, unknown>, 'hash');
+
+  // IDEMPOTENT AGAINST CONSENSUS FIRST (D-165). A request already standing on
+  // this lane for this envelope is the request; a second schedule would give the
+  // recipient two things to sign for one envelope, and §11.4 would then have to
+  // decide which receipt is the receipt.
+  const standing = await receiptRequestOn(ctx.consensus, args.lane, args.envelopeId);
+  if (standing !== null) {
+    const record = await ctx.consensus.schedule(standing.scheduleId);
+    return {
+      scheduleId: standing.scheduleId,
+      expirationTime: record?.expirationTime ?? null,
+      requestSequenceNumber: standing.message.sequenceNumber,
+      requestConsensusTimestamp: standing.message.consensusTimestamp,
+      manifestHash,
+      reused: true,
+    };
+  }
+
+  const windowSeconds = args.windowSeconds ?? SCHEDULE_MAX_LIFETIME;
+  if (windowSeconds > SCHEDULE_MAX_LIFETIME) {
+    throw new Error(
+      `send: an acknowledgment window of ${windowSeconds}s is over SCHEDULE_MAX_LIFETIME ${SCHEDULE_MAX_LIFETIME}s (§1.6, §10.4)`,
+    );
+  }
+
+  // The inner submission goes to the RECIPIENT's manifest topic, which only the
+  // recipient's key can write to — which is what makes the recipient's signature
+  // the only one that can complete it (§10.4). The payer is the SENDER's choice
+  // (D-157) and is never the recipient (T-P16-2).
+  let record: ScheduleRecord;
+  try {
+    record = await ctx.consensus.scheduleSubmission({
+      topicId: args.coordinates.manifestTopic,
+      message,
+      payerAccountId: ctx.receiptPayer ?? ctx.account,
+      expirationSeconds: windowSeconds,
+    });
+  } catch (e) {
+    // Not a §6.4 failure code: the envelope is SETTLED and stays SETTLED, and
+    // §10.4 names no refusal for a request that could not be made. It is raised
+    // so the caller sees it rather than reporting a receipt nobody asked for.
+    throw new Error(`send: the receipt's schedule was not created (§6.4 step 7): ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  const announced = await ctx.consensus.submitMessage(
+    args.lane,
+    transactionOperation(operatorIdOf(ctx.doorbell, ctx.account), record.scheduleId, args.envelopeId),
+    // HCS-10 gives the `transaction` operation no memo at the pin (D-94, recon
+    // C-5), and §6.1 says a tool MUST carry none where it defines none.
+    TRANSACTION_OP_MEMO,
+  );
+
+  return {
+    scheduleId: record.scheduleId,
+    expirationTime: record.expirationTime,
+    requestSequenceNumber: announced.sequenceNumber,
+    requestConsensusTimestamp: announced.consensusTimestamp,
+    manifestHash,
+    reused: false,
+  };
+}
+
+/**
+ * Resume step 7 for an envelope this sender already posted — P-7's resume, and
+ * the only thing a rerun of a `send` that died after SETTLED should do.
+ *
+ * A plain rerun of `send` is NOT a resume: §7.2 requires a fresh nonce per
+ * envelope, so composing again produces a different envelope and a second
+ * settlement. The identifier is the handle, and the store is where the caller
+ * finds it (D-165).
+ */
+export async function resumeReceipt(
+  ctx: SenderContext,
+  coordinates: Coordinates,
+  envelopeId: string,
+): Promise<ReceiptRequested> {
+  const row = ctx.sent?.get(envelopeId);
+  if (row === undefined) {
+    throw new Error(`send: this sender has no record of the envelope ${envelopeId}; there is nothing to resume`);
+  }
+  if (!row.returnReceipt) {
+    throw new Error(`send: the envelope ${envelopeId} requested no return receipt (§7.7), so step 7 was never owed`);
+  }
+  if (row.chunkZero === undefined) {
+    throw new Error(
+      `send: the envelope ${envelopeId} never reached SUBMITTED, so it has no chunk 0 postmark for a receipt to name (§10.4)`,
+    );
+  }
+  const out = await requestReceipt(ctx, {
+    coordinates,
+    envelopeId,
+    lane: row.lane,
+    chunkZero: row.chunkZero,
+    keyEpoch: row.keyEpoch,
+  });
+  ctx.sent?.put({ ...row, stage: 'requested', scheduleId: out.scheduleId });
+  return out;
+}
+
 /** §10.5's slip proof, as a manifest to publish. */
 function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string, manifestTopic: string): Record<string, unknown> {
   const parts = {
@@ -418,12 +688,24 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
   if (coordinates.ledgerTag !== ctx.ledgerTag) {
     refuse('SEND_UNRESOLVED', `the coordinates name ${coordinates.ledgerTag} and this sender is on ${ctx.ledgerTag}`);
   }
-  if (req.returnReceipt === true) {
-    // Not a TOOL_REASON: §6.4 names no failure for this, because in a release
-    // that implements §10.4 there is none. See the head of this file.
-    throw new Error(
-      'send: returnReceipt is not implemented in this release — §10.4 lands with `ack` (T-P1-8, T-P1-9), and postage that pays for a receipt nobody requested is an artefact on consensus that cannot be withdrawn',
-    );
+  const returnReceipt = req.returnReceipt === true;
+  if (returnReceipt) {
+    // T-P16-2, at the one place it can be enforced rather than observed: "The
+    // recipient MUST NOT be charged for a receipt." A schedule whose payer is
+    // the recipient would charge the recipient the instant it signed, and by
+    // then the bytes are on consensus and cannot be edited (§10.4).
+    const payer = ctx.receiptPayer ?? ctx.account;
+    if (payer === coordinates.account) {
+      throw new Error(
+        `send: the receipt's schedule would name the recipient ${payer} as its payer, and §10.4 forbids charging the recipient for a receipt (T-P16-2)`,
+      );
+    }
+    if (coordinates.manifestTopic === '' || coordinates.manifestTopic === undefined) {
+      refuse(
+        'SEND_UNRESOLVED',
+        'the coordinates name no manifest topic for the recipient, and §10.4 schedules the receipt to exactly that topic (§5.3, D-166)',
+      );
+    }
   }
 
   const recipientKey = await ctx.consensus.accountKey(coordinates.account);
@@ -494,7 +776,7 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
     recipientX25519Pub: coordinates.x25519Pub,
     keyEpoch: coordinates.keyEpoch,
     payload: req.payload,
-    returnReceipt: false,
+    returnReceipt,
     schemaRef: ctx.schemaRef,
     operatorId: operatorIdOf(ctx.doorbell, ctx.account),
   });
@@ -515,6 +797,22 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
   let settlement: Settlement;
   try {
     assembled = affix(sealed, settlementRef);
+    // WRITTEN BEFORE THE TRANSFER IS SUBMITTED, and that ordering is the whole
+    // value of the row (P-7). A run that dies inside the transfer's own window
+    // has either spent postage or not, and only the identifier can tell anyone
+    // which — it is what the memo on consensus carries, and a fresh process
+    // would not know to look for it.
+    ctx.sent?.put({
+      envelopeId: sealed.id,
+      lane: lane.topicId,
+      recipientAccount: coordinates.account,
+      settlementRef,
+      postage: sealed.postage,
+      returnReceipt,
+      stage: 'affixed',
+      chunkCount: assembled.chunks.length,
+      keyEpoch: coordinates.keyEpoch,
+    });
     settlement = await ctx.consensus.transferStamps(settlementRef, ctx.treasury, sealed.postage, sealed.memo);
   } catch (e) {
     // Nothing submitted, nothing consumed (§6.4's postcondition on this failure).
@@ -541,6 +839,16 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       );
     }
     postmarks.push(postmarkOf(message, ctx.ledgerTag, sealed.id, chunk.i));
+    if (chunk.i === 0) {
+      const affixed = ctx.sent?.get(sealed.id);
+      if (affixed !== undefined) {
+        ctx.sent?.put({
+          ...affixed,
+          stage: 'submitted',
+          chunkZero: { topicId: message.topicId, sequenceNumber: message.sequenceNumber },
+        });
+      }
+    }
   }
 
   // `submitMessage` returns only once consensus has assigned a timestamp, so
@@ -555,6 +863,29 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
     );
   }
 
+  const row = ctx.sent?.get(sealed.id);
+  const chunkZero = { topicId: zero.topicId, sequenceNumber: zero.sequenceNumber };
+  if (row !== undefined) ctx.sent?.put({ ...row, stage: 'settled', chunkZero });
+
+  // --- 7. Receipt request (§6.4 step 7, §10.4). ------------------------------
+  // The envelope is SETTLED before this runs and stays SETTLED whatever happens
+  // in it: a receipt is a different proof on a different axis (§8.1), and a
+  // request that fails to be made leaves an envelope that was delivered to the
+  // lane exactly as one that was never asked for.
+  let receipt: ReceiptRequested | undefined;
+  if (returnReceipt) {
+    receipt = await requestReceipt(ctx, {
+      coordinates,
+      envelopeId: sealed.id,
+      lane: lane.topicId,
+      chunkZero,
+      keyEpoch: coordinates.keyEpoch,
+      ...(req.receiptWindowSeconds === undefined ? {} : { windowSeconds: req.receiptWindowSeconds }),
+    });
+    const settled = ctx.sent?.get(sealed.id);
+    if (settled !== undefined) ctx.sent?.put({ ...settled, stage: 'requested', scheduleId: receipt.scheduleId });
+  }
+
   return {
     kind: 'postmark',
     postmark: zero,
@@ -563,5 +894,6 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
     settlement,
     manifestLocator,
     lane: lane.topicId,
+    ...(receipt === undefined ? {} : { receipt }),
   };
 }

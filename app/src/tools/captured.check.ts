@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../ops/env.js';
 import { verify } from './verify.js';
-import type { Reader, Settlement, TopicInfo, TopicMessage } from './consensus.js';
+import type { Reader, ScheduleRecord, Settlement, TopicInfo, TopicMessage } from './consensus.js';
 
 const FIXTURE = path.join(repoRoot(), 'conformance', 'fixtures', 'checkpoint-one-letter.json');
 
@@ -39,6 +39,16 @@ interface Fixture {
   readonly topicInfo: Record<string, TopicInfo | null>;
   readonly accounts: Record<string, { memo: string | null; key: string | null }>;
   readonly settlements: Record<string, Settlement>;
+  /**
+   * §10.4's schedules, where the correspondence carries a return receipt.
+   *
+   * §11.2's ingestion table reaches "the schedule and its record" from the
+   * lane's `transaction` operation, so a capture that took the lane and left the
+   * schedules behind would send the suite back to the network for exactly the
+   * evidence a receipt rests on — which is what P-4 forbids. Absent on a fixture
+   * whose letters requested none.
+   */
+  readonly schedules?: Record<string, ScheduleRecord>;
   readonly envelope: { readonly aadHash: string };
   readonly appraisal: { readonly appraised: { readonly standing: string; readonly reasons: readonly string[] } };
   readonly bundleDigest: string;
@@ -66,6 +76,7 @@ function readerOver(f: Fixture): Reader {
     transfer: (txRef) => Promise.resolve(f.settlements[txRef] ?? null),
     accountMemo: (account) => Promise.resolve(f.accounts[account]?.memo ?? null),
     accountKey: (account) => Promise.resolve(f.accounts[account]?.key ?? null),
+    schedule: (scheduleId) => Promise.resolve(f.schedules?.[scheduleId] ?? null),
   };
 }
 

@@ -32,10 +32,13 @@ import { proofLocation } from '../core/proof.js';
 import { hcs1File } from '../ops/hcs1.js';
 import { resolveHcs14 } from '../resolve/hcs14.js';
 import { readerSource } from './verify.js';
+import { ack } from './ack.js';
+import { decodeScheduledSubmission, encodeScheduledSubmission } from '../core/schedulebody.js';
+import { fields } from '../core/protokey.js';
 import { inbox, type Delivery } from './inbox.js';
 import { MemoryLedger } from './memory.js';
-import { operationOf } from './consensus.js';
-import { send, type Coordinates, type SenderContext } from './send.js';
+import { compareTimestamps, operationOf } from './consensus.js';
+import { requestReceipt, send, type Coordinates, type SenderContext } from './send.js';
 import { verify } from './verify.js';
 import { repoRoot } from '../ops/env.js';
 import { schemas } from '../schema/loader.js';
@@ -82,8 +85,19 @@ function manifestAgainstProofSchema(label: string, manifest: unknown): void {
   ok(`${label} validates against the registered Proof schema: ${errors.join('; ')}`, errors.length === 0);
 }
 
-const SENDER_KEY = 'sender-ed25519';
-const RECIPIENT_KEY = 'recipient-ed25519';
+/**
+ * The two agents' keys, as RAW HEX rather than as labels.
+ *
+ * They were `'sender-ed25519'` and `'recipient-ed25519'` until Gate Two
+ * checkpoint two, which read fine and could not exercise §11.4's signature
+ * match: a mirror node gives a schedule signature's prefix in base64 and an
+ * account's key in raw hex, and `keyMatchesPrefix` decodes one into the other.
+ * A model whose keys were words would have let that matcher pass here and fail
+ * on the network. Thirty-two bytes each, distinct, and nothing about them is a
+ * secret — the model does not verify signatures and says so.
+ */
+const SENDER_KEY = '5e4d' + 'a1'.repeat(30);
+const RECIPIENT_KEY = 'b0b1' + 'c2'.repeat(30);
 
 /** Everything the two agents own, stood up as §4.6 provisions it. */
 interface World {
@@ -465,14 +479,25 @@ async function main(): Promise<void> {
   }
   {
     const s = await stand();
+    // T-P16-2, refused at the one place it can be: a schedule whose payer is the
+    // recipient would charge the recipient the instant it signed, and by then the
+    // bytes are on consensus and cannot be edited.
     let message = '';
     try {
-      await send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, returnReceipt: true, windowSeconds: 1 });
+      await send(
+        { ...s.ctx, receiptPayer: s.recipient.account },
+        { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, returnReceipt: true, windowSeconds: 1 },
+      );
     } catch (e) {
       message = e instanceof Error ? e.message : String(e);
     }
-    ok('a requested return receipt is refused rather than silently skipped', message.includes('returnReceipt is not implemented'));
+    ok('a receipt schedule that would charge the RECIPIENT is refused at send (T-P16-2)', message.includes('T-P16-2'));
   }
+
+  // === §10.4: the receipt, end to end on the modelled ledger ================
+  await theReceipt();
+  await theProbeAgainstTheSdk();
+  await theLongLetter();
 
   report();
 }
@@ -693,11 +718,521 @@ function report(): void {
   }
   console.log(
     `check:letter PASS — ${checked} assertions: a letter resolved, rung through, stamped, sealed, chunked and ` +
-      'posted on a modelled ledger that enforces submit keys, HIP-991 fees, balances and consensus order; opened ' +
-      'byte for byte by inbox; reconciled by verify from consensus alone into a bundle two Verifiers agree on and ' +
-      'a narrative carrying its digest; a slip where no door answered; and seven alterations refused — header, ' +
-      'proof, operator_id, epoch, a broken link, the settlement memo, and the wrong lane.',
+      'posted on a modelled ledger that enforces submit keys, HIP-991 fees, balances, consensus order and ' +
+      'HIP-423 schedules; opened byte for byte by inbox; reconciled by verify from consensus alone into a bundle ' +
+      'two Verifiers agree on and a narrative carrying its digest; a slip where no door answered; and seven ' +
+      'alterations refused — header, proof, operator_id, epoch, a broken link, the settlement memo, and the wrong ' +
+      'lane. AND §10.4 whole: a letter with a return receipt, its schedule announced on the lane, the pending ' +
+      'schedule surfacing at inbox, ack refusing a body that names a different identifier, postmark or epoch ' +
+      '(T-P1-9) and an envelope that never opened (T-P1-3), the ScheduleSign executing to the recipient own ' +
+      'manifest topic with not one stamp of the recipient moved (T-P16-2), verify reading it back as acked with ' +
+      'the envelope ACKED (T-P1-8), a schedule expired unsigned reported unclaimed and nothing else (T-P15-5), ' +
+      'step 7 reusing a standing request rather than making a second, a multi-chunk letter opened byte for byte ' +
+      'and both halves of its chain refused when broken (T-P1-11), and the SchedulableTransactionBody codec ' +
+      'courted against @hashgraph/sdk own frozen bytes.',
   );
+}
+
+
+/* ------------------------------------------------------------------ */
+/* §10.4 — the return receipt, end to end, on a modelled ledger.        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The whole of checkpoint two, offline: a letter WITH a return receipt, the
+ * pending schedule surfacing at `inbox`, `ack` refusing what it must and signing
+ * what it may, the execution putting the manifest on the recipient's own topic,
+ * and `verify` reading it back as `acked` with the envelope ACKED.
+ *
+ * WHY THE MODEL CAN HOLD THIS AT ALL. `memory.ts` executes a schedule when a key
+ * the inner submission REQUIRES has signed, and submits as that signer — so a
+ * schedule cannot write where its signer could not, which is the entire property
+ * §10.4 rests on. The body it holds is real `SchedulableTransactionBody` bytes
+ * from `core/schedulebody.ts`, so the decoder `ack` and `verify` use is
+ * exercised here rather than bypassed, and `theProbeAgainstTheSdk` below courts
+ * that codec against `@hashgraph/sdk`'s own output.
+ *
+ * What it cannot hold: signature verification, HBAR fees, and the passage of
+ * sixty-two days. `expire()` stands in for the last, which is why T-P15-5's case
+ * is a method call and not a wait.
+ */
+async function theReceipt(): Promise<void> {
+  const w = await stand();
+  const beforeStamps = w.ledger.balance(w.sender.account);
+  const recipientBefore = w.ledger.balance(w.recipient.account);
+
+  const flight = send(w.ctx, {
+    coordinates: w.coordinates,
+    manifest: w.manifest,
+    payload: PAYLOAD,
+    returnReceipt: true,
+    windowSeconds: 10,
+    receiptWindowSeconds: 30 * 86_400,
+  });
+  await new Promise((r) => setTimeout(r, 50));
+  const lane = answerTheDoor(w);
+  const result = await flight;
+  if (result.kind !== 'postmark') {
+    failures.push('the receipt letter was not posted');
+    return;
+  }
+
+  // --- What `send` step 7 produced. -----------------------------------------
+  is(
+    'postage is the weight plus the receipt fee, and the settlement moved exactly it (§4.2, §7.5)',
+    result.settlement.amount,
+    result.envelope.weight + 1,
+  );
+  is(
+    'one stamp at the door, then the postage including the receipt fee',
+    w.ledger.balance(w.sender.account),
+    beforeStamps - 1 - result.settlement.amount,
+  );
+  const requested = result.receipt;
+  ok('send returned the receipt request it made (§6.4 step 7)', requested !== undefined);
+  if (requested === undefined) return;
+  ok('the request names a schedule', /^0\.0\.[0-9]+$/.test(requested.scheduleId));
+  is('and it was made, not reused', requested.reused, false);
+
+  // The lane carries the `transaction` operation, and it carries NO memo:
+  // HCS-10 gives that operation no enum at the pin (D-94, recon C-5), and §6.1
+  // says a tool MUST carry none where HCS-10 defines none (T-P9-5).
+  const announcement = (await w.ledger.reader().messages(lane)).find(
+    (m) => operationOf(m)?.['op'] === 'transaction',
+  );
+  ok('the lane carries an HCS-10 `transaction` operation (§10.4)', announcement !== undefined);
+  const announcementOp = announcement === undefined ? {} : (operationOf(announcement) ?? {});
+  is('it names the schedule', announcementOp['schedule_id'], requested.scheduleId);
+  is(
+    'and the envelope it is for, so two letters on one lane are never confused',
+    announcementOp['data'],
+    `wishmail:receipt:${result.envelope.aadHash}`,
+  );
+  is('and it is the sender who posted it', announcementOp['operator_id'], operatorIdOf(w.sender.doorbell, w.sender.account));
+
+  // --- §6.5: the pending schedule reaches the recipient. ---------------------
+  const keys = new Map<number, KeyObject>([[1, w.recipient.key]]);
+  const inboxCtx = {
+    reader: w.ledger.reader(),
+    account: w.recipient.account,
+    keys,
+    treasury: w.ledger.treasury,
+    stampToken: w.ledger.stampToken,
+  };
+  const delivered = (await inbox(inboxCtx, { lanes: [lane] }))[0] as Delivery;
+  is('the receipt letter opens at the recipient', delivered.opened, true);
+  ok('and the delivery carries the pending schedule (§6.5)', delivered.returnReceipt !== undefined);
+  is('which is the one the lane named', delivered.returnReceipt?.scheduleId, requested.scheduleId);
+  is('and the header did request it (§7.7)', delivered.returnReceipt?.requestedByHeader, true);
+  is('the delivery says which epoch it opened under', delivered.openedUnderEpoch, 1);
+
+  const ackCtx = {
+    consensus: w.ledger.as(w.recipient.account),
+    ledgerTag: w.ledger.ledgerTag,
+    account: w.recipient.account,
+    doorbell: w.recipient.doorbell,
+    manifestTopic: w.recipient.manifestTopic,
+  };
+
+  // --- T-P1-9: what `ack` MUST NOT sign. ------------------------------------
+  // Each of the three inputs §10.4 names, altered one at a time, on the
+  // RECIPIENT's side — which is the side that matters, because the schedule's
+  // bytes are the sender's and the recipient is the only party that can tell
+  // whether they describe the letter it actually opened.
+  const wrongOnes: readonly { readonly what: string; readonly d: Delivery }[] = [
+    {
+      what: 'a different identifier',
+      d: { ...delivered, envelope: { ...delivered.envelope, aadHash: 'f'.repeat(64) } },
+    },
+    {
+      what: 'a different postmark',
+      d: {
+        ...delivered,
+        chunkPostmarks: [{ sequenceNumber: 999, consensusTimestamp: '1.0' }, ...delivered.chunkPostmarks.slice(1)],
+      },
+    },
+    { what: 'a different epoch', d: { ...delivered, openedUnderEpoch: 9 } },
+  ];
+  for (const wrong of wrongOnes) {
+    let reason = '';
+    try {
+      await ack(ackCtx, wrong.d);
+    } catch (e) {
+      reason = isToolFailure(e) ? e.reason : String(e);
+    }
+    is(`ack refuses a schedule naming ${wrong.what} (T-P1-9)`, reason, 'ACK_NOT_OPENED');
+  }
+
+  // T-P1-3: "`ack` refuses an envelope that was returned unopened, for every
+  // reason in §6.5."
+  {
+    let reason = '';
+    try {
+      await ack(ackCtx, { ...delivered, opened: false, reason: 'INBOX_UNBOUND' });
+    } catch (e) {
+      reason = isToolFailure(e) ? e.reason : String(e);
+    }
+    is('ack refuses an envelope that came back unopened (T-P1-3)', reason, 'ACK_NOT_OPENED');
+  }
+
+  // --- The ScheduleSign, and the execution it triggers. ----------------------
+  // THE INGESTION LAG IS ON, because this is exactly where a single read is
+  // believed: the signature and the execution are one act on the network and two
+  // reads on a mirror node. `ack` looks for the manifest on the recipient's own
+  // topic after the execution, and this hides it from the next read to prove the
+  // reader does not fall over when a mirror node is a moment behind.
+  w.ledger.lag(w.recipient.manifestTopic, 1);
+  const acked = await ack(ackCtx, delivered);
+  is('ack signs and the schedule executes', acked.alreadyExecuted, false);
+  ok('the receipt names an execution timestamp', acked.receipt.witness.executedTimestamp !== '');
+  is('the receipt names the envelope it acknowledges', acked.receipt.envelopeId, result.envelope.aadHash);
+  is('and the schedule that witnessed it', acked.receipt.witness.scheduleId, requested.scheduleId);
+  is('and the manifest hash the sender pre-filled', acked.receipt.proof.hash, requested.manifestHash);
+  {
+    const errors = registry.validate('return-receipt', acked.receipt);
+    ok(
+      `the receipt validates against its registered schema (§5.8)${errors.length ? ': ' + errors.join('; ') : ''}`,
+      errors.length === 0,
+    );
+  }
+
+  // T-P16-2: "Across the RECIPIENT suite, the recipient account's balances in
+  // HBAR and stamps are unchanged by `ack`." The model has no HBAR; what it can
+  // say — and does — is that not one stamp moved.
+  is('the recipient stamps are unchanged by ack (T-P16-2)', w.ledger.balance(w.recipient.account), recipientBefore);
+  is('and the schedule inner transaction is paid by the sender', acked.schedule.payer, w.sender.account);
+
+  // The execution follows the nth chunk (§8.3, T-P1-7).
+  const lastChunkAt = result.postmarks[result.postmarks.length - 1]?.consensusTimestamp ?? '0.0';
+  ok(
+    'the execution follows the nth chunk (T-P1-8)',
+    compareTimestamps(lastChunkAt, acked.receipt.witness.executedTimestamp) < 0,
+  );
+
+  // --- §11.4: what a Verifier makes of it. ----------------------------------
+  const scope = {
+    lane,
+    stampToken: { tokenId: w.ledger.stampToken, treasury: w.ledger.treasury },
+    claims: ['hcs14'],
+  };
+  const v = await verify(w.ledger.reader(), scope, { narrative: true });
+  const entry = v.bundle.correspondence[0];
+  is('verify reports the receipt as acked (§11.4)', entry?.appraisal.receipt.status, 'acked');
+  is('with no reason beside it', (entry?.appraisal.receipt.reasons ?? []).join(','), '');
+  is('and the envelope is ACKED (§8.3)', entry?.state, 'ACKED');
+  is('the bundle carries the request the lane made', entry?.requests.length, 1);
+  is('and its status', entry?.requests[0]?.status, 'acked');
+  ok('and §5.8 object, recomposed from consensus alone', entry?.returnReceipt !== undefined);
+  is('naming the same manifest ack named', entry?.returnReceipt?.proof.hash, acked.receipt.proof.hash);
+  is('landed on the recipient manifest topic (T-P1-8)', entry?.returnReceipt?.proof.uri?.topicId, w.recipient.manifestTopic);
+  {
+    const errors = registry.validate('evidence-bundle', v.bundle);
+    ok(
+      `the bundle with a receipt in it still validates (§5.10)${errors.length ? ': ' + errors.join('; ') : ''}`,
+      errors.length === 0,
+    );
+  }
+  ok('the narrative says the receipt is acked', (v.narrative?.text ?? '').includes('acked'));
+
+  // Two Verifiers over one correspondence, receipt and all (P-3, T-P3-1).
+  const again = await verify(w.ledger.reader(), scope, {});
+  is('two Verifiers agree with a receipt in the bundle (T-P3-1)', again.bundle.digest, v.bundle.digest);
+
+  // §6.6's duplicate case, as this build meets it: the schedule has already
+  // executed, so there is nothing left to sign and nothing is signed.
+  const twice = await ack(ackCtx, delivered);
+  is('a second ack signs nothing, because the schedule already executed', twice.alreadyExecuted, true);
+  is('and returns the same receipt', twice.receipt.proof.hash, acked.receipt.proof.hash);
+
+  // --- T-P15-5: a request whose schedule expired unsigned. -------------------
+  {
+    const u = await stand();
+    const flight2 = send(u.ctx, {
+      coordinates: u.coordinates,
+      manifest: u.manifest,
+      payload: PAYLOAD,
+      returnReceipt: true,
+      windowSeconds: 10,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    const lane2 = answerTheDoor(u);
+    const out2 = await flight2;
+    if (out2.kind === 'postmark' && out2.receipt !== undefined) {
+      // The network DELETES a schedule that expires unsigned (§10.4). The lane's
+      // operation remains, which is why the status is `unclaimed` and not `none`.
+      u.ledger.expire(out2.receipt.scheduleId);
+      const e2 = (
+        await verify(
+          u.ledger.reader(),
+          { lane: lane2, stampToken: { tokenId: u.ledger.stampToken, treasury: u.ledger.treasury }, claims: ['hcs14'] },
+          { narrative: true },
+        )
+      ).bundle.correspondence[0];
+      is('a schedule that expired unsigned is unclaimed (T-P15-5)', e2?.appraisal.receipt.status, 'unclaimed');
+      is('the envelope stays SETTLED', e2?.state, 'SETTLED');
+      is('and its standing is unchanged', e2?.appraisal.appraised.reasons.join(','), 'T-P9-3');
+      ok('and unclaimed is not reported as refused, returned or undelivered (T-P15-5)', true);
+    }
+  }
+
+  // --- A receipt whose schedule is still unsigned, and step 7's idempotence. --
+  {
+    const q = await stand();
+    const flight3 = send(q.ctx, {
+      coordinates: q.coordinates,
+      manifest: q.manifest,
+      payload: PAYLOAD,
+      returnReceipt: true,
+      windowSeconds: 10,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    const lane3 = answerTheDoor(q);
+    const out3 = await flight3;
+    if (out3.kind === 'postmark') {
+      const e3 = (
+        await verify(
+          q.ledger.reader(),
+          { lane: lane3, stampToken: { tokenId: q.ledger.stampToken, treasury: q.ledger.treasury }, claims: ['hcs14'] },
+          {},
+        )
+      ).bundle.correspondence[0];
+      is('a request nobody has signed for yet is unclaimed, not none', e3?.appraisal.receipt.status, 'unclaimed');
+      is('and the envelope is SETTLED and not ACKED', e3?.state, 'SETTLED');
+
+      // §6.4 step 7 is idempotent against consensus: a second request for the
+      // same envelope reuses the one standing on the lane rather than giving the
+      // recipient two things to sign for one letter.
+      const zero = out3.postmarks[0];
+      const twiceRequested = await requestReceipt(q.ctx, {
+        coordinates: q.coordinates,
+        envelopeId: out3.envelope.aadHash,
+        lane: lane3,
+        chunkZero: { topicId: lane3, sequenceNumber: zero?.sequenceNumber ?? 0 },
+        keyEpoch: 1,
+      });
+      is('a second step 7 reuses the standing request (§10.4, D-165)', twiceRequested.reused, true);
+      is('and names the same schedule', twiceRequested.scheduleId, out3.receipt?.scheduleId);
+      const ops = (await q.ledger.reader().messages(lane3)).filter((m) => operationOf(m)?.['op'] === 'transaction');
+      is('and the lane still carries exactly one transaction operation', ops.length, 1);
+    }
+  }
+}
+
+/**
+ * The protobuf codec, courted against the SDK's own bytes — CLAUDE.md §12's
+ * rule, applied to the one message this release added.
+ *
+ * "Protobuf field numbers are probed against the SDK's own bytes, never
+ * recalled." `core/protokey.ts`'s first version read `ThresholdKey.keys` as
+ * `Key.ed25519` because both are field 2; the field this one would most
+ * plausibly get wrong is `SchedulableTransactionBody.consensusSubmitMessage`,
+ * which is **21** and not the **27** that `TransactionBody` uses for the same
+ * body. So a real `ScheduleCreateTransaction` is built and FROZEN OFFLINE — no
+ * client, no network, no key — and the decoder is run on what the SDK produced.
+ */
+async function theProbeAgainstTheSdk(): Promise<void> {
+  const sdk = await import('@hashgraph/sdk');
+  const message = Buffer.from('the bytes a receipt manifest would be', 'utf8');
+  const inner = new sdk.TopicMessageSubmitTransaction().setTopicId('0.0.10452154').setMessage(message);
+  const create = new sdk.ScheduleCreateTransaction()
+    .setScheduledTransaction(inner)
+    .setPayerAccountId(sdk.AccountId.fromString('0.0.10450879'))
+    .setWaitForExpiry(false)
+    .setExpirationTime(new sdk.Timestamp(1_789_000_000, 0))
+    .setTransactionId(sdk.TransactionId.generate('0.0.10450879'))
+    .setNodeAccountIds([new sdk.AccountId(3)]);
+  create.freezeWith(null);
+
+  const body = frozenBodyOf(create);
+  // `TransactionBody.scheduleCreate` = 42, and inside it
+  // `ScheduleCreateTransactionBody.scheduledTransactionBody` = 1.
+  let scheduleCreate = Buffer.alloc(0);
+  fields(body, (field, wire, part) => {
+    if (wire === 2 && field === 42) scheduleCreate = Buffer.from(part);
+  });
+  let schedulable = Buffer.alloc(0);
+  let waitForExpiry = -1;
+  fields(scheduleCreate, (field, wire, part, value) => {
+    if (wire === 2 && field === 1) schedulable = Buffer.from(part);
+    if (wire === 0 && field === 13) waitForExpiry = value;
+  });
+  ok('the SDK ScheduleCreate carries a SchedulableTransactionBody at field 1 of field 42', schedulable.length > 0);
+  is('and waitForExpiry at field 13, false as §10.4 fixes it', waitForExpiry, 0);
+
+  const decoded = decodeScheduledSubmission(schedulable);
+  is('the decoder reads the SDK own bytes: the topic', decoded.topicId, '0.0.10452154');
+  is('and the message', decoded.message.toString('utf8'), message.toString('utf8'));
+  is('and no transport chunking on it (§7.4)', decoded.chunked, false);
+
+  let fee = 0;
+  fields(schedulable, (field, wire, _part, value) => {
+    if (wire === 0 && field === 1) fee = value;
+  });
+  const ours = encodeScheduledSubmission({ topicId: '0.0.10452154', message, transactionFee: fee });
+  ok('and the encoder bytes ARE the SDK bytes, byte for byte', ours.equals(schedulable));
+
+  // A schedule of any other kind is refused rather than reported as an empty
+  // submission: §10.4 admits exactly one inner transaction.
+  const transfer = new sdk.TransferTransaction()
+    .addHbarTransfer(sdk.AccountId.fromString('0.0.10450879'), new sdk.Hbar(-1))
+    .addHbarTransfer(sdk.AccountId.fromString('0.0.10452127'), new sdk.Hbar(1));
+  const other = new sdk.ScheduleCreateTransaction()
+    .setScheduledTransaction(transfer)
+    .setTransactionId(sdk.TransactionId.generate('0.0.10450879'))
+    .setNodeAccountIds([new sdk.AccountId(3)]);
+  other.freezeWith(null);
+  let otherCreate = Buffer.alloc(0);
+  fields(frozenBodyOf(other), (field, wire, part) => {
+    if (wire === 2 && field === 42) otherCreate = Buffer.from(part);
+  });
+  let otherSchedulable = Buffer.alloc(0);
+  fields(otherCreate, (field, wire, part) => {
+    if (wire === 2 && field === 1) otherSchedulable = Buffer.from(part);
+  });
+  let refused = '';
+  try {
+    decodeScheduledSubmission(otherSchedulable);
+  } catch (e) {
+    refused = e instanceof Error ? e.message : String(e);
+  }
+  ok(`a scheduled transfer is refused, not read as a submission: ${refused}`, refused.includes('admits only'));
+}
+
+/**
+ * The signable body bytes of a frozen transaction — exactly what `signWith`
+ * hands a signer, which is why decoding them is decoding the thing being signed
+ * and not a copy of it (`counter/body.ts` says the same in the same words).
+ */
+function frozenBodyOf(tx: unknown): Buffer {
+  const list = (tx as { _signedTransactions: { list: { bodyBytes: Uint8Array }[] } })._signedTransactions.list;
+  return Buffer.from(list[0]?.bodyBytes ?? new Uint8Array());
+}
+
+/**
+ * A LONG letter — the multi-chunk half of the chain that checkpoint one could
+ * not reach.
+ *
+ * §11.3 walks chunk 0 by its header and each later chunk by the PRIOR's `nx`.
+ * Checkpoint one's letter was 53 bytes of payload and fitted in one chunk, so
+ * there was no `nx` to break and `check:captured`'s seventh alteration had to
+ * exercise the other half of the same walk. This one is the weight class of the
+ * letter checkpoint two actually sends, so both halves are exercised: a `nx`
+ * that commits nothing, so the chain stops; and a header claiming a ciphertext
+ * digest the slices do not reach, so the walk completes and then refuses.
+ */
+async function theLongLetter(): Promise<void> {
+  const w = await stand();
+  // Four kilobytes and change: two ounces, the same weight §4.2 puts on the
+  // letter checkpoint two carries.
+  const long = Buffer.from('Whereas, on the twenty-second day of September, '.repeat(94), 'utf8');
+  const flight = send(w.ctx, { coordinates: w.coordinates, manifest: w.manifest, payload: long, windowSeconds: 10 });
+  await new Promise((r) => setTimeout(r, 50));
+  const lane = answerTheDoor(w);
+  const result = await flight;
+  if (result.kind !== 'postmark') {
+    failures.push('the long letter was not posted');
+    return;
+  }
+  ok(`a ${long.length}-byte letter chunks into more than five (§7.4)`, result.envelope.chunkCount > 5);
+  is('and weighs two ounces (§7.5)', result.envelope.weight, 2);
+  is('with one postmark per chunk', result.postmarks.length, result.envelope.chunkCount);
+
+  const inboxCtx = {
+    reader: w.ledger.reader(),
+    account: w.recipient.account,
+    keys: new Map<number, KeyObject>([[1, w.recipient.key]]),
+    treasury: w.ledger.treasury,
+    stampToken: w.ledger.stampToken,
+  };
+  const d = (await inbox(inboxCtx, { lanes: [lane] }))[0] as Delivery;
+  is('it opens', d.opened, true);
+  is('byte for byte across every chunk', d.payload?.toString('hex'), long.toString('hex'));
+
+  // T-P1-11's first half: a `nx` that commits nothing. The chain stops where the
+  // link breaks, and a partial envelope is INCOMPLETE rather than wrong.
+  {
+    const g = await stand();
+    const f2 = send(g.ctx, { coordinates: g.coordinates, manifest: g.manifest, payload: long, windowSeconds: 10 });
+    await new Promise((r) => setTimeout(r, 50));
+    const lane2 = answerTheDoor(g);
+    const r2 = await f2;
+    if (r2.kind === 'postmark') {
+      await rewriteChunkOn(g, lane2, 0, (chunk) => {
+        chunk['nx'] = 'c'.repeat(64);
+      });
+      const bad = (
+        await inbox(
+          {
+            reader: g.ledger.reader(),
+            account: g.recipient.account,
+            keys: new Map<number, KeyObject>([[1, g.recipient.key]]),
+            treasury: g.ledger.treasury,
+            stampToken: g.ledger.stampToken,
+          },
+          { lanes: [lane2] },
+        )
+      )[0];
+      is('a chunk 0 whose nx commits nothing stops the chain (T-P1-11)', bad?.reason, 'INBOX_INCOMPLETE');
+      const v = await verify(
+        g.ledger.reader(),
+        { lane: lane2, stampToken: { tokenId: g.ledger.stampToken, treasury: g.ledger.treasury }, claims: ['hcs14'] },
+        {},
+      );
+      ok(
+        'and verify appraises it unbound with T-P3-3',
+        (v.bundle.correspondence[0]?.appraisal.appraised.reasons ?? []).includes('T-P3-3'),
+      );
+    }
+  }
+
+  // T-P1-11's second half: every link intact and the slices not concatenating to
+  // `hdr.h`. The walk completes and then refuses.
+  {
+    const g = await stand();
+    const f3 = send(g.ctx, { coordinates: g.coordinates, manifest: g.manifest, payload: long, windowSeconds: 10 });
+    await new Promise((r) => setTimeout(r, 50));
+    const lane3 = answerTheDoor(g);
+    const r3 = await f3;
+    if (r3.kind === 'postmark') {
+      await rewriteChunkOn(g, lane3, 0, (chunk) => {
+        const hdr = chunk['hdr'] as Record<string, unknown>;
+        hdr['h'] = 'd'.repeat(64);
+      });
+      const bad = (
+        await inbox(
+          {
+            reader: g.ledger.reader(),
+            account: g.recipient.account,
+            keys: new Map<number, KeyObject>([[1, g.recipient.key]]),
+            treasury: g.ledger.treasury,
+            stampToken: g.ledger.stampToken,
+          },
+          { lanes: [lane3] },
+        )
+      )[0];
+      is('a complete envelope whose slices do not hash to hdr.h is unbound (T-P1-11)', bad?.reason, 'INBOX_UNBOUND');
+    }
+  }
+}
+
+/** One chunk on a lane, altered in place — the same shape `refusals` uses. */
+async function rewriteChunkOn(
+  w: World,
+  lane: string,
+  index: number,
+  edit: (chunk: Record<string, unknown>) => void,
+): Promise<void> {
+  for (const m of await w.ledger.reader().messages(lane)) {
+    const op = JSON.parse(m.contents) as Record<string, unknown>;
+    if (op['op'] !== 'message') continue;
+    const chunk = JSON.parse(op['data'] as string) as Record<string, unknown>;
+    if (chunk['i'] !== index) continue;
+    edit(chunk);
+    op['data'] = JSON.stringify(chunk);
+    w.ledger.overwriteMessage(lane, m.sequenceNumber, JSON.stringify(op));
+    return;
+  }
+  throw new Error(`no chunk ${index} on ${lane}`);
 }
 
 await main();

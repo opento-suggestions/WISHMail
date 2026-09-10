@@ -77,6 +77,53 @@ export interface TopicInfo {
 }
 
 /**
+ * One signature on a schedule's record, as consensus recorded it (HIP-423).
+ *
+ * The record carries the signing key's PREFIX and not the account, which is why
+ * §11.4 words the check the way it does: "the record carries the signing key's
+ * prefix, and the Verifier reads that account's key from consensus and matches
+ * it". Nothing here identifies a person; a prefix is public data about a public
+ * key.
+ */
+export interface ScheduleSignature {
+  /** base64, as a mirror node returns it. */
+  readonly publicKeyPrefix: string;
+  /** When this signature reached consensus — the create's, or the ScheduleSign's. */
+  readonly consensusTimestamp: string;
+  /** `ED25519`, `ECDSA_SECP256K1`, … as the mirror names it. */
+  readonly type: string;
+}
+
+/**
+ * A long-term scheduled transaction as consensus holds it (HIP-423, §10.4).
+ *
+ * §11.2's ingestion table reaches this row from "the lane's transaction op",
+ * and §11.4 reads from it "whether it executed, when, under whose signature,
+ * and to which topic its inner submission wrote". Every field below answers one
+ * of those, and `transactionBody` is what `core/schedulebody.ts` decodes to
+ * answer the last.
+ */
+export interface ScheduleRecord {
+  readonly ledgerTag: string;
+  readonly scheduleId: string;
+  /** The account that submitted the ScheduleCreate. */
+  readonly creator: string;
+  /** The account that pays for the INNER transaction when it executes (§10.4: never the recipient). */
+  readonly payer: string;
+  /** When the schedule was created. */
+  readonly consensusTimestamp: string;
+  /** When the inner transaction executed, or null while it has not. */
+  readonly executedTimestamp: string | null;
+  /** The acknowledgment window's end (§10.4), or null on a short-term schedule. */
+  readonly expirationTime: string | null;
+  readonly waitForExpiry: boolean;
+  readonly deleted: boolean;
+  readonly signatures: readonly ScheduleSignature[];
+  /** base64 of the `SchedulableTransactionBody` (HIP-423). */
+  readonly transactionBody: string;
+}
+
+/**
  * What a Verifier is given, and the whole of it (P-4). Every method here is a
  * read of public data; none of them can be given a key.
  */
@@ -97,6 +144,27 @@ export interface Reader {
    * two keys a topic names.
    */
   accountKey(account: string): Promise<string | null>;
+  /**
+   * One schedule's record by its id — §11.2's row "the schedule and its record",
+   * found from the lane's `transaction` operation and from nothing else.
+   *
+   * It is a READ, which is why it is here and not on `Writer`: a Verifier must
+   * be able to appraise a return receipt with nothing configured (P-4), and a
+   * `ScheduleInfoQuery` against a consensus node is a paid query.
+   */
+  schedule(scheduleId: string): Promise<ScheduleRecord | null>;
+}
+
+/** §10.4's ScheduleCreate, in the one shape a receipt takes. */
+export interface ScheduleRequest {
+  /** The recipient's manifest topic — a topic only the recipient's key can write to. */
+  readonly topicId: string;
+  /** The receipt manifest, pre-filled, as UTF-8 canonical JSON. */
+  readonly message: Buffer;
+  /** Who pays for the inner transaction. §10.4: never the recipient. */
+  readonly payerAccountId: string;
+  /** The acknowledgment window, in seconds from creation (§10.4, `SCHEDULE_MAX_LIFETIME`). */
+  readonly expirationSeconds: number;
 }
 
 /** What a writing tool is given in addition. */
@@ -126,6 +194,28 @@ export interface Writer {
 
   /** The stamps this account holds, for §6.4's precondition (SEND_INSUFFICIENT_STAMPS). */
   stampBalance(): Promise<number>;
+
+  /**
+   * §6.4 step 7: create the long-term schedule whose inner transaction is the
+   * receipt's submission (§10.4). `waitForExpiry` is false and is not an
+   * argument, because §10.4 fixes it: the receipt lands the instant the
+   * recipient signs, not at the window's end.
+   *
+   * The network's own idempotence is part of the contract here. An identical
+   * inner transaction yields `IDENTICAL_SCHEDULE_ALREADY_CREATED` and the
+   * EXISTING schedule id, so a sender that lost the outcome of a ScheduleCreate
+   * cannot make a second schedule for one envelope by trying again.
+   */
+  scheduleSubmission(request: ScheduleRequest): Promise<ScheduleRecord>;
+
+  /**
+   * §6.6's ScheduleSign — `ack`, and the only thing the recipient submits.
+   *
+   * The recipient pays the ScheduleSign's own fee, and nothing else: the inner
+   * transaction is paid by the schedule's `payerAccountId`, which §10.4 forbids
+   * from being the recipient (T-P16-2).
+   */
+  scheduleSign(scheduleId: string): Promise<ScheduleRecord>;
 }
 
 /** A tool that both reads and writes: `send`, `buy_stamp`, `ack`. */
@@ -183,6 +273,33 @@ export function compareTimestamps(a: string, b: string): number {
 /** Whether `a` is strictly before `b` in consensus time. */
 export function before(a: string, b: string): boolean {
   return compareTimestamps(a, b) < 0;
+}
+
+/**
+ * §11.4's match: does this account's key, as consensus holds it, begin with the
+ * prefix the schedule's record carries?
+ *
+ * "The record carries the signing key's prefix, and the Verifier reads that
+ * account's key from consensus and matches it." The record's prefix is base64
+ * of the raw key bytes; `Reader.accountKey` answers in raw hex, the form
+ * `core/protokey.ts` flattens every key into. So one is converted to the other
+ * and the comparison is a prefix test rather than an equality: the network is
+ * free to record fewer bytes than the whole key, and a check that demanded the
+ * whole key would fail on a shorter prefix that matches perfectly well.
+ *
+ * An empty prefix matches nothing. A prefix that is not base64 matches nothing.
+ * Neither is an error: an unmatched signature is an appraisal (P-12).
+ */
+export function keyMatchesPrefix(accountKeyHex: string | null, publicKeyPrefixB64: string): boolean {
+  if (accountKeyHex === null || accountKeyHex === '' || publicKeyPrefixB64 === '') return false;
+  let prefixHex: string;
+  try {
+    prefixHex = Buffer.from(publicKeyPrefixB64, 'base64').toString('hex');
+  } catch {
+    return false;
+  }
+  if (prefixHex === '') return false;
+  return accountKeyHex.toLowerCase().startsWith(prefixHex.toLowerCase());
 }
 
 /** Parse a message's contents as an operation object, or null if it is not one. */

@@ -49,6 +49,8 @@
     "inbox": "tsx sdk/inbox.cli.ts",
     "verify": "tsx sdk/verify.cli.ts",
     "capture": "tsx sdk/capture.cli.ts",
+    "ack": "tsx sdk/ack.cli.ts --dry-run",
+    "ack:live": "tsx sdk/ack.cli.ts --live",
     "check:captured": "tsx src/tools/captured.check.ts"
   },
   "dependencies": {

@@ -30,8 +30,15 @@ import path from 'node:path';
  * `carry` holds what a provisioning purchase is still carrying (D-168): the
  * holder, the node, and the row-by-row record of what the counter has paid for,
  * so a purchase that stops between rows is resumable from either side.
+ *
+ * `envelopes` is a CORRESPONDENT's, not a Postmaster's: the sent envelopes
+ * D-165 puts in the agent's home, keyed by envelope identifier, written at the
+ * affix and updated as `send` proceeds. P-7 is the reason — "one settlement
+ * stamps one envelope" — and the row is what lets a run that died after the
+ * affix be resumed instead of paid for twice. It is a cache of consensus and
+ * never an authority over it (`tools/send.ts`).
  */
-export type Namespace = 'payments' | 'requirements' | 'carry';
+export type Namespace = 'payments' | 'requirements' | 'carry' | 'envelopes';
 
 /** What a stored row carries beside its value: when it was written, and when it may go. */
 export interface Entry<T> {

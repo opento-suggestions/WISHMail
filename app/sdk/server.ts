@@ -9,16 +9,12 @@
  * and `verify` with nothing but a mirror node, because it is the VERIFIER class
  * and P-4 says so.
  *
- * WHAT IS LIVE HERE AND WHAT IS NOT. Gate One's scope is two Correspondents
- * provisioned through the counter, both resolving under `hcs14` and `hol`, both
- * watchers up. So `resolve`, `verify`, `buy_stamp`, `generate_mailbox` and
- * `register_agent` have bodies. `send`, `inbox` and `ack` are Gate Two's — they
- * refuse here, naming the gate, rather than half-working. A refusal that says
- * which gate is a fact; a tool that returns a plausible empty object is not.
- * `send` and `inbox` are built and exercised end to end against
- * `tools/memory.ts` and need the live wiring and a letter to carry; **`ack` is
- * not built at all**, because §10.4's schedule it witnesses is not. Saying so
- * costs nothing and saying otherwise was wrong until 2026-09-10.
+ * ALL SIX OF §6.1'S VERBS HAVE BODIES, as of Gate Two checkpoint two
+ * (2026-09-10). `ack` was the last, and it was refused here rather than
+ * half-working for as long as §10.4's schedule it witnesses did not exist — a
+ * refusal that says which gate is a fact; a tool that returns a plausible empty
+ * object is not. `send` now takes `returnReceipt`, because step 7 exists to
+ * honour it.
  *
  * THE DOORBELL WATCHER RUNS BESIDE THE TOOLS. §6.1's verbs must stay answerable
  * while the door is being watched, so the watcher is a timer and not a loop.
@@ -34,6 +30,7 @@ import { repoRoot } from '../src/ops/env.js';
 import { RELEASE } from '../src/release.js';
 import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
+import { ack } from '../src/tools/ack.js';
 import { inbox } from '../src/tools/inbox.js';
 import { send } from '../src/tools/send.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
@@ -42,15 +39,12 @@ import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
 import { CounterUnavailable, buyStamps } from './counter.js';
 import { openHome } from './home.js';
 import { liveReader } from './live.js';
-import { inboxContext, lanesOf, ringStamp, senderContext } from './letter.js';
+import { ackContext, inboxContext, lanesOf, ringStamp, senderContext } from './letter.js';
 import { MailboxRefusal, generateMailbox } from './mailbox.js';
 import { RegistrationRefusal, registerAgent } from './registration.js';
 import { boot, type Session } from './session.js';
 import { affordances, six } from './tools.js';
 import { watchDoorbell, type Watcher } from './watcher.js';
-
-/** Gate Two's three, named where a caller meets them. */
-const GATE_TWO = new Set(['send', 'inbox', 'ack']);
 
 function ok(payload: unknown, structured?: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -160,7 +154,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           `${t.summary}${t.name === 'buy_stamp' ? BUY_STAMP_NOTE : ''} Used by ${t.usedBy.join(', ')}. ` +
           `Reads consensus: ${t.reads ? 'yes' : 'no'}; writes: ${t.writes ? 'yes' : 'no'}; pays: ${t.pays}. ` +
           `Failures: ${t.failures.join(', ')}.` +
-          (GATE_TWO.has(t.name) ? ' NOT AVAILABLE IN THIS BUILD: it lands with the first letter (Gate Two).' : ''),
+          '',
         inputSchema: bundled(t.inputSchema, root),
         outputSchema: bundled(t.outputSchema, root),
         _meta: { 'wishmail/spec': RELEASE.spec, 'wishmail/conformance': t.conformance, 'wishmail/kind': 'tool' },
@@ -266,16 +260,6 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           if (typeof payload !== 'string') {
             return refuse('SEND_UNRESOLVED', 'payload is required, as text or base64 (§6.4)');
           }
-          if (args['returnReceipt'] === true) {
-            return refuse(
-              'NOT_IN_THIS_BUILD',
-              'returnReceipt lands with Gate Two checkpoint TWO: §10.4 makes the receipt a ScheduleSign over a ' +
-                'schedule `send` creates, and neither half is built. Postage that paid for a receipt nobody was ' +
-                'asked for is an artefact on consensus that cannot be withdrawn, so this refuses rather than ' +
-                'assembling one (§6.4 step 7).',
-            );
-          }
-
           // The recipient is resolved HERE, by this agent, from a mirror node —
           // and the proof that resolution produces is what `send` welds into the
           // AAD. A letter to an address nobody resolved is what §10 exists to
@@ -293,8 +277,14 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
             coordinates: r.coordinates,
             manifest: r.manifest as unknown as Record<string, unknown>,
             payload: Buffer.from(payload, 'utf8'),
-            returnReceipt: false,
+            // §6.4 step 7, and §7.7's header bit with it. The postage the
+            // envelope affixes includes the receipt fee when this is true, so a
+            // caller that asks for one pays for one (§4.2, §7.5).
+            returnReceipt: args['returnReceipt'] === true,
             ...(typeof args['windowSeconds'] === 'number' ? { windowSeconds: args['windowSeconds'] } : {}),
+            ...(typeof args['receiptWindowSeconds'] === 'number'
+              ? { receiptWindowSeconds: args['receiptWindowSeconds'] }
+              : {}),
           });
           return ok(out, out as unknown as Record<string, unknown>);
         }
@@ -311,13 +301,28 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           return ok(out, { deliveries: out as unknown as Record<string, unknown>[] });
         }
 
-        case 'ack':
-          return refuse(
-            'NOT_IN_THIS_BUILD',
-            'ack lands with Gate Two checkpoint TWO. It is NOT BUILT: §10.4 makes a return receipt a ScheduleSign ' +
-              'over a schedule `send` creates, and neither half exists yet — which is also why `send` refuses ' +
-              '`returnReceipt`. This release claims no conformance class (§1.5: silence claims nothing).',
-          );
+        case 'ack': {
+          // §6.6, over one delivery THIS agent's own `inbox` returned. The
+          // delivery is what attests that the envelope opened with its AAD
+          // verified, which is §6.6's precondition, so `ack` is never handed an
+          // identifier alone — it is handed the reading that earned it.
+          const envelopeId = args['envelopeId'];
+          if (typeof envelopeId !== 'string' || envelopeId === '') {
+            return refuse('ACK_NOT_OPENED', 'envelopeId is required: `ack` acknowledges one envelope (§6.6)');
+          }
+          const lane = args['lane'];
+          const lanes = typeof lane === 'string' && lane !== '' ? [lane] : await lanesOf(s);
+          const deliveries = await inbox(inboxContext(s), { lanes });
+          const delivery = deliveries.find((d) => d.envelope.aadHash === envelopeId);
+          if (delivery === undefined) {
+            return refuse(
+              'ACK_NOT_OPENED',
+              `no envelope ${envelopeId} is on this agent's lanes; §6.6 acknowledges what this agent's own inbox opened`,
+            );
+          }
+          const out = await ack(ackContext(s), delivery);
+          return ok(out.receipt, { receipt: out.receipt as unknown as Record<string, unknown> });
+        }
 
         default:
           return refuse(
