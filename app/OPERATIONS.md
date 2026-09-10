@@ -3207,6 +3207,238 @@ nowhere else.
 
 ---
 
+## Step 6 — CHECKPOINT TWO, THE REPLY: gate report, written 2026-09-10 before any signature
+
+**This supersedes §11 of the checkpoint-two gate report above, and that section is left exactly as it stood.** It said
+the reply was held at the gate on ledger §G-21, and it was right to. §G-21 is now closed by **D-171** and §G-22 by
+**D-172**, the specification is at **0.5.11**, and this is the gate report for the one act checkpoint two did not do:
+**a plain reply, B → A2, on the lane A2 opened, ringing nothing.**
+
+Nothing below has been signed. `npm run letter:plan` is the dry run and has been run; its output is printed verbatim
+in §9. `npm run letter … --live` is the live one and has not.
+
+### 1. What changed under the reply, and why it can happen at all
+
+§7.1 said "a lane is bidirectional: either party sends on it" and also bound an envelope only to a lane born from "the
+doorbell its resolution proof yielded". An HCS-10 `connection_created` sits on the **acceptor's** doorbell. B answered
+A2's ring, so the lane's birth is on **B's** doorbell `0.0.10452149` and **A2's doorbell `0.0.10462704` holds zero
+messages** — so for a reply the two sentences pointed opposite ways, and the dry run said `lane NONE — this is first
+contact` before anything signed.
+
+**D-171 (RECORD, Sonic, 2026-09-10):** an envelope is bound to a lane **iff** the lane's submit key is a threshold over
+exactly the two parties' keys **and** its `connection_created` is on the doorbell of one of the two parties, naming the
+other. First contact is found on the recipient's doorbell as before; a reply on the sender's own, because the sender is
+the agent that answered.
+
+### 2. The parties, and who pays for what
+
+```
+  sender      B    0.0.10452127   doorbell 0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+  recipient   A2   0.0.10462700   doorbell 0.0.10462704   manifest 0.0.10462713
+  payer       B's operator 0.0.10450880   — the operator pays, the agent signs (§3.5)
+  lane        0.0.10464056   opened by A2's ring, answered by B, reused now in the other direction
+```
+
+Every submission below is signed by **B's agent key** and paid by **B's own operator wallet** `0.0.10450880`. The
+Postmaster pays for nothing here: carry outside `buy_stamp` is deferred this window (CLAUDE.md §11, LIMITATIONS L-5).
+A2 pays nothing and is not asked for anything — it is the recipient, and there is no receipt to sign.
+
+**The stray stamp is not lost.** Checkpoint two moved one of A2's ten stamps to A2's operator `0.0.10450879` for a
+doorbell fee that was never charged, because `ringStamp` asked whether the payer held a stamp rather than whether a
+door would be rung. It sits on `0.0.10450879` and **serves the next ring A2 makes** — nothing was consumed, and the
+treasury received nothing it should not have. It is not touched by this run: B is the sender here and B's operator is
+the payer.
+
+### 3. The lane, and the binding this envelope asserts
+
+Read from the mirror rather than recalled:
+
+```
+  lane      0.0.10464056  memo hcs-10:1:60:2:0.0.10452149:1
+  doorbell  0.0.10452149  memo hcs-10:0:60:0:0.0.10452127     -> the door is B's
+  answer    0.0.10452149 #2  connection_created
+              connection_topic_id 0.0.10464056
+              connected_account_id 0.0.10462700               -> the ringer was A2
+              operator_id 0.0.10452149@0.0.10452127           -> submitted by B, the door's owner
+  keys      submit key = threshold of exactly
+              d94b7e7d…  A2's account key
+              0bf6f350…  B's account key
+  fees      none
+```
+
+So the walk §11.4 now performs yields `{owner, requester}` = `{B, A2}`, and this envelope's two parties are
+`{coordinates.account, settlement.from}` = `{A2, B}`. **The same set** — which is why one rule serves both directions.
+Nothing in that walk is a resolution; it is four reads of public consensus data.
+
+**What a Verifier will actually do today, stated rather than implied.** This release claims no profile, so §11.4 does
+not replay the resolution, has no `coordinates.account` to compare against, and **the lane-provenance check is dark** —
+exactly as the key-epoch check T-P1-10 is. The reply will therefore appraise the same as every letter before it, and
+the binding above is proved by `check:letter` offline rather than by this run. LIMITATIONS L-1 says so.
+
+### 4. The quote, measured before anything is bought
+
+From the dry run in §9, composed by **the same `sealEnvelope` the tool calls**:
+
+```
+  body        The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln.
+  payload     80 bytes    sha256 b70281c14ab4bf1f0de4dd14174ee432ee5b5cc83b534cbfebe749b70b407898
+  ciphertext  96 bytes
+  chunks      1           (CHUNK_WIRE_MAX 1000 bytes per operation, §7.4)
+  weight      1 oz of 16  (§7.5)
+  postage     1 stamp     = weight 1 + receipt 0, returnReceipt FALSE
+  ring        NONE        the lane exists; §4.4's hop does not happen and no stamp moves to the payer
+  held        B holds 12 stamps
+```
+
+**One stamp against twelve.** §4.2's maximum is not in play at one ounce. Nothing is bought at the counter.
+
+The envelope identifier the dry run printed is **not** the one the live run will produce: §7.2's AAD carries a fresh
+16-byte nonce for every envelope, so the identifier changes on every composition and is only pinned once the live run
+seals. The lane, the weight, the postage and the payload digest are what this quote fixes.
+
+### 5. What it creates, and what it does not
+
+Creates: one resolution manifest on **B's** manifest topic `0.0.10452154`; one settlement of one stamp; one chunk on
+the lane. **Nothing else.** No schedule, no `transaction` operation, no `connection_request`, no `connection_created`,
+no new topic, no new account.
+
+**A2's doorbell must hold zero messages after this run, exactly as it does now.** That is the assertion the whole
+ruling rests on, and it is proved by an absence.
+
+### 6. The submit→learn window, per write, and how a rerun resumes from inside it
+
+Every row is a signature leaving this process before its outcome is known. There is no offline consensus node, so
+this is the window no check reaches (CLAUDE.md §12).
+
+| # | Write | Payer | If it dies after the signature and before the answer | How a rerun resumes |
+|---|---|---|---|---|
+| 1 | the resolution manifest → `0.0.10452154` | `0.0.10450880` | the manifest is on B's topic and this process does not know its sequence number | **A rerun publishes a second manifest.** A manifest is content-addressed and both recompute to the same hash, so the second is a duplicate and not a contradiction; the envelope binds to the hash, never to the sequence number. Cost: one message. The readback is bounded below by the transaction's own valid start (fixed 2026-09-10), so it cannot be answered by an identical earlier message. |
+| 2 | the settlement — one stamp | `0.0.10450880` | **the stamp is consumed and no chunk names it** | A rerun composes a NEW envelope with a new nonce and a new settlement, and the first settlement becomes an **orphan** — reported under `orphans` (F-3), the stamp spent, nothing double-charged and nothing false on consensus. §8.5 has a word for it. The row in B's own store, written **before** the transfer is submitted, is what lets a later run name the envelope and ask consensus about it (P-7, D-165). |
+| 3 | chunk 0 on the lane | `0.0.10450880` | the letter is on the lane and this process does not know it settled | The envelope is SETTLED on consensus whatever this process believes; `npm run verify -- --lane 0.0.10464056` reads it back. A rerun would post a **second** envelope, not a duplicate of this one, because the nonce differs — so a rerun is a decision and not a repair, and it is not taken without the word. |
+
+**There is no step 7.** `returnReceipt` is false, so no schedule is created, no `transaction` operation is posted, and
+the whole of §10.4's window is absent from this run.
+
+### 7. The predicted standing, and it is a prediction
+
+Derived from §11.5's table, not from running it:
+
+```
+  state       SETTLED                     (§8.3 — one chunk, delivered; no receipt was requested)
+  standing    unverified
+  reasons     T-P12-4                     (§11.4: the profile is not claimed, so the resolution is not replayed)
+  receipt     none                        (§11.4 — no request and no receipt)
+  trustClass  math, endorsements []       (declared, reported beside the standing, never folded into it — P-12)
+```
+
+**`T-P10-2` and `T-P17-2` MUST NOT appear**, and not because the lane is wrong — because a Verifier claiming no
+profile never reaches either check. If either appears, something is wrong with the implementation and not with the
+lane, and that is a stop.
+
+**`T-P9-3` must not appear either**: B's `schemaRef` is `hcs://13/0.0.10448509#1`, the registered one from Step 4.
+
+### 8. Every way it stops
+
+- The dry run prints anything but `lane 0.0.10464056` and `ring NONE` → **stop**, report, wait.
+- `send` returns `SEND_LANE_INVALID` → the lane is closed, carries a fee, or its key list is not the two parties' →
+  **stop**; nothing is repaired and no second lane is rung.
+- `send` rings anything at all → **stop immediately**. A ring here means the lane was not found, which is the defect
+  D-171 exists to remove, and a lane cannot be un-opened.
+- `SEND_INSUFFICIENT_STAMPS` → B holds 12 and needs 1; this cannot fire without something else being wrong.
+- `SEND_SUBMIT_FAILED` / `SEND_SETTLE_TIMEOUT` → the settlement stands and the envelope is partial or orphaned; read
+  the mirror, report what is true and what is resumable, **wait**.
+- A2's `inbox` does not return the reply → **stop**. Do not re-send. The letter is on consensus or it is not, and
+  `verify` says which.
+- Any mirror readback disagreeing with what the process believes → the mirror is the record; **stop and report**.
+
+### 9. The dry run, verbatim, signing nothing
+
+```
+$ npm run letter:plan -- "C:/Users/Sonic/.wishmail/demo/b" --to 0.0.10462700 \
+    --text "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."
+
+> npm run letter:plan --workspace app -- C:/Users/Sonic/.wishmail/demo/b --to 0.0.10462700 --text The Proclamation …
+> tsx sdk/letter.cli.ts --dry-run C:/Users/Sonic/.wishmail/demo/b --to 0.0.10462700 --text The Proclamation …
+
+  letter — DRY RUN: nothing will be signed
+  argv as received  ["--dry-run","C:/Users/Sonic/.wishmail/demo/b","--to","0.0.10462700","--text",
+                     "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."]
+  to go live        pass --live, and check the line above says it arrived
+
+  sender      0.0.10452127  (home …/demo/b)
+  payer       0.0.10450880  — the operator pays; the agent signs (§3.5)
+  doorbell    0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+  schemaRef   hcs://13/0.0.10448509#1
+
+  recipient   0.0.10462700  doorbell 0.0.10462704  manifest 0.0.10462713
+  resolution  math · 0 endorsement(s)
+  proof hash  4759aa5ca4d39de2a7540976788da5b2f2386a6aa18744f73a27a3328f4ba893
+  epoch       1
+
+  lane        0.0.10464056 created 1789064925.372200222 at THIS agent own door — a reply — reused, nothing is rung (§7.1)
+  stamps      the agent holds 12
+
+  body        inline text
+  payload     80 bytes · sha256 b70281c14ab4bf1f0de4dd14174ee432ee5b5cc83b534cbfebe749b70b407898
+  ciphertext  96 bytes
+  chunks      1 · CHUNK_WIRE_MAX 1000 bytes per operation (§7.4)
+  weight      1 oz of 16 (§7.5)
+  postage     1 stamp(s) = 1 weight · returnReceipt false
+  envelope id 12e5e929a012321ef7d9a8b11e538782691621e753828c07281b07bd2c488159
+  memo        wishmail:12e5e929… (§4.3 — this exact string, on the settlement)
+
+  DRY RUN: nothing was signed and nothing submitted.
+```
+
+**The line that matters is the lane line**, and it is the line that read `NONE — this is first contact` yesterday. The
+driver printed its mode and the argv it received **before it read a key**, which is CLAUDE.md §12's rule and the
+reason it exists.
+
+### 10. Two findings the probe for this ruling turned up, raised and not coded around
+
+**§G-24 — HCS-10 contradicts itself about who writes the Outbound Connection Created record.** FETCHED 2026-09-10 from
+the pinned blob itself, git blob sha `0cb5d2eb…` **verified equal to the sha `spec/pins.json` carries**. Its prose
+(`index.md:560`) and its table row (`:529`) say the **acceptor** writes it; three of its five required field
+descriptions (`:585`, `:586`, `:587`) describe the **requester** writing it. It decides whether an agent can enumerate
+the lanes it requested from consensus alone. Nothing is coded around it either way.
+
+**One outbound record on this deployment is wrong against the pin, and it is ours.** `index.md:553` gives an outbound
+`connection_request` record an `operator_id` naming the agent *being* requested, plus a required `outbound_topic_id`
+and `connection_request_id`; this implementation posted the **inbound** body — the agent naming itself, two required
+fields absent. **A2's log `0.0.10462708` #1 is the one such record**, verified from the mirror; B's log `0.0.10452150`
+and the Postmaster-agent's `0.0.10426554` hold none, because neither has rung a doorbell. Fixed forward and **not
+repaired**: a consensus record cannot be rewritten and manufacturing one would be worse. LIMITATIONS L-1 names it.
+**It does not fire in this run** — the reply rings nothing.
+
+**§G-25 — the evidence bundle's digest is a function of the release's patch version.** Found by the version bump
+itself: `check:captured` and `check:receipt` failed on their digests with no change to the evidence. Isolated rather
+than assumed — with the whole of D-171's code in place and `RELEASE.spec` alone set back to `0.5.10`, both returned to
+exactly the values the network produced. §11.7 requires two Verifiers to agree and T-P3-1 compares two implementations
+byte for byte, and two implementations are never at one patch. Nothing was changed to make it go away. **The digests
+in the runs of record above were computed under 0.5.10, remain true of that day, and reproduce from tag `v0.5.11`'s
+predecessor `v0.5.10`.**
+
+### 11. What the offline courts prove, and what they leave out
+
+`check:letter` is **155 assertions**, up from 133. The reply direction runs end to end on the modelled ledger: the
+lane found through the replier's **own** doorbell and **through an ingestion lag**, `willRing` false, no second
+`connection_created` anywhere, the envelope binding, the agent that rang opening it byte for byte, and a Verifier
+**claiming `hcs14`** reporting neither `T-P10-2` nor `T-P17-2` — the direction that had never been exercised anywhere.
+Three lanes are refused beside it: one whose memo names a door holding no answer for it, one born at a third party's
+door, and one whose submit key carries a third key.
+
+**What they leave out, and no offline court can reach it**: whether the fee assesses, whether the chunk lands without
+`chunk_info`, whether the mirror ingests in the order this process expects, and whether the lane still accepts B's key.
+Every defect Gate One found lived in that gap.
+
+### 12. The gate
+
+**Sonic authorized the reply after the patch, the courts and this report** (RECORD, 2026-09-10): *"GATE — the reply
+B→A2 on the lane: AUTHORIZED after above."* The patch is committed and pushed at **`9ce3792`**, tagged `v0.5.11`;
+twenty checks are green; this report is committed before the first signature.
+
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.
