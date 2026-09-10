@@ -1922,6 +1922,32 @@
         "warrant": "§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase. Sequence 3 moved the hbar rate source from a DEX spot price to the network’s own exchange rate, which a mirror node serves with a timestamp filter — so a Verifier holding a receipt’s rate.at can obtain exactly what the Postmaster read, and T-P11-4 is checkable on a rate-priced method."
       },
       "specTag": "v0.5.10"
+    },
+    "prices.fourth": {
+      "kind": "message",
+      "role": "the fourth PriceList — the provisioned path priced at what it costs",
+      "id": "0.0.10426551",
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "postmaster payer"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1789055853.203536189",
+      "consensusTimestamp": "1789055861.123389104",
+      "confirmedFrom": "GET /topics/0.0.10426551/messages",
+      "confirmedAt": "2026-09-10T15:57:44.288Z",
+      "policy": {
+        "sequenceNumber": 4,
+        "sha256": "03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec",
+        "bytes": 667,
+        "provisioning": {
+          "method": "hbar",
+          "unitPrice": "30",
+          "registrationFee": "0.05"
+        },
+        "warrant": "§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase. Sequence 3 priced provisioning at 2 ℏ, set before the provisioning topic set’s cost was measured. Gate One measured it: one mailbox costs the Postmaster 27.78 ℏ, of which the HIP-991 fee-gated doorbell alone is 26.31 ℏ. Sequence 4 prices it at 30 ℏ; registrationFee is unchanged at 0.05 ℏ. Correspondent B bought under sequence 3 and is never repriced."
+      },
+      "specTag": "v0.5.10"
     }
   },
   "residue": [

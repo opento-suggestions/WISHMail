@@ -8,10 +8,13 @@ Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor
 and not a specification fact (D-144), and §14.3 makes a new schedule a new message rather than an edit. **[S]** ruled
 the number; **[CC]** built the runner and wrote the gate report.
 
-### Prepared and UNSIGNED
+### On consensus
 
-- **`PriceList` sequence 4** on `0.0.10426551` — sequence 3 with **one leaf changed**: `provisioning.unitPrice`
-  `"2"` → `"30"`. 667 canonical bytes, sha256 `03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`.
+- **`PriceList` sequence 4** on `0.0.10426551`, transaction `0.0.8641261@1789055853.203536189`, consensus
+  `1789055861.123389104` — sequence 3 with **one leaf changed**: `provisioning.unitPrice` `"2"` → `"30"`. 667 canonical
+  bytes, sha256 `03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`, charged 0.00734187 ℏ. Sequences 1, 2
+  and 3 read back untouched. **It is the schedule current now**, and the counter reads it back from a mirror node as
+  sequence 4: 30 ℏ for the provisioned path, 0.05 ℏ funded, ≈43.29 ℏ for a provisioning purchase with twelve stamps.
   `registrationFee` unchanged at `"0.05"`; every method, bundle, rate source and `stampToken` unchanged.
   **Why:** sequences 2 and 3 published 2 ℏ, set before a HIP-991 fee-gated topic had ever been created on this
   network. Gate One measured it: one mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows, of which
@@ -20,8 +23,9 @@ the number; **[CC]** built the runner and wrote the gate report.
   roughly eight percent over the measurement, which is what absorbs ordinary movement in the exchange rate.
   **Nothing is repriced retroactively:** Correspondent B bought under sequence 3 and stays bought under it, and its
   `StampReceipt` is not touched — a receipt is never reconstructed by the party that charged it.
-- **The gate report is in `app/OPERATIONS.md`, written before any signature**, with the submit→learn window and the
-  resume from every point inside it. **Nothing signs until [S] says the word.**
+- **The gate report is in `app/OPERATIONS.md`, written and committed before any signature**, with the submit→learn
+  window and the resume from every point inside it; the run of record is beneath it and the report is left exactly as
+  it stood. **[S]** authorised the run.
 
 ### The one-leaf claim is asserted against consensus, not against a file
 

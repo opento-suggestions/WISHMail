@@ -1573,6 +1573,127 @@ coded around here** and no file in `spec/schemas/` is touched.
 prices:4` is the submission and has not.
 
 ---
+## PriceList sequence 4 — THE RUN OF RECORD, 2026-09-10
+
+**Sequence 4 is on `hedera:testnet` and it is the schedule current now.** The gate report above is what was
+promised; this is what happened, and the report above it is left exactly as it stood. Nothing below is
+reconstructed: every value was read from a mirror node after the fact, never from an SDK receipt (D-144).
+
+Authorised by Sonic, 2026-09-10, against the gate report at commit `93f4f06`.
+
+### What was signed
+
+```
+transaction   0.0.8641261@1789055853.203536189      SUCCESS
+consensus     1789055861.123389104
+topic         0.0.10426551 #4
+payer         0.0.8641261                            the Postmaster payer
+charged       0.00734187 ℏ against 2 ℏ declared
+memo          none — a price list is not an HCS-10 operation (§6.1, T-P9-5)
+canonical     667 bytes (RFC 8785)
+sha256        03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec
+```
+
+**The digest and the byte count are the ones the gate report declared before the run**, which is the point of
+declaring them.
+
+### The readback, and what the topic holds now
+
+`GET /topics/0.0.10426551/messages?limit=25&order=asc`, after consensus:
+
+| # | bytes | sha256 | payer | consensus |
+|---|---|---|---|---|
+| 1 | 563 | `20aa3b010709d9ff…` | `0.0.8641261` | `1788895954.743195291` |
+| 2 | 637 | `14d1ee1b6fec4d5e…` | `0.0.8641261` | `1788989981.685451648` |
+| 3 | 666 | `d5f1f6fb19e0f110…` | `0.0.8641261` | `1789004842.557476068` |
+| 4 | **667** | **`03a553856cbae698…`** | `0.0.8641261` | **`1789055861.123389104`** |
+
+**Sequences 1, 2 and 3 read back untouched**, byte for byte and digest for digest, exactly as they stood
+before this run. §14.3 makes the schedule the *sequence* of messages: a new schedule is a new message and no
+published one is ever edited. The runner asserted the readback was byte-for-byte identical to what was signed
+and that the payer of record was `0.0.8641261`, and it reported sequence 1 still present.
+
+### The one leaf, as it was asserted before the signature
+
+```
+  THE DIFF, against sequence 3 as the mirror holds it (topic 0.0.10426551)
+
+    provisioning.unitPrice: "2" -> "30"
+
+  exactly one leaf moved: provisioning.unitPrice: "2" -> "30"
+  canonical   667 bytes, sha256 03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec
+  which is sequence 3's 666, less "2", plus "30"
+```
+
+`registrationFee` is `"0.05"` on both. Every method, bundle, rate source, `payTo`, `stampToken` and the `spec`
+string are sequence 3's, unchanged.
+
+### The reader, run twice — before the signature and after
+
+**Before**, over the composed bytes through a modelled mirror, `currentPriceList()` then `quote()` — the two
+the counter calls at `buy_stamp`:
+
+```
+  one stamp      1.32152769 0.0.0
+  rate           0.07567 HBAR/USD at 1789052462.238239154
+  provisioning   30 0.0.0, registrationFee 0.05
+  stampToken     0.0.10426208 / 0.0.10426205
+```
+
+**After**, over the READBACK — a real mirror node, the real topic, nothing local:
+
+```
+  mirror        https://testnet.mirrornode.hedera.com/api/v1
+  topic         0.0.10426551
+  current       sequence 4, consensus 1789055861.123389104
+  provisioning  {"method":"hbar","registrationFee":"0.05","unitPrice":"30"}
+
+  twelve stamps 13.23883804 0.0.0
+  rate          0.07553533 HBAR/USD at 1789056062.817630056
+  provisioned   30 ℏ + 0.05 ℏ registration fee
+  quoted from   sequence 4 at 1789055861.123389104
+```
+
+**The counter now selects sequence 4 as the price current at a purchase**, and quotes the provisioned path at
+30 ℏ with a 0.05 ℏ registration fee funded out of it. A provisioning purchase with twelve stamps at this
+schedule is **≈ 43.29 ℏ** at the rate above, which is what A′'s wallet must carry before it buys.
+
+The two rate readings differ (`0.07567` before, `0.07553533` after) because they were taken minutes apart and
+the network's exchange rate moves. That is the mechanism working, not a discrepancy: the rate is read at every
+quote and recorded in the receipt with the consensus timestamp a Verifier passes back to re-obtain it (D-170).
+
+### Sequence 3 is history
+
+**Permanent, never edited, and never charged under again after `1789055861.123389104`.** §14.3 fixes the price
+at the latest message with a consensus timestamp before the purchase's, so every purchase from that instant
+forward quotes at sequence 4 and every purchase before it quotes at sequence 3 — forever, and by reading the
+same topic a Verifier reads.
+
+**Correspondent B is not repriced.** It bought under sequence 3 at reference `0.0.8641261@1789007373.238805114`,
+its `StampReceipt` names sequence 3's numbers and sequence 3's rate, and none of that is touched, reissued or
+recomputed. A receipt is never reconstructed by the party that charged it.
+
+### What was written
+
+- `app/deployment/hedera-testnet.json` — one new entity `prices.fourth`, `specTag` `v0.5.10`, `policy`
+  carrying `sequenceNumber: 4`, the digest, `bytes: 667`, the `provisioning` line, and the warrant.
+  `prices.first`, `.second`, `.third` untouched.
+- `ENTITIES.md` regenerated: the price table is four rows and the bold **"This is the schedule current now"**
+  is on row 4. `npm run check:entities` PASS.
+- `STATUS.md` — the schedule current is sequence 4.
+
+### Divergence, reported rather than tidied away
+
+**The runner completed in full; the shell wrapper did not exit within the harness's 300-second window** and
+the command was moved to the background. That is the submit→learn window §7 above describes, and it was
+resolved the way §7 says to resolve it: **the mirror was read first, because the mirror is the authority and
+the process is not.** The topic held four messages with the declared digest and the declared payer before this
+process's own output was read. Nothing was rerun, nothing was repaired, and no second message was submitted.
+The process had in fact finished — `submitted … SUCCESS`, `confirmed sequence 4`, `byte-for-byte identical to
+what was signed`, `recorded as prices.fourth` — so the record write had already landed and the rerun the
+window's resume path provides for was not needed.
+
+---
 ## Step 6 — the first letter: GATE TWO, written before any signature
 
 **Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.

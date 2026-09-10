@@ -183,6 +183,12 @@ fee-gated topic was known. Repricing is a new `PriceList` message and touches no
 
 Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it without this conversation.
 
+**SIGNED 2026-09-10 — item 1 is done. `PriceList` sequence 4 is on `0.0.10426551`, 667 bytes, sha256
+`03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`, consensus `1789055861.123389104`, transaction
+`0.0.8641261@1789055853.203536189`. `provisioning.unitPrice` is 30 ℏ, `registrationFee` unchanged at 0.05 ℏ, and it is the
+schedule every purchase from that timestamp quotes at. Sequence 3 is history and Correspondent B is not repriced.
+Run of record in `app/OPERATIONS.md`.**
+
 1. **Sequence 4, before A′.** A new `PriceList` on `0.0.10426551`, identical to sequence 3 except
    `provisioning.unitPrice`; `registrationFee` unchanged at 0.05. No schema, no wire string. **Prepared and validated
    tomorrow; signed on your word. The number is OPEN — 30 ℏ was your lean, against 27.78 ℏ measured.**
@@ -199,7 +205,7 @@ Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it wit
    the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger's
    verify. Friday is goose by hand.
 
-**Open for Sonic:** sequence 4's `provisioning.unitPrice` · which classes
+**Open for Sonic:** ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · which classes
 the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
 submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
 
