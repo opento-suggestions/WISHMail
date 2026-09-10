@@ -2,6 +2,98 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.11] — 2026-09-10 — a lane binds from either party's doorbell; T-P1-8 as the ledger can show it
+
+**A patch.** No wire string moves, no schema moves, and no row is added to the register — two sketches
+are amended and one is widened. **[S]** ruled both open items; **[CC]** found them, courted them offline
+and wrote them up.
+
+### Changed
+
+- **D-171 closes §G-21.** §7.1 said "a lane is bidirectional: either party sends on it" and also bound an
+  envelope only to a lane born from "the doorbell its resolution proof yielded". An HCS-10
+  `connection_created` sits on the **acceptor's** doorbell, so the two agreed for a first letter and
+  contradicted each other for a reply: the reply's recipient is the agent that rang, and its doorbell
+  holds nothing. Found by the dry run of a real reply, before any signature.
+
+  An envelope is now bound to a lane **iff** the lane's submit key is a threshold over exactly the two
+  parties' keys **and** its `connection_created` is on the doorbell of one of them, naming the other. The
+  key clause is what makes reading *either* doorbell safe: anyone may post a `connection_created` on
+  their own door naming anyone, but nobody can make a topic key name two keys they do not hold.
+
+  **A Verifier resolves nobody to check it.** The lane's memo names the doorbell it was born on
+  (`index.md:279`); that doorbell's memo names its owner (`index.md:246`); the `connection_created` there
+  names the other party; and the pair must equal the envelope's two parties — the recipient from the
+  resolution's coordinates, the sender from the settlement's `from`. Four reads of public data, and the
+  **same walk in both directions**, because a lane has one birth however many letters cross it.
+
+- **D-172 closes §G-22.** T-P1-8 asked for a schedule record showing "exactly the recipient's signature",
+  which nothing can produce: HIP-423 records every transaction payer that touches a schedule, and our own
+  `0.0.10465145` carries three. It now asks what the ledger can show and the network enforces — the
+  recipient's key **among** the signatures, and the inner transaction's **required** signer being the
+  submit key of the recipient's manifest topic, so it could not have executed under any other. §11.4's
+  membership test stays the check, which is what the implementation already did.
+
+- Amended: §6.4's `SEND_LANE_INVALID` gloss, §7.1's discovery rule, its MUST and its memo sentence,
+  §10.4's MUST and its `Conformance:` note, §11.2's ingestion table, §11.4's binding and receipt
+  paragraphs, §11.5's reason table (a `T-P17-2` row), §12.2's P-10, §13.2's F-11.
+
+**Why patches and not 0.6.** The first text was self-contradictory and so fixed no determinate conforming
+behaviour; the second test was unsatisfiable and so nothing could ever have passed it. Beside that,
+`RELEASE.classes` is empty and no test body is expanded, so there is no previously conforming
+implementation to invalidate. Precedent: D-157, D-169.
+
+### Fixed
+
+- **The outbound HCS-10 connection record was the inbound one.** FETCHED at the pin (blob sha
+  `0cb5d2eb…`, verified against `spec/pins.json`): an outbound `connection_request` record names the
+  agent *being* requested (`index.md:553`) and requires `outbound_topic_id` and `connection_request_id`
+  (`:554-555`), under memo `hcs-10:op:3:2`. This implementation posted the inbound body to both topics —
+  the agent naming itself, two required fields missing. Fixed forward; the one such record on consensus
+  is named in LIMITATIONS and not repaired.
+- **`send` looks twice before it concludes there is no lane**, where the other party has rung this
+  agent's door. Gate One's "a mirror-lag read believed once", in a place where believing it costs more
+  than a wasted read: a lane taken for absent is a doorbell rung, a ring that need not have happened
+  opens a second lane, and a lane cannot be closed. First contact is untouched.
+- **`lanesOf` was half a rule.** An agent could list the lanes it *accepted* and not the lanes it
+  *requested*, because a lane's birth sits on one door only. It now reads both, the correspondents coming
+  from the home's own record and every lane still from consensus (D-165).
+- **`capture` did not capture the doorbell a lane was born at**, so no fixture could try the binding.
+
+### Found, raised, not coded around
+
+- **§G-24** — HCS-10's *Outbound Connection Created* operation says in its prose and its table that the
+  **acceptor** writes it, and in three of five required field descriptions that the **requester** does
+  (`index.md:558-588`). FETCHED at the pin. It decides whether an agent can enumerate the lanes it
+  requested from consensus alone.
+- **§G-25** — **the evidence bundle's digest is a function of the release's patch version.** §11.7 says
+  two Verifiers reconciling the same scope MUST produce the same digest, and T-P3-1 compares two
+  implementations byte for byte — but `verify` fills the bundle's `spec` from the full
+  `major.minor.patch`, and two independent implementations are never at the same patch. Isolated rather
+  than assumed: with the whole of D-171's code in place and `RELEASE.spec` alone set back to `0.5.10`,
+  both fixture digests returned to exactly the values the network produced. Nothing was changed to make
+  it go away. `check:captured` and `check:receipt` now assert what P-3 actually claims, which is stronger
+  than the equality they asserted before: substitute the spec string the fixture was captured under and
+  the digest is the network's **exactly**, proving every other byte of the evidence is unchanged. The
+  digests in the runs of record were computed under 0.5.10, remain true of that day, and are reproducible
+  from tag `v0.5.10`.
+
+### Courts
+
+`check:letter` 133 → **155**: the reply direction end to end — found through the replier's own doorbell
+and through an ingestion lag, ringing nothing, opened byte for byte by the agent that rang, bound by a
+Verifier claiming the profile — with three lanes refused beside it: one whose memo names a door holding
+no answer for it, one born at a third party's door, and one whose submit key carries a third key. The
+fixture's own model was wrong on the memos it now reads — the lane wore `hcs-10:1:60:3`, which is not
+HCS-10's connection-topic form and names no doorbell, while `watcher.ts` had always written the real one.
+Both agents are now declared, so a reply can be resolved at all.
+
+`check:hcs10` 17 → **30**. Twenty checks green; typecheck and `p13:check` green.
+
+**`emancipation_proclamation.md` is committed**, with `-text` on that one path so the 27 CRLF line
+endings that were sealed survive normalisation. Proven the way the LF rule was proven — delete, check
+out, hash: 4408 bytes, `a5998644…`.
+
 ## [Gate Two, checkpoint two] — 2026-09-10 — §10.4's return receipt, and `ack`
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** ruled the shape and

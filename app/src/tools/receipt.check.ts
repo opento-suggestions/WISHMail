@@ -21,7 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../ops/env.js';
-import { canonicalBytes, canonicalDigest } from '../core/canonical.js';
+import { canonicalBytes, canonicalDigest, sha256hex } from '../core/canonical.js';
 import { decodeScheduledSubmission } from '../core/schedulebody.js';
 import { verify } from './verify.js';
 import { keyMatchesPrefix } from './consensus.js';
@@ -164,7 +164,23 @@ async function main(): Promise<void> {
   is('while its STANDING is untouched by the receipt (§11.5)', base.standing, 'unverified');
 
   const out = await verify(readerOver(pristine), { lane: pristine.lane }, {});
-  is('the bundle digest is the one the network produced (P-3)', out.bundle.digest, pristine.bundleDigest);
+  // THE DIGEST IS A FUNCTION OF THE RELEASE'S PATCH VERSION, and this is where
+  // that shows. §11.7's evidence carries `spec`, and `verify` fills it from
+  // `RELEASE.spec` — the full major.minor.patch. So a Verifier at 0.5.11
+  // computes a different digest from the one this correspondence produced at
+  // 0.5.10, over byte-identical evidence, and §11.7's MUST that "two Verifiers
+  // reconciling the same scope and window MUST produce evidence with the same
+  // digest" holds only between Verifiers at one patch. Raised as ledger §G-25;
+  // NOT coded around, and `RELEASE.spec` is left exactly as it is.
+  //
+  // What P-3 claims is asserted here rather than assumed: put back the spec
+  // string this fixture was captured under and the digest is EXACTLY the one
+  // the network produced. Every other byte of the evidence is unchanged, which
+  // is a stronger statement than the equality this line used to make.
+  const SPEC_WHEN_CAPTURED = '0.5.10';
+  const { observations: _observations, digest: _digest, ...evidence } = out.bundle;
+  const asCaptured = sha256hex(canonicalBytes({ ...evidence, spec: SPEC_WHEN_CAPTURED }));
+  is('the bundle digest is the one the network produced (P-3)', asCaptured, pristine.bundleDigest);
   const again = await verify(readerOver(pristine), { lane: pristine.lane }, {});
   is('and two Verifiers over the same bytes agree (T-P3-1)', again.bundle.digest, out.bundle.digest);
 
