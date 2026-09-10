@@ -632,7 +632,12 @@ Both are correct. The suite refuses a report because the schemas are not registe
 
 ## Step 5 — two Correspondents provisioned through the counter: GATE ONE, written before any signature
 
-**Status: GATED, NOT RUN. NOTHING IS SIGNED.** Written and committed before the first transaction, on the rule the probe and Steps 2, 3 and 4 followed. What follows is what it will create, what it will assert from the mirror, what it writes and where, how it is idempotent, and every way it stops.
+**Status: RUN 2026-09-09 on Sonic's word. Correspondent B is provisioned; Correspondent A is stopped.** What follows
+is the report as it was written and committed **before the first transaction**, on the rule the probe and Steps 2, 3
+and 4 followed — what it would create, what it would assert from the mirror, what it writes and where, how it is
+idempotent, and every way it stops. **It is left exactly as it stood**, because a gate report amended after the run is
+not a gate report. **The run of record is the section immediately after it**, and where the two differ the run is what
+happened.
 
 **Re-armed 2026-09-09 after §G-19 was ruled.** The thing that blocked this step — a provisioning purchase could produce no
 `StampReceipt` that validates — is closed by **D-168, reading (a)**: §4.6’s provisioned path is taken as written and **the
@@ -959,6 +964,160 @@ Gate One’s first two purchases will quote at sequence 3, because §14.3 makes 
 the purchase.
 
 ---
+## Step 5 — THE RUN OF RECORD, 2026-09-09
+
+**Correspondent B is provisioned on `hedera:testnet` and resolves under both profiles with no `blurred`. Correspondent A
+is stopped, and what is true of it is written below rather than tidied away.** The gate report above is what was
+promised; this is what happened. Nothing in it is reconstructed: every id below was read from a mirror node after the
+fact, and every fee is the fee the network charged.
+
+### What ran
+
+Seven runs, because six of them found defects. **Every defect was in the window between "a signature left the buyer"
+and "the buyer learned what happened"** — which is the one window `check:exchange` cannot reach, and says so: there is
+no offline consensus node, so its settle leg runs down the replay path a landed transfer takes and `submit()` itself was
+Gate One's. Each is listed with what it cost, because what a defect costs is the only honest measure of it.
+
+| # | What stopped it | On consensus at the stop | Cost |
+|---|---|---|---|
+| 1 | `submit()` prepared a transaction the counter had already frozen and signed; every SDK setter it calls throws on a frozen one | nothing | nothing — a refusal leaves no mark (§3.5) |
+| 2 | `receiptFrom` read the first SUCCESS record under the transaction id. A transfer to a public-key alias auto-creates the account (HIP-542) and the mirror reports that as a **CRYPTOCREATEACCOUNT record under the same id, listed first** — no token transfers in it | A's transfer, and the account it created | nothing yet |
+| 3 | the Correspondent wrote the purchase reference down **after** the settle call returned, so it was written exactly when nothing can go wrong and lost exactly when something does | A's transfer | A's reference, restored from consensus |
+| 4 | a `quoteRef` arriving with no signature fell through to `quotePurchase` and answered a paid-for purchase with a **second quote** | A's transfer | nothing — caught before it was taken |
+| 5 | the quote-expiry check ran **ahead** of the consensus check, and its `requirements.remove` **deleted the counter's record of a purchase that had settled** | A's transfer | **A's receipt. It is not recoverable.** |
+| 6 | the re-boot after a purchase read the mirror's `account.publickey` index once; it had not ingested | B's transfer, and the account | nothing — resumed |
+| 7 | `register_agent` read the anchor back once; a topic with 381 messages had not ingested | B's registration, at sequence 381 | nothing — resumed |
+| 8 | the driver read `uaid` from the returned session's own record, which a provisioning purchase loads from disk **before** the mailbox rows are written | B's whole mailbox, and its receipt | nothing — the handle was stale, not the record |
+
+Every one is fixed, pushed, and has an offline court where one can exist: `check:correspondent` went from 105
+assertions to 109, and the four it gained are the SDK facts defect 1 turned on.
+
+### Correspondent B — bought, carried, receipted, registered
+
+**The purchase.** One transaction, three legs, the buyer signing in its own process and the Postmaster as payer.
+
+```
+reference     0.0.8641261@1789007373.238805114
+consensus     1789007377.498011153        CRYPTOTRANSFER  SUCCESS
+              15.09094832 ℏ   0.0.10450880 → the Postmaster   (12 stamps at sequence 3, plus 2 ℏ for the path)
+              12 $POSTAGE     0.0.10426205 → the agent's public-key alias, WHICH CREATED 0.0.10452127
+              0.05 ℏ          the Postmaster → 0.0.10452127    (the registration fee, as a leg of the sale)
+```
+
+**The eight carried rows.** Each body signed by the agent in its own process, decoded by the counter before it would
+sign it, and paid for by `0.0.8641261`. The payer on the mirror is the Postmaster for all eight — that is D-168's carry,
+and this is the first time it has run anywhere but in a check.
+
+| Row | Entity | Transaction | Charged |
+|---|---|---|---|
+| doorbell | `0.0.10452149` | `0.0.8641261@1789007480.796319343` | **26.31542199 ℏ** |
+| log | `0.0.10452150` | `0.0.8641261@1789007482.960695874` | 0.39534659 ℏ |
+| manifest | `0.0.10452154` | `0.0.8641261@1789007493.632479078` | 0.39534659 ℏ |
+| declRegistry | `0.0.10452155` | `0.0.8641261@1789007497.993599919` | 0.39534659 ℏ |
+| profileFile | `0.0.10452158` | `0.0.8641261@1789007506.592015773` | 0.26443711 ℏ |
+| profileChunks | 1 chunk on `0.0.10452158` | `0.0.8641261@1789007512.366919010` | 0.00740684 ℏ |
+| registryEntry | `0.0.10452155`#1 | `0.0.8641261@1789007516.787937944` | 0.00353454 ℏ |
+| accountMemo | `0.0.10452127` | `0.0.8641261@1789007518.420848031` | 0.00418909 ℏ |
+
+**27.78102934 ℏ against 15.09094832 ℏ taken.** LIMITATIONS carries what that means; it is a pricing decision and not a
+defect, and nothing on consensus is wrong.
+
+**The readback, from a mirror node, every field against the shape the row was created under.**
+
+```
+doorbell      hcs-10:0:60:0:0.0.10452127   submit NONE   admin 0bf6f350…
+              fee 1 × 0.0.10426208 → 0.0.10426205 · 1 exempt key · auto-renew 0.0.10450880
+log           hcs-10:0:60:1                submit 0bf6f350…   admin 0bf6f350…   no fee
+manifest      wishmail:manifest:1          submit 0bf6f350…   admin 0bf6f350…   no fee
+declRegistry  hcs-2:0:60                   submit 0bf6f350…   admin 0bf6f350…   no fee
+profileFile   00d27750…51190:brotli:base64 submit 0bf6f350…   admin NONE        no fee      ← D-150
+account       memo "hcs-11:hcs://2/0.0.10452155"    12 $POSTAGE    0.04622564 ℏ
+```
+
+**The auto-renew account is `0.0.10450880` — the Correspondent's own operator — on every row.** The Postmaster sells a
+mailbox once; it does not undertake to renew it forever, and a topic naming it would say otherwise on consensus where
+every reader can see it. The counter refuses a row that names it, and this is that refusal never being needed.
+
+**The receipt, and it is the first this counter has issued.** Every `provisioning` field filled from the counter's own
+readback under the transaction ids its own signature carried, never echoed from anything the agent said, and validated
+against the **registered** `StampReceipt` schema before it was returned.
+
+```json
+{
+  "ledgerTag": "hedera:testnet", "tokenId": "0.0.10426208", "amount": 12,
+  "txRef": "0.0.8641261@1789007373.238805114",
+  "price": { "amount": "13.09094832", "currency": "0.0.0" },
+  "rate": { "source": ".../api/v1/network/exchangerate", "pair": "HBAR/USD",
+            "value": "0.07638866", "at": "1789005662.118530104" },
+  "holder": "0.0.10452127",
+  "provisioning": { "price": { "amount": "2", "currency": "0.0.0" }, "registrationFee": "0.05",
+                    "account": "0.0.10452127", "doorbell": "0.0.10452149", "log": "0.0.10452150",
+                    "manifestTopic": "0.0.10452154", "declRegistry": "0.0.10452155",
+                    "profileFile": "0.0.10452158" }
+}
+```
+
+**`rate` is D-170's, and a stranger can run it**: `GET /api/v1/network/exchangerate?timestamp=1789005662.118530104`
+returns the record that yields `0.07638866`. Under sequence 1 or 2 this receipt would have been true and unprovable.
+
+**The registration, and the one fact the funded fee exists to buy.**
+
+```
+anchor        0.0.6913983   sequence 381   consensus 1789007656.541995104
+payer         0.0.10452127  — THE AGENT ITSELF, which is what §9.5 reads to decide `blurred`
+charged       0.00377436 ℏ  against 0.02 ℏ declared and the 0.05 ℏ the purchase funded
+body          {"p":"hcs-10","op":"register","account_id":"0.0.10452127","uaid":"uaid:aid:6oLcXzHfk4X3…",
+               "t_id":"0.0.10452155","m":"WISHMail"}   — no transaction memo (D-164, §6.1)
+```
+
+**Row 10 of the gate report is answered, and the answer is that the question did not have to be settled.** The report
+said the declared maximum was set to 0.02 ℏ because this project cannot cite whether Hedera's solvency precheck compares
+the balance to the fee it *estimates* or to the maximum the transaction *declares*, and that an explicit maximum below
+the balance is safe under both readings. **It was.** The submission cost 0.00377436 ℏ — thirteen times under the
+declaration and under a tenth of the funding — so the run passed without distinguishing the readings, which is what
+declaring explicitly was for. **The question is still open**, and the footnote probe is what would close it.
+
+**Both resolutions, and the acceptance test for the whole step.**
+
+```
+hcs14   0.0.10452127 · doorbell 0.0.10452149 · manifest 0.0.10452154 · math · endorsements []
+hol     0.0.10452127 · math · endorsements []
+```
+
+**No `blurred` on either.** Every agent on the testnet anchor today carries it — all 380 messages before ours were paid
+by one broker account — and B does not, because B paid for its own name out of what it was bought with.
+
+**And the idempotency test.** The run was repeated twice more against the same home. Both exited 0, created nothing, and
+printed *mailbox existing, registration existing*: `generate_mailbox` asks the resolver first and `register_agent` reads
+the anchor first, so a wiped local file cannot cause a second doorbell or the duplicate §9.5 assigns `vague` to (D-165).
+
+### Correspondent A — STOPPED, and what is true of it
+
+**The account is on consensus, bought and paid for. There is no mailbox and there will be no receipt.**
+
+```
+reference   0.0.8641261@1789006030.569861064   consensus 1789006038.283484423   SUCCESS
+account     0.0.10451893 — created by the transfer, holding 12 $POSTAGE and 0.05 ℏ
+paid        15.09094832 ℏ from 0.0.10450879
+```
+
+**What is lost is the counter's record of the sale, and only that.** Defect 5 above: the quote-expiry check ran ahead of
+the consensus check and deleted the `Requirement` row — the quote it charged, the rate it charged at, and the holder it
+sold to. §5.4's receipt carries the price and the rate, and those come from that row. **Rebuilding them from the ledger
+would be manufacturing the evidence the receipt exists to be**, so this release does not, and A has no `StampReceipt`.
+
+**What is NOT lost.** Nothing was charged twice, and nothing can be: a transaction id is single-use. The account, its
+stamps and its fee are on consensus and spendable. A's home holds the reference, restored from consensus alone — the
+account's own `created_timestamp`, and the transaction at it — so the ledger can still be walked from either side.
+
+**What is resumable, and by whom.** A's mailbox can be finished by `generate_mailbox`, which is §4.6's
+**self-provisioned** path: A's own operator pays for the six rows, at their own expense, and A then registers itself and
+resolves under both profiles exactly as B does. That is L-5's path and the driver already takes it for an agent that
+brings its own account. **It is a decision about who pays and about what the demo shows, and it is not a repair** — so
+it is written here and not taken.
+
+---
+
 ## Demo-operator funding — two wallets, and it is not a sale
 
 **Written before the first signature, as everything here is.** Gate One needs two Correspondents, and a Correspondent

@@ -117,12 +117,24 @@ written to by any code in this repository.
 
 ## DEMO AGENTS
 
-**Empty until Gate One.** The two Correspondents do not exist yet: their accounts are *bought* rather than
-funded (§4.6, HIP-542), so nothing here exists until the counter’s first two sales. Their **Operators’** wallets
-do — `app/OPERATIONS.md`, "Demo-operator funding" — and that was funding and not a sale, which is why those two
-accounts are not entities of this deployment and are not listed above.
+From `app/deployment/demo-agents.hedera-testnet.json`, snapshotted from each home’s own `record.json`. Every id
+below is public and nothing here is a key: a home’s config and keystore are never read (P-13).
 
-Filled by `npm run entities:md -- --homes <parent>` once the two homes carry records. **A home is read for its
-`record.json` only** — what that agent has on consensus, which is public — and never for its config or its
-keystore, which stay outside the repository (P-13).
+| Agent | What | Id | Payer of record |
+|---|---|---|---|
+| a | the provisioning purchase this agent was bought by | `0.0.10451893` | `0.0.8641261` |
+| b | the provisioning purchase this agent was bought by | `0.0.10452127` | `0.0.8641261` |
+| b | doorbell (HCS-10 inbound) | [`0.0.10452149`](https://hashscan.io/testnet/topic/0.0.10452149) | `0.0.8641261` |
+| b | log (HCS-10 outbound) | [`0.0.10452150`](https://hashscan.io/testnet/topic/0.0.10452150) | `0.0.8641261` |
+| b | manifest | [`0.0.10452154`](https://hashscan.io/testnet/topic/0.0.10452154) | `0.0.8641261` |
+| b | declaration registry (HCS-2) | [`0.0.10452155`](https://hashscan.io/testnet/topic/0.0.10452155) | `0.0.8641261` |
+| b | HCS-11 profile file (HCS-1) | [`0.0.10452158`](https://hashscan.io/testnet/topic/0.0.10452158) | `0.0.8641261` |
+| b | HCS-11 profile, as HCS-1 chunks | `0.0.10452158` | `0.0.8641261` |
+| b | HCS-2 register entry naming the profile file | `0.0.10452155` | `0.0.8641261` |
+| b | §9.2’s account memo, the first link in the chain | `0.0.10452127` | `0.0.8641261` |
+| b | the agent’s own registration on the HOL anchor (§9.5, T-P13-4) | `0.0.6913983` | `0.0.10452127` |
+
+**The payer column is the point of it.** Every row of a mailbox names the Postmaster as payer — it provisioned
+what it sold (D-168) — and the registration on the HOL anchor names **the agent’s own account**, which is the one
+fact §9.5 reads to decide `blurred` and the reason the purchase funds exactly one fee (T-P13-4).
 

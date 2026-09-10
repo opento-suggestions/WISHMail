@@ -70,13 +70,22 @@ literally true of the receipt. What remains a limitation is what it cost to deci
 D-159 attempted — making the two fields optional — is a minor version, 0.6, across fourteen schema files now registered on
 consensus, and this release does not take it.**
 
-**A carried body authorises a fee this release does not measure.** A body the Postmaster co-signs names its own maximum
-transaction fee, and that fee comes out of the Postmaster’s account. The ceiling for each row is read from `networks.ts` —
-the same file the Correspondent builds the row’s cap from — and a fee-gated topic creation was observed to fail at a 20 ℏ
-cap and to succeed at 100 ℏ, charged far less (FETCHED 2026-09-08). So the authorised exposure per doorbell is 100 ℏ and
-the actual charge is what the network charges, which we have not measured. An operator who has can lower it with
-`WISHMAIL_CARRY_MAX_HBAR`, which may only lower. **That is our scoping — a measurement we did not take — and not a
-property of Hedera or of the specification.**
+**A carried body authorises a fee, and Gate One measured what it costs: the counter sells a mailbox at a loss.** A body
+the Postmaster co-signs names its own maximum transaction fee, and that fee comes out of the Postmaster’s account. The
+ceiling for each row is read from `networks.ts` — the same file the Correspondent builds the row’s cap from — and a
+fee-gated topic creation was observed to fail at a 20 ℏ cap and to succeed at 100 ℏ (FETCHED 2026-09-08). **What it is
+actually charged was unknown until 2026-09-09, and it is 26.31542199 ℏ.** The eight carried rows of one mailbox cost the
+Postmaster **27.78102934 ℏ**, of which the doorbell is 95%, against **15.09094832 ℏ** taken for the sale — the twelve
+stamps at sequence 3’s rate, plus the 2 ℏ the provisioned path is priced at. **Every mailbox sold at the published price
+loses about 12.7 ℏ.**
+
+Nothing here is wrong on consensus and nothing is a defect: the price on the price topic is the price charged (§14.3,
+T-P11-4), every fee is inside the ceiling the policy authorised, and the Postmaster’s payer holds thousands of ℏ of
+testnet ℏ. **What is true is that `provisioning.price` was set before the cost of a HIP-991 fee-gated topic was known,
+and it does not cover it.** Repricing is a new `PriceList` message and touches no schema and no wire string (§14.3 makes
+the schedule the sequence of messages), so it is a decision and not a change to WISHMail. **This release states the
+number rather than the intention.** An operator can lower the authorised exposure with `WISHMAIL_CARRY_MAX_HBAR`, which
+may only lower — but lowering it below 26.4 ℏ refuses the doorbell, which is what the ceiling is for.
 **Every leg of a purchase but the receipt is flagged as an error on the wire, and that is MCP’s rule rather than ours.**
 A tool that declares an `outputSchema` must return `structuredContent` matching it on any result not flagged as an
 error; the client rejects the response otherwise, with a protocol error and not a tool one. §6.3 makes `buy_stamp`’s

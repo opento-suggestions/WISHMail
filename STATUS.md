@@ -163,10 +163,25 @@ shape before any signature, in the form Steps 2-4 follow.
   receipt’s `rate.at` obtains exactly what the Postmaster read. Verified by replay, 2026-09-09, identical to the digit.
   Under the DEX source every rate-priced receipt would have been true and unprovable, and P-12 downgrades what cannot
   be replayed.
-- **What Gate One waits on: Sonic’s word.** The two Operators’ wallets exist — `0.0.10450879` and `0.0.10450880`, 35 ℏ
-  each, unlimited auto-associations, recorded in `app/OPERATIONS.md` as funding and not a sale — and their two homes are
-  filled and boot. The purchases are
-  **real sales at sequence 3’s prices (D-170)** and will be the counter’s first; nothing in the demo is a fixture funded on the side.
+- **GATE ONE RAN, 2026-09-09.** **Correspondent B is provisioned on `hedera:testnet`** — bought at sequence 3's price,
+  its eight mailbox rows carried and paid for by the Postmaster, its receipt issued from the counter's own readback,
+  its registration on the HOL anchor at sequence 381 **paid by its own account**, and it resolves under `hcs14` and
+  `hol` with **no `blurred`** on either. Account `0.0.10452127`, doorbell `0.0.10452149`, log `0.0.10452150`, manifest
+  `0.0.10452154`, declaration registry `0.0.10452155`, profile file `0.0.10452158`. Two further runs against the same
+  home created nothing and exited 0. **`ENTITIES.md` carries every id with a HashScan link.**
+- **Correspondent A is STOPPED and its state is on consensus**: account `0.0.10451893`, bought and paid for, holding its
+  12 `$POSTAGE` and its 0.05 ℏ, with no mailbox and **no receipt**. A defect deleted the counter's record of that sale —
+  the quote it charged and the rate it charged at — and §5.4's receipt is built from those, so rebuilding them would be
+  manufacturing the evidence the receipt exists to be. Nothing was charged twice and nothing can be. **Finishing A
+  through `generate_mailbox` at its own operator's expense is L-5's self-provisioned path and a decision about who pays**,
+  written in `app/OPERATIONS.md` and not taken.
+- **Eight defects, every one in the window a real submission is the only way to reach**, all fixed and pushed; the run
+  of record names each with what it cost. `check:correspondent` is 109 assertions, up from 105, and the four it gained
+  are the SDK facts the first one turned on.
+- **The doorbell costs 26.31542199 ℏ, measured for the first time.** One mailbox costs the Postmaster 27.78102934 ℏ to
+  provision and sells for 15.09094832 ℏ. Nothing on consensus is wrong and no fee left its ceiling; `provisioning.price`
+  was simply set before the cost of a HIP-991 fee-gated topic was known. **Repricing is a new `PriceList` message and
+  touches no schema and no wire string** — a decision, in LIMITATIONS, not taken here.
 - **What Gate Two owes.** `send`, `inbox` and `ack` refuse on the Correspondent’s MCP, naming the gate. They are built and
   run end to end against the modelled ledger (`check:letter`, 63 assertions); what they need is the live wiring, §10.4’s
   schedule — which `send` still refuses outright — and a letter to carry.

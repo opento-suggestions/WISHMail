@@ -133,6 +133,15 @@ export async function registerAgent(
   if (existing === null) throw new RegistrationRefusal(`the anchor ${anchor} could not be read; refusing to register blind`);
   const mine = existing.filter((r) => r.body.account_id === s.account);
   if (mine.length > 0) {
+    // A REGISTRATION FOUND IS RECORDED LIKE A REGISTRATION MADE. The record is a
+    // cache of consensus (D-165), and a run that finds its own registration
+    // already there has read exactly what a run that submitted one reads back.
+    // So it writes the same row and checks the payer the same way. Gate One's
+    // last run found B's registration and recorded nothing, which left a home
+    // that could not name a registration standing on consensus in its own name.
+    const found = mine[0] as Registration;
+    requirePayer(found, s.account, anchor);
+    remember(record, s, anchor, found, '(submitted by an earlier run of this agent; the anchor is the record)', { ...found.body });
     push(line('register.existing', { account: s.account, anchor }));
     return { outcome: 'existing', coordinates: await requireHol(s, inputs.uaid, push), lines };
   }
@@ -205,13 +214,36 @@ export async function registerAgent(
         'Run it again once the mirror has caught up.',
     );
   }
-  if (landed.payer !== s.account) {
-    throw new RegistrationRefusal(
-      `the registration at ${anchor}#${landed.sequenceNumber} was paid by ${landed.payer ?? '(unknown)'} and not by ` +
-        `${s.account}, so §9.5 assigns \`blurred\` and T-P13-4 does not hold. It cannot be withdrawn.`,
-    );
-  }
+  requirePayer(landed, s.account, anchor);
+  remember(record, s, anchor, landed, r.transactionId, body);
+  push(line('register.submitted', { anchor, sequenceNumber: landed.sequenceNumber, payer: s.account }));
 
+  return { outcome: 'created', coordinates: await requireHol(s, inputs.uaid, push), lines };
+}
+
+/**
+ * THE ONE FACT THE FUNDED FEE EXISTS TO BUY, checked wherever the registration
+ * came from. §9.5 assigns `blurred` where the registration's payer is not the
+ * address's own account, and it does that whoever put the message there — so a
+ * registration this run found is held to the same standard as one it made.
+ */
+function requirePayer(reg: Registration, account: string, anchor: string): void {
+  if (reg.payer === account) return;
+  throw new RegistrationRefusal(
+    `the registration at ${anchor}#${reg.sequenceNumber} was paid by ${reg.payer ?? '(unknown)'} and not by ` +
+      `${account}, so §9.5 assigns \`blurred\` and T-P13-4 does not hold. It cannot be withdrawn.`,
+  );
+}
+
+/** The record row, written the same way whether this run made the registration or found it. */
+function remember(
+  record: AgentRecord,
+  s: Session,
+  anchor: string,
+  reg: Registration,
+  transactionId: string,
+  body: Record<string, unknown>,
+): void {
   record.put('holRegistration', {
     kind: 'message',
     role: 'the agent’s own registration on the HOL anchor (§9.5, T-P13-4)',
@@ -219,16 +251,13 @@ export async function registerAgent(
     builtBy: 'TopicMessageSubmitTransaction',
     signedBy: ['agent'],
     payer: s.account,
-    transactionId: r.transactionId,
-    consensusTimestamp: landed.consensusTimestamp,
+    transactionId,
+    consensusTimestamp: reg.consensusTimestamp,
     confirmedFrom: `GET /topics/${anchor}/messages`,
     confirmedAt: new Date().toISOString(),
-    policy: { sequenceNumber: landed.sequenceNumber, operation: body, transactionMemo: '', warrant: '§4.6 · D-164 · the agent is its own payer so §9.5 assigns no `blurred`' },
+    policy: { sequenceNumber: reg.sequenceNumber, operation: body, transactionMemo: '', warrant: '§4.6 · D-164 · the agent is its own payer so §9.5 assigns no `blurred`' },
     specTag: s.specTag,
   });
-  push(line('register.submitted', { anchor, sequenceNumber: landed.sequenceNumber, payer: s.account }));
-
-  return { outcome: 'created', coordinates: await requireHol(s, inputs.uaid, push), lines };
 }
 
 /** Resolve under §9.5 and refuse to call it done while `blurred` is on it. */
