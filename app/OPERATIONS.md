@@ -2411,6 +2411,201 @@ sequence, and sequencing it is Sonic's.
 is the live one and has not. B's watcher is not up.
 
 ---
+## Step 6 — CHECKPOINT ONE: THE RUN OF RECORD, 2026-09-10
+
+**One plain certified letter travelled from A2 to B on `hedera:testnet`, B opened it byte for byte, and a stranger
+holding nothing reconstructed it from consensus alone.** The gate report above is what was promised; this is what
+happened, and the report is left exactly as it stood. Nothing below is reconstructed: every id was read from a mirror
+node **before** the process's own output was read, which is the rule Gate One and the a2 run both taught.
+
+Authorised by Sonic, 2026-09-10 evening, against the gate report at commit `2821470`. **It completed in one pass with
+no stop.**
+
+### The arrangement, as it ran
+
+```
+  the counter        NOT STARTED. Nothing here buys anything.
+  B's process        npm run correspondent -- <b home>, up first and left up.
+                     Its doorbell watcher armed before the banner printed.
+  A2's driver        npm run letter -- <a2 home> --to 0.0.10452127 --live
+  the stranger       npm run verify -- --lane 0.0.10464056, from a directory
+                     holding nothing at all.
+```
+
+### What was signed, in order
+
+| # | Act | Transaction | Consensus | Payer |
+|---|---|---|---|---|
+| 1 | one stamp to the payer (§4.4's first hop) | `0.0.10450879@1789064908.370570359` | — | `0.0.10450879` |
+| 2 | `connection_request` on B's doorbell | `0.0.10450879-1789064908-008543399` | `1789064914.951353025` | `0.0.10450879` |
+| 3 | `connection_created`, B's answer | — | `1789064925.372200222` | **`0.0.10450880`** |
+| 4 | the lane topic | — | `1789064923.250107307` | `0.0.10450880` |
+| 5 | the resolution manifest on A2's manifest topic | — | `1789064928.078590104` | `0.0.10450879` |
+| 6 | the settlement | `0.0.10450879@1789064924.136455588` | `1789064932.591585104` | `0.0.10450879` |
+| 7 | chunk 0 on the lane | `0.0.10450879-1789064930-720301282` | `1789064935.243142061` | `0.0.10450879` |
+
+```
+lane        0.0.10464056
+envelope    cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2
+manifest    0.0.10462713 #1
+```
+
+### Every assertion the gate report owed, from the mirror
+
+**The ring, and the fee it assessed.** The `connection_request` is sequence 1 on B's doorbell `0.0.10452149`, body
+`{"p":"hcs-10","op":"connection_request","operator_id":"0.0.10462704@0.0.10462700"}`. Its transaction assessed
+
+```
+TOKEN 0.0.10426208   0.0.10450879  -1
+TOKEN 0.0.10426208   0.0.10426205  +1
+```
+
+**Exactly one stamp, in the pinned stamp token, collected by the treasury, debited from the transaction payer** —
+T-P7-4 on consensus, and §4.4's sentence about the payer demonstrated rather than quoted. The two-hop worked: A2 moved
+one stamp to `0.0.10450879` first, and no association transaction was needed.
+
+**B's answer.** Sequence 2 on the same doorbell, `connection_created` naming `connection_topic_id 0.0.10464056`,
+`connected_account_id 0.0.10462700`, `connection_id 1`, **paid by `0.0.10450880`** — B's own operator, signed in B's
+own process. The Postmaster is not on this page anywhere.
+
+**The lane.**
+
+```
+memo         hcs-10:1:60:2:0.0.10452149:1
+submit_key   ThresholdKey, threshold 1, over EXACTLY two keys:
+               d94b7e7d8f051d32…  A2's agent key
+               0bf6f35094412d8c…  B's agent key
+admin_key    0bf6f35094412d8c…
+custom_fees  fixed_fees: []        ← no custom fee (T-P11-3)
+```
+
+**Exactly the two agents' keys and nobody else's** (T-P17-2). The threshold is 1 because either party may post to a
+lane and neither needs the other's signature to write a letter; the "exactly two" is what the test is about.
+
+**The affix.**
+
+```
+settlement   0.0.10450879@1789064924.136455588
+memo         wishmail:cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2
+TOKEN        0.0.10426208   0.0.10462700 -1   →   0.0.10426205 +1
+consensus    1789064932.591585104
+```
+
+The memo is the identifier and nothing else. **It precedes chunk 0 by 2.65 seconds** — strictly earlier, T-P7-1.
+
+**The submission.**
+
+```
+chunk 0      806 bytes on the wire      ← at or under CHUNK_WIRE_MAX 1000
+chunk_info   null                       ← NO transport chunking (T-P9-7)
+memo         hcs-10:op:6:3              ← operation 6, topic type 3 (T-P9-5)
+operator_id  0.0.10462704@0.0.10462700  ← names the settlement's `from` (T-P1-6)
+```
+
+**`chunk_info: null` is the base-class freeze override of §5 confirmed on consensus for the first time.** Step 6 §5
+promised that the first chunk on the ledger would be the confirmation, and if the mirror showed `chunk_info` the step
+would stop there. It does not.
+
+**The manifest** is message 1 on `0.0.10462713`, 737 bytes, at `1789064928.078590104` — **before chunk 0**, which is
+what §11.4 requires of a resolution proof's postmark.
+
+### `inbox` at B — the letter opened
+
+```
+inbox — 0.0.10452127, home b
+lanes  0.0.10464056   — from consensus, by §7.1's rule
+
+envelope   cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2
+opened     true
+payload    "Certified mail for agents, on Hedera. Checkpoint one."
+bytes      53
+
+1 delivery(ies). inbox wrote nothing (§6.5).
+```
+
+**Byte-identical to what was sent.** B found the lane from consensus rather than from any local file, reassembled by
+the chain, rebuilt the AAD from the header and the lane, checked it against `id`, fetched the settlement and checked
+its memo and amount, and decrypted under epoch 1. **And it wrote nothing** — reading a lane leaves no mark on it
+(D-29).
+
+### `verify` from a stranger holding nothing
+
+```
+verify — configured with NOTHING (P-4)
+mirror   https://testnet.mirrornode.hedera.com/api/v1
+scope    lane 0.0.10464056
+holding  no key · no account · no stamp · no counter · no home
+
+bundle digest   8d30dfdc4c58d6b283189dc08257f4f5bce76577efa89a50dd59fb8279255fe6
+correspondence  1 envelope(s)
+  state         SETTLED
+  APPRAISED     unverified
+  reasons       T-P12-4
+  DECLARED      trust class math · 0 endorsement(s)
+  receipt       none
+
+narrative.bundleDigest  8d30dfdc…   matches the bundle: true
+```
+
+**Run twice: the same digest both times** (T-P3-1), and the narrative carries it (T-P3-4). This is the second of
+WISHMail's two claims, and it is the first time it has been anything but a design intention: **a correspondence
+reconstructed from public consensus data by someone with no key, no account, no stamp and no credential.**
+
+### The appraisal against the prediction
+
+**The gate report predicted `unverified`, with the reason being the profile-not-claimed row, and that is what came
+back.** The prediction named the row's two test ids, **T-P6-1 / T-P12-4**; the Verifier reported **T-P12-4** alone,
+which is the narrower and more precise of the two and the one §9.6's own sentence names. The substance — *this release
+claims no profile, so it does not replay, so the resolution is unverified* — is exactly right, and the run confirmed a
+prediction rather than producing a surprise. **T-P9-3 did not fire**, which is Step 4's signing showing up in an
+appraisal for the first time.
+
+The declared trust class came back `math` with no endorsements, reported beside the standing and not folded into it —
+P-12's "a Verifier does not raise a trust class", visible.
+
+### The fixture, and the alterations offline
+
+`conformance/fixtures/checkpoint-one-letter.json` holds the correspondence as the mirror returned it: the lane's
+messages, the manifest topic, **the HCS-13 registry and the HCS-1 schema file**, the settlement, the topic records,
+and the account memos and keys the bundle touched. `npm run check:captured` appraises it **with no network** and
+reaches the same standing and **the same bundle digest** the network produced.
+
+**Six of the seven alterations drive the standing strictly lower**: a changed `id`; the same chunk read on another
+topic; a swapped `hdr.rp.h`; a settlement memo that is not the identifier; an `operator_id` that is not the
+settlement's `from`; and a `hdr.h` the slices do not hash to. None is a tool failure — every one is an appraisal
+(P-12).
+
+**The seventh could not be caught, and that is a finding rather than a gap.** §11.5's ladder has `hdr.ke equals the
+coordinates' keyEpoch` yielding unbound (T-P1-10), but §11.4 says it is compared against *the coordinates the
+resolution yielded* — and this release does not replay, because it claims no profile. So an altered epoch passes
+unnoticed. It is recorded as a passing assertion that says so. **Claiming `hcs14` therefore buys more than a higher
+standing: it turns on a binding check that is dark today**, and that belongs beside §11's derivation in the gate
+report.
+
+### Divergences, brought rather than coded around
+
+**The lane, the settlement and the chunks are NOT in A2's home record.** §3 of the gate report says they would be.
+`CorrespondentKey` in `sdk/home.ts` is a closed union of the eleven provisioning keys with no room for a lane, so
+`record.put` cannot name one. Nothing is lost — all three are on consensus and the fixture holds them — but
+`ENTITIES.md` shows A2's mailbox and not its correspondence, and the gate report's §3 overstated what would be
+written. Left as it is rather than widened mid-run.
+
+**The seventh alteration is a substitute.** §11.3's chain walks chunk 0 by its header and each later chunk by the
+prior's `nx`. **This letter is one chunk** — 53 bytes of payload fit in a single HCS message — so there is no `nx` to
+break, and the seventh alteration exercises the other half of the same walk instead. **T-P1-11 still owes a
+multi-chunk fixture**, and checkpoint one did not produce one.
+
+**Three new CLIs were written during the run**, because the gate report named `inbox` and `verify` as parts of the
+checkpoint and neither had a driver: `sdk/inbox.cli.ts`, `sdk/verify.cli.ts` and `sdk/capture.cli.ts`. **None of them
+takes a mode flag and none of them can sign** — `inbox` writes nothing by §6.5, and `verify` and `capture` hold a
+`Reader`, which is a type that cannot write. That is why they are exempt from CLAUDE.md §12's rule rather than
+forgetful of it.
+
+**The Correspondent MCP server is a signing surface with no dry-run mode**, and it stayed that way for this run. Its
+watcher answers doors, which is the agent's ordinary business rather than a one-shot spend, and a server has no plan
+mode to default to. Named here so the exemption is a decision and not an oversight.
+
+---
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.

@@ -1,7 +1,7 @@
 {
   "_readme": "The demo Correspondents’ own entities on consensus, snapshotted from each home’s record.json by `npm run entities:md -- --homes <parent>`. It is here and NOT in hedera-testnet.json because that file is the Postmaster’s ops record and takes no Correspondent entity id (CLAUDE.md §11). Every field is public: an id, a role, and the account that paid. No key, no config, no keystore — those stay in the home, outside the repository, and are never read by the generator (P-13). ENTITIES.md is generated from this file and is never hand-edited; `npm run check:entities` is what holds that.",
   "ledgerTag": "hedera:testnet",
-  "takenAt": "2026-09-10T17:24:31.524Z",
+  "takenAt": "2026-09-10T18:39:48.677Z",
   "agents": [
     {
       "slug": "a",

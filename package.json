@@ -54,6 +54,10 @@
     "prices:2": "npm run prices:2 --workspace app --",
     "prices:2:plan": "npm run prices:2:plan --workspace app --",
     "letter": "npm run letter --workspace app --",
-    "letter:plan": "npm run letter:plan --workspace app --"
+    "letter:plan": "npm run letter:plan --workspace app --",
+    "inbox": "npm run inbox --workspace app --",
+    "verify": "npm run verify --workspace app --",
+    "capture": "npm run capture --workspace app --",
+    "check:captured": "npm run check:captured --workspace app --"
   }
 }

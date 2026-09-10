@@ -2,6 +2,65 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Two, checkpoint one] — 2026-09-10 — the first letter
+
+**No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** authorised the run;
+**[CC]** wired it, ran it and wrote the record.
+
+### On consensus
+
+**A plain certified letter, A2 → B, on `hedera:testnet`.** One pass, no stop.
+
+```
+lane        0.0.10464056    threshold of exactly A2's and B's keys · no custom fee (T-P17-2, T-P11-3)
+envelope    cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2
+settlement  0.0.10450879@1789064924.136455588 · memo wishmail:cd9dc8f4… · 2.65 s before chunk 0 (T-P7-1)
+chunk 0     806 bytes · chunk_info NULL (T-P9-7) · memo hcs-10:op:6:3 (T-P9-5)
+manifest    0.0.10462713 #1, before chunk 0
+```
+
+- **The doorbell's fee assessed exactly one `$POSTAGE` to the treasury** from the transaction payer (T-P7-4), which
+  is §4.4's sentence about who pays demonstrated rather than quoted. The two-hop worked: A2 moved one stamp to its
+  operator first, and the wallet's unlimited auto-associations meant no association transaction.
+- **`chunk_info: null` on the mirror** — the base-class freeze override of Step 6 §5, confirmed on consensus for the
+  first time. Step 6 promised the first chunk would be the confirmation and that the step would stop if it were not.
+- **B answered in B's own process, paid by B's own operator.** The Postmaster is not a party to this letter anywhere.
+- **`inbox` returned the payload byte-identical** and wrote nothing (§6.5, D-29).
+- **`verify` from a directory holding nothing** — no key, no account, no stamp, no counter, no home — produced the
+  same bundle digest twice (T-P3-1) with a narrative carrying it (T-P3-4). **That is the second of the two claims
+  WISHMail sells, and the first time it has been more than a design intention.**
+
+**The appraisal is the one the gate report predicted BEFORE the letter**: `unverified`, reason `T-P12-4`. This release
+claims no profile, so §11.4 does not replay and §9.6 makes that conforming. **T-P9-3 did not fire** — Step 4's signing
+showing up in an appraisal for the first time. The declared trust class came back `math` with no endorsements,
+reported beside the standing and never folded into it (P-12).
+
+### Added
+
+- **The letter path is wired to live consensus** through the seam it was always built for. `sdk/letter.ts` hands
+  `send` and `inbox` this agent's own ids; `sdk/live.ts` and `Session.consensus` were already the network half.
+  §4.4's first hop is `ringStamp`, which moves one stamp to the payer exactly when the payer holds none.
+- **`conformance/fixtures/checkpoint-one-letter.json`** — the correspondence as the mirror returned it, including the
+  HCS-13 registry and the HCS-1 schema file. **`npm run check:captured` (13 assertions) reaches the same standing and
+  the same bundle digest with NO NETWORK**, which is what P-4 asks for.
+- Three read-only drivers: `sdk/inbox.cli.ts`, `sdk/verify.cli.ts`, `sdk/capture.cli.ts`. **None takes a mode flag
+  and none can sign** — `inbox` writes nothing and the other two hold a `Reader`, a type that cannot write.
+
+### Found
+
+- **A fixture that captured only the lane and the manifest appraised the SAME letter one rung lower offline than on
+  the network**, because a chunk's `schemaRef` is an HCS-13 locator with nowhere to resolve to. The capture now takes
+  the registry topic and the file topic it names. Found by the fixture's own offline court on its first run.
+- **A wrong key epoch is not caught by a Verifier that claims no profile.** §11.5 has `hdr.ke` yielding unbound
+  (T-P1-10), but §11.4 compares it against the coordinates a *replay* produces — and a claimless release does not
+  replay. Recorded as a passing assertion that says so. **Claiming `hcs14` buys a binding check that is dark today,
+  not only a higher standing.**
+- **T-P1-11 still owes a multi-chunk fixture.** Checkpoint one's letter is one chunk, so it has no `nx` to break; the
+  seventh alteration exercises the other half of the same walk and the record says so rather than faking it.
+- **The lane, settlement and chunks are not in A2's home record**, because `CorrespondentKey` is a closed union of
+  the eleven provisioning keys. Nothing is lost — all three are on consensus and in the fixture — but Step 6 §3
+  overstated what would be written, and it is left as it is rather than widened mid-run.
+
 ## [A2] — 2026-09-10 — the second Correspondent, and a dry run that was not one
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** ruled the label, the

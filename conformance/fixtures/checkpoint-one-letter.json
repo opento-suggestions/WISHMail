@@ -1,0 +1,212 @@
+{
+  "_readme": "A correspondence captured from hedera:testnet, byte for byte as a mirror node returned it. Nothing here is a key and nothing here is private: every byte is on a public topic. It exists so the suite can run with no network (P-4) — a test that reached a mirror node would be a test of the mirror node. The appraisal below is what THIS release reached; a release claiming a profile reaches a different one, and the difference is the point of §11.4.",
+  "ledgerTag": "hedera:testnet",
+  "capturedAt": "2026-09-10T18:37:35.448Z",
+  "lane": "0.0.10464056",
+  "topics": {
+    "0.0.10462713": [
+      {
+        "topicId": "0.0.10462713",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789064928.078590104",
+        "runningHash": "PJqZ9qynllZIASI+RMRBQz/Xv51dFSo9HSy7gxC4ASnbqCyXLkXodZuEoutAyBzJ",
+        "runningHashVersion": 3,
+        "contents": "{\"rule\":{\"id\":\"hcs14\",\"revision\":\"0.5\"},\"inputs\":{\"digest\":\"d1ac807ef8999929cf6576b970b87f4899d0f814f548723870b00b99558f9565\",\"locator\":{\"ledgerTag\":\"hedera:testnet\",\"address\":\"0.0.10452127\",\"account\":\"0.0.10452127\",\"memo\":\"hcs-11:hcs://2/0.0.10452155\",\"registryTopic\":\"0.0.10452155\",\"registrySequence\":1,\"consensusTimestamp\":\"1789007524.437321104\",\"profileTopic\":\"0.0.10452158\"}},\"output\":{\"digest\":\"8b893383725a8e82ef79a95af89a4f23808f47228348e31480bb1929d2b4f075\"},\"meaning\":{\"statement\":\"Declared under HCS-11 via the HCS-2 registry the account memo names.\",\"uri\":{\"ledgerTag\":\"hedera:testnet\",\"topicId\":\"0.0.10462713\"},\"trustClass\":\"math\",\"endorsements\":[]},\"hash\":\"f84257b7e7ccf152b2002fe52bf7852fd2a01c1ece0d8995e44e5f0bad29544a\"}",
+        "payer": "0.0.10450879"
+      }
+    ],
+    "0.0.10464056": [
+      {
+        "topicId": "0.0.10464056",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789064935.243142061",
+        "runningHash": "TNNY9BKl02MQzTkjSZqDxnlmHRLVEIY0Ooso9rTF3SR/iM23RRmw9jiIf/us9JGB",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"message\",\"operator_id\":\"0.0.10462704@0.0.10462700\",\"data\":\"{\\\"p\\\":\\\"wishmail\\\",\\\"s\\\":\\\"hcs://13/0.0.10448509#1\\\",\\\"id\\\":\\\"cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2\\\",\\\"i\\\":0,\\\"n\\\":1,\\\"d\\\":\\\"cF9Bc9LLHrnvLAV2QvLZCbdlJDooUAIR_EfFMk6rnllGm-G7oWBkHWTF9MCj4clsdsD9Ss4AEbH-yp1cZ21SAgjvxbCX\\\",\\\"hdr\\\":{\\\"l\\\":\\\"hedera:testnet\\\",\\\"pr\\\":\\\"hcs14\\\",\\\"rp\\\":{\\\"h\\\":\\\"f84257b7e7ccf152b2002fe52bf7852fd2a01c1ece0d8995e44e5f0bad29544a\\\",\\\"u\\\":{\\\"ledgerTag\\\":\\\"hedera:testnet\\\",\\\"topicId\\\":\\\"0.0.10462713\\\",\\\"sequenceNumber\\\":1}},\\\"nc\\\":\\\"hiq6K7tGo8DIHNksWeYkEQ\\\",\\\"ke\\\":1,\\\"ep\\\":\\\"c12P56Xh6YnuG24HglWherdQIiLu5uKXe6qv_BcHtEA\\\",\\\"st\\\":\\\"0.0.10450879@1789064924.136455588\\\",\\\"w\\\":1,\\\"h\\\":\\\"acf464e914b548c2c7be271e6ef26fb65a9b95bde166824823863cc97632a7d5\\\",\\\"cb\\\":69,\\\"rr\\\":false}}\"}",
+        "payer": "0.0.10450879"
+      }
+    ],
+    "0.0.10448509": [
+      {
+        "topicId": "0.0.10448509",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1788989754.597764781",
+        "runningHash": "nDufrVDSFPavJrwvy6Bj7FIscl/Zh/GptnLenz1KBjSv5eObnB2+olFFGBKd8U0w",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-2\",\"op\":\"register\",\"t_id\":\"0.0.10448507\",\"metadata\":{\"name\":\"chunk\",\"description\":\"WISHMail chunk schema, specification minor version 0.5 (§18.5)\"}}",
+        "payer": "0.0.8641261"
+      }
+    ],
+    "0.0.10448507": [
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1788989743.942824104",
+        "runningHash": "InAse4YH0JPPpeN3UYRsXSHJoaUXYyxjHXWojbnGkcfbFvnuB3LXwwojnwkGQYsf",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":0,\"c\":\"data:application/schema+json;base64,Gy8aACwKbGdqg+FBsss3HDoldWEz4ZDV1CpKu7h3RgrPeM9IjBZq+YEyu/7y5K1c079RsfC3IXAFpPG1dY3TVGDRSRAFYb9a+wyQIpAaUUa59Oue/YC3B7Q/rBhnd6YPiGQUoUIVG2lS0epUZPzy57IzflOE7bws0UTvbpsFqE+qn6emumRKFpf7PQuChjVk/rrURTJWvSbbCqqcefG5QZIlQ6IvXPN4hVBbO5D+YiCHhjbb020ag7m0F6PeKFOvjX/rtbsYbL9+1Svga/A/IGKrInh6bXR2fvMflHpusjUf/Dn05F+MhPp9/OIKLWONzm4jMoPOJoQOVn3QYYX8rlnnX7NNN70nKpaXx7IPfTvBc+BVrj8TtAEn2DbSTie4fqFF/5IDbn6vazLbOjUeLZJLb6KdeMr+SEGJvr0OuqL5JA62d2Q004osaoBnzJ5QIwv2AmUQldwNhow2AQimigq6v2n74HA2e/Vf+pb3xeYDWwUSUTMpMEaKttUSpEF+I0LItYw0J47/P9Wawc7/njPpbqzhFZA/QgJqS0jrNn5XNJIC+WJ+t7q+OWyBxa5MNgRSgoeVoG0bjH3oj7NQMOECxOFLLMOvu4ocuf0bneQ/Fm8vy9rMZBFRg0igzHAGng3v+RLU4kEJXREhzXHBir1SpgPcxTWfXSoSxJtXQSANC/r7T3YlseJlrvEMJ5bHKwb4oC87QNgA4Cpy5Y83hpN4Y2b4YkWOm9VmAdNlFANIolcaH8+qudUfLb8u2xthc8MZ8yQS0rPxzbZR5o/VTt00lYd8efkzklt45D+twhExWKrRFXdGNoHhoGtEnbnTZr/g53f3Oov+v/FGIlPrlQ63fTrLkH2IjLoxueQYHVuqnDcpPVhn2eMt7VJFBtfTI5zXUbWhPSm7VMPN0auHcJNNQcJgnBZdTucFMtWXi6gjfAWYFeTrYsZh6LwpEB5J7IQZoYVVuL1D1z\"}",
+        "payer": "0.0.8641261"
+      },
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 2,
+        "consensusTimestamp": "1788989745.883028933",
+        "runningHash": "/9puhITW2Ik1x7WdcY+j7AoXEyCFlcmGCiauepVxqHqd+EPtq3isAXK0xBhxlPQ4",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":1,\"c\":\"c8rai8yHqAIlA/86bWRctpx5gozH9wbEOXdlyPsyRYOk3uZy08UHVuGdR0bz5Al1iW7WqH/rQ1afBw8CEBu9uqivUDmsEb3pMcJgYnH84oAdoZnXBp3uzs+F0ltrB1PrujCc8r+kkKoWJ+yGKexefpzO5X2XCipcK5CPPnXIJQ0TL7ln9d2i2Nn5yw6XFCod7OimVCwFGO1wviQ3qpqYyCSUvLf6jfBbx2bRkkaLSeAaQcA8r5jRLqzEjFLmKZKJhrIpI8BwLADnY3oTHRp47kBs9k1aAkWEeSwmrjmRznMprVaaSCN7TUUGw08XzGQL7relVizCgWF1hdoOnWVumCba69Jic0kic/V0gMDTNjg1ezdRhM8G5SuKY9eH7zoF1yFboKQyP3tlq1rK6BA1ekj8T2S9Hlqt4crEs4jJqZfeTKCwfJfcBBU8QRFP6psGVMSeGaLE9rsl6n+tjnydQj1wed3zbEthoUpS1OWx57IIvRIUp6ngBq4JSojojiZqWoWoP2lKKQkFQJg+BrOT4KytZYoMlbSHBwNYfiDCJpklQXgP+hW0gVCWU9gTr0KuFl2HHH3VBvEb2K/F1PH1H1kdXtfotxpF1cIq6vE4BSZC9G4dDYh9uF3TAc7qxTb/bASgpoyu3SBE6QQWlyLZWbCKNWNJaabwkmTZKI8ywOXhUAl88OsOvYfHeQU1ApA7iSr6f6KkrJYnc4VRuV/mp3ETvQ3pSbKWZIzcyAyu5eOx489MS4937DlxYr6AG9pxlmJIvms//dr88K03EXwNxb/SJ9nuzG0Nrnf8+R9b+Go+V/nMhfDBpiDi+XlgwMHWxM05BpJS2ncsXdvTdGSuqgnreVxl2OVHHG1IecXrMSMyhIIRWryMllQfpMpiC7FyuTSk+N+FjyHdqapNFwNOeKKDUt6aihOM7Y6LSNkPW8bN+aFC/0u0vpzTcheCa58zv2TKOaUSz4c/ahOLw2cfQLCPCOehMor0oy9pT9UtxP2v36vB/H\"}",
+        "payer": "0.0.8641261"
+      },
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 3,
+        "consensusTimestamp": "1788989747.788260386",
+        "runningHash": "MCMzuSi6kuK426aRBFN5upIqtmoj7LjLvWUHay70O+USbhvpAH1hKXLcATfbG2b1",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":2,\"c\":\"/XJpN7qts6yLBOkUhVltiMWCiTDFZLaDZLXDWiJtdYVfOuo3seVkNps+OCWXUfxiZG2uc+ZuzmslMgpXOo7uUeT9ebexjmdM2rkK+VAVHi4sQwIi5CIQ1Srh1EQsJxG6zgqV6DueoUvKfA5cNftZfigeWHEwpeNXM6UDStiwblVTtiYNJ2GfOZJQJnqu3zlgcHiWWArNr/oA\"}",
+        "payer": "0.0.8641261"
+      }
+    ]
+  },
+  "topicInfo": {
+    "0.0.10462713": {
+      "topicId": "0.0.10462713",
+      "memo": "wishmail:manifest:1",
+      "submitKeys": [
+        "d94b7e7d8f051d328f1ad26cd331eb8d63e2f2ac946e8861cbb52ab2516beba5"
+      ],
+      "adminKey": "d94b7e7d8f051d328f1ad26cd331eb8d63e2f2ac946e8861cbb52ab2516beba5",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10464056": {
+      "topicId": "0.0.10464056",
+      "memo": "hcs-10:1:60:2:0.0.10452149:1",
+      "submitKeys": [
+        "d94b7e7d8f051d328f1ad26cd331eb8d63e2f2ac946e8861cbb52ab2516beba5",
+        "0bf6f35094412d8c05d3fb5f33ef37737efa09ef684a7d5c52b2b1c3f3a978c5"
+      ],
+      "adminKey": "0bf6f35094412d8c05d3fb5f33ef37737efa09ef684a7d5c52b2b1c3f3a978c5",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10448509": {
+      "topicId": "0.0.10448509",
+      "memo": "hcs-2:0:60",
+      "submitKeys": [
+        "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460"
+      ],
+      "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10448507": {
+      "topicId": "0.0.10448507",
+      "memo": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec:brotli:base64",
+      "submitKeys": [
+        "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460"
+      ],
+      "adminKey": null,
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    }
+  },
+  "accounts": {
+    "0.0.10462700": {
+      "memo": "hcs-11:hcs://2/0.0.10462719",
+      "key": "d94b7e7d8f051d328f1ad26cd331eb8d63e2f2ac946e8861cbb52ab2516beba5"
+    },
+    "0.0.10426205": {
+      "memo": "",
+      "key": "0232144fec2cbf7818e2b1a5ad1c0f00e93398eeeaa643d7fe66828b5ff768a4"
+    }
+  },
+  "settlements": {
+    "0.0.10450879@1789064924.136455588": {
+      "ledgerTag": "hedera:testnet",
+      "txRef": "0.0.10450879@1789064924.136455588",
+      "from": "0.0.10462700",
+      "to": "0.0.10426205",
+      "amount": 1,
+      "memo": "wishmail:cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2",
+      "consensusTimestamp": "1789064932.591585104",
+      "tokenId": "0.0.10426208"
+    }
+  },
+  "settlement": {
+    "ledgerTag": "hedera:testnet",
+    "txRef": "0.0.10450879@1789064924.136455588",
+    "from": "0.0.10462700",
+    "to": "0.0.10426205",
+    "amount": 1,
+    "memo": "wishmail:cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2",
+    "consensusTimestamp": "1789064932.591585104",
+    "tokenId": "0.0.10426208"
+  },
+  "envelope": {
+    "ledgerTag": "hedera:testnet",
+    "lane": "0.0.10464056",
+    "profile": "hcs14",
+    "resolutionProof": {
+      "hash": "f84257b7e7ccf152b2002fe52bf7852fd2a01c1ece0d8995e44e5f0bad29544a",
+      "uri": {
+        "ledgerTag": "hedera:testnet",
+        "topicId": "0.0.10462713",
+        "sequenceNumber": 1
+      }
+    },
+    "nonce": "hiq6K7tGo8DIHNksWeYkEQ",
+    "aad": "eyJsIjoiaGVkZXJhOnRlc3RuZXQiLCJsYW5lIjoiMC4wLjEwNDY0MDU2IiwibmMiOiJoaXE2Szd0R284RElITmtzV2VZa0VRIiwicCI6Indpc2htYWlsIiwicnAiOiJmODQyNTdiN2U3Y2NmMTUyYjIwMDJmZTUyYmY3ODUyZmQyYTAxYzFlY2UwZDg5OTVlNDRlNWYwYmFkMjk1NDRhIiwidiI6IjAuNSJ9",
+    "aadHash": "cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2",
+    "keyEpoch": 1,
+    "ephemeralPub": "c12P56Xh6YnuG24HglWherdQIiLu5uKXe6qv_BcHtEA",
+    "ciphertextDigest": "acf464e914b548c2c7be271e6ef26fb65a9b95bde166824823863cc97632a7d5",
+    "ciphertextBytes": 69,
+    "weight": 1,
+    "settlementRef": "0.0.10450879@1789064924.136455588",
+    "schemaRef": "hcs://13/0.0.10448509#1",
+    "chunkCount": 1
+  },
+  "chunks": [
+    {
+      "ledgerTag": "hedera:testnet",
+      "topicId": "0.0.10464056",
+      "sequenceNumber": 1,
+      "consensusTimestamp": "1789064935.243142061",
+      "runningHash": "",
+      "runningHashVersion": 0,
+      "envelopeId": "cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2",
+      "chunkIndex": 0
+    }
+  ],
+  "appraisal": {
+    "declared": {
+      "trustClass": "math",
+      "endorsements": []
+    },
+    "appraised": {
+      "standing": "unverified",
+      "reasons": [
+        "T-P12-4"
+      ]
+    },
+    "resolution": {
+      "standing": "unverified",
+      "reasons": [
+        "T-P12-4"
+      ]
+    },
+    "receipt": {
+      "status": "none",
+      "reasons": []
+    }
+  },
+  "bundleDigest": "8d30dfdc4c58d6b283189dc08257f4f5bce76577efa89a50dd59fb8279255fe6",
+  "narrative": {
+    "bundleDigest": "8d30dfdc4c58d6b283189dc08257f4f5bce76577efa89a50dd59fb8279255fe6",
+    "text": "This reading covers 2 topic(s) on hedera:testnet, from consensus timestamp 1789064935.243142061 to 1789064935.243142061, under specification 0.5.10.\n\nEnvelope cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2.\nIt was posted to lane 0.0.10464056 in 1 chunk(s), the first postmarked at 1789064935.243142061 as sequence 1.\nIts postage was 1 stamp(s) in token 0.0.10426208, affixed by 0.0.10462700 to 0.0.10426205 at 1789064932.591585104 under the memo wishmail:cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2, which names this envelope and no other.\nIts resolution was made under the hcs14 profile, declared at trust class math with no endorsements, and its manifest is message 1 on topic 0.0.10462713.\nIt was sealed against key epoch 1, over 69 bytes of ciphertext, weighing 1 ounce(s).\nIts state is SETTLED.\nIts standing is unverified, which is the lowest any check yielded, and the checks that yielded it are T-P12-4.\nNo return receipt was requested for it, and none was found.\nThis reading says nothing about what the envelope contained; nothing on any topic can."
+  }
+}

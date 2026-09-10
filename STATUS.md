@@ -179,6 +179,42 @@ fee-gated topic was known. Repricing is a new `PriceList` message and touches no
 
 ---
 
+## GATE TWO, CHECKPOINT ONE — the first letter, 2026-09-10
+
+**A plain certified letter travelled from A2 to B on `hedera:testnet`, B opened it byte for byte, and a stranger
+holding nothing reconstructed it from consensus alone.** One pass, no stop. The run of record is
+`app/OPERATIONS.md` under Step 6.
+
+```
+lane        0.0.10464056   threshold of exactly A2's and B's keys · no custom fee
+envelope    cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2
+settlement  0.0.10450879@1789064924.136455588  ·  memo wishmail:cd9dc8f4…
+chunk 0     806 bytes · chunk_info NULL · memo hcs-10:op:6:3 · 1789064935.243142061
+manifest    0.0.10462713 #1, before chunk 0
+ring        one $POSTAGE assessed to the treasury from 0.0.10450879 (T-P7-4)
+```
+
+**`inbox` at B returned the payload byte-identical** and wrote nothing. **`verify` from a directory holding nothing
+— no key, no account, no stamp, no counter, no home — produced the same bundle digest twice**,
+`8d30dfdc4c58d6b283189dc08257f4f5bce76577efa89a50dd59fb8279255fe6`, with a narrative carrying it. That is the second
+of the two claims WISHMail sells, and it is the first time it has been anything but a design intention.
+
+**The appraisal is the one the gate report predicted before the letter: `unverified`, reason `T-P12-4`** — this
+release claims no profile, so §11.4 does not replay the resolution and §9.6 makes that conforming. **T-P9-3 did not
+fire**, which is Step 4's signing showing up in an appraisal for the first time. The declared trust class came back
+`math` with no endorsements, reported beside the standing and never folded into it (P-12).
+
+**`conformance/fixtures/checkpoint-one-letter.json`** holds the correspondence as the mirror returned it, and
+`npm run check:captured` reaches the same standing and the same digest **with no network** (P-4). Six of seven
+alterations drive the standing strictly lower; **the seventh cannot be caught by a Verifier that claims no profile**,
+because T-P1-10 compares `hdr.ke` against coordinates only a replay produces — so claiming `hcs14` buys a binding
+check that is dark today, not just a higher standing.
+
+**What checkpoint one did NOT do**: `returnReceipt` is still refused at `send.ts:322`, `ack` is still not built, and
+no reply has gone the other way. That is checkpoint two.
+
+---
+
 ## A2 — the register, 2026-09-10
 
 **A2 is provisioned on `hedera:testnet` and it is the demo's first Correspondent from here on**, superseding both A
@@ -232,12 +268,11 @@ Run of record in `app/OPERATIONS.md`.**
    A2's own agent account received 150 ℏ from the same. Recorded as funding and not a sale. `0.0.10450879` holds
    416.67021364 ℏ and `0.0.10450880` holds 459.90905168 ℏ.
 3. ~~**A′.**~~ **DONE 2026-09-10 — and it is A2.** See the register below.
-4. **Gate Two, after A2.** The first letter **A2 → B** with `returnReceipt`, B's `inbox` and `ack`, the receipt on B's
-   manifest topic, `verify` from an empty home, and a reply B → A2 on the same lane ringing nothing. Its gate report is
-   Step 6, **amended 2026-09-10** for A2, sequence 4, and what is actually built.
-5. **Provisioning happens before recording, not on video.** The demo shows provisioning as facts already on consensus —
-   the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger's
-   verify. Friday is goose by hand.
+4. **Gate Two.** ~~The first letter A2 → B~~ **CHECKPOINT ONE DONE 2026-09-10** — see the register above.
+   **Checkpoint two** is what remains: §10.4’s scheduled receipt and `ack`, then a SECOND letter A2 → B on the same
+   lane WITH `returnReceipt` (ringing nothing — §7.1’s proof and the receipt in one act), B acks, the receipt lands on
+   B’s manifest topic, `verify` shows it; then a plain reply B → A2. Schedule window **30 days**; the schedule is paid
+   by the **sender’s own operator wallet** (D-157 over D-47).
 
 **Open for Sonic:** ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · whether `ack`
 and §10.4's schedule are in this window at all, since they are the two genuinely unbuilt things Gate Two needs ·
