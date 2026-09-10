@@ -399,8 +399,13 @@ frozen `evidence-bundle` schema decides whether it is 0.5.12 or 0.6.**
   digest. Every recorded digest moves once and then never again for a patch. **0.5.12 vs 0.6 decided by the
   frozen-schema probe.**
 - ~~**§G-24** — the pinned HCS-10 contradicts itself about who writes the Outbound Connection Created record~~ →
-  **written on BOTH parties' logs**, satisfying both readings at one message each, so an agent enumerates the lanes it
-  requested from consensus alone and needs no address book. The contradiction is **recorded FETCHED**, not resolved.
+  **written on BOTH parties' logs**, satisfying both readings at one message each. **The outbound records are the
+  primary enumeration path from the fix forward; the home's address book is the fallback for lanes whose records
+  predate the fix or were never completed; consensus is the only authority on whether a lane exists.** A2's lane with
+  B is a permanent counterexample — its one record is in the inbound shape and cannot be edited — the requester-side
+  record sits in a submit→learn window and is best-effort, and neither log is authoritative: §7.1's rule is the
+  `connection_created` on the doorbell, so every candidate is confirmed there before it counts. The contradiction is
+  **recorded FETCHED**, not resolved.
 - ~~**§G-23** — §11.4 requires a reason no test names~~ → **the test row is added in the 0.5.12 patch.** A MUST does
   not stay without a court (§1.3).
 - ~~**§G-20** — the provisioned path cannot be rate-priced under a frozen schema~~ → **a 0.6 candidate, and no version
