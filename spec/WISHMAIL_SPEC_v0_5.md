@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.10
+# WISHMail — Specification v0.5.11
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -972,7 +972,8 @@ Behavior, in this order:
 
 Postconditions on `Postmark`: the envelope is SETTLED (§8); its stamps are consumed; its manifest is on the sender's manifest topic; its settlement is on the ledger with the AAD hash in its memo. Postconditions on `AttemptedDeliverySlip`: the connection request is on the doorbell and on the sender's log with consensus timestamps; one stamp has been consumed by the treasury as the doorbell's fee (§4.4); no envelope was assembled and no postage affixed.
 
-Failures: `SEND_UNRESOLVED` (coordinates carry no proof); `SEND_INSUFFICIENT_STAMPS`; `SEND_TOO_HEAVY` (weight exceeds `MAX_WEIGHT`, §7); `SEND_STALE_KEY` (the coordinates' key epoch is no longer current; re-resolve; F-8); `SEND_LANE_INVALID` (the named lane is closed, carries a custom fee, or was not created from the doorbell the coordinates name; §7.1); `SEND_AFFIX_FAILED` (nothing submitted, nothing consumed); `SEND_SUBMIT_FAILED` (affixed, not fully submitted: the envelope is an orphan or partial; it may be resubmitted against the same settlement, D-52); `SEND_SETTLE_TIMEOUT` (submitted, not all chunks witnessed within the tool's wait; the envelope's state is recoverable by `verify`).
+<!-- CHANGED: D-171 -->
+Failures: `SEND_UNRESOLVED` (coordinates carry no proof); `SEND_INSUFFICIENT_STAMPS`; `SEND_TOO_HEAVY` (weight exceeds `MAX_WEIGHT`, §7); `SEND_STALE_KEY` (the coordinates' key epoch is no longer current; re-resolve; F-8); `SEND_LANE_INVALID` (the named lane is closed, carries a custom fee, or was not created from the doorbell of either party; §7.1); `SEND_AFFIX_FAILED` (nothing submitted, nothing consumed); `SEND_SUBMIT_FAILED` (affixed, not fully submitted: the envelope is an orphan or partial; it may be resubmitted against the same settlement, D-52); `SEND_SETTLE_TIMEOUT` (submitted, not all chunks witnessed within the tool's wait; the envelope's state is recoverable by `verify`).
 
 `Conformance:` T-P7-1, T-P7-2, T-P7-3, T-P9-5; T-P10-1 — an envelope with no resolution proof, or whose AAD does not name the lane it is submitted to, is rejected at `send` and appraises as unbound at replay; T-P14-1 — no tool call by one agent waits on an act of another except a first-contact `send`, which returns a slip when its window closes.
 
@@ -1042,7 +1043,8 @@ Failures: `VERIFY_MIRROR_UNREACHABLE` (no consensus data, no bundle); `VERIFY_SC
 
 A lane is an HCS-10 connection topic. It exists between exactly two agents — the requester and the acceptor — from the consensus timestamp of the acceptor's `connection_created` operation until a `close_connection` operation from either party, and it is identified by its ledger tag and topic ID.
 
-A lane is created by the acceptor in answer to a connection request on its doorbell, per HCS-10 at the pinned revision. Its submit key is a threshold key of the two agents' keys. Its admin key is set at creation per the acceptor's declared topic policy (P-17); no key of the Postmaster appears on it (D-47). It carries no custom fee. Its memo is HCS-10's connection-topic memo, which marks the topic non-indexed: a hint to HCS-10 readers that only the latest message matters. The hint is HCS-10's; the reading rule is this document's. A lane is mail, and every message on it is read.
+<!-- CHANGED: D-171 -->
+A lane is created by the acceptor in answer to a connection request on its doorbell, per HCS-10 at the pinned revision. Its submit key is a threshold key of the two agents' keys. Its admin key is set at creation per the acceptor's declared topic policy (P-17); no key of the Postmaster appears on it (D-47). It carries no custom fee. Its memo is HCS-10's connection-topic memo, which marks the topic non-indexed and names the inbound topic the lane was created from: the first is a hint to HCS-10 readers that only the latest message matters, and the second is the doorbell a Verifier reads to appraise the lane's birth (§11.4). The hint is HCS-10's; the reading rule is this document's. A lane is mail, and every message on it is read.
 
 An Inbox and a Verifier MUST read every message on a lane in scope, whatever the lane's memo indicates.
 `Conformance:` T-P9-10 — a fixture lane whose memo carries HCS-10's non-indexed flag and holds an envelope of `n` chunks is fully reassembled by `inbox` and by the VERIFIER suite.
@@ -1050,10 +1052,12 @@ An Inbox and a Verifier MUST read every message on a lane in scope, whatever the
 A lane's submit key MUST be a threshold of the two agents' keys and MUST NOT include any other key. An agent that creates a lane MUST create it with no custom fee.
 `Conformance:` T-P17-2 — every fixture lane's submit key is a threshold of exactly the two agents' keys, and its admin key matches the acceptor's declared policy; T-P11-3 — every fixture lane carries no custom fee, and `send` returns `SEND_LANE_INVALID` for a lane that does.
 
-Between two agents there may be more than one lane. The lane between a sender and a recipient — for `send`, for `inbox`, and for reconciliation — is the earliest-created open lane between them, creation time being the consensus timestamp of the `connection_created` operation on the recipient's doorbell that names the sender's account. For `send`, only a lane whose submit key includes the sender's current key counts; a lane keyed to a key the sender no longer holds is, for that sender, no lane (§7.6). A sender MAY name a different open lane explicitly; an envelope binds to the lane its AAD names, whichever that is. A Verifier discovers the lanes between two agents by the same rule, from the same doorbell.
+<!-- CHANGED: D-171 -->
+Between two agents there may be more than one lane. The lane between a sender and a recipient — for `send`, for `inbox`, and for reconciliation — is the earliest-created open lane between them, creation time being the consensus timestamp of the `connection_created` operation that created it, on the doorbell of whichever party answered: on the recipient's doorbell naming the sender's account, where the recipient answered, and on the sender's own doorbell naming the recipient's account, where the sender did. First contact is found the first way and a reply the second — the same lane, read from the door that opened it. For `send`, only a lane whose submit key includes the sender's current key counts; a lane keyed to a key the sender no longer holds is, for that sender, no lane (§7.6). A sender MAY name a different open lane explicitly; an envelope binds to the lane its AAD names, whichever that is. A Verifier discovers the lanes between two agents by the same rule, from both doorbells, and appraises a particular lane's birth by §11.4, from the lane's own memo.
 
-The lane an envelope binds to MUST have been created in answer to a connection request on the doorbell its resolution proof yielded. An envelope MUST NOT be submitted on a closed lane.
-`Conformance:` T-P10-2 — `send` refuses, and replay appraises unbound, an envelope whose lane's `connection_created` is not on the doorbell its coordinates name; T-P9-6 — `send` returns `SEND_LANE_INVALID` for a lane with a `close_connection` at or before submission, and replay appraises such an envelope unbound.
+<!-- CHANGED: D-171 -->
+The lane an envelope binds to MUST have a submit key that is a threshold of exactly the two parties' keys, and MUST have been created in answer to a connection request on the doorbell of one of those two parties, its `connection_created` there naming the other. An envelope MUST NOT be submitted on a closed lane.
+`Conformance:` T-P10-2 — `send` refuses, and replay appraises unbound, an envelope whose lane's `connection_created` is on the doorbell of neither party, or is absent from the doorbell the lane's memo names; a reply bound through the sender's own doorbell binds, because the sender is the agent that answered; T-P17-2 — replay appraises unbound an envelope whose lane's submit key is not a threshold of exactly the two parties' keys; T-P9-6 — `send` returns `SEND_LANE_INVALID` for a lane with a `close_connection` at or before submission, and replay appraises such an envelope unbound.
 
 A lane is bidirectional: either party sends on it. The sender of a chunk is the agent whose key signed its submission, identified by the `operator_id` of the HCS-10 operation; no header field names a sender. What travels on a lane is chunks, as HCS-10 `message` operations; return receipts, by the mechanism of §10; and HCS-10's own connection operations. Nothing else this document defines. A lane's history persists after closure: a closed lane is replayable and unwritable.
 
@@ -1503,8 +1507,9 @@ What a receipt proves, a Verifier recomputes: that the account whose key execute
              -> manifest postmark on the recipient's topic -> recompute
 ```
 
-A return receipt MUST be the execution of a scheduled submission to the recipient's manifest topic, requested by an HCS-10 `transaction` operation on the lane, and signed by the recipient's key alone.
-`Conformance:` T-P1-8 — a fixture receipt's schedule record shows exactly the recipient's signature, its execution timestamp follows the nth chunk's, and the executed submission's postmark is on the recipient's manifest topic; a receipt manifest submitted by any other path is not a receipt and leaves the envelope's state unchanged.
+<!-- CHANGED: D-172 -->
+A return receipt MUST be the execution of a scheduled submission to the recipient's manifest topic, requested by an HCS-10 `transaction` operation on the lane, and signed by the recipient's key alone. Alone is said of what completes the schedule: the recipient's signature is the one the inner transaction requires, and it is what the network waits for. A ledger MAY additionally record the account that paid for each transaction touching the schedule; those entries are bookkeeping and neither complete it nor disqualify it (§11.4).
+`Conformance:` T-P1-8 — a fixture receipt's schedule record carries the recipient's signature among its signatures; the scheduled transaction's required signer is the submit key of the recipient's manifest topic, so the schedule executes only when that key signs and under no other; its execution timestamp follows the nth chunk's; and the executed submission's postmark is on the recipient's manifest topic; a receipt manifest submitted by any other path is not a receipt and leaves the envelope's state unchanged.
 
 `ack` MUST NOT sign a schedule whose inner submission does not name the envelope identifier, chunk 0's postmark, and the epoch under which the envelope opened in the recipient's `inbox`.
 `Conformance:` T-P1-9 — `ack` refuses a fixture schedule whose body names a different identifier, postmark, or epoch, returning `ACK_NOT_OPENED`.
@@ -1589,7 +1594,7 @@ the sender's account                    settlement.from (§7.2)             the 
 the sender's manifest topic             hdr.rp.u (§9.1)                    resolution-proof manifests;
                                                                            slip manifests
 the resolution's coordinates            the resolution manifest's output   the recipient's account, doorbell
-the recipient's doorbell                coordinates.doorbell               connection_request;
+the lane's birth doorbell               the lane's memo (§7.1)             connection_request;
                                                                            connection_created (§7.1, §8.2)
 the settlement                          hdr.st (§4.3)                      postage
 the schedule and its record             the lane's transaction op (§10.4)  the receipt's signature and
@@ -1638,7 +1643,10 @@ The chain is what makes reassembly a computation on bytes and not on clocks. Eit
 
 For each envelope reassembled, a Verifier appraises the proofs of §10 in the order the chain consumes them, then the postage, then the receipt or the slip. §11.5 names the test each check answers to and says how the results combine.
 
-**The proof of posting (binding).** Its manifest is chunk 0; its output is the AAD; its witness is the postmark (§10.3). A Verifier recomputes the AAD from the header and the lane and compares its hash to `id`; checks that the `operator_id` of every canonical chunk names the settlement's `from`; checks that the AAD's `lane` is the topic the chunks are on; checks that the lane was created in answer to a request on the doorbell the resolution's coordinates name, and that it was open at chunk 0's consensus timestamp; and checks that the header's `ke` equals the `keyEpoch` the resolution's coordinates carry. Any of these failing is a binding failure: the envelope is unbound.
+<!-- CHANGED: D-171 -->
+**The proof of posting (binding).** Its manifest is chunk 0; its output is the AAD; its witness is the postmark (§10.3). A Verifier recomputes the AAD from the header and the lane and compares its hash to `id`; checks that the `operator_id` of every canonical chunk names the settlement's `from`; checks that the AAD's `lane` is the topic the chunks are on; checks that the lane's submit key is a threshold of exactly the two parties' keys; checks that the lane was created in answer to a request on the doorbell of one of those two parties, and that it was open at chunk 0's consensus timestamp; and checks that the header's `ke` equals the `keyEpoch` the resolution's coordinates carry. Any of these failing is a binding failure: the envelope is unbound.
+
+The two parties are read from the envelope, not supplied to the Verifier: the recipient is the account the resolution's coordinates name, and the sender is the account that affixed the postage (§7.2). Which doorbell to read is read from the lane: the lane's memo names the inbound topic it was created from (§7.1), that topic's memo names the account it belongs to, and the `connection_created` on it that names this lane — submitted under that same account's `operator_id` — names the other party. A lane whose memo names a doorbell that holds no such operation, or whose owner and named party are not the envelope's two parties, is a lane this envelope is not bound to. Nothing in this walk is a resolution: it is four reads of public consensus data, and it is the same walk in both directions of a correspondence, because a lane has one birth however many letters cross it.
 
 The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's resolution proof yielded; an envelope for which it does not MUST be appraised unbound and MUST NOT be opened.
 `Conformance:` T-P1-10 — a fixture envelope whose header names an epoch other than the one its bound resolution yielded is returned `INBOX_UNBOUND` at `inbox` and appraises unbound at replay.
@@ -1650,7 +1658,8 @@ The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's re
 
 The manifest's meaning carries what the sender declared: the profile, its trust class, and its endorsements. A Verifier reports these as declared and adds its own standing beside them. It does not raise a trust class, and it does not remove an endorsement: a `social-committee` proof that replays perfectly is a verified `social-committee` proof, and a `withheld` input that the Verifier happens to be able to see was still withheld from the proof (P-12).
 
-**The return receipt.** A Verifier reads each `transaction` operation on the lane that names a schedule, and each schedule's record as consensus recorded it: whether it executed, when, under whose signature, and to which topic its inner submission wrote. For an executed schedule, the Verifier reads the receipt manifest at the executed submission's postmark on the recipient's manifest topic and recomputes the receipt (§10.4): its inputs name this `id`, this chunk 0 postmark, and this epoch; its hash matches; the signature on the schedule's record is by the key of the account the resolution's coordinates name — the record carries the signing key's prefix, and the Verifier reads that account's key from consensus and matches it; the execution follows the nth chunk. A receipt that recomputes and was witnessed after delivery, on an envelope standing verified or unverified, is the receipt: `receipt.status` is `acked` and the envelope is ACKED (§8.3). A receipt witnessed before delivery, on an envelope standing unstamped or unbound, or whose parts do not recompute, is `invalid`: recorded, the envelope's state unchanged (§8.6). A receipt for an envelope whose header did not request one counts, and the reason names it (§8.6). A request whose schedule expired unsigned is `unclaimed`. An envelope with no request and no receipt is `none`.
+<!-- CHANGED: D-172 -->
+**The return receipt.** A Verifier reads each `transaction` operation on the lane that names a schedule, and each schedule's record as consensus recorded it: whether it executed, when, under whose signature, and to which topic its inner submission wrote. For an executed schedule, the Verifier reads the receipt manifest at the executed submission's postmark on the recipient's manifest topic and recomputes the receipt (§10.4): its inputs name this `id`, this chunk 0 postmark, and this epoch; its hash matches; a signature on the schedule's record is by the key of the account the resolution's coordinates name — the record carries the signing key's prefix, and the Verifier reads that account's key from consensus and matches it, and a record carrying further signatures is not thereby disqualified, because the ledger records every transaction payer that touches a schedule and not only the keys the inner transaction required; the scheduled transaction's required signer is the submit key of that account's manifest topic, so the schedule could not have executed under any other key; the execution follows the nth chunk. A receipt that recomputes and was witnessed after delivery, on an envelope standing verified or unverified, is the receipt: `receipt.status` is `acked` and the envelope is ACKED (§8.3). A receipt witnessed before delivery, on an envelope standing unstamped or unbound, or whose parts do not recompute, is `invalid`: recorded, the envelope's state unchanged (§8.6). A receipt for an envelope whose header did not request one counts, and the reason names it (§8.6). A request whose schedule expired unsigned is `unclaimed`. An envelope with no request and no receipt is `none`.
 
 A Verifier MUST report a receipt request whose schedule expired unsigned as `unclaimed`, and MUST NOT report it as refused, as returned, or as undelivered.
 `Conformance:` T-P15-5 — a fixture request that expired unsigned yields `receipt.status` = `unclaimed`, the envelope remains SETTLED with its standing unchanged, and the reference narrative's sentence for it is the unclaimed template and no other.
@@ -1668,13 +1677,15 @@ Standing is what an envelope's evidence binds to, on one axis; state is how far 
 <!-- CHANGED: D-163 -->
 An envelope's standing is the lowest that any check of §11.4 yields; every check that yields a standing below verified contributes its test to `reasons`; an envelope with no reasons is verified. The order is read as: a bound and stamped envelope whose resolution could not be replayed is still certified mail whose address is unappraised; an unstamped envelope is not certified mail; an unbound envelope does not open.
 
+<!-- CHANGED: D-171 -->
 ```
 Check (§11.4)                                              Yields       Reason
 header rebuilds to id; chain complete; slices hash to h    unbound      T-P1-1, T-P1-11, T-P3-3
 operator_id names settlement.from                          unbound      T-P1-6
 AAD names the lane the chunks are on                       unbound      T-P10-1
 ledger tag defined here or by a claimed extension          unbound      T-P9-11
-lane born from the resolution's doorbell; open at chunk 0  unbound      T-P10-2, T-P9-6
+lane born from either party's doorbell; open at chunk 0    unbound      T-P10-2, T-P9-6
+lane's submit key is exactly the two parties' keys         unbound      T-P17-2
 hdr.ke equals the coordinates' keyEpoch                    unbound      T-P1-10
 settlement exists, memo = id, to = treasury,               unstamped    T-P7-1, T-P11-1
   precedes chunk 0, in the stamp token
@@ -1788,7 +1799,8 @@ The class matrix of §1.4 says which classes are tested against which invariants
 **P-9 — Strict HCS-10.** Envelopes ride inside HCS-10 `message` operations on HCS-10 topics at the pinned revision, one HCS message per chunk with no transport-layer chunking; every operation carries HCS-10's memo; every chunk declares a version-pinned schema registered under HCS-13; the revisions of every pinned standard are declared and equal the specification's; no claim is made while a pin is unfilled; a patch revision changes no wire string and no registered schema; a lane is read in full whatever its memo hints; a ledger tag names a ledger only where this document or a claimed extension defines it.
 *Stated in:* §1.6, §1.7, §5.1, §5.11, §6.1, §7.1, §7.4, §9.1. *Tests:* T-P9-1 – T-P9-11.
 
-**P-10 — Directed only.** A stamp buys one envelope to one witnessed-resolved address. An envelope's AAD names the lane it travels on; the lane was born from the doorbell its resolution yielded; an envelope with no resolution proof, or on a lane not so born, is unbound. There is no unaddressed mail and no broadcast.
+<!-- CHANGED: D-171 -->
+**P-10 — Directed only.** A stamp buys one envelope to one witnessed-resolved address. An envelope's AAD names the lane it travels on; the lane was born from the doorbell of one of its two parties; an envelope with no resolution proof, or on a lane not so born, is unbound. There is no unaddressed mail and no broadcast.
 *Stated in:* §1.2, §4.1, §6.4, §7.1. *Tests:* T-P10-1, T-P10-2.
 
 **P-11 — Uniform postage.** A stamp is one token and costs the same for every buyer, blind to profile, address, recipient, and content; weight is the only scale; a settlement in any other token is not postage; a lane carries no fee.
@@ -1842,7 +1854,8 @@ A failure mode is a way the world can go wrong around an envelope. This section 
 
 **F-10 — Resolution failure.** An address does not resolve: no profile handles it, no declaration is found, the declaration is malformed, or the account has no `properties.wishmail`. `resolve` fails with the failure §6.2 names, and nothing else happens: no stamp is spent, no doorbell is rung, no chunk is submitted, because resolution precedes all of them (§6.4). Resolution failure is a failure of a tool, not a state of any envelope, and leaves no mark on consensus.
 
-**F-11 — Binding mismatch.** An envelope's parts disagree: the header does not rebuild to `id`, the chunks' `operator_id` is not the settlement's `from`, the AAD names a lane the chunks are not on, the lane was not born from the resolution's doorbell, the epoch is not the one the resolution yielded, or the slices do not hash to `hdr.h`. Decryption fails closed: `inbox` returns `INBOX_UNBOUND` and never a plaintext (§6.5, §7.2, §7.4). A Verifier appraises the envelope unbound with every reason (§11.5). The settlement that names such an envelope's `id` counts for it; postage on a malformed envelope is spent.
+<!-- CHANGED: D-171 -->
+**F-11 — Binding mismatch.** An envelope's parts disagree: the header does not rebuild to `id`, the chunks' `operator_id` is not the settlement's `from`, the AAD names a lane the chunks are not on, the lane was born from the doorbell of neither party, the epoch is not the one the resolution yielded, or the slices do not hash to `hdr.h`. Decryption fails closed: `inbox` returns `INBOX_UNBOUND` and never a plaintext (§6.5, §7.2, §7.4). A Verifier appraises the envelope unbound with every reason (§11.5). The settlement that names such an envelope's `id` counts for it; postage on a malformed envelope is spent.
 
 ### 13.3 What each leaves on consensus
 
@@ -2171,7 +2184,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152, D-157, D-159, D-160, D-161 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152, D-157, D-159, D-160, D-161, D-171, D-172 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2276,6 +2289,8 @@ D-161  buy_stamp takes provision; the receipt records it              §5.4, §6
 D-163  A proof's location is a topic; lookup is content-addressed      §2.2, §5.2, §9.1, §10.2, §10.4, §10.5, §11.1, §11.4, §11.5
 D-166  MailCoordinates carries the recipient's manifest topic          §5.3
 D-167  The resolution output is a digest; §9.1 allocates the budget    §5.2, §9.1, §10.2, §11.4
+D-171  A lane binds from either party's doorbell; the memo says which  §6.4, §7.1, §11.2, §11.4, §11.5, §12.2, §13.2
+D-172  T-P1-8 reads the required signer, not a count of signatures     §10.4, §11.4
 ```
 
 ### 18.3 Concordance of identifiers (informative)
