@@ -2606,6 +2606,341 @@ watcher answers doors, which is the agent's ordinary business rather than a one-
 mode to default to. Named here so the exemption is a decision and not an oversight.
 
 ---
+## Step 6 — CHECKPOINT TWO: the certified letter, the receipt, the reply. Gate report, written 2026-09-10 before any signature
+
+**NOTHING IS SIGNED.** Checkpoint one put a plain letter on the lane `0.0.10464056` and a stranger reconstructed it
+from consensus alone. **Checkpoint two is the parts checkpoint one said it did not do**: §10.4's scheduled return
+receipt, `ack`, and a second letter A2 → B carrying the receipt — ringing nothing, which is §7.1's proof and the
+receipt in one act.
+
+**One item of it is HELD AT THE GATE and it is the reply.** The plain reply B → A2 cannot be sent on the lane the two
+agents share without contradicting §7.1's own MUST, and cannot be sent anywhere else without ringing a doorbell the
+ruling says to ring nothing at. That is **ledger §G-21**, found by the dry run before any signature and confirmed from
+the mirror; §11 below is the whole of it. Items (a) through (d) of the ruling are unaffected, conformant, and are what
+this report gates.
+
+### 1. The parties, and who pays for what
+
+| | |
+|---|---|
+| **sender** | **A2**, account `0.0.10462700`, home `a2` — doorbell `0.0.10462704`, log `0.0.10462708`, manifest `0.0.10462713` |
+| **recipient** | **Correspondent B**, account `0.0.10452127` — doorbell `0.0.10452149`, manifest `0.0.10452154` |
+| **stranger** | a THIRD home with nothing in it: no key, no account, no stamp, no counter (P-4) |
+| **the counter** | **NOT STARTED.** The quote is three stamps and A2 holds ten; nothing is bought |
+| **Postmaster** | **not a party.** It sold both mailboxes and it carries nothing here |
+
+| Submission | Signs | Pays |
+|---|---|---|
+| the resolution manifest on A2's manifest topic | A2 | `0.0.10450879` |
+| the settlement — three stamps to the treasury | A2 | `0.0.10450879` |
+| every chunk on the lane (ten of them) | A2 | `0.0.10450879` |
+| the **ScheduleCreate** of §10.4 | `0.0.10450879` | `0.0.10450879` |
+| the `transaction` operation on the lane | A2 | `0.0.10450879` |
+| the **ScheduleSign** — `ack` | **B** | **`0.0.10450880`** |
+| the schedule's **inner** submission, when it executes | B, by the ScheduleSign | **`0.0.10450879`** |
+
+**The schedule's payer is A2's operator wallet `0.0.10450879`** — D-157 over D-47, ruled 2026-09-10. §10.4 makes it
+"the payer designated by the sender" and its parenthetical names the Postmaster on D-47; D-157 is later and wider, and
+Postmaster-pays carry outside `buy_stamp` is deferred this window (CLAUDE.md §11, L-5). **It is never the recipient**,
+and that is refused in two places rather than assumed: `send` refuses to build the schedule at all if the payer is the
+recipient, and `ack` refuses to sign one whose record names the recipient as payer (T-P16-2).
+
+**WHO SIGNS THE ScheduleCreate, and why it is not the agent.** A ScheduleCreate's signatures are offered to the *inner*
+transaction's required keys, and the inner transaction requires exactly two: B's, because the manifest goes to a topic
+only B's key can write to, and the inner payer's. A2's agent key is required by neither, so adding it would put a
+signature on the schedule's record that stands for nothing and makes T-P1-8's reading of that record harder. This is
+the one submission in the whole build where the agent does not sign, and the reason is that there is nothing for its
+signature to satisfy.
+
+### 2. What it creates
+
+| # | Entity | Declared shape | Warrant |
+|---|---|---|---|
+| 1 | the second letter's manifest | A2's resolution of B, on `0.0.10462713` | §6.4 step 2, §10.2 |
+| 2 | the second letter's settlement | **three** stamps to the treasury, memo `wishmail:<id>`, strictly before chunk 0 | §4.2, §4.3, P-7, T-P7-1 |
+| 3 | the second letter's chunks | **ten** HCS-10 `message` operations on `0.0.10464056` | §7.4, P-9, T-P9-7 |
+| 4 | the **schedule** | HIP-423 long-term, inner = one `ConsensusSubmitMessage` of the receipt manifest to `0.0.10452154`, payer `0.0.10450879`, `waitForExpiry` false, expiry **30 days** | §10.4, T-P1-8 |
+| 5 | the lane's `transaction` operation | `{p, op, operator_id, schedule_id, data}`, **no transaction memo** | HCS-10 pin, D-94, T-P9-5 |
+| 6 | the **executed submission** | the receipt manifest on **B's** manifest topic `0.0.10452154` | §10.4, T-P1-8 |
+
+**No lane is created and no doorbell is rung.** The lane exists; §7.1's rule finds it from B's doorbell, where B's
+`connection_created` sits. That is the sentence of §7.1 this letter proves, and it is proved by the absence of a
+`connection_request` rather than by anything positive: after this run, B's doorbell still holds exactly two messages.
+
+### 3. What the home record does and does not get — Step 6 §3, amended to what is true
+
+**RECORD, Sonic 2026-09-10.** The home record stays provisioning-only. §3 of checkpoint one's gate report said the
+lane, the settlement and the chunks would be written to A2's own record, and they were not: `CorrespondentKey` in
+`sdk/home.ts` is a closed union of the eleven provisioning keys. **That overstatement is corrected here rather than
+widened.** What is true, and what this checkpoint relies on:
+
+- **Lanes are found from consensus every time** (D-165, §7.1). Nothing is cached and nothing needs to be: a wiped home
+  loses no lane.
+- **Sent envelopes live in `<home>/store/envelopes/`**, keyed by envelope identifier, written **before the affixing
+  transfer is submitted** and updated as `send` proceeds. That is P-7's whole reason: one settlement stamps one
+  envelope, and a run that died inside the transfer's own window has either spent postage or not, and only the
+  identifier can tell anyone which. It is a **cache of consensus and never an authority over it** — nothing in `send`
+  reads it to decide anything, and `--resume` reads it only to learn which envelope to go and ask consensus about.
+- **The letter's entities are recorded in the run of record and in the fixture capture**, which is where a reader
+  without this machine can find them.
+
+Widening `CorrespondentKey` is a nice-to-have and is **not done in this window**.
+
+### 4. What it asserts, and what it reads back
+
+Every readback is a mirror-node read with a named predicate, never an SDK receipt.
+
+**No ring** (§7.1). B's doorbell `0.0.10452149` holds **exactly two** messages after the run, the same two it held
+before: no new `connection_request` for either letter. A2's doorbell `0.0.10462704` holds **zero**.
+
+**The affix.** One settlement, `to` the treasury, **amount 3** — two ounces of weight plus one receipt fee (§4.2,
+§7.5) — memo **exactly** `wishmail:<id>`, consensus timestamp **strictly earlier** than chunk 0's (T-P7-1). Every
+chunk's `operator_id` names the settlement's `from` (T-P1-6).
+
+**The submission.** **Ten** chunks, every one at or under **1000 bytes** on the whole operation, **no `chunk_info`**
+(T-P9-7), memo `hcs-10:op:6:3` (T-P9-5). The `nx` chain intact across all ten, which checkpoint one's one-chunk letter
+could not exercise at all (T-P1-11).
+
+**The schedule** (T-P1-8). Its record on the mirror shows: `payer_account_id` **`0.0.10450879`**, not B; `wait_for_expiry`
+false; `expiration_time` 30 days out; `transaction_body` decoding to one `ConsensusSubmitMessage` **to `0.0.10452154`**
+carrying the receipt manifest byte for byte; and, after `ack`, an `executed_timestamp` **after the tenth chunk's**, with
+B's key prefix among the signatures.
+
+**The receipt** (T-P1-8). The receipt manifest is message 1 on **B's** manifest topic `0.0.10452154` — a topic whose
+submit key is B's account key `0bf6f350…` and nobody else's, read from the mirror 2026-09-10 — and its body recomputes
+to the hash the sender pre-filled.
+
+**B pays nothing for the receipt** (T-P16-2). B's account `0.0.10452127` holds **0.04622564 ℏ and 12 `$POSTAGE`**
+before the run, read 2026-09-10. Both are read again after `ack` and **both must be unchanged**: the ScheduleSign's own
+fee is B's *operator's* (`0.0.10450880`), and the inner transaction's is the schedule payer's.
+
+**The readers.** `inbox` at B returns the Proclamation **byte-identical to the file** — 4408 bytes, sha256
+`a5998644f8a86e1993244d6fb6ace1695f3f4264208c0912d5fbeaabd6f31f2a` — and carries the pending schedule beside it
+(§6.5). `verify` from the empty home emits a bundle whose digest is equal across two runs (T-P3-1), with a `Narrative`
+carrying it (T-P3-4).
+
+### 5. The quote, measured before anything is bought
+
+`npm run letter:plan` on the Proclamation, composed by **the same `sealEnvelope` the tool calls**:
+
+```
+body        emancipation_proclamation.md   (NARA text, UTF-8, CRLF as supplied)
+payload     4408 bytes · sha256 a5998644f8a86e1993244d6fb6ace1695f3f4264208c0912d5fbeaabd6f31f2a
+ciphertext  4424 bytes                     (+16, the AEAD tag)
+chunks      10 · CHUNK_WIRE_MAX 1000 bytes per operation (§7.4)
+weight      2 oz of 16 (§7.5)              — §4.2's maximum is not approached; nothing is cut
+postage     3 stamp(s) = 2 weight + 1 receipt fee · returnReceipt true
+envelope id 82bce897…                      (a dry-run composition; the live one differs — see §9)
+receipt     schedule paid by 0.0.10450879 — never the recipient (§10.4, T-P16-2)
+window      30 days = 2592000s, under SCHEDULE_MAX_LIFETIME 5356800s (§1.6)
+```
+
+**A2 holds ten stamps and the quote is three.** Sonic's fill-in — *if the quote exceeds 10, buy at the counter* — is
+not reached: the counter is not started, `buy_stamp` is not called, and the Postmaster is not a party to this
+checkpoint at all. Reported because a fill-in that was not needed is a fact about the run.
+
+**§4.2's maximum is not in play.** `MAX_WEIGHT` is 16 ounces, 65,536 ciphertext bytes; the Proclamation is 2 ounces.
+There is nothing to cut and nothing to ask.
+
+### 6. The window, verified rather than recalled
+
+**30 days is within the network's maximum.** `SCHEDULE_MAX_LIFETIME` is pinned at **5,356,800 s — 62 days** (§1.6,
+D-77, ledger §H), and re-**FETCHED 2026-09-10** from `docs.hedera.com/hedera/core-concepts/scheduled-transaction`,
+which gives the same number and cites `SchedulingConfig.java:35` for it. 30 days is 2,592,000 s. The driver refuses
+anything over the maximum before it composes a body, and the network's own
+`SCHEDULE_EXPIRATION_TIME_TOO_FAR_IN_FUTURE` stands behind that. **No stop fires.**
+
+### 7. The `transaction` operation's shape and memo, probed at the pin
+
+**Probed, not recalled** (CLAUDE.md §3's FETCH rule). `provenance/recon/pins-recon-2026-09-06.md`, C-5 and the
+operation table at `docs/standards/hcs-10/index.md:696-714`: the `transaction` operation requires `p`, `op`,
+`operator_id`, `schedule_id` and `data`, with `m` optional. **HCS-10 assigns it no operation enum and defines no
+transaction memo for it** — the enum table at `index.md:366-374` stops at `6` (message) — so §6.1's rule ("MUST carry
+none where HCS-10 defines none") makes its memo the empty string, which is what T-P9-5 checks and what
+`ops/hcs10.ts::TRANSACTION_OP_MEMO` already was.
+
+`data` is a free-text description of what the recipient is being asked to sign; HCS-10's own example is *"Transfer 10
+HBAR to account 0.0.111222"*. Ours is **`wishmail:receipt:<envelope id>`**, and it is load-bearing rather than
+decorative: it is what pairs a request with an envelope on a lane that carries more than one letter. Until 2026-09-10
+`verify` attached every request on a lane to every envelope on it, which was invisible while a lane held one letter and
+wrong the moment it held two.
+
+### 8. The submit→learn window, per consensus write, and the resume from inside each
+
+| Write | If the signature left and the outcome was not learned | Resume |
+|---|---|---|
+| **the manifest** (step 2) | published, unknown | harmless: a manifest is content-addressed and a duplicate is another message that recomputes to the same hash. The rerun composes a fresh envelope anyway |
+| **the settlement** (step 4) | postage may be consumed with no envelope on the lane | **NEVER retried blindly** (P-7). The row in `<home>/store/envelopes/` is written **before** the transfer is submitted, so a fresh process can name the identifier; the settlement is then found on consensus by its memo — `wishmail:<id>` — and reused. A second transfer under the same memo would be a second settlement for one envelope, which T-P7-2 rejects |
+| **the chunks** (step 5) | some on the lane and some not | resubmittable against the **same** settlement (D-52). The chain is walked from the header, so a partial envelope is `INBOX_INCOMPLETE` rather than a wrong one |
+| **a send that died after SETTLE and before the schedule** | the envelope is delivered and no receipt was ever requested | **the envelope is SETTLED and stays SETTLED**; what is missing is a request, not postage. `npm run letter -- <home> --to <addr> --resume <envelope id>` runs step 7 alone. **A plain rerun is NOT a resume**: §7.2 requires a fresh nonce per envelope, so running the driver again composes a *different* envelope and affixes a *second* settlement — a second letter. `--resume` with no value lists what the store holds |
+| **the ScheduleCreate** | a schedule may exist and this process not know its id | **the ledger itself prevents two.** An identical inner transaction returns **`IDENTICAL_SCHEDULE_ALREADY_CREATED`**, and the receipt of that transaction **carries the id of the schedule that already exists** — FETCHED 2026-09-10 from `docs.hedera.com/hedera/core-concepts/scheduled-transaction`: *"The receipt status will result in `IDENTICAL_SCHEDULE_ALREADY_CREATED`"*, and it gives "the schedule ID in the receipt of the transaction that was submitted" so the caller can sign that one. `ops/hedera.ts` was changed to carry an entity id back on a **failed** status for exactly this, and `send` treats that status as success. **Above it, step 7 reads the lane first**: a `transaction` operation whose `data` names this envelope is the request, and its schedule is reused. So there are two independent guards and the outer one costs nothing |
+| **the `transaction` operation** | posted twice, or posted and unknown | **§10.4 permits it**: *"A sender MAY request again by creating a new schedule and posting a new `transaction` operation; each request is its own record."* A reader with two operations naming one schedule sees one request twice and appraises it once; a reader with two operations naming two schedules sees two requests, and `acked` on either is `acked` — the Verifier takes an acknowledged request over an unclaimed one and reports both rows under `requests`. Our own step 7 posts one, because it reads first |
+| **the ScheduleSign** (`ack`) | the signature landed and the execution is not yet visible | **look again; never sign again.** `ack` polls the schedule for `executed_timestamp`, which is the fact, and a second ScheduleSign from the same key returns `NO_NEW_VALID_SIGNATURES`. If the poll runs out, `ack` refuses with `ACK_SUBMIT_FAILED` and says in as many words to read the schedule again rather than sign again |
+| **the executed submission** | executed and the manifest not yet on the mirror | the receipt is witnessed by the schedule's record, which already carries the execution. `proof.uri` comes back **null** until the manifest is visible — which the registered schema permits and `check:freeze` asserts — and a later read fills it |
+
+**The rule for all of them is the one Gate One taught and the a2 run re-taught: read the mirror first, and the
+process's own output second.** If anything stops, report what is true at the stop and wait. Do not repair.
+
+### 9. What the dry run showed, and what it could not
+
+The quote in §5 is the whole of it, plus: the lane is found and reused, so this is not first contact; A2 holds ten
+stamps against a quote of three; and the schedule's payer is `0.0.10450879` and not B.
+
+**The envelope identifier above is a dry-run composition and will NOT be the one on consensus.** §7.2 requires a fresh
+nonce for every envelope and §7.3 a fresh ephemeral key, so the live run seals again and reaches a different `id` — and
+the settlement memo, which is `wishmail:` plus that id, differs with it. Its absence from the ledger is not a defect.
+What the dry run fixed is the shape: the weight, the postage, the chunk count, the receipt fee, and that the memo is
+the identifier and nothing else.
+
+**What it could not prove**: whether the network accepts a 30-day expiration, whether the schedule's record shows what
+§11.4 needs, whether the execution follows the tenth chunk, and whether ten chunks land without `chunk_info`. There is
+no offline consensus node.
+
+**`ack`'s dry run is different in kind, and it is worth saying.** Every check §10.4 puts *before* the signature is a
+check on bytes already on consensus — the schedule's record, the body inside it, the topic that body writes to, the
+payer it names, and whether the manifest it carries is the one this envelope, this postmark and this epoch compose. All
+of that runs with `--live` absent. So a dry run of `ack` that prints `carries EXACTLY those bytes` has checked T-P1-9
+in full; what it cannot know is whether the network executes.
+
+### 10. The predicted appraisal, and the predicted trust class of the receipt
+
+**The envelope: `appraised.standing` = `unverified`, reason `T-P12-4`.** The same prediction checkpoint one made and
+the same reason it got back, and for the same sentence: `RELEASE.profiles` is `{}`, so §11.4 does not replay, and §9.6
+makes a claimless Verifier conforming. Binding passes, postage passes, and T-P9-3 does not bite because Step 4 signed.
+
+**The receipt: `receipt.status` = `acked`, no reasons, and the envelope's state moves to `ACKED`** (§8.3). It is the
+first time any envelope in this deployment has been anything but SETTLED.
+
+**The receipt's declared trust class is `math`, and its output is `opened`** — D-81, and §10.4's own paragraph. What a
+Verifier recomputes is that B's key signed for this envelope after this postmark, which is arithmetic; that the
+envelope *opened* is B's testimony and nothing else, "as a signature on a return-receipt card is the signer's testimony
+that the letter was received". So the manifest carries `trustClass: math` with no endorsements, and the statement is
+where the testimony is confined.
+
+**A caveat this release owes, and it is the same shape as checkpoint one's seventh alteration.** §11.4 words the
+receipt's signature check as *"the key of the account the resolution's coordinates name"*, and a Verifier that claims
+no profile has no coordinates. §10.4 puts the recipient's **account** in the receipt's meaning, so the account is
+inside the hash and a manifest naming any other account recomputes to a different hash — which is how the account is
+confirmed rather than merely read. It is then checked against consensus twice: its key must be the submit key of the
+topic the receipt landed on, and the prefix on the schedule's record must be that key. **Where a profile IS claimed the
+replayed coordinates are compared to the same account as well**, and `check:letter` exercises that path. MINE, and
+recorded here rather than coded around.
+
+**If the run yields anything else, that is the finding.**
+
+### 11. WHAT IS HELD, AND WHY — the reply, and ledger §G-21
+
+**The plain reply B → A2 is not run.** It is held at the gate on a contradiction inside §7.1 that the dry run found
+before any signature, and CLAUDE.md §5 forbids coding around it.
+
+```
+  §7.1 ¶6      "A lane is bidirectional: either party sends on it."
+  §7.1 ¶5      the lane is found by "the connection_created operation ON THE
+               RECIPIENT'S DOORBELL that names the sender's account"
+  §7.1's MUST  "The lane an envelope binds to MUST have been created in answer to a
+               connection request on the doorbell ITS RESOLUTION PROOF YIELDED."
+               Conformance: T-P10-2
+```
+
+**On consensus, read 2026-09-10**: lane `0.0.10464056` was created by B in answer to A2's ring, so its
+`connection_created` is on **B's** doorbell `0.0.10452149`. **A2's doorbell `0.0.10462704` holds zero messages.** For a
+reply B → A2 the recipient is A2, the doorbell its resolution proof yields is `0.0.10462704`, and no lane is
+discoverable there at all — while the lane the two agents share, and which either may write to under its threshold key,
+is invisible to ¶5's rule and forbidden by the MUST.
+
+**Neither way out is free.** Sending on the shared lane produces an envelope that **our own Verifier appraises unbound
+the day it claims `hcs14`** (T-P10-2) and that this claimless release would not catch — conformant-looking today,
+refused later, which is the worst version of the defect. Ringing A2's doorbell obeys the specification and opens a
+**second** lane between the same two agents, spending a stamp at a HIP-991 fee, against a ruling that said the reply
+rings nothing. **A second lane on consensus cannot be undone.**
+
+**So nothing is signed for the reply and nothing is rung.** `lanesFromDoorbell` implements ¶5 exactly as written, which
+is why the dry run said *first contact* rather than quietly picking a lane. Ledger §G-21 states both readings, what
+each costs, and what a ruling would move. **Sonic rules; the reply resumes on his word and on nothing else.**
+
+### 12. Two more findings, raised and not coded around
+
+**§G-22 — T-P1-8's word is "exactly".** It asks for "a fixture receipt's schedule record shows exactly the recipient's
+signature", and HIP-423's record cannot show one. A ScheduleCreate's signatures are offered to the inner transaction's
+required keys, and §10.4's inner transaction requires two — B's, and the inner payer's, which §10.4 forbids from being
+B. Twenty-five executed schedules read from testnet on 2026-09-10 carry two signatures each, creator's and
+counterparty's. **§11.4's own wording is satisfiable and is what the code checks**: the recipient's key is *among* the
+signatures, matched by prefix. The run will report what the record holds and will not pretend it holds one signature.
+
+**§G-23 — §11.4 requires a reason no test names.** "A receipt for an envelope whose header did not request one counts,
+and the reason names it (§8.6)" — and section A has no row for §8.6's unrequested receipt. The code reports `T-P12-2`,
+which is §11.5's own sanctioned answer for a condition its table does not name, so the gap is flagged in the Verifier's
+output rather than papered over with a test id that means something else. Not reachable in this run: the header does
+request one.
+
+### 13. What else this checkpoint changed, and what it did not
+
+**`check:freeze` no longer composes a receipt by hand.** It built the manifest itself until today, and a second
+spelling of a document that is inside a hash is a second receipt (CLAUDE.md §9). Moving it onto `core/receipt.ts`
+found two things no schema could have caught: the digest covered `{envelopeId, keyEpoch}` and left **chunk 0's
+postmark** in the locator only, though §10.4 makes the output `opened` "over exactly those inputs" and there are
+**three** of them; and `meaning.statement` did not name the recipient's account, though §10.4's meaning lists it first
+and §5.2's `meaning` has no other field it could be in.
+
+**The `SchedulableTransactionBody` codec is hand-rolled and courted against the SDK's own bytes.** `@hashgraph/proto`
+resolves only from a `node_modules` above this repository, so importing it would pass here and fail on a clean clone —
+`core/protokey.ts` and `counter/body.ts` already refused it for that reason, and this refuses it for the same one. The
+field this file would most plausibly get wrong from memory is
+`SchedulableTransactionBody.consensusSubmitMessage`, which is **21** and not the **27** that `TransactionBody` uses for
+the same body. `check:letter` builds a real `ScheduleCreateTransaction`, freezes it **offline**, decodes it with our
+decoder, and asserts **our encoder's bytes are the SDK's bytes byte for byte**.
+
+**`spec/schemas/` is not touched.** `spec/pins.json` is not touched. `app/deployment/hedera-testnet.json` is not
+touched. `RELEASE.classes` stays `[]` and `RELEASE.profiles` stays `{}`.
+
+**The Correspondent MCP server keeps no dry-run mode and no gate but the stamp (D-158), and the reader drivers keep no
+mode flag.** Both stand as decided (RECORD, Sonic 2026-09-10). `sdk/ack.cli.ts` is new and DOES take one, because it
+can sign.
+
+### 14. Every way it stops
+
+`send` stops, before or instead of signing, on every reason checkpoint one listed, and now also on: a receipt whose
+schedule would name the recipient as payer (§10.4, T-P16-2); coordinates carrying no manifest topic for the recipient
+(§5.3, D-166); an acknowledgment window over `SCHEDULE_MAX_LIFETIME`; a ScheduleCreate the network refuses for any
+reason but `IDENTICAL_SCHEDULE_ALREADY_CREATED`; and a receipt manifest that would need more than one HCS message,
+which `check:freeze` measures at 506 bytes and the SDK would refuse to schedule.
+
+`ack` refuses with `ACK_NOT_OPENED` on: a delivery that came back unopened, for every reason in §6.5 (T-P1-3); a
+delivery with no chunk 0 postmark or no epoch; a schedule whose body is not a `ConsensusSubmitMessage`; one that writes
+to a topic other than this recipient's manifest topic; and one whose manifest is not the manifest this envelope, this
+postmark and this epoch compose (T-P1-9). With `ACK_NOT_REQUESTED` on: no `transaction` operation naming a schedule for
+this envelope; a header that did not set `rr` (§7.7); a schedule consensus no longer holds, which is `unclaimed` and
+not a failure; and one whose payer is the recipient (T-P16-2). With `ACK_SUBMIT_FAILED` on a ScheduleSign that did not
+land, or one that landed with no execution visible inside the wait — where the remedy is to read again and never to
+sign again.
+
+### 15. The offline courts, and what they leave out
+
+`npm run check:letter` is **133 assertions**, up from 69. What it gained: a letter with a return receipt on a modelled
+ledger that now holds HIP-423 schedules; the `transaction` operation on the lane, with no memo and with the envelope
+in its `data`; the pending schedule surfacing at `inbox`; `ack` refusing a body that names a different identifier,
+postmark or epoch (T-P1-9, three cases) and an envelope that never opened (T-P1-3); the ScheduleSign executing to the
+recipient's own manifest topic with **not one stamp of the recipient's moved** (T-P16-2); `verify` reading it back as
+`acked` with the envelope **ACKED** and §5.8's object recomposed from consensus alone (T-P1-8); a schedule expired
+unsigned reported `unclaimed` and nothing else (T-P15-5); step 7 reusing a standing request rather than making a
+second; a **multi-chunk** letter of the same weight class as the Proclamation, opened byte for byte, with **both**
+halves of its chain refused when broken (T-P1-11); the ingestion-lag knob on the read that follows an execution; and
+the protobuf codec courted against the SDK's own frozen bytes.
+
+**What it leaves out, and says so rather than approximating.** The model does not verify signatures, charge HBAR,
+throttle, or let time pass: `expire()` is a method call standing in for sixty-two days, and a key is a string. It does
+not model the network's *own* refusal of a duplicate schedule as a status — it refuses in the same place and returns
+the existing id, which is the behaviour the code depends on, but the status string is the network's. And it cannot
+reach a single one of the four windows in §8: there is no offline consensus node.
+
+### 16. The gate
+
+**Nothing signs until Sonic says the word.** `npm run letter:plan` and `npm run ack` are the dry runs and have been
+run; `npm run letter` and `npm run ack:live` are the live ones and have not. **Items (a) through (d) are what this
+report gates. Item (e), the reply, is held on §G-21 and is not gated by anything here.**
+
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.

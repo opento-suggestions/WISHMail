@@ -26,6 +26,8 @@ Fields marked `[fill at deployment]` are filled when the testnet artifacts exist
 
 Compromise of an epoch's private key exposes every envelope sealed to that epoch, past and future, until rotation, and every past one forever (F-2). This release seals with HPKE base mode (§7.3) and claims no forward secrecy. Rotation is by epoch (§7.6); the SDK retains every epoch's key it has generated. No mitigation is offered beyond rotation.
 
+**Under a release that claims no profile, the key-epoch binding check is dark in `verify`** (T-P1-10, §11.4). §11.5's ladder has `hdr.ke` disagreeing with the coordinates' `keyEpoch` yielding unbound, and §11.4 says what it is compared against: the epoch *the resolution's coordinates carry*, which come from replaying the resolution — and §11.4 replays only "if that profile is one the Verifier claims (§9.6)". `RELEASE.profiles` is `{}`, so this release has no coordinates to compare against and an altered epoch passes unnoticed at replay. The envelope still opens or does not at `inbox`, where the recipient holds the epoch's key and a wrong epoch simply does not decrypt; what a stranger's `verify` cannot see is that the epoch was wrong. **That is our timing and not the specification's**: claiming `hcs14` turns the check on, and doing so waits on the VERIFIER suite (§1.5, T-P15-3) rather than on anything the specification withholds.
+
 ## L-2 — Metadata is public
 
 Doorbells, lanes, settlements, postmarks, receipts, and slips are readable by anyone, forever (F-1). This release publishes nothing beyond what the specification requires on consensus, and hides nothing that it requires. Who wrote to whom, when, how often, with what postage, and whether a hand signed is public. Content is not.

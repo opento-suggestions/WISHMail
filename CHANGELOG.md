@@ -2,6 +2,82 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Two, checkpoint two] — 2026-09-10 — §10.4's return receipt, and `ack`
+
+**No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** ruled the shape and
+authorised the run; **[CC]** built it, courted it offline, and wrote the record.
+
+### Changed
+
+- **`send` implements §6.4 step 7.** A `returnReceipt` was refused outright until now, because postage would have
+  included the receipt fee and chunk 0's header would have requested one that nobody was asked for. Step 7 creates
+  §10.4's long-term schedule — inner transaction one `ConsensusSubmitMessage` of the receipt's pre-filled manifest to
+  the **recipient's** manifest topic, `waitForExpiry` false, expiry a sender parameter under `SCHEDULE_MAX_LIFETIME` —
+  and posts HCS-10's `transaction` operation on the lane naming it. **Idempotent against consensus**: the lane is read
+  for a request naming this envelope before anything is created, and beneath that the ledger refuses a duplicate with
+  `IDENTICAL_SCHEDULE_ALREADY_CREATED` and the existing schedule's id.
+- **`ack` exists (§6.6), and it is a check before it is a signature.** It reads the pending schedule the lane's
+  `transaction` operation names, decodes the body, and **recomposes** the receipt manifest from the three inputs §10.4
+  names — the envelope identifier, chunk 0's postmark, and the epoch the envelope opened under **in this recipient's
+  own `inbox`** — refusing `ACK_NOT_OPENED` unless the bytes match (T-P1-9). It refuses an envelope that came back
+  unopened (T-P1-3) and a schedule whose payer is the recipient (T-P16-2). Then it signs, and the network executes.
+- **`inbox` surfaces the pending schedule** on a delivery whose header requested a receipt (§6.5), and says which
+  epoch the envelope opened under.
+- **`verify` appraises the receipt (§11.4).** It reads each `transaction` operation on the lane, each schedule's
+  record, and the manifest the execution published; recomputes the receipt; matches the signing key's prefix against
+  the account's key from consensus; and reports `acked`, `unclaimed`, `invalid` or `none`. An acknowledged envelope
+  moves to **ACKED** (§8.3) — the first state after SETTLED this deployment has produced. **The receipt never lowers
+  the envelope's standing** (§11.5).
+- **A `transaction` operation now belongs to one envelope.** Its `data` carries `wishmail:receipt:<envelope id>`, and
+  that is what pairs a request with a letter. `verify` attached every request on a lane to every envelope on it until
+  today, which was invisible while a lane held one letter and wrong the moment it held two.
+- **`core/receipt.ts` is the one place a receipt is composed** — by `send` to fill the schedule, by `ack` to decide
+  whether to sign, and by `verify` to recompute what executed. `check:freeze` built its own until today, and moving it
+  found two things no schema could catch: the digest covered two of §10.4's three inputs and left **chunk 0's
+  postmark** out, and `meaning.statement` did not name the recipient's account, which §10.4's meaning lists first and
+  §5.2's `meaning` has no other field for.
+- **The reader drivers gain one that can sign**, `sdk/ack.cli.ts`, and it defaults to DRY RUN with `--live` required
+  to arrive (CLAUDE.md §12). Its dry run is unusual in being nearly complete: every check §10.4 puts before the
+  signature reads consensus, so a dry run checks T-P1-9 in full and only the ScheduleSign is withheld.
+- **`sdk/letter.cli.ts` takes `--file`, `--receipt`, `--receipt-window` and `--resume`**, prints the whole quote —
+  payload bytes and digest, ciphertext, chunk count, weight, postage, the receipt fee, the schedule's payer and window
+  — and refuses before composing anything if the postage exceeds what the sender holds.
+- **`send` writes what it affixed to `<home>/store/envelopes/` before it submits the transfer** (D-165, P-7). One
+  settlement stamps one envelope, and a run that died inside the transfer's window has either spent postage or not;
+  only the identifier can tell anyone which. `--resume <envelope id>` runs step 7 alone for an envelope already paid
+  for. **A plain rerun is not a resume**: §7.2's fresh nonce makes it a second letter.
+- **`LIMITATIONS.md` L-1 gains a paragraph**: under a release that claims no profile, the key-epoch binding check is
+  dark in `verify` (T-P1-10, §11.4). The envelope still opens or does not at `inbox`; what a stranger cannot see is a
+  wrong epoch. Our timing, not the specification's.
+
+### Added
+
+- **`core/schedulebody.ts`** — the `SchedulableTransactionBody` codec, hand-rolled on `core/protokey.ts`'s primitives
+  for the reason that file already gives: `@hashgraph/proto` resolves only from a `node_modules` above this
+  repository, and a `ScheduleInfoQuery` is a paid query a Verifier must not need (P-4). **Its field numbers are probed
+  against the SDK's own frozen bytes**, in `check:letter`: the one it would most plausibly get wrong is
+  `consensusSubmitMessage`, which is **21** here and **27** in `TransactionBody`. The encoder's output is asserted
+  equal to the SDK's, byte for byte.
+- **`tools/memory.ts` models HIP-423 schedules** — created, signed, executed when a key the inner submission requires
+  signs, submitted **as** that signer, refused as a duplicate with the existing id, and deletable to stand in for
+  expiry. It holds real `SchedulableTransactionBody` bytes, so the decoder is exercised rather than bypassed.
+- **`check:letter` is 133 assertions**, up from 69, and every one of §10.4's paths is among them.
+
+### Findings, raised and not coded around
+
+- **§G-21 — §7.1 says a lane is bidirectional and §7.1's own MUST says a reply cannot use it.** The lane's
+  `connection_created` is on the ACCEPTOR's doorbell, and §7.1 finds a lane by reading the RECIPIENT's; for a reply
+  those are different doorbells, and the MUST that T-P10-2 tests forbids binding to a lane not born from the one the
+  resolution yielded. **Found by the dry run before any signature.** Sending on the shared lane makes an envelope our
+  own Verifier appraises unbound the day it claims `hcs14`; ringing instead opens a second lane between the same two
+  agents, which cannot be undone. **The plain reply of checkpoint two is held at the gate on this.**
+- **§G-22 — T-P1-8 asks for "exactly the recipient's signature" and HIP-423 records the payer's too.** A
+  ScheduleCreate's signatures are offered to the inner transaction's required keys, and §10.4's inner transaction
+  requires the recipient's and the payer's. Twenty-five executed schedules read from testnet carry two each. §11.4's
+  own wording — the recipient's key is *among* the signatures — is satisfiable and is what the code checks.
+- **§G-23 — §11.4 requires a reason for a receipt on an envelope that did not request one, and no test names it.**
+  The code reports `T-P12-2`, which is §11.5's own answer for a condition its table does not name.
+
 ## [Gate Two, checkpoint one] — 2026-09-10 — the first letter
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** authorised the run;
