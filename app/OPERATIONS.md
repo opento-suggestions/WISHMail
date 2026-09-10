@@ -1445,13 +1445,13 @@ Two questions, and the second is the one D-159 actually rests on.
 
 **Cost.** Five transactions and four mirror reads, all on the operator's account *(amended: the treasury and token have to be created, per the correction above)*. **No stamp is spent, because no `$POSTAGE` is involved** — the units moved here are a token minted for this run and worth nothing.
 
-**Where the runner is.** `app/src/ops/probe542.ts`, `npm run probe:542` inside `app/`. It writes its raw observations to `probe542-observations.json` and its findings here.
+**Where the runner is.** `app/src/ops/probe542.ts`, `npm run probe:542` inside `app/`. It writes its raw observations to `probe542-observations.json` — gitignored, and a working paper rather than a record: what the probe establishes is written out here, and the JSON is not kept.
 
 ---
 
 ## The HIP-542 probe — the run of record, 2026-09-09
 
-**Run and answered. Both questions are yes, and the second is the one D-159 rests on.** `npm run probe:542`, five transactions, four mirror reads, **9 of 9 predicates held**. Every predicate below was read from the mirror node and none from an SDK receipt. The raw JSON for each read is in `probe542-observations.json` (gitignored, as the 09-08 probe's was); what it establishes is here.
+**Run and answered. Both questions are yes, and the second is the one D-159 rests on.** `npm run probe:542`, five transactions, four mirror reads, **9 of 9 predicates held**. Every predicate below was read from the mirror node and none from an SDK receipt. **Every read is written out below rather than pointed at.** The runner wrote its raw JSON to `probe542-observations.json`, gitignored as the 09-08 probe's was and **deleted from the working tree on 2026-09-09**: a working paper nobody else can open is not a record, and everything it held — the alias, the key, the ids, the fees, the balances at each step — is in this section.
 
 **Entities of the run.** Probe treasury `0.0.10446531`; probe token `0.0.10446532` ("WISHMail HIP-542 probe stamp", P542, decimals 0, born at 0 and minted 10); the account the probe was written to find, **`0.0.10446534`**, which nobody created — it was bought. Operator `0.0.8641261` paid every transaction. No `$POSTAGE` was involved: the units moved here are a token minted for this run and worth nothing.
 

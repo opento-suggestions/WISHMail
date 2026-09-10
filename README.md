@@ -10,7 +10,81 @@ It sells two claims, separately.
 
 **Story.** A correspondence is a chain of proofs on public topics, replayable by anyone from the specification alone — with no key, no stamp, no account, no credential, and no broker.
 
-ETHOnline 2026 submission. Specification 0.5.9; frozen at 0.5.0 on 2026-09-07 and patched nine times since — 0.5.1 the same day (D-135 – D-138), then 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167's §10.2 text) on 2026-09-09. Wire strings carry `0.5`, because a patch changes none. Deployed on `hedera:testnet` and no other ledger.
+ETHOnline 2026 submission. Specification **0.5.10**; frozen at 0.5.0 on 2026-09-07 and patched ten times since. Wire
+strings carry `0.5`, because a patch changes none (§1.7). Deployed on `hedera:testnet` and no other ledger.
+
+## What is on `hedera:testnet` right now
+
+**A Postmaster that sells mailboxes, and one agent that bought one.** The treasury and the `$POSTAGE` token; the price
+topic with three published schedules; the Postmaster-agent's six topics; the fourteen JSON Schemas of §5, each
+registered as an HCS-1 file on its own HCS-2 topic. And, since 2026-09-09, **Correspondent B** — an agent whose account
+did not exist until the transfer that created it:
+
+```
+account 0.0.10452127   doorbell 0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+declaration registry 0.0.10452155   HCS-11 profile file 0.0.10452158
+```
+
+It signed every one of those topic creations in its own process and **the Postmaster paid for all eight** — that is
+§6.1's carry — and then it paid for its own name on the HOL registry anchor out of the 0.05 ℏ its purchase funded, so
+that §9.5 assigns it no `blurred`. It resolves under `hcs14` and `hol`, and its `StampReceipt` names every entity the
+Postmaster created for it, at a rate any stranger can re-obtain from a mirror node at the receipt's own timestamp.
+
+**Every id, with a HashScan link: [`ENTITIES.md`](ENTITIES.md).** It is generated from `app/deployment/` and
+`spec/pins.json` — `npm run check:entities` fails if it is ever hand-edited — and it has a second table headed
+**RESIDUE — NOT OPERATING**, because three `$POSTAGE`-shaped tokens exist on this testnet and exactly one is the stamp.
+
+## Where conformance actually stands
+
+**Eighty-six tests registered. Zero passing. No class claimed. A report is emitted.**
+
+```
+$ npm run conformance
+  register    86 tests (81 core + 5 extension), §A
+  files       86 present, 0 missing, 0 unregistered
+  passed      0
+  failed      86
+  report      conformance/reports/all.json
+```
+
+**That is the honest state and not a failure**, and the difference matters: the suite is the eighty-six tests the
+specification's own `Conformance:` notes name — one file each, every one keyed to the invariant it serves — and they
+are written as failing stubs first because a test that exists only after the code it checks is a test shaped by the
+code. What changed at 0.5.10 is that the *report* is now permitted at all: T-P9-2 refuses a conformance claim while any
+pin in `spec/pins.json` is null, and the last of those closed when the fourteen schemas were registered on consensus.
+**`RELEASE.classes` is empty, so this release claims nothing** (§1.5: silence claims nothing), and a build guard makes
+it an error to claim a class beside a `NOT_IMPLEMENTED` body.
+
+## Running it
+
+Node 22, and nothing else. `npm install` at the root.
+
+```
+npm run counter        # the Postmaster's counter: Streamable HTTP MCP on 127.0.0.1:4600
+                       #   buy_stamp, verify, resolve  (§14.2's resource server)
+                       #   needs .env — see .env.example
+
+npm run correspondent  # ONE AGENT: stdio MCP, for goose. Its keys are born in it and
+                       #   stay in it; the Postmaster holds none of them, ever (P-13).
+                       #   Point goose at this as a stdio extension.
+
+npm run correspondent:provision -- <home> [--dry-run]
+                       # buy a mailbox and register: D-159's order, every step
+                       #   idempotent against consensus. --dry-run signs nothing
+                       #   and prints who pays for each row.
+```
+
+**A home directory IS the agent** (D-165): its config is the operator's, its keystore holds keys born on first run, and
+a fresh home is a new agent. Copy `app/sdk/config.template.json` to `<home>/config.json` and fill it in; the repository
+ships a template and never a filled one, and `npm run p13:check` is what keeps it that way.
+
+**To verify, you need none of this.** `verify` reads a mirror node and a mirror node is a read interface, not a broker
+— no key, no account, no stamp, no credential (P-4).
+
+**Where to look next:** what is built and in what order, [`STATUS.md`](STATUS.md) · what this deployment does not
+defend, [`LIMITATIONS.md`](LIMITATIONS.md) · what changed and why, [`CHANGELOG.md`](CHANGELOG.md) · the only normative
+document, [`spec/WISHMAIL_SPEC_v0_5.md`](spec/WISHMAIL_SPEC_v0_5.md) · the rules a change is made under,
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## What it is not
 
@@ -55,13 +129,12 @@ spec/           WISHMAIL_SPEC_v0_5.md — the only normative document
                 adr/      one architecture decision record per decision, D-1 onward
 conformance/    the suite: one test per T-<P-ID>-<n>, keyed to the invariant it serves
 app/            the reference implementation: MCP server, WebMCP page, SDK, CLI, resolvers
-recon/          dated fetches of the standards, and the pins drafted from them
-provenance/     where the design came from. Binds nothing; the specification governs
+provenance/     read-only history: where the design came from, the venue's rules, and
+                recon/ — dated fetches of the standards and the pins drafted from them.
+                Binds nothing; the specification governs, in every particular
 plans/          the plans this build was directed by. Binds nothing; artifacts, not rules
 ENTITIES.md     every entity on hedera:testnet, and which of them operate. Generated
 ```
-
-**What is actually on the ledger:** [`ENTITIES.md`](ENTITIES.md) — the treasury and `$POSTAGE`, the price topic and both published schedules, the Postmaster-agent's six topics, and the fourteen registered schemas, each with a HashScan link. It has a second table headed **RESIDUE — NOT OPERATING**: three `$POSTAGE`-shaped tokens exist on this testnet and exactly one is the stamp token, so every probe leftover and every superseded entity is listed with the reason it is there and the reason it is not ours. The file is **generated** from `app/deployment/hedera-testnet.json` and `spec/pins.json` by `npm run entities:md`, and `npm run check:entities` fails if it is ever hand-edited.
 
 **Start here:** `spec/WISHMAIL_SPEC_v0_5.md`. Read §1 (scope, classes, pins), §2 (vocabulary — the names in code are these names), then §5 through §12.
 
@@ -99,7 +172,7 @@ Where the build stands, and what is not built: `STATUS.md` §6. What was provisi
 
 Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
 
-**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-seven decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance in `recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and sixty-seven decision records in `spec/CONFORMANCE_TESTS_v0_5.md` §B are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance now in `provenance/recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
 
 **Where to look, four places.**
 

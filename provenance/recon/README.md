@@ -1,6 +1,8 @@
-# recon/
+# provenance/recon/
 
-Dated fetches of the standards WISHMail rides on, and the pins drafted from them. **Nothing here is normative.** The specification's §1.6 is the appendix of record for pins and `spec/pins.json` is its machine-readable form; these files are the working papers those were built from.
+**Read-only history, like everything under `provenance/`.** Dated fetches of the standards WISHMail rides on, and the
+pins drafted from them, none of them touched since 2026-09-07. This folder was at the repository root until
+2026-09-09; documents written before then cite it as `recon/`. **Nothing here is normative.** The specification's §1.6 is the appendix of record for pins and `spec/pins.json` is its machine-readable form; these files are the working papers those were built from.
 
 Read one only when the corresponding row in `spec/CONFORMANCE_TESTS_v0_5.md` §H is not enough. §H is the digest: verified facts with their sources and `file:line`, and it is what the build leans on.
 
