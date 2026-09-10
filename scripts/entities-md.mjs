@@ -73,10 +73,17 @@ function txLink(id) {
  * first as though it were the second put seven hundred characters of base64
  * into a table cell, which is how the difference was noticed. Neither row is
  * edited to suit a reader: a record of what was submitted is not rewritten.
+ *
+ * A base64 body is therefore DECODED before it is measured. Measuring the
+ * encoding reported sequence 1 as 752 bytes — `ceil(563/3) x 4`, the length of
+ * the transport form — for a message that is 563 bytes on consensus and whose
+ * recorded sha256 is over those 563. The digest was right and the count beside
+ * it was not, in the one file a reader is meant to trust because it is the
+ * readable one. The fix is here, in the rendering, and not in the record.
  */
 function byteCount(value) {
   if (typeof value === 'number') return value;
-  if (typeof value === 'string') return Buffer.byteLength(value, 'utf8');
+  if (typeof value === 'string') return Buffer.from(value, 'base64').length;
   return '?';
 }
 
