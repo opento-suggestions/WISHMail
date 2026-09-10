@@ -43,7 +43,9 @@
     "probe:542:plan": "tsx src/ops/probe542.ts --dry-run",
     "probe:precheck:plan": "tsx src/ops/probe-precheck.ts --dry-run",
     "correspondent:provision:plan": "tsx sdk/provision.cli.ts --dry-run",
-    "demo:operators:plan": "tsx src/ops/demo-operators.ts --dry-run"
+    "demo:operators:plan": "tsx src/ops/demo-operators.ts --dry-run",
+    "letter": "tsx sdk/letter.cli.ts --live",
+    "letter:plan": "tsx sdk/letter.cli.ts --dry-run"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

@@ -22,6 +22,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import canonicalize from 'canonicalize';
 import { writeReport } from './report.mjs';
+import { EXPECTED_TOTAL } from './register.mjs';
 
 const failures = [];
 let checked = 0;
@@ -59,7 +60,11 @@ try {
   is('the file is named for the scope', path.basename(first.file), 'VERIFIER.json');
   is('the report carries the digest the runner printed', doc.digest, first.digest);
   is('it records the specification version', doc.spec, '0.5.3');
-  is('and the register it was run against', doc.register.total, 83);
+  // Against the REGISTER and never a literal. This asserted 83 until 2026-09-10,
+  // which was the register's size before the two rows added at 0.5.5 and one at
+  // 0.5.6 — so the check failed on its own staleness rather than on anything
+  // writeReport does, and regenerating the report could never have fixed it.
+  is('and the register it was run against', doc.register.total, EXPECTED_TOTAL);
   is('results are sorted, so the digest does not depend on run order', doc.results.map((r) => r.test), ['T-P3-1', 'T-P4-1']);
   is('a clean run is passed in full (T-P15-3)', doc.passedInFull, true);
 

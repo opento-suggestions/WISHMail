@@ -52,6 +52,8 @@
     "probe:precheck:plan": "npm run probe:precheck:plan --workspace app --",
     "provision:plan": "npm run provision:plan --workspace app --",
     "prices:2": "npm run prices:2 --workspace app --",
-    "prices:2:plan": "npm run prices:2:plan --workspace app --"
+    "prices:2:plan": "npm run prices:2:plan --workspace app --",
+    "letter": "npm run letter --workspace app --",
+    "letter:plan": "npm run letter:plan --workspace app --"
   }
 }

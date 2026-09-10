@@ -26,7 +26,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { createPrivateKey, createPublicKey } from 'node:crypto';
+import { createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto';
 import { PrivateKey } from '@hashgraph/sdk';
 import { b64u } from '../src/core/canonical.js';
 import { rawPublic } from '../src/core/hpke.js';
@@ -224,6 +224,27 @@ export function currentEpoch(home: Home): number {
  * `KeyObject` does not leave this scope, so `inbox` decrypts without any module
  * but this one ever holding the secret (P-13, T-P13-1, T-P13-2).
  */
+/**
+ * Every retained epoch's private key, for `inbox` to decrypt with (§7.6, L-1).
+ *
+ * §6.5's precondition is that "the caller holds the decryption keys for the
+ * epochs of the envelopes it will open", and `InboxContext.keys` is typed as a
+ * map of them — so the tool needs the KeyObjects and this is the module that
+ * has them. It stays here, beside the file it reads, rather than being handed
+ * out as DER for somebody else to reconstruct: `p13:check` permits the field
+ * name `derKey` in this module and no other, and every epoch is retained
+ * because deleting one makes every envelope sealed under it unopenable forever.
+ */
+export function epochKeys(home: Home): ReadonlyMap<number, KeyObject> {
+  const epochs = require_(home).epochs;
+  return new Map(
+    Object.entries(epochs).map(([epoch, der]) => [
+      Number(epoch),
+      createPrivateKey({ key: Buffer.from(der, 'hex'), format: 'der', type: 'pkcs8' }),
+    ]),
+  );
+}
+
 export function agentSeal(home: Home, keyEpoch = currentEpoch(home)): SealIdentity {
   const der = require_(home).epochs[String(keyEpoch)];
   if (der === undefined) {

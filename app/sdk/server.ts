@@ -34,12 +34,15 @@ import { repoRoot } from '../src/ops/env.js';
 import { RELEASE } from '../src/release.js';
 import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
+import { inbox } from '../src/tools/inbox.js';
+import { send } from '../src/tools/send.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
 import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
 import { CounterUnavailable, buyStamps } from './counter.js';
 import { openHome } from './home.js';
 import { liveReader } from './live.js';
+import { inboxContext, lanesOf, ringStamp, senderContext } from './letter.js';
 import { MailboxRefusal, generateMailbox } from './mailbox.js';
 import { RegistrationRefusal, registerAgent } from './registration.js';
 import { boot, type Session } from './session.js';
@@ -251,18 +254,69 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           return ok({ outcome: r.outcome, coordinates: r.coordinates, log: r.lines });
         }
 
-        case 'send':
-        case 'inbox':
+        case 'send': {
+          // §6.4 in order, over the live seam. The tools are the ones
+          // `check:letter` exercises; `sdk/letter.ts` only hands them this
+          // agent's own ids. Nothing here knows it is on a network.
+          const address = args['address'];
+          if (typeof address !== 'string' || address === '') {
+            return refuse('SEND_UNRESOLVED', 'address is required: `send` takes one resolved recipient (§6.4)');
+          }
+          const payload = args['payload'];
+          if (typeof payload !== 'string') {
+            return refuse('SEND_UNRESOLVED', 'payload is required, as text or base64 (§6.4)');
+          }
+          if (args['returnReceipt'] === true) {
+            return refuse(
+              'NOT_IN_THIS_BUILD',
+              'returnReceipt lands with Gate Two checkpoint TWO: §10.4 makes the receipt a ScheduleSign over a ' +
+                'schedule `send` creates, and neither half is built. Postage that paid for a receipt nobody was ' +
+                'asked for is an artefact on consensus that cannot be withdrawn, so this refuses rather than ' +
+                'assembling one (§6.4 step 7).',
+            );
+          }
+
+          // The recipient is resolved HERE, by this agent, from a mirror node —
+          // and the proof that resolution produces is what `send` welds into the
+          // AAD. A letter to an address nobody resolved is what §10 exists to
+          // make impossible.
+          const mine = s.record.get('manifest')?.id ?? s.account;
+          const r = await resolveHcs14(mirrorSource(s.mirror), s.ledgerTag, address, mine);
+          if ('failure' in r) return refuse(r.failure, r.detail);
+
+          // §4.4's first hop, where the payer is not the sender's own account:
+          // the fee is debited from the PAYER, so the payer must hold a stamp.
+          const hop = await ringStamp(s);
+          if (hop !== null) console.error(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
+
+          const out = await send(senderContext(s), {
+            coordinates: r.coordinates,
+            manifest: r.manifest as unknown as Record<string, unknown>,
+            payload: Buffer.from(payload, 'utf8'),
+            returnReceipt: false,
+            ...(typeof args['windowSeconds'] === 'number' ? { windowSeconds: args['windowSeconds'] } : {}),
+          });
+          return ok(out, out as unknown as Record<string, unknown>);
+        }
+
+        case 'inbox': {
+          // §6.5 writes nothing: reading a lane leaves no mark on it (D-29).
+          const lane = args['lane'];
+          const lanes =
+            typeof lane === 'string' && lane !== '' ? [lane] : await lanesOf(s);
+          const out = await inbox(inboxContext(s), {
+            lanes,
+            ...(typeof args['since'] === 'string' ? { since: args['since'] } : {}),
+          });
+          return ok(out, { deliveries: out as unknown as Record<string, unknown>[] });
+        }
+
         case 'ack':
           return refuse(
             'NOT_IN_THIS_BUILD',
-            `${name} lands with the first letter (Gate Two). ` +
-              (name === 'ack'
-                ? 'It is NOT BUILT: §10.4 makes a return receipt a ScheduleSign over a schedule `send` creates, and ' +
-                  'neither half exists yet — which is also why `send` refuses `returnReceipt`.'
-                : 'It is built and exercised end to end against the modelled ledger — `npm run check:letter` — and ' +
-                  'what it still needs is the live wiring and a letter to carry.') +
-              ' This release claims no conformance class (§1.5: silence claims nothing).',
+            'ack lands with Gate Two checkpoint TWO. It is NOT BUILT: §10.4 makes a return receipt a ScheduleSign ' +
+              'over a schedule `send` creates, and neither half exists yet — which is also why `send` refuses ' +
+              '`returnReceipt`. This release claims no conformance class (§1.5: silence claims nothing).',
           );
 
         default:
