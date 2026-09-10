@@ -677,6 +677,59 @@ function fieldsFor(_key: string): Record<string, string> {
     ),
   );
 
+  /* ---------------------------------------------------------------- *
+   * A FROZEN TRANSACTION IS IMMUTABLE, AND `submit()` MUST NOT FORGET IT.
+   *
+   * Gate One's first run stopped here. The counter's settle leg reconstitutes
+   * the purchase from the bytes it froze at the quote and adds the buyer's
+   * signature (§14.2, D-168), so what reaches `ops/hedera.ts::submit` is
+   * frozen, signed, and immutable — and the preparation `submit` does for
+   * every other caller throws on exactly that. `check:exchange` could not
+   * reach it: there is no offline consensus node, so its settle leg runs down
+   * the replay path a landed transfer takes and `submit()` itself was Gate
+   * One's. Nothing had landed when it stopped; a refusal leaves no mark (§3.5).
+   *
+   * These four assertions are the SDK facts the defect turned on, so the guard
+   * cannot be removed without a check going red first.
+   * ---------------------------------------------------------------- */
+  {
+    const buyer = PrivateKey.generateED25519();
+    const built = new AccountUpdateTransaction()
+      .setAccountId('0.0.1001')
+      .setAccountMemo('a stand-in for the purchase')
+      .setTransactionId(TransactionId.generate('0.0.2002'))
+      .setNodeAccountIds([AccountId.fromString('0.0.3')])
+      .setMaxTransactionFee(new Hbar(2))
+      .freeze();
+
+    const reconstituted = Transaction.fromBytes(built.toBytes());
+    ok('a transaction reconstituted from its own bytes reports itself frozen', reconstituted.isFrozen());
+
+    const bytes = (reconstituted.signableNodeBodyBytesList[0] as { signableTransactionBodyBytes: Uint8Array } | undefined)
+      ?.signableTransactionBodyBytes;
+    ok('and it still exposes the one body a remote signer signs', bytes !== undefined);
+    reconstituted.addSignature(buyer.publicKey, buyer.sign(bytes!));
+
+    let threw = '';
+    try {
+      reconstituted.setRegenerateTransactionId(false);
+    } catch (e: unknown) {
+      threw = e instanceof Error ? e.message : String(e);
+    }
+    ok(
+      'and every setter submit() would call on it throws — this is the defect Gate One found',
+      threw.includes('immutable'),
+    );
+
+    // The guard: submit() prepares only what is not yet frozen. Read from the
+    // source, because the fact under test is that the branch exists at all.
+    const submitSrc = fs.readFileSync(path.join(repoRoot(), 'app/src/ops/hedera.ts'), 'utf8');
+    ok(
+      'so submit() prepares only where preparation is still possible, and never re-freezes',
+      submitSrc.includes('if (!tx.isFrozen()) {') && !submitSrc.includes('const frozen = await tx.freezeWith'),
+    );
+  }
+
   fs.rmSync(stateDir, { recursive: true, force: true });
   client.close();
 }

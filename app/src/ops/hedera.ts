@@ -53,16 +53,29 @@ export async function submit(
   signers: readonly Signer[] = [],
   options: SubmitOptions = {},
 ): Promise<Submitted> {
-  // Pin the id before submitting, so a run that dies between consensus and the
-  // record write leaves behind the one handle that can find what it made.
-  // setRegenerateTransactionId(false) keeps that handle single-valued.
-  if (!tx.transactionId) tx.setTransactionId(TransactionId.generate(payerId));
-  tx.setRegenerateTransactionId(false);
-  if (options.nodeAccountIds !== undefined && options.nodeAccountIds.length > 0) {
-    tx.setNodeAccountIds([...options.nodeAccountIds]);
+  // A TRANSACTION MAY ARRIVE ALREADY FROZEN, AND THEN NOTHING HERE MAY TOUCH IT.
+  // The counter's settle leg reconstitutes the purchase from the bytes it froze
+  // at the quote and adds the buyer's signature to it (§14.2, D-168), so by the
+  // time it reaches this function it is frozen, signed, and immutable: every
+  // setter below calls the SDK's `_requireNotFrozen` and throws, and a second
+  // `freezeWith` would rebuild the signed bodies underneath a signature that is
+  // over the first ones. There is also nothing left to decide — a frozen
+  // transaction already carries its id and its nodes, which is what freezing
+  // means. So the preparation happens only where preparation is still possible,
+  // and every path signs and executes the SAME object.
+  if (!tx.isFrozen()) {
+    // Pin the id before submitting, so a run that dies between consensus and the
+    // record write leaves behind the one handle that can find what it made.
+    // setRegenerateTransactionId(false) keeps that handle single-valued.
+    if (!tx.transactionId) tx.setTransactionId(TransactionId.generate(payerId));
+    tx.setRegenerateTransactionId(false);
+    if (options.nodeAccountIds !== undefined && options.nodeAccountIds.length > 0) {
+      tx.setNodeAccountIds([...options.nodeAccountIds]);
+    }
+    await tx.freezeWith(client);
   }
 
-  const frozen = await tx.freezeWith(client);
+  const frozen = tx;
   for (const s of signers) await frozen.signWith(s.publicKey, s.sign);
 
   let transactionId = frozen.transactionId?.toString() ?? '(unassigned)';

@@ -166,7 +166,7 @@ shape before any signature, in the form Steps 2-4 follow.
 - **What Gate One waits on: Sonic’s word.** The two Operators’ wallets exist — `0.0.10450879` and `0.0.10450880`, 35 ℏ
   each, unlimited auto-associations, recorded in `app/OPERATIONS.md` as funding and not a sale — and their two homes are
   filled and boot. The purchases are
-  **real sales at sequence 2’s prices** and will be the counter’s first; nothing in the demo is a fixture funded on the side.
+  **real sales at sequence 3’s prices (D-170)** and will be the counter’s first; nothing in the demo is a fixture funded on the side.
 - **What Gate Two owes.** `send`, `inbox` and `ack` refuse on the Correspondent’s MCP, naming the gate. They are built and
   run end to end against the modelled ledger (`check:letter`, 63 assertions); what they need is the live wiring, §10.4’s
   schedule — which `send` still refuses outright — and a letter to carry.
