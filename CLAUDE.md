@@ -44,7 +44,10 @@ all of it and sign none of it.
 **Superseded 2026-09-10.** Sequence 4 is on consensus at 30 ℏ, the wallets are funded from Sonic's own accounts, and
 **A2** — account `0.0.10462700`, home `a2`, `displayName` `DemoAgentA2` — is provisioned and is the demo's first
 Correspondent, superseding both A and the plan's "A′". Where a plan or an earlier record says `A′`, it means A2.
-What remains is Gate Two.
+**Gate Two's two checkpoints are both run**: a plain letter, then a certified one carrying §10.4's return receipt,
+both on lane `0.0.10464056`, with `ack` and the schedule built and the envelope ACKED. **What remains is one thing
+and it is not a build item: the plain reply B → A2, held at the gate on ledger §G-21** — §7.1 says a lane is
+bidirectional and §7.1's own MUST says a reply cannot use it. Nothing is signed for it and nothing is rung.
 
 ## 1. The documents, and their order
 

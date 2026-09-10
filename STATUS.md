@@ -210,8 +210,64 @@ alterations drive the standing strictly lower; **the seventh cannot be caught by
 because T-P1-10 compares `hdr.ke` against coordinates only a replay produces — so claiming `hcs14` buys a binding
 check that is dark today, not just a higher standing.
 
-**What checkpoint one did NOT do**: `returnReceipt` is still refused at `send.ts:322`, `ack` is still not built, and
-no reply has gone the other way. That is checkpoint two.
+**What checkpoint one did NOT do**: `returnReceipt` was refused at `send.ts:322`, `ack` was not built, and no reply
+had gone the other way. **The first two were checkpoint two's and are done below; the third is held on §G-21.**
+
+---
+
+## GATE TWO, CHECKPOINT TWO — the certified letter and the receipt, 2026-09-10
+
+**A certified letter carrying a return receipt travelled from A2 to B on the lane checkpoint one opened, with nothing
+rung; B opened four and a half thousand bytes of it across ten chunks; B's own signature published the receipt on B's
+own topic without B paying a tinybar; and a stranger holding nothing read it back and reported the envelope ACKED.**
+The run of record is `app/OPERATIONS.md` under Step 6.
+
+```
+lane        0.0.10464056    REUSED — B's doorbell held two messages before and after, A2's held zero
+envelope    514e5045f706415613a6e513233f9e74007fedf7f89ed0f3b821c87ca28da2e1
+payload     the Emancipation Proclamation, 4408 bytes, sha256 a5998644…
+settlement  3 stamps = 2 weight + 1 receipt fee (§4.2) · 3.92 s before chunk 0 (T-P7-1)
+chunks      TEN, sequences 2-11, chunk_info NULL on every one (T-P9-7)
+schedule    0.0.10465145 · payer 0.0.10450879 · waitForExpiry false · 30 days
+receipt     417f73b3… on B's OWN manifest topic 0.0.10452154 #1, by B's OWN signature
+```
+
+**Nothing was rung, and it is proved by an absence.** §7.1's "a second letter to the same recipient rings nothing" is
+now a fact on consensus rather than a design intention, and it cost no stamp at any treasury.
+
+**`inbox` returned the Proclamation byte for byte** — the same 4408 bytes and the same digest as the file — across ten
+chunks walked by the `nx` chain, which checkpoint one's single chunk could not exercise at all.
+
+**`ack` checked before it signed.** B recomposed the receipt manifest from three things it knew — the envelope its own
+inbox opened, chunk 0's postmark, and the epoch it decrypted under — and matched it byte for byte against the bytes in
+the schedule (T-P1-9). A ScheduleSign is a signature over bytes made before the signer can see what it did.
+
+**B paid nothing** (T-P16-2), read before and after: **4,622,564 tinybar and 12 `$POSTAGE`, unchanged to the unit.**
+B's *operator* paid 0.0146 ℏ for the ScheduleSign; the execution's own fee went to the payer the schedule designated.
+The sender funded the receipt and the recipient signed for it.
+
+**The envelope is ACKED** — the first state after SETTLED this deployment has produced — and the stranger said so
+twice at the same bundle digest `00229e6f3d12b1302175ead37ab1460276bbf05254a8856f9a9db948685935a1`. **The appraisal is
+the one predicted**: `unverified`, reason `T-P12-4`, trust class `math`, and `receipt: acked` with no reason beside it.
+**The receipt did not move the standing** (§11.5); `state` alone changed.
+
+**`conformance/fixtures/checkpoint-two-receipt.json`** holds it all, **schedule record and protobuf body included** — a
+row of §11.2's ingestion table no fixture had carried. `npm run check:receipt` is 40 assertions with **no network**
+(P-4), seven of them alterations that drive the receipt to `unclaimed` or `invalid` without moving the envelope's
+standing by one rung.
+
+**WHAT CHECKPOINT TWO DID NOT DO: the plain reply B → A2.** Held at the gate on **ledger §G-21**, found by the dry run
+before any signature. §7.1 says a lane is bidirectional and §7.1's own MUST says a reply cannot use it: the lane's
+`connection_created` is on the ACCEPTOR's doorbell and §7.1 finds a lane by reading the RECIPIENT's. Read from the
+mirror: **A2's doorbell holds zero messages.** Sending on the shared lane makes an envelope our own Verifier appraises
+unbound the day it claims `hcs14`; ringing instead opens a second lane that cannot be undone, against a ruling that
+said to ring nothing. **Nothing was signed and nothing was rung. Sonic rules.**
+
+**Two defects the ledger found, both fixed after the run and both in the record.** `ringStamp` moved a stamp to A2's
+operator where no doorbell would be rung — nothing consumed, nothing lost, but not where §4.2 says the postage went.
+And `submitMessage`'s readback could be answered by an identical OLDER message, so the manifest locator named sequence
+1 where this run's manifest landed at 2 — harmless for a content-addressed manifest and not harmless anywhere a
+sequence number means something.
 
 ---
 
@@ -268,21 +324,24 @@ Run of record in `app/OPERATIONS.md`.**
    A2's own agent account received 150 ℏ from the same. Recorded as funding and not a sale. `0.0.10450879` holds
    416.67021364 ℏ and `0.0.10450880` holds 459.90905168 ℏ.
 3. ~~**A′.**~~ **DONE 2026-09-10 — and it is A2.** See the register below.
-4. **Gate Two.** ~~The first letter A2 → B~~ **CHECKPOINT ONE DONE 2026-09-10** — see the register above.
-   **Checkpoint two** is what remains: §10.4’s scheduled receipt and `ack`, then a SECOND letter A2 → B on the same
-   lane WITH `returnReceipt` (ringing nothing — §7.1’s proof and the receipt in one act), B acks, the receipt lands on
-   B’s manifest topic, `verify` shows it; then a plain reply B → A2. Schedule window **30 days**; the schedule is paid
-   by the **sender’s own operator wallet** (D-157 over D-47).
+4. ~~**Gate Two.**~~ **CHECKPOINTS ONE AND TWO DONE 2026-09-10** — see both registers above. §10.4's scheduled
+   receipt and `ack` are built and on consensus; the second letter went out on the same lane ringing nothing, B acked,
+   the receipt landed on B's manifest topic at a 30-day window paid by the sender's own operator wallet, and `verify`
+   shows the envelope ACKED. **The one thing left is the plain reply B → A2**, held at the gate on ledger **§G-21**:
+   §7.1 says a lane is bidirectional and §7.1's own MUST says a reply cannot use it. Nothing signed, nothing rung,
+   waiting on a ruling.
 
-**Open for Sonic:** ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · whether `ack`
-and §10.4's schedule are in this window at all, since they are the two genuinely unbuilt things Gate Two needs ·
+**Open for Sonic:** **§G-21 — the reply's lane, and it blocks the reply and nothing else** ·
+~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · ~~whether `ack`
+and §10.4's schedule are in this window at all~~ **both built and on consensus 2026-09-10** ·
+ledger §G-22 (T-P1-8 asks for one signature and HIP-423 records three) · §G-23 (§11.4 requires a reason no test names) ·
 ledger §G-20 (the provisioned path cannot be rate-priced under a frozen schema) · the 150 ℏ now sitting in A2's own
 agent account, against "an agent's account never holds ℏ, with one exception" · which classes
 the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
 submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
 
-**What is not done, and is not pretended to be:** Gate Two — no letter has been sent on `hedera:testnet`, and `send`,
-`inbox` and `ack` refuse on the Correspondent's MCP naming the gate. The `dns` and `nanda` resolvers. The CLI and the
+**What is not done, and is not pretended to be:** the plain reply of checkpoint two, held on §G-21. The `dns` and
+`nanda` resolvers. The CLI and the
 WebMCP page. **The claim**: eighty-six tests are registered, none is expanded, zero pass, and `RELEASE.classes` is
 empty — this release claims nothing, and §1.5 says silence claims nothing.
 

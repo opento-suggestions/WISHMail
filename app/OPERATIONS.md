@@ -2941,6 +2941,272 @@ report gates. Item (e), the reply, is held on §G-21 and is not gated by anythin
 
 ---
 
+## Step 6 — CHECKPOINT TWO: THE RUN OF RECORD, 2026-09-10
+
+**A certified letter carrying a return receipt travelled from A2 to B on `hedera:testnet`, on the lane checkpoint one
+opened and with nothing rung; B opened four and a half thousand bytes of it byte for byte across ten chunks; B's own
+signature published the receipt on B's own topic without B paying a tinybar; and a stranger holding nothing read the
+correspondence back and reported the envelope ACKED.** The gate report above is what was promised; this is what
+happened, and the report is left exactly as it stood. Nothing below is reconstructed: every id was read from a mirror
+node **before** the process's own output was read.
+
+Authorised by Sonic, 2026-09-10 night, against the gate report at commit `294e6de`. **Items (a) through (d) completed
+in one pass with no stop. Item (e), the plain reply, was held at the gate on §G-21 and is not run.**
+
+### The arrangement, as it ran
+
+```
+  the counter        NOT STARTED. The quote was three stamps and A2 held ten.
+  B's process        npm run correspondent -- <b home>, up first and left up.
+                     Its doorbell watcher answered NOTHING, because nothing rang —
+                     which is the assertion, not an idle process.
+  A2's driver        npm run letter -- <a2 home> --to 0.0.10452127
+                       --file emancipation_proclamation.md --receipt --receipt-window 30 --live
+  B's readers        npm run inbox -- <b home>
+                     npm run ack -- <b home>          (dry: every §10.4 check, no signature)
+                     npm run ack:live -- <b home>
+  the stranger       npm run verify -- --lane 0.0.10464056, from a directory
+                     holding nothing at all.
+```
+
+### What was signed, in order
+
+| # | Act | Transaction / locator | Consensus | Payer |
+|---|---|---|---|---|
+| 1 | one stamp to the operator (§4.4's hop) | — | — | **did not need to happen; see the divergence below** |
+| 2 | the resolution manifest | `0.0.10462713` #2 | `1789070191.705408104` | `0.0.10450879` |
+| 3 | the settlement — **three** stamps | `0.0.10450879@1789070187.355627312` | `1789070193.709560104` | `0.0.10450879` |
+| 4 | chunks 0–9 on the lane | `0.0.10464056` #2 – #11 | `1789070197.627300435` … `1789070223.395764702` | `0.0.10450879` |
+| 5 | the **ScheduleCreate** | schedule `0.0.10465145` | `1789070225.403001449` | `0.0.10450879` |
+| 6 | the lane's `transaction` operation | `0.0.10464056` #12 | `1789070227.298222111` | `0.0.10450879` |
+| 7 | **`ack` — the ScheduleSign** | — | `1789070359.540189104` | **`0.0.10450880`** |
+| 8 | the schedule's inner submission, executed | `0.0.10452154` #1 | `1789070359.540189105` | **`0.0.10450879`** |
+
+```
+lane        0.0.10464056        reused; nothing rung
+envelope    514e5045f706415613a6e513233f9e74007fedf7f89ed0f3b821c87ca28da2e1
+schedule    0.0.10465145        expires 1791662224.000000000
+receipt     417f73b31060433e2e5e220001d596c2f2e87b950060d1caa0eb2dcd3f2f6886
+```
+
+### Every assertion the gate report owed, from the mirror
+
+**NOTHING WAS RUNG, and it is proved by an absence.** B's doorbell `0.0.10452149` holds **two** messages after the run,
+the same two it held before — checkpoint one's `connection_request` and `connection_created`, and no third. A2's
+doorbell `0.0.10462704` holds **zero**. §7.1's sentence *"A second letter to the same recipient rings nothing"* is now
+a fact on consensus rather than a design intention, and it cost no stamp at any treasury.
+
+**The affix.**
+
+```
+settlement   0.0.10450879@1789070187.355627312
+memo         wishmail:514e5045f706415613a6e513233f9e74007fedf7f89ed0f3b821c87ca28da2e1
+amount       3 $POSTAGE   0.0.10462700 → 0.0.10426205      (2 weight + 1 receipt fee, §4.2)
+consensus    1789070193.709560104
+```
+
+**It precedes chunk 0 by 3.92 seconds** — strictly earlier, T-P7-1. The treasury's balance moved **+3** and by
+exactly 3.
+
+**The submission.**
+
+```
+chunk 0      1000 bytes on the wire      ← at CHUNK_WIRE_MAX exactly, and not over
+chunks 1-8   999 bytes each
+chunk 9      458 bytes
+chunk_info   null on all ten             ← T-P9-7, across a MULTI-CHUNK envelope for the first time
+n            10 on every chunk
+memo         hcs-10:op:6:3               ← T-P9-5
+```
+
+**The chain walked all ten links** — which checkpoint one's single chunk could not exercise at all — and `inbox`
+rebuilt 4424 ciphertext bytes from them.
+
+**The schedule** (T-P1-8), read from `/api/v1/schedules/0.0.10465145`:
+
+```
+creator            0.0.10450879
+payer_account_id   0.0.10450879        ← A2's operator. NOT the recipient (T-P16-2)
+wait_for_expiry    false               ← §10.4 fixes it; a receipt lands when a hand signs
+consensus          1789070225.403001449
+expiration_time    1791662224.000000000    →  2,591,998.6 s = 30 days, 1.4 s short of the
+                                              second because a sender's clock is the only
+                                              clock a ScheduleCreate has
+executed_timestamp 1789070359.540189105    →  AFTER the tenth chunk at 1789070223.395764702
+transaction_body   one ConsensusSubmitMessage, 508 bytes, to 0.0.10452154, no chunkInfo
+```
+
+**The receipt** is message 1 on **B's** manifest topic `0.0.10452154` — a topic whose submit key is B's account key
+`0bf6f35094412d8c…` and nobody else's — 508 canonical bytes, **recomputing to its own hash**
+`417f73b31060433e2e5e220001d596c2f2e87b950060d1caa0eb2dcd3f2f6886`, which is the hash `send` pre-filled and the hash
+`ack` recomposed before it would sign:
+
+```json
+{ "rule":   {"id":"wishmail:receipt","revision":"0.5"},
+  "inputs": {"digest":"2c61ec99…","locator":{"ledgerTag":"hedera:testnet",
+                                             "topicId":"0.0.10464056","sequenceNumber":2}},
+  "output": {"value":"opened"},
+  "meaning":{"statement":"0.0.10452127 opened this envelope with its AAD verified.",
+             "uri":{"ledgerTag":"hedera:testnet","topicId":"0.0.10452154"},
+             "trustClass":"math","endorsements":[]} }
+```
+
+The locator is chunk 0's postmark — lane `0.0.10464056` sequence **2** — which is where all three of §10.4's inputs
+are re-obtained from one public read. **`meaning.uri` carries no sequence number**, because the bytes were fixed
+before the message existed; D-163's rule reaching the one case that forced it.
+
+**B PAID NOTHING** (T-P16-2), read before and after:
+
+```
+                            HBAR (tinybar)          $POSTAGE
+B's agent  0.0.10452127     4,622,564  →  4,622,564  ( +0 )      12  →  12  ( +0 )
+```
+
+Not a tinybar and not a stamp. B's **operator** `0.0.10450880` paid **1,460,990 tinybar** — 0.0146 ℏ — for the
+ScheduleSign's own network fee, and the executed submission's fee was charged to `0.0.10450879`, the payer the
+schedule designated. So the sender funded the receipt and the recipient signed for it, which is §10.4's sentence
+demonstrated rather than quoted.
+
+### `ack` at B — the check, and then the signature
+
+The dry run made every check §10.4 puts before a signature, and made all of them without signing:
+
+```
+  inner      ConsensusSubmitMessage to 0.0.10452154, 508 bytes, chunk_info none
+  payer      0.0.10450879   — not the recipient (T-P16-2)
+  expires    1791662224.000000000   waitForExpiry false
+  composes   417f73b31060433e2e5e220001d596c2f2e87b950060d1caa0eb2dcd3f2f6886
+  carries    EXACTLY those bytes (T-P1-9)
+```
+
+**`composes` is the whole tool.** B recomposed the manifest from three things IT knew — the envelope its own `inbox`
+opened, chunk 0's postmark on the lane, and the epoch it decrypted under — and compared the result to what the sender
+had put in the schedule. A ScheduleSign is a signature over bytes made before the signer can see what it did; a
+recipient that signed first and read afterwards would have signed anything.
+
+### `inbox` at B — the Proclamation opened
+
+```
+envelope   514e5045f706415613a6e513233f9e74007fedf7f89ed0f3b821c87ca28da2e1
+opened     true
+bytes      4408
+sha256     a5998644f8a86e1993244d6fb6ace1695f3f4264208c0912d5fbeaabd6f31f2a
+```
+
+**Byte-identical to `emancipation_proclamation.md` as NARA gives it** — the same 4408 bytes, the same digest, CRLF and
+all — reassembled from ten chunks by the chain and decrypted under epoch 1. `inbox` returned **two** deliveries on the
+lane, checkpoint one's and this one, and **wrote nothing** (§6.5, D-29).
+
+### `verify` from a stranger holding nothing
+
+```
+bundle digest   00229e6f3d12b1302175ead37ab1460276bbf05254a8856f9a9db948685935a1
+correspondence  2 envelope(s)
+
+  cd9dc8f4…   SETTLED   1 chunk    unverified (T-P12-4)   receipt none
+  514e5045…   ACKED     10 chunks  unverified (T-P12-4)   receipt ACKED
+
+narrative.bundleDigest  00229e6f…   matches the bundle: true
+```
+
+**Run twice: the same digest both times** (T-P3-1), and the narrative carries it (T-P3-4). **`Its state is ACKED. Its
+return receipt is acked.`** — the first time any envelope in this deployment has been anything but SETTLED, said by
+someone with no key, no account, no stamp, no counter and no home.
+
+### The appraisal against the prediction
+
+**Exactly as predicted, and for the third time the prediction was the narrower id.** `unverified`, reason `T-P12-4`,
+declared trust class `math` with no endorsements. Binding passed across ten chunks; postage passed at three stamps;
+T-P9-3 did not bite. **And the receipt came back `acked` with no reason beside it**, which the gate report predicted
+and which required every one of §11.4's receipt checks to hold at once: the manifest recomposes from the envelope, the
+postmark and the epoch; B's key is among the signatures on the record; the topic it landed on is one only B's key can
+write to; the payer is not B; and the execution follows the tenth chunk.
+
+**The receipt did not move the envelope's standing** (§11.5): `unverified` before and after, and `state` alone changed.
+
+### The fixture, and the alterations offline
+
+`conformance/fixtures/checkpoint-two-receipt.json` holds the whole correspondence as the mirror returned it — both
+envelopes, all twelve lane messages, the manifest topics, the HCS-13 registry and the HCS-1 schema file, the
+settlements, the topic records, the account keys, **and the schedule record with its protobuf body**, which is a row of
+§11.2's ingestion table no fixture had ever carried.
+
+`npm run check:receipt` is **40 assertions with no network** (P-4): the same bundle digest the network produced, the
+schedule's body decoded by our own decoder, the manifest recomposed and matched, B's key matched to a signature prefix,
+the envelope ACKED — and **seven alterations**, each driving the receipt to `unclaimed` or `invalid` **without moving
+the envelope's standing by one rung**. The seventh is the one the design exists for: a receipt manifest left
+*internally perfect* — its `inputs.digest` changed and its `hash` recomputed over the change, so it validates and
+self-recomputes exactly as well as the real one — and refused, because it is not the manifest this envelope, this
+postmark and this epoch compose. A reader that checked a manifest against itself would have passed it.
+
+`npm run check:letter` is **133 assertions**, up from 69, and `npm run check:captured` is unchanged and still green
+over checkpoint one's letter.
+
+### Divergences, brought rather than coded around
+
+**ONE STAMP LEFT A2 FOR NOTHING, and the ledger is where it was found.** A2 held ten stamps and the quote was three;
+after the run it holds **six**. The fourth is on `0.0.10450879`, A2's operator wallet. `ringStamp` — §4.4's first hop,
+which puts a stamp on the payer for the doorbell's HIP-991 fee — asked only whether the payer held one, and not whether
+a doorbell was going to be rung. **No doorbell was rung**, so there was no fee, so bearer custody had nothing to be in
+transit to. Nothing was consumed and nothing is lost: the stamp sits on a wallet whose key is in A2's own home. But it
+is not where §4.2 says the letter's postage went, and the arithmetic of a letter should be readable off the treasury.
+**Fixed after the run**: `ringStamp` now takes `willRing` and returns null without it, and both callers ask §7.1's own
+rule — the lane on the RECIPIENT's doorbell — rather than a second spelling of it.
+
+**THE MANIFEST LOCATOR NAMES A MESSAGE THIS RUN DID NOT WRITE.** `hdr.rp.u` is `0.0.10462713` sequence **1** —
+checkpoint one's manifest — while this run's manifest landed at sequence **2**. The two are byte-identical: the same
+recipient, the same epoch, the same proof, so the same 737 bytes and the same hash `f84257b7…`. `submitMessage` reads
+the topic back for its own bytes, and the predicate was satisfied by the older message before the new one had been
+ingested. **It is harmless here and would not be harmless elsewhere**: §11.4 asks whether the manifest at `rp.u`
+recomputes to `rp.h` and whether its postmark precedes chunk 0, and #1 does both, so the envelope is correct and the
+Verifier agrees. What is wrong is that a locator names something this submission did not produce, and a duplicate sits
+at #2 that nothing names. **Fixed after the run**: the readback is now bounded below by the transaction's own valid
+start, and a consensus timestamp is always at or after that, so an identical older message can no longer answer for a
+new one.
+
+**THE SCHEDULE'S RECORD SHOWS THREE SIGNATURES, and T-P1-8 asks for one.** Read from the mirror:
+
+```
+1789070225.403001449   1173197491f31555…   0.0.10450879   A2's operator, at the ScheduleCreate
+1789070359.540189104   0bf6f35094412d8c…   0.0.10452127   B's AGENT — the required key
+1789070359.540189104   6147c33991e2cd1a…   0.0.10450880   B's operator, the ScheduleSign's payer
+```
+
+The gate report predicted two and the network gave three: HIP-423 records **every transaction payer that touches a
+schedule**, not only the keys the inner transaction requires. There is no arrangement in which the record shows one
+signature and the recipient is not paying — §10.4 forbids the second, so it forbids the first. **§11.4's own wording
+is satisfiable and is what the code checks**: the recipient's key is *among* the signatures, matched by prefix against
+the account's key from consensus. **§G-22 is amended with the observed count**, and `check:receipt` asserts the
+plurality rather than hiding it, so the day the sketch is fixed, that assertion is what changes.
+
+**THE PLAIN REPLY IS NOT RUN.** §G-21, and §11 of the gate report above is the whole of it: §7.1 says a lane is
+bidirectional and §7.1's own MUST says a reply cannot use it, because the lane's `connection_created` is on the
+acceptor's doorbell and §7.1 finds a lane by reading the recipient's. Found by the dry run, before any signature, and
+confirmed from the mirror: **A2's doorbell holds zero messages**. Sending on the shared lane makes an envelope our own
+Verifier appraises unbound the day it claims `hcs14`; ringing instead opens a second lane that cannot be undone,
+against a ruling that said to ring nothing. **Nothing was signed and nothing was rung. Sonic rules.**
+
+**The counter's fill-in was not reached.** Sonic ruled *if the quote exceeds 10, buy at the counter*. The quote was
+three. Reported because a fill-in that was not needed is a fact about the run.
+
+**A2's home record is unchanged and provisioning-only**, which is what Step 6 §3 now says rather than what it said
+before. What the run wrote is one row under `<home>/store/envelopes/`, keyed by the envelope identifier:
+
+```json
+{"envelopeId":"514e5045…","lane":"0.0.10464056","recipientAccount":"0.0.10452127",
+ "settlementRef":"0.0.10450879@1789070187.355627312","postage":3,"returnReceipt":true,
+ "stage":"requested","chunkCount":10,"keyEpoch":1,
+ "chunkZero":{"topicId":"0.0.10464056","sequenceNumber":2},"scheduleId":"0.0.10465145"}
+```
+
+B's own store holds none, because B sent nothing.
+
+**`ENTITIES.md` is unchanged by this run.** It renders the Postmaster's ops record, and no Correspondent entity goes
+there (CLAUDE.md §11) — so the lane, the schedule and the receipt appear in this record and in the fixture, and
+nowhere else.
+
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.

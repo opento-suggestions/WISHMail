@@ -5,7 +5,58 @@ Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor
 ## [Gate Two, checkpoint two] — 2026-09-10 — §10.4's return receipt, and `ack`
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. **[S]** ruled the shape and
-authorised the run; **[CC]** built it, courted it offline, and wrote the record.
+authorised the run; **[CC]** built it, courted it offline, ran it and wrote the record.
+
+### On consensus
+
+**A certified letter with a return receipt, A2 → B, on the lane checkpoint one opened — with nothing rung.**
+
+```
+lane        0.0.10464056    reused; B's doorbell held two messages before and after, and A2's held zero
+envelope    514e5045f706415613a6e513233f9e74007fedf7f89ed0f3b821c87ca28da2e1
+payload     the Emancipation Proclamation, 4408 bytes, sha256 a5998644…
+settlement  0.0.10450879@1789070187.355627312 · 3 stamps = 2 weight + 1 receipt fee (§4.2)
+chunks      TEN, sequences 2-11, 1000/999×8/458 bytes, chunk_info NULL on every one (T-P9-7)
+schedule    0.0.10465145 · payer 0.0.10450879 · waitForExpiry false · 30 days
+receipt     417f73b31060433e2e5e220001d596c2f2e87b950060d1caa0eb2dcd3f2f6886, on B's own
+            manifest topic 0.0.10452154 #1, published by B's own signature
+```
+
+- **Nothing was rung, and it is proved by an absence.** §7.1's "a second letter to the same recipient rings nothing" is
+  a fact on consensus rather than a design intention, and it cost no stamp at any treasury.
+- **Ten chunks walked the `nx` chain**, which checkpoint one's single chunk could not exercise at all, and `inbox`
+  returned the Proclamation **byte for byte** — the same 4408 bytes and the same digest as the file (T-P1-11, §11.3).
+- **`ack` checked before it signed.** B recomposed the receipt manifest from three things it knew — the envelope its
+  own inbox opened, chunk 0's postmark, and the epoch it decrypted under — and compared it to the bytes in the
+  schedule. `carries EXACTLY those bytes (T-P1-9)`.
+- **B paid nothing** (T-P16-2), read before and after: 4,622,564 tinybar and 12 `$POSTAGE`, unchanged to the unit. B's
+  *operator* paid 0.0146 ℏ for the ScheduleSign; the execution's own fee went to the payer the schedule designated.
+- **The envelope is ACKED** — the first state after SETTLED this deployment has produced — and a stranger holding no
+  key, no account, no stamp and no home said so, twice, at the same bundle digest
+  `00229e6f3d12b1302175ead37ab1460276bbf05254a8856f9a9db948685935a1`.
+- **The receipt did not move the envelope's standing** (§11.5): `unverified` with reason `T-P12-4` before and after,
+  exactly as the gate report predicted, and `state` alone changed.
+
+**`conformance/fixtures/checkpoint-two-receipt.json`** holds the correspondence as the mirror returned it, **schedule
+record and protobuf body included** — a row of §11.2's ingestion table no fixture had carried. `npm run check:receipt`
+is 40 assertions with **no network** (P-4), including seven alterations that drive the receipt to `unclaimed` or
+`invalid` without moving the envelope's standing by one rung. The seventh is the one the design exists for: a manifest
+left *internally perfect* — `inputs.digest` changed and `hash` recomputed over the change — and refused anyway,
+because it is not the manifest this envelope, this postmark and this epoch compose.
+
+### Fixed, found by the run
+
+- **`ringStamp` moved a stamp where no doorbell would be rung.** §4.4's first hop is for a HIP-991 fee, and a reused
+  lane charges none; one of A2's ten stamps left for its operator wallet with nothing to pay. Nothing was consumed and
+  nothing is lost, but the arithmetic of a letter should be readable off the treasury. It now takes `willRing`, and
+  both callers ask §7.1's own rule — the lane on the RECIPIENT's doorbell — rather than a second spelling of it.
+- **`submitMessage`'s readback could be answered by an identical OLDER message.** This run's resolution manifest was
+  byte-identical to checkpoint one's, so the predicate was satisfied before the new message was ingested and the
+  locator named sequence 1. Harmless for a manifest, which is content-addressed and recomputed correctly either way;
+  not harmless on a topic where a sequence number means something. The readback is now bounded below by the
+  transaction's own valid start.
+
+**Not run: the plain reply B → A2**, held at the gate on **§G-21**. Nothing was signed and nothing was rung.
 
 ### Changed
 
