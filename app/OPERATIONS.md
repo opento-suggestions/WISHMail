@@ -3439,6 +3439,217 @@ twenty checks are green; this report is committed before the first signature.
 
 ---
 
+## Step 6 — CHECKPOINT TWO, THE REPLY: THE RUN OF RECORD, 2026-09-10
+
+**The letter came back.** B wrote to A2 on the lane A2 opened, in the direction §7.1 said was possible and §7.1's own
+MUST forbade until D-171. **Nothing was rung, no second lane exists, and A2's doorbell still holds zero messages.**
+One pass, no stop. The gate report above is left exactly as it stood.
+
+### The arrangement, as it ran
+
+```
+  the counter        NOT STARTED. The quote was one stamp and B held twelve.
+  A2's process       NOT STARTED, and deliberately. A2's watcher is the only thing
+                     that could ANSWER a ring, and an answered ring is a second lane
+                     that cannot be closed. With it down, the worst a mistaken ring
+                     could do is fail — and B's operator holds zero stamps, so the
+                     HIP-991 fee could not have been paid either. Two independent
+                     reasons the irreversible act was out of reach.
+  B's driver         npm run letter -- <b home> --to 0.0.10462700
+                       --text "The Proclamation arrived whole, and I have signed for it.
+                               Thank God for Lincoln."
+  A2's reader        npm run inbox -- <a2 home>
+  the stranger       npm run verify -- --lane 0.0.10464056, twice, from a directory
+                     holding no key, no account, no stamp and no home.
+```
+
+### What was signed, in order
+
+| # | Act | Transaction / locator | Consensus | Signed by | Payer |
+|---|---|---|---|---|---|
+| 1 | one stamp to the payer (§4.4's hop) | — | — | — | **did not happen: the lane exists, so no door is rung and no fee is charged** |
+| 2 | the resolution manifest | `0.0.10452154` #2 | `1789076238.679062477` | B's agent | `0.0.10450880` |
+| 3 | the settlement — **one** stamp | `0.0.10450880@1789076237.491878073` | `1789076242.579090104` | B's agent | `0.0.10450880` |
+| 4 | chunk 0 on the lane | `0.0.10464056` #13 | `1789076246.605728104` | B's agent | `0.0.10450880` |
+
+**Three submissions and no fourth.** No ScheduleCreate, no `transaction` operation, no `connection_request`, no
+`connection_created`, no new topic, no new account.
+
+```
+lane        0.0.10464056        REUSED, in the OTHER DIRECTION — nothing rung
+envelope    bc1bd61ee97faee136f8f15f1cf0de7590bfef65446d6024982d0152fcd7e492
+body        "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."
+payload     80 bytes · sha256 b70281c14ab4bf1f0de4dd14174ee432ee5b5cc83b534cbfebe749b70b407898
+ciphertext  96 bytes · 1 chunk · weight 1 oz of 16 · postage 1 stamp
+manifest    0.0.10452154 #2 — on B's OWN manifest topic, the sender being B this time
+settlement  from 0.0.10452127 to 0.0.10426205, memo wishmail:bc1bd61e…
+epoch       1 · schemaRef hcs://13/0.0.10448509#1
+```
+
+### Every assertion the gate report owed, from the mirror
+
+**NOTHING WAS RUNG, AND IT IS PROVED BY TWO ABSENCES.** Counted before the run and again after:
+
+```
+  A2's doorbell  0.0.10462704   0 messages before   0 messages after   UNCHANGED
+  B's doorbell   0.0.10452149   2 messages before   2 messages after   UNCHANGED
+  the lane       0.0.10464056  12 messages before  13 messages after   +1, the reply's chunk 0
+  B's manifest   0.0.10452154   1 message  before   2 messages after   +1, the resolution manifest
+```
+
+B's doorbell holds the same two it has held since checkpoint one — A2's `connection_request` and B's
+`connection_created` — and no third. **A2's doorbell has never held anything, and still does not.** That is the
+sentence "a reply rings nothing" as a count rather than a design intention.
+
+**The lane was found at B's own door**, which is what D-171 changed. The dry run printed it before anything signed:
+
+```
+  lane  0.0.10464056 created 1789064925.372200222 at THIS agent own door — a reply — reused, nothing is rung (§7.1)
+```
+
+**The order of the three writes is the order §11.4 requires.** The manifest at `1789076238.679…` precedes the
+settlement at `1789076242.579…`, which precedes chunk 0 at `1789076246.605…` — the manifest's postmark before chunk 0
+(T-P9-8) and the settlement **4.03 seconds** before it (T-P7-1).
+
+**Chunk 0 carries no `chunk_info`** (T-P9-7), and its `operator_id` is `0.0.10452149@0.0.10452127` — B's doorbell and
+B's account, naming the account the settlement came `from` (§7.2's fourth weld, T-P1-6). **On this lane the
+`operator_id` now points both ways**: sequences 1–12 name A2, sequence 13 names B.
+
+**B paid one stamp and no tinybar; A2 paid nothing at all.** Read before and after:
+
+| Account | tinybar before | tinybar after | Δ | `$POSTAGE` before | after | Δ |
+|---|---|---|---|---|---|---|
+| B's agent `0.0.10452127` | 4,622,564 | 4,622,564 | **0** | 12 | 11 | **−1** |
+| B's operator `0.0.10450880` | 45,869,184,996 | 45,865,756,285 | **−3,428,711** | 0 | 0 | 0 |
+| A2's agent `0.0.10462700` | 15,004,618,300 | 15,004,618,300 | **0** | 6 | 6 | **0** |
+| A2's operator `0.0.10450879` | 41,499,071,098 | 41,499,071,098 | **0** | 1 | 1 | **0** |
+
+**The agent signs and the operator pays** (§3.5): B's agent account did not move by one tinybar across three
+submissions, and B's operator paid **0.03428711 ℏ** for all three. The one stamp left B's agent for the treasury,
+which is where §4.4 says postage goes.
+
+**No stamp moved to a payer**, and that is the `ringStamp` fix showing on consensus: B's operator holds zero
+`$POSTAGE` before and after. Under yesterday's code it would have been asked to hold one, and a hop with no fee to
+pay would have stranded it. **A2's operator still holds the stamp checkpoint two stranded there** — one `$POSTAGE`,
+untouched by this run. It is not lost: it is on an account A2's own operator controls, and it pays the next doorbell
+fee A2 owes.
+
+### `inbox` at A2 — the letter opened by the agent that rang
+
+```
+  inbox — 0.0.10462700
+  lanes  0.0.10464056   — from consensus, by §7.1's rule
+
+  envelope   bc1bd61ee97faee136f8f15f1cf0de7590bfef65446d6024982d0152fcd7e492   lane 0.0.10464056
+  opened     true
+  payload    "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."
+  bytes      80
+```
+
+**A2 found the lane at all, and that is new.** A2 never answered a door, so it has no `connection_created` of its own
+to read; before D-171 `lanesOf` looked only at the agent's own doorbell and A2's holds nothing. It now reads both
+kinds — the lanes it accepted and the lanes it requested, the latter by taking the correspondents its own home
+records and reading **their** doorbells from consensus. The home said *whom*; consensus said *which lane*.
+
+**80 bytes, byte for byte**, and `inbox` wrote nothing (§6.5).
+
+**An observation, and not a defect.** A2's `inbox` also reports its own two outgoing letters on that lane as
+`INBOX_UNBOUND`. They were sealed against B's key, so they do not open under A2's, and §6.5 fails closed rather than
+guessing. It is the first time an agent has read a lane carrying its own outbound mail, which is only possible now
+that both directions travel one lane; nothing is wrong and nothing was written.
+
+### `verify` from a stranger holding nothing
+
+Run twice, from a directory holding no key, no account, no stamp, no counter and no home.
+
+```
+  bundle digest   1c4359e5bf6fbbe00fc82e4e5b358500d307572891a1be89dfd47d493f13d648   (both runs)
+  narrative.bundleDigest matches the bundle   true
+```
+
+Three envelopes on one lane, and the narrative reads the correspondence as a correspondence:
+
+```
+  cd9dc8f4…  posted by 0.0.10462700  1 chunk    SETTLED   unverified (T-P12-4)   receipt none
+  514e5045…  posted by 0.0.10462700  10 chunks  ACKED     unverified (T-P12-4)   receipt ACKED
+  bc1bd61e…  posted by 0.0.10452127  1 chunk    SETTLED   unverified (T-P12-4)   receipt none
+```
+
+**"affixed by 0.0.10462700" twice and "affixed by 0.0.10452127" once**, from the settlements alone — a stranger reads
+which way each letter went without being told, because §7.2's fourth weld makes the sender the account that paid.
+
+### The appraisal against the prediction
+
+| | predicted | observed |
+|---|---|---|
+| state | SETTLED | **SETTLED** |
+| standing | unverified | **unverified** |
+| reasons | `T-P12-4` and nothing else | **`T-P12-4`** |
+| receipt | none | **none** |
+| trust class | `math`, endorsements `[]` | **`math`, `[]`** |
+| `T-P10-2` / `T-P17-2` | MUST NOT appear | **absent** |
+| `T-P9-3` | must not appear | **absent** |
+
+Exactly as §7 of the gate report predicted. `T-P10-2` and `T-P17-2` are absent for the reason stated there and not
+because the lane is right: **this release claims no profile, so §11.4 never reaches either check.** That the lane IS
+right is proved offline, below, and in LIMITATIONS L-1 it is written down that the check is dark.
+
+### The fixture, and the binding walk on real bytes
+
+**`conformance/fixtures/checkpoint-two-reply.json`**, and it is the first fixture that carries **the lane's birth
+doorbell** — `0.0.10452149`, reached by following the lane's own memo, which `capture` did not do until today.
+Neither earlier capture took it, which was harmless only because a claimless Verifier never reads it.
+
+`npm run check:reply` is **29 assertions with no network** (P-4). It runs `laneBirth` on the captured bytes and is
+told nothing about who the parties are:
+
+```
+  lane 0.0.10464056  memo hcs-10:1:60:2:0.0.10452149:1   -> the door
+  door 0.0.10452149  memo hcs-10:0:60:0:0.0.10452127     -> the owner is B
+  answer on that door, submitted under B's own operator_id,
+      names connected_account_id 0.0.10462700            -> the ringer was A2
+  submit key = threshold of exactly A2's and B's account keys, no custom fee
+```
+
+and `{B, A2}` is the pair, which is the same set from either direction. It also asserts the three envelopes are on
+**one** lane, that the first two were affixed by A2 and the third by B, that checkpoint two's envelope is **still
+ACKED with its receipt still acked**, and that B's doorbell holds two messages and no third.
+
+**`check:letter` is 155 assertions**, up from 133: the reply direction end to end on the modelled ledger, found
+through the replier's own doorbell **and through an ingestion lag**, plus three lanes refused — one whose memo names
+a door holding no answer for it, one born at a third party's door, and one whose submit key carries a third key.
+
+**Twenty-one checks green**, with `typecheck` and `p13:check`.
+
+### The homes, after
+
+B's store gained one row; A2's is unchanged.
+
+```json
+b : {"envelopeId":"bc1bd61e…","lane":"0.0.10464056","recipientAccount":"0.0.10462700",
+     "settlementRef":"0.0.10450880@1789076237.491878073","postage":1,"returnReceipt":false,
+     "stage":"settled","chunkCount":1,"keyEpoch":1,
+     "chunkZero":{"topicId":"0.0.10464056","sequenceNumber":13}}
+
+a2: {"envelopeId":"514e5045…", … "stage":"requested"}   — checkpoint two's, untouched
+```
+
+**`ENTITIES.md` is unchanged by this run**, as it was by checkpoint two: it renders the Postmaster's ops record, and
+no Correspondent entity goes there (CLAUDE.md §11).
+
+### Divergences, brought rather than coded around
+
+**None on consensus.** Every submission landed where the gate report said it would, in the order it said, at the
+price it quoted, and no stop fired.
+
+Three findings stand open in the ledger and none of them is a defect in this run: **§G-24** (the pinned HCS-10 text
+contradicts itself about who writes the Outbound Connection Created record), the **one outbound record already on
+consensus that is wrong against the pin** — A2's log `0.0.10462708` #1, named in LIMITATIONS and not repaired — and
+**§G-25** (the evidence bundle's digest is a function of the release's patch version, so the digests recorded above
+for checkpoints one and two reproduce from tag `v0.5.10` and this one from `v0.5.11`).
+
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.

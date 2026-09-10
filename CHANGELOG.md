@@ -2,6 +2,57 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Two, the reply] — 2026-09-10 — the letter that came back
+
+**No version bump.** The specification moved to 0.5.11 in the entry below and is unchanged by this run. **[S]**
+ruled §G-21 and §G-22 and authorised the reply; **[CC]** built it, courted it offline, ran it and wrote the record.
+
+### On consensus
+
+**A plain reply, B → A2, on the lane A2 opened — in the direction §7.1 said was possible and §7.1's own MUST forbade
+until D-171.**
+
+```
+lane        0.0.10464056   reused in the OTHER DIRECTION; B's doorbell held two before and after, A2's zero
+envelope    bc1bd61ee97faee136f8f15f1cf0de7590bfef65446d6024982d0152fcd7e492
+body        "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."
+payload     80 bytes · sha256 b70281c1… · 1 chunk · 1 oz · ONE stamp, no receipt fee
+manifest    0.0.10452154 #2 — on B's own topic, B being the sender this time
+settlement  0.0.10450880@1789076237.491878073 · 4.03 s before chunk 0 (T-P7-1)
+chunk 0     0.0.10464056 #13 · chunk_info NULL · operator_id 0.0.10452149@0.0.10452127
+```
+
+- **Nothing was rung, and it is proved by two absences.** A2's doorbell `0.0.10462704` held **zero** messages before
+  and zero after; B's held the same **two** it has held since checkpoint one. Three submissions and no fourth: a
+  manifest, a settlement, a chunk.
+- **On this lane the `operator_id` now points both ways** — sequences 1–12 name A2, sequence 13 names B — and a
+  stranger reads which way each letter went from the settlements alone, because §7.2's fourth weld makes the sender
+  the account that paid.
+- **A2 paid nothing; B paid one stamp and no tinybar.** B's agent did not move by one tinybar across three
+  submissions and went 12 → 11 `$POSTAGE`; B's operator paid 0.03428711 ℏ and held no stamp before or after — the
+  `ringStamp` fix on consensus, because no door was rung and so no fee was owed. **A2's operator still holds the
+  stamp checkpoint two stranded there**; it is not lost and pays the next ring A2 makes.
+- **A2 found the lane at all, and that is new.** A2 never answered a door, so it has no `connection_created` of its
+  own; `lanesOf` now reads the lanes an agent accepted at its own door and the lanes it requested at the doors it
+  rang. The home said *whom*, consensus said *which lane* (D-165). `inbox` returned the 80 bytes byte for byte.
+- **A stranger holding nothing read it twice** at digest
+  `1c4359e5bf6fbbe00fc82e4e5b358500d307572891a1be89dfd47d493f13d648`: three envelopes on one lane, two affixed by A2
+  and one by B, the middle one still **ACKED with its receipt still acked**.
+- **The appraisal is the one the gate report predicted**: SETTLED, `unverified`, reason `T-P12-4`, receipt `none`,
+  trust class `math`. **`T-P10-2` and `T-P17-2` are absent because a claimless release never reaches either check** —
+  not because the lane is right. That it is right is proved offline, and LIMITATIONS L-1 says the check is dark.
+
+**`conformance/fixtures/checkpoint-two-reply.json`** is the **first fixture carrying the lane's birth doorbell**,
+which `capture` now reaches by following the lane's own memo. `npm run check:reply` is **29 assertions with no
+network** (P-4): it runs the binding walk on the captured bytes, told nothing about who the parties are — the lane's
+memo names the door, the door's memo names its owner, the answer names the ringer — and `{B, A2}` is the same set
+from either direction. Twenty-one checks green.
+
+**The arrangement had a deliberate absence.** A2's process was **not** started. A2's watcher is the only thing that
+could ANSWER a ring, and an answered ring is a second lane that cannot be closed; with it down, the worst a mistaken
+ring could do is fail. B's operator holding zero stamps was the second, independent reason the irreversible act was
+out of reach.
+
 ## [0.5.11] — 2026-09-10 — a lane binds from either party's doorbell; T-P1-8 as the ledger can show it
 
 **A patch.** No wire string moves, no schema moves, and no row is added to the register — two sketches

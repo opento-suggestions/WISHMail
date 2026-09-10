@@ -44,10 +44,13 @@ all of it and sign none of it.
 **Superseded 2026-09-10.** Sequence 4 is on consensus at 30 ℏ, the wallets are funded from Sonic's own accounts, and
 **A2** — account `0.0.10462700`, home `a2`, `displayName` `DemoAgentA2` — is provisioned and is the demo's first
 Correspondent, superseding both A and the plan's "A′". Where a plan or an earlier record says `A′`, it means A2.
-**Gate Two's two checkpoints are both run**: a plain letter, then a certified one carrying §10.4's return receipt,
-both on lane `0.0.10464056`, with `ack` and the schedule built and the envelope ACKED. **What remains is one thing
-and it is not a build item: the plain reply B → A2, held at the gate on ledger §G-21** — §7.1 says a lane is
-bidirectional and §7.1's own MUST says a reply cannot use it. Nothing is signed for it and nothing is rung.
+**Gate Two is run, all three acts**: a plain letter, a certified one carrying §10.4's return receipt with `ack` and
+the schedule and the envelope ACKED, and **the reply B → A2 — done 2026-09-10, on the same lane `0.0.10464056`, with
+nothing rung and A2's doorbell still holding zero messages.** Ledger **§G-21 is closed by D-171** (a lane binds from
+the doorbell of either party, and a Verifier reads which from the lane's own memo) and **§G-22 by D-172** (T-P1-8 as
+the ledger can show it). The specification is **0.5.11**, tagged; no schema and no wire string moved. Open and unruled:
+**§G-20, §G-23, §G-24, §G-25** — §G-25 says the evidence bundle's digest is a function of the release's patch version,
+so a recorded digest reproduces only from its own tag.
 
 ## 1. The documents, and their order
 
@@ -171,7 +174,7 @@ This section is the 2026-09-09 rulings (D-156 – D-170). It governs `app/` for 
 
 **Every provisioning verb is idempotent against consensus, not against local state.** `generate_mailbox` first resolves the agent's own address under `hcs14` and does nothing if coordinates exist; `register_agent` first resolves under `hol` and does nothing if a registration by this account exists; `buy_stamp` with `provision` refuses if the holder's account already exists, so a returning agent buys without it. A wiped local file never causes a second doorbell or a duplicate registration — and a duplicate registration is not merely waste: §9.5 assigns `vague` where more than one names an address. This is §9's write-the-reader-with-the-writer applied to provisioning: **the resolver is the reader**, and a local file is a cache of consensus, never an authority over it.
 
-**Lanes are reused, never re-rung.** §7.1: the earliest-created open lane between two agents is *the* lane, for `send`, `inbox` and replay. The doorbell watcher decides by reading the doorbell for requests with no `connection_created`, so it too is idempotent from consensus. A second letter to the same recipient rings nothing. Rotation stays out of the MVP, and nothing built here may make it harder — no local assumption that there is only ever one epoch.
+**Lanes are reused, never re-rung.** §7.1: the earliest-created open lane between two agents is *the* lane, for `send`, `inbox` and replay. The doorbell watcher decides by reading the doorbell for requests with no `connection_created`, so it too is idempotent from consensus. A second letter to the same recipient rings nothing, **and neither does a reply** (D-171): a lane's birth sits on the doorbell of whichever party answered, so both doorbells are read to find it — the recipient's for a first letter, the sender's own for a reply. **A Verifier finds it differently and deliberately**: it reads the lane's own memo down to the door that answered and that door's memo down to its owner, so it needs no resolution and gets the same answer in both directions. Discovery and binding are two rules because they answer two questions. Rotation stays out of the MVP, and nothing built here may make it harder — no local assumption that there is only ever one epoch.
 
 **One template, three readers** (D-162). The lines `send` logs as consensus facts land, the text block `send` returns beside its structured `Postmark`, and `narrate()`'s sentences over a bundle come from one template file. Same sentence, three readers. **None of the three may imply receipt or delivery** — §2.3 reserves *delivery* for the lane, and §11.8 forbids turning silence into refusal. goose renders tool-call cards and final payloads and does *not* render `notifications/progress`, so the Correspondent's own log is the live surface and the result's text block is the retrospective one.
 

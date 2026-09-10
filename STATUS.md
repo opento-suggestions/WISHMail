@@ -1,6 +1,6 @@
 # STATUS — WISHMail, ETHOnline 2026
 
-The one file in this repository where ordering is allowed. Specification: 0.5.9 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+The one file in this repository where ordering is allowed. Specification: 0.5.9 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text), 0.5.10 on 2026-09-09 (D-169, D-170), and 0.5.11 on 2026-09-10 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
 
 ## 1. Scope line (RECORD)
 
@@ -256,18 +256,74 @@ row of §11.2's ingestion table no fixture had carried. `npm run check:receipt` 
 (P-4), seven of them alterations that drive the receipt to `unclaimed` or `invalid` without moving the envelope's
 standing by one rung.
 
-**WHAT CHECKPOINT TWO DID NOT DO: the plain reply B → A2.** Held at the gate on **ledger §G-21**, found by the dry run
-before any signature. §7.1 says a lane is bidirectional and §7.1's own MUST says a reply cannot use it: the lane's
-`connection_created` is on the ACCEPTOR's doorbell and §7.1 finds a lane by reading the RECIPIENT's. Read from the
-mirror: **A2's doorbell holds zero messages.** Sending on the shared lane makes an envelope our own Verifier appraises
-unbound the day it claims `hcs14`; ringing instead opens a second lane that cannot be undone, against a ruling that
-said to ring nothing. **Nothing was signed and nothing was rung. Sonic rules.**
+~~**WHAT CHECKPOINT TWO DID NOT DO: the plain reply B → A2.**~~ **Done 2026-09-10, after D-171 closed §G-21 — the
+register is below.** The finding as it stood: §7.1 says a lane is bidirectional and §7.1's own MUST says a reply
+cannot use it, because the lane's `connection_created` is on the ACCEPTOR's doorbell while §7.1 finds a lane by
+reading the RECIPIENT's, and **A2's doorbell holds zero messages**. Sending on the shared lane would make an envelope
+our own Verifier appraises unbound the day it claims `hcs14`; ringing would open a second lane that cannot be undone.
+**Nothing was signed and nothing was rung, and it was found by the dry run before any signature.**
 
 **Two defects the ledger found, both fixed after the run and both in the record.** `ringStamp` moved a stamp to A2's
 operator where no doorbell would be rung — nothing consumed, nothing lost, but not where §4.2 says the postage went.
 And `submitMessage`'s readback could be answered by an identical OLDER message, so the manifest locator named sequence
 1 where this run's manifest landed at 2 — harmless for a content-addressed manifest and not harmless anywhere a
 sequence number means something.
+
+---
+
+## GATE TWO, THE REPLY — the letter that came back, 2026-09-10
+
+**B wrote to A2 on the lane A2 opened, in the direction §7.1 said was possible and §7.1's own MUST forbade until
+D-171. Nothing was rung, no second lane exists, and A2's doorbell still holds zero messages.** One pass, no stop.
+The run of record is `app/OPERATIONS.md` under Step 6.
+
+```
+lane        0.0.10464056    REUSED, in the OTHER DIRECTION — B's doorbell held two before and after, A2's zero
+envelope    bc1bd61ee97faee136f8f15f1cf0de7590bfef65446d6024982d0152fcd7e492
+body        "The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln."
+payload     80 bytes · 1 chunk · 1 oz · ONE stamp, no receipt fee
+manifest    0.0.10452154 #2 — on B's own topic, B being the sender this time
+settlement  0.0.10450880@1789076237.491878073 · 4.03 s before chunk 0 (T-P7-1)
+chunk 0     0.0.10464056 #13 · chunk_info NULL · operator_id 0.0.10452149@0.0.10452127
+```
+
+**The lane was found at B's own door**, and the dry run printed it before anything signed — the same line that read
+`NONE — this is first contact` the day before. **§G-21 is closed by D-171** and **§G-22 by D-172**; the specification
+is at **0.5.11**, tagged, and no schema and no wire string moved.
+
+**Nothing was rung, and it is proved by two absences.** A2's doorbell `0.0.10462704` held **zero** messages before and
+zero after; B's `0.0.10452149` held the same **two** it has held since checkpoint one. On this lane the `operator_id`
+now points both ways: sequences 1–12 name A2, sequence 13 names B.
+
+**A2 paid nothing and B paid one stamp.** B's agent account did not move by one tinybar across three submissions and
+went 12 → 11 `$POSTAGE`; B's operator paid **0.03428711 ℏ** for all three and holds no stamp before or after — which
+is the `ringStamp` fix on consensus, because no doorbell was rung and so no fee was owed. **A2's operator still holds
+the stamp checkpoint two stranded there**: it is not lost, and it pays the next doorbell fee A2 owes.
+
+**A2 found the lane at all, and that is new.** A2 never answered a door, so it has no `connection_created` of its own;
+`lanesOf` now reads both kinds — the lanes an agent accepted, at its own door, and the lanes it requested, at the
+doors it rang. The home said *whom*; consensus said *which lane* (D-165). `inbox` returned the 80 bytes byte for byte.
+
+**A stranger holding nothing read the correspondence as a correspondence**, twice, at digest
+`1c4359e5bf6fbbe00fc82e4e5b358500d307572891a1be89dfd47d493f13d648`: three envelopes on one lane, two affixed by A2
+and one by B, the middle one still **ACKED with its receipt still acked**. The reply appraised **exactly as the gate
+report predicted** — SETTLED, `unverified`, reason `T-P12-4`, receipt `none`, trust class `math`. **`T-P10-2` and
+`T-P17-2` are absent because a claimless release never reaches either check**, not because the lane is right; that
+the lane is right is proved offline, and LIMITATIONS L-1 says the check is dark.
+
+**`conformance/fixtures/checkpoint-two-reply.json`** is the first fixture that carries **the lane's birth doorbell**,
+which `capture` reaches by following the lane's own memo. `npm run check:reply` is **29 assertions with no network**
+(P-4) and runs the binding walk on the captured bytes, told nothing about who the parties are: the lane's memo names
+the door, the door's memo names its owner, the answer on it names the ringer, and the pair is the same set from
+either direction. `check:letter` is **155**, up from 133. **Twenty-one checks green.**
+
+**Three findings stand open, none of them a defect in this run.** **§G-24**: the pinned HCS-10 text says in its prose
+that the acceptor writes the Outbound Connection Created record and in three of five required field descriptions that
+the requester does. **One outbound record already on consensus is wrong against the pin** — A2's log `0.0.10462708` #1,
+which named itself where `index.md:553` names the target and omitted two required fields; fixed forward, named in
+LIMITATIONS, and not repaired, because a consensus record cannot be rewritten. **§G-25**: the evidence bundle's digest
+is a function of the release's patch version, so checkpoint one's and two's digests reproduce from tag `v0.5.10` and
+this one from `v0.5.11`.
 
 ---
 

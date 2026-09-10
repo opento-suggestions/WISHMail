@@ -61,6 +61,7 @@
     "ack": "npm run ack --workspace app --",
     "ack:live": "npm run ack:live --workspace app --",
     "check:captured": "npm run check:captured --workspace app --",
-    "check:receipt": "npm run check:receipt --workspace app --"
+    "check:receipt": "npm run check:receipt --workspace app --",
+    "check:reply": "npm run check:reply --workspace app --"
   }
 }
