@@ -924,6 +924,41 @@ that separates two agents.
 **Two funded testnet wallets, two filled home directories, and Sonic’s word are what this step now waits on.** §G-19 is
 ruled and no longer among them.
 
+## PriceList sequence 3 — the rate a Verifier can re-obtain (D-170)
+
+**Submitted 2026-09-09**, transaction `0.0.8641261@1789004837.951853257`, consensus `1789004842.557476068`, sequence 3
+on `0.0.10426551`. 666 canonical bytes, sha256 `d5f1f6fb19e0f110c905c00c082b4f3df8172466b8140cb3df4c0246e8f275ae`,
+validated against the registered `PriceList` schema before signing and byte-compared against the mirror after. Sequences
+1 and 2 read back untouched — a schedule is the sequence of messages (§14.3) and a published one is never edited.
+
+**Why, in one line**: T-P11-4 asks whether the price charged is the price the schedule yields, and on a rate-priced
+method that means a Verifier must obtain the rate the Postmaster read **at the instant it read it**. A DEX spot price
+cannot be re-obtained at a past timestamp by anyone, so every rate-priced receipt would be true and unprovable, and P-12
+downgrades what cannot be replayed. Hedera’s own rate can be.
+
+**The replay, run as a stranger would run it, 2026-09-09.** The counter quoted from sequence 3:
+
+```
+quote   13.07417529 ℏ for twelve, plus 2 ℏ for the provisioned path and a 0.05 ℏ registration fee
+rate    {source: .../api/v1/network/exchangerate, pair: HBAR/USD,
+         value: "0.07648666", at: "1789002062.339026104"}
+
+GET /api/v1/network/exchangerate?timestamp=1789002062.339026104
+  -> cent_equivalent / (100 × hbar_equivalent), in integers  ->  0.07648666
+
+IDENTICAL to what the receipt would carry.
+```
+
+`rate.at` is the rate record’s **consensus timestamp** and not a wall clock, because that is the string passed back;
+`rate.value` is truncated to the arithmetic’s own scale, so the figure published is the figure the price was divided by
+and a replay reaches the same tinybar. **No schema moved**: §5.4 types `source`, `pair` and `at` as plain strings.
+
+**What is not fixed and cannot be.** Sequences 1 and 2 name the DEX source and are permanent. Any receipt issued under
+them is unreplayable on its rate — LIMITATIONS says so beside L-5. **None exists**: the counter has made no sale, and
+Gate One’s first two purchases will quote at sequence 3, because §14.3 makes the current price the latest message before
+the purchase.
+
+---
 ## Demo-operator funding — two wallets, and it is not a sale
 
 **Written before the first signature, as everything here is.** Gate One needs two Correspondents, and a Correspondent

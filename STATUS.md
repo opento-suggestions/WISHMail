@@ -158,6 +158,11 @@ shape before any signature, in the form Steps 2-4 follow.
 - **`npm run check:exchange` — 49 assertions over a real Streamable HTTP socket**, the first in this project to open
   one. It found that MCP refuses a non-error result from a tool declaring an `outputSchema`, so every leg of the purchase
   but the receipt is now flagged and carries a state code. The two submissions are Gate One’s.
+- **`PriceList` sequence 3 is on consensus** (D-170), and Gate One’s purchases quote at it: the `hbar` rate is now
+  read from Hedera’s own exchange rate, which a mirror node serves with a timestamp filter, so a Verifier holding a
+  receipt’s `rate.at` obtains exactly what the Postmaster read. Verified by replay, 2026-09-09, identical to the digit.
+  Under the DEX source every rate-priced receipt would have been true and unprovable, and P-12 downgrades what cannot
+  be replayed.
 - **What Gate One waits on: Sonic’s word.** The two Operators’ wallets exist — `0.0.10450879` and `0.0.10450880`, 35 ℏ
   each, unlimited auto-associations, recorded in `app/OPERATIONS.md` as funding and not a sale — and their two homes are
   filled and boot. The purchases are

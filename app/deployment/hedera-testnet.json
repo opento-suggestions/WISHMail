@@ -1896,6 +1896,32 @@
         "warrant": "§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase"
       },
       "specTag": "v0.5.9"
+    },
+    "prices.third": {
+      "kind": "message",
+      "role": "the third PriceList — the hbar rate read from the network’s own exchange rate (D-170)",
+      "id": "0.0.10426551",
+      "builtBy": "TopicMessageSubmitTransaction",
+      "signedBy": [
+        "postmaster payer"
+      ],
+      "payer": "0.0.8641261",
+      "transactionId": "0.0.8641261@1789004837.951853257",
+      "consensusTimestamp": "1789004842.557476068",
+      "confirmedFrom": "GET /topics/0.0.10426551/messages",
+      "confirmedAt": "2026-09-10T01:47:25.605Z",
+      "policy": {
+        "sequenceNumber": 3,
+        "sha256": "d5f1f6fb19e0f110c905c00c082b4f3df8172466b8140cb3df4c0246e8f275ae",
+        "bytes": 666,
+        "provisioning": {
+          "method": "hbar",
+          "unitPrice": "2",
+          "registrationFee": "0.05"
+        },
+        "warrant": "§14.3: the schedule is the sequence of messages; the current price is the latest before the purchase. Sequence 3 moved the hbar rate source from a DEX spot price to the network’s own exchange rate, which a mirror node serves with a timestamp filter — so a Verifier holding a receipt’s rate.at can obtain exactly what the Postmaster read, and T-P11-4 is checkable on a rate-priced method."
+      },
+      "specTag": "v0.5.10"
     }
   },
   "residue": [
