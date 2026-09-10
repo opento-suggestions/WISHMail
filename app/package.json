@@ -35,7 +35,8 @@
     "check:correspondent": "tsx sdk/correspondent.check.ts",
     "demo:operators": "tsx src/ops/demo-operators.ts",
     "check:exchange": "tsx src/counter/exchange.check.ts",
-    "pricelist3": "tsx src/ops/pricelist3.ts"
+    "pricelist3": "tsx src/ops/pricelist3.ts",
+    "probe:precheck": "tsx src/ops/probe-precheck.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

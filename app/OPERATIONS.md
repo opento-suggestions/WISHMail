@@ -1217,6 +1217,93 @@ should say so to themselves before pointing `--dir` anywhere else. Not a propert
 ours, and named rather than assumed.
 
 ---
+## The precheck probe — gate report, written before any signature. NOTHING IS SIGNED.
+
+**The question, and it is one this project has said out loud four times that it cannot answer.** Does Hedera's solvency
+precheck compare the payer's balance to the fee it **estimates**, or to the maximum the transaction **declares**?
+
+It matters in exactly one place. `register_agent` is the only submission in this project whose payer holds almost
+nothing — 0.05 ℏ, funded as the third leg of the purchase (§4.6, D-159's addendum) — so it is the only one where the
+declared maximum is not a formality. It declared **2 ℏ** until 2026-09-09, forty times the balance funding it. It was
+lowered to 0.02 ℏ **because the answer is unknown and an explicit maximum below the balance is safe under both
+readings**. That was the right move and it is not an answer.
+
+**Gate One did not settle it either, and the reason is worth stating.** B's registration succeeded and was charged
+0.00377436 ℏ against 0.02 ℏ declared and 0.05 ℏ held. Both readings predict success there — the declaration is below
+the balance and so is the cost — so the run is consistent with both and evidence for neither. **A run that cannot fail
+under either hypothesis tests neither.**
+
+### The experiment, and it is a binary
+
+One throwaway account, one throwaway topic, one HCS message whose real cost is a tiny fraction of the balance:
+
+```
+balance    0.10 ℏ    (10,000,000 tinybars, read back from the MIRROR and not from a receipt)
+declared   1.00 ℏ    ABOVE the balance
+actual    ~0.0001 ℏ  far BELOW it
+```
+
+| Outcome of act 2 | What it means |
+|---|---|
+| `INSUFFICIENT_PAYER_BALANCE` | the precheck compares the **DECLARED** maximum |
+| `SUCCESS` | the precheck compares the fee it **ESTIMATES** |
+
+**There is no third outcome that answers the question, and one that would confuse it.** `INSUFFICIENT_TX_FEE` means the
+declared maximum was **below** what the network required — the opposite comparison, and the status the 2026-09-08 probe
+observed, which is precisely why that observation settled nothing here. It is why the declaration is set far above any
+plausible cost rather than near it: 1 ℏ against a fee of order 0.0001 ℏ leaves no room for the two to be confused.
+
+**The control, without which act 2 means nothing.** The same submission, from the same account, declaring 0.05 ℏ —
+**below** the balance. It must succeed under either reading. If it fails, the account cannot pay at all, for some
+reason that has nothing to do with the comparison, and act 2's refusal would have been about that instead.
+
+### What it creates, in order
+
+| # | Act | Declared shape | Who signs / who pays |
+|---|---|---|---|
+| 0 | a disposable topic | memo `wishmail:probe:precheck`, **no submit key** so any account may submit, no custom fee | the Postmaster's payer |
+| 1 | a disposable account | 0.10 ℏ initial balance, key **born in this process**, never persisted | the Postmaster's payer; the new key signs for itself |
+| 2 | **the question** | one `ConsensusSubmitMessage`, `setMaxTransactionFee(1 ℏ)` | **the throwaway account, as payer and signer** |
+| 3 | **the control** | one `ConsensusSubmitMessage`, `setMaxTransactionFee(0.05 ℏ)` | the throwaway account |
+| 4 | the readback | the mirror on what act 3 was charged, and the balance after | nothing |
+
+### What it asserts
+
+The account holds **exactly** 10,000,000 tinybars, read from `GET /accounts/{id}` and not from a receipt — the whole
+question is what a node compares a balance to, so the balance had better be the one consensus records. It is not
+deleted. Act 2's status is one of the two that answer the question, and the probe **reports UNRESOLVED rather than
+inferring** if it is anything else. The control succeeds. The actual charge is under a tenth of the balance.
+
+### What it writes, and where
+
+**Nothing but this file.** No entry in `app/deployment/hedera-testnet.json`, no entry in `spec/pins.json` — a probe is
+not an entity of record (D-144, and the posture of both probes before it). The finding goes to **ledger §H** with its
+date, and to **LIMITATIONS** beside the sentence that says the purchase funds exactly one fee.
+
+### Disposable, and what it will leave behind
+
+A topic and an account on `hedera:testnet` whose key was born in the run's process and is discarded with it — nobody
+can ever move that account's balance, including us, which is the strongest sense of inert and the same posture the
+09-08 and 09-09 probes took. **The real `$POSTAGE`, treasury, doorbell, price topic and Postmaster-agent are not
+created, touched, or named**, and the runner carries their ids in a `FORBIDDEN` list and stops if it sees one.
+
+### Every way it stops
+
+1. the topic create or the account create returns anything but `SUCCESS`;
+2. either returns no entity id;
+3. the created topic id is one of the real entities;
+4. the mirror does not show the account holding exactly the balance under test;
+5. act 2 returns a status that is neither of the two that answer the question — **reported as UNRESOLVED, and no
+   inference is drawn**;
+6. the control fails, which makes act 2 uninterpretable.
+
+**Cost.** About 0.5 ℏ for the topic, 0.1 ℏ of balance plus its creation fee, and two submissions of order 0.0001 ℏ.
+All on the Postmaster's payer, which held 3229.7 ℏ before Gate One.
+
+**Where the runner is.** `app/src/ops/probe-precheck.ts`, `npm run probe:precheck` inside `app/`, with `--dry-run`.
+
+---
+
 ## Step 6 — the first letter: GATE TWO, written before any signature
 
 **Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.
