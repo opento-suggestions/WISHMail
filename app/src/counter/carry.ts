@@ -45,7 +45,7 @@
  *     a ceiling is the only thing between a published policy and an unbounded
  *     one. The ceiling is read from `networks.ts`, which is where the agent
  *     read the cap it built with — a second spelling of a cap would refuse a
- *     body the agent had every reason to build — and an operator may set a
+ *     body the agent had every reason to build — and an postmasterPayer may set a
  *     lower absolute maximum beside it.
  *   - an account update that sets ANY field besides the memo. The same
  *     transaction type that writes §9.2's first link can rotate the account's
@@ -55,7 +55,7 @@
  *     mailbox once, at the price on consensus; it does not undertake to renew
  *     it forever, and a topic that named it would say otherwise on consensus
  *     where every reader can see it. The row must name the BUYER, which is the
- *     Correspondent's own operator — the party §3.5 already has paying.
+ *     Correspondent's own postmasterPayer — the party §3.5 already has paying.
  *   - a row already carried under this reference. Each row is created once; a
  *     second doorbell cannot be undone and §9.5 assigns `vague` where more than
  *     one registration names an address (D-165).
@@ -123,7 +123,7 @@ export interface CarryReference {
   readonly holderKey: string;
   /** The account the purchase created for that key, read back from the mirror. */
   readonly account: string;
-  /** The buyer: the Correspondent's operator, and the auto-renew account of every row. */
+  /** The buyer: the Correspondent's postmasterPayer, and the auto-renew account of every row. */
   readonly buyer: string;
   /** The node the purchase pinned. One body, one signature. */
   readonly node: string;
@@ -376,8 +376,8 @@ export async function carrySignature(ctx: CounterContext, reference: string, bod
   const bytes = Buffer.from(bodyBase64, 'base64');
   const tx = decodeTransactionBody(bytes);
 
-  if (tx.payer !== ctx.operatorId) {
-    refuse(`this body names ${tx.payer} as its payer and the counter signs only for ${ctx.operatorId}`);
+  if (tx.payer !== ctx.postmasterPayerId) {
+    refuse(`this body names ${tx.payer} as its payer and the counter signs only for ${ctx.postmasterPayerId}`);
   }
   if (tx.node !== ref.node) {
     refuse(`this body is addressed to node ${tx.node} and this purchase pinned ${ref.node}; one body, one signature`);
@@ -403,15 +403,15 @@ export async function carrySignature(ctx: CounterContext, reference: string, bod
     refuse(`this exact body was already carried, as ${tx.transactionId}; a signature is issued once per body`);
   }
 
-  const signature = await ctx.operator.sign(bytes);
+  const signature = await ctx.postmasterPayer.sign(bytes);
   recordRow(ctx, ref, row, tx.transactionId);
 
   return {
     row,
     transactionId: tx.transactionId,
-    publicKey: ctx.operator.publicKey.toStringDer(),
+    publicKey: ctx.postmasterPayer.publicKey.toStringDer(),
     signature: Buffer.from(signature).toString('base64'),
-    statement: `carried row \`${row}\` as ${tx.transactionId}, payer ${ctx.operatorId}, node ${tx.node}, fee ceiling ${ceiling} tinybars`,
+    statement: `carried row \`${row}\` as ${tx.transactionId}, payer ${ctx.postmasterPayerId}, node ${tx.node}, fee ceiling ${ceiling} tinybars`,
   };
 }
 

@@ -141,10 +141,10 @@ const accountStep = (
     return c.result;
   },
   async create(ctx, want) {
-    const r = await submit(ctx.client, ctx.env.operatorId, new AccountCreateTransaction()
+    const r = await submit(ctx.client, ctx.env.postmasterPayerId, new AccountCreateTransaction()
       .setKeyWithoutAlias(signer(ctx).publicKey)
       .setInitialBalance(new Hbar(want.initialBalanceHbar)));
-    return { ...r, signedBy: ['operator'] };
+    return { ...r, signedBy: ['postmaster payer'] };
   },
 });
 
@@ -222,7 +222,7 @@ const tokenStep: Step<TokenWant> = {
     };
   },
   async create(ctx, want) {
-    const r = await submit(ctx.client, ctx.env.operatorId, new TokenCreateTransaction()
+    const r = await submit(ctx.client, ctx.env.postmasterPayerId, new TokenCreateTransaction()
       .setTokenName(want.name).setTokenSymbol(want.symbol)
       .setTokenType(TokenType.FungibleCommon)
       .setDecimals(want.decimals).setInitialSupply(want.initialSupply)
@@ -230,7 +230,7 @@ const tokenStep: Step<TokenWant> = {
       .setTreasuryAccountId(want.treasury)
       .setSupplyKey(ctx.treasury.publicKey)
       .setMaxTransactionFee(new Hbar(ctx.env.constants.feeCaps.tokenCreate)), [ctx.treasury]);
-    return { ...r, signedBy: ['operator', 'treasury'] };
+    return { ...r, signedBy: ['postmaster payer', 'treasury'] };
   },
 };
 
@@ -255,18 +255,18 @@ const mintStep: Step<MintWant> = {
     return c.result;
   },
   async create(ctx, want) {
-    const r = await submit(ctx.client, ctx.env.operatorId,
+    const r = await submit(ctx.client, ctx.env.postmasterPayerId,
       new TokenMintTransaction().setTokenId(ctx.tokenId()).setAmount(Number(want.amount)), [ctx.treasury]);
-    return { ...r, signedBy: ['operator', 'treasury'] };
+    return { ...r, signedBy: ['postmaster payer', 'treasury'] };
   },
 };
 
-/* --- associations (§4.4: the operator is the momentary bearer) ----------- */
+/* --- associations (§4.4: the postmasterPayer is the momentary bearer) ----------- */
 
 interface AssocWant { readonly account: string; readonly token: string; readonly warrant: string }
 
 const assocStep = (
-  key: 'operator.association' | 'agent.association',
+  key: 'postmasterPayer.association' | 'agent.association',
   role: string,
   account: (c: Ctx) => string,
   signers: (c: Ctx) => readonly Signer[],
@@ -283,9 +283,9 @@ const assocStep = (
   },
   async create(ctx, want) {
     const extra = signers(ctx);
-    const r = await submit(ctx.client, ctx.env.operatorId,
+    const r = await submit(ctx.client, ctx.env.postmasterPayerId,
       new TokenAssociateTransaction().setAccountId(want.account).setTokenIds([want.token]), extra);
-    return { ...r, signedBy: ['operator', ...extra.map((s) => s.label)] };
+    return { ...r, signedBy: ['postmaster payer', ...extra.map((s) => s.label)] };
   },
 });
 
@@ -299,7 +299,7 @@ function subject(ctx: Ctx): template.TemplateSubject {
     publicKey: publicHex(ctx.agent),
     treasury: ctx.treasuryId(),
     stampToken: ctx.tokenId(),
-    autoRenewAccount: ctx.env.operatorId,
+    autoRenewAccount: ctx.env.postmasterPayerId,
   };
 }
 
@@ -376,14 +376,14 @@ const topicStep = (
       return tx;
     };
     // The admin key must sign its own topic's creation.
-    let r = await submit(ctx.client, ctx.env.operatorId, build2(), [owner]);
-    let signedBy = ['operator', owner.label];
+    let r = await submit(ctx.client, ctx.env.postmasterPayerId, build2(), [owner]);
+    let signedBy = ['postmaster payer', owner.label];
     if (!r.ok && r.status === 'INVALID_SIGNATURE' && want.fee) {
       // ONLY this status answers "must the fee collector sign?" — the probe
       // observed that a treasury collector need not, so this branch should be
       // dead. Any other failure is a different question and is not retried.
-      r = await submit(ctx.client, ctx.env.operatorId, build2(), [owner, ctx.treasury]);
-      signedBy = ['operator', owner.label, 'treasury'];
+      r = await submit(ctx.client, ctx.env.postmasterPayerId, build2(), [owner, ctx.treasury]);
+      signedBy = ['postmaster payer', owner.label, 'treasury'];
     }
     return { ...r, signedBy };
   },
@@ -399,7 +399,7 @@ const topicStep = (
  *
  * Exactly three fields are filled here, because they cannot be known at commit
  * time: the token and treasury ids, from the ops record, and payTo, from
- * OPERATOR_ID. They are null in the file, and the schema's account-id pattern
+ * POSTMASTER_PAYER_ID. They are null in the file, and the schema's account-id pattern
  * means a fill that did not happen is caught by validation rather than published.
  *
  * Everything else is asserted to agree with app/src/ops/networks.ts, which is
@@ -425,7 +425,7 @@ export function buildPriceList(ctx: Ctx, suffix = ''): Record<string, unknown> {
 
   const k = ctx.env.constants;
   for (const m of raw['methods'] as PLMethod[]) {
-    m.payTo = ctx.env.operatorId;
+    m.payTo = ctx.env.postmasterPayerId;
     if (m.method === 'x402-usdc') {
       if (k.usdc && m.asset !== k.usdc.assetId) {
         throw new Error(`price list asset ${m.asset} disagrees with networks.ts USDC ${k.usdc.assetId}`);
@@ -481,7 +481,7 @@ const priceListStep: Step<PriceWant> = {
     const c = new Checks();
     const first = m.messages?.[0];
     c.num('sequence_number', first?.sequence_number, 1);
-    c.eq('payer_account_id', first?.payer_account_id, ctx.env.operatorId);
+    c.eq('payer_account_id', first?.payer_account_id, ctx.env.postmasterPayerId);
     c.eq('message (base64, byte-for-byte)', first?.message, want.bytes);
     return c.result;
   },
@@ -493,10 +493,10 @@ const priceListStep: Step<PriceWant> = {
     if (errors.length) {
       throw new Error('the first PriceList does not validate, and is not published: ' + errors.join('; '));
     }
-    const r = await submit(ctx.client, ctx.env.operatorId, new TopicMessageSubmitTransaction()
+    const r = await submit(ctx.client, ctx.env.postmasterPayerId, new TopicMessageSubmitTransaction()
       .setTopicId(want.topic)
-      .setMessage(Buffer.from(want.bytes, 'base64')), [ctx.operator]);
-    return { ...r, signedBy: ['operator'] };
+      .setMessage(Buffer.from(want.bytes, 'base64')), [ctx.postmasterPayer]);
+    return { ...r, signedBy: ['postmaster payer'] };
   },
 };
 
@@ -575,7 +575,7 @@ const profileChunksStep: Step<ChunkWant> = {
     for (const chunk of want.chunks) {
       last = await submit(
         ctx.client,
-        ctx.env.operatorId,
+        ctx.env.postmasterPayerId,
         new TopicMessageSubmitTransaction()
           .setTopicId(want.topic)
           .setMessage(Buffer.from(JSON.stringify(chunk), 'utf8')),
@@ -584,7 +584,7 @@ const profileChunksStep: Step<ChunkWant> = {
       if (!last.ok) break;
     }
     if (last === undefined) throw new Error('the profile produced no chunks');
-    return { ...last, signedBy: ['operator', 'agent'] };
+    return { ...last, signedBy: ['postmaster payer', 'agent'] };
   },
 };
 
@@ -627,7 +627,7 @@ const registryEntryStep: Step<RegisterWant> = {
     if (!m || !p.test(m)) return 'absent';
     const c = new Checks();
     const current = m.messages?.[0];
-    c.eq('payer_account_id', current?.payer_account_id, ctx.env.operatorId);
+    c.eq('payer_account_id', current?.payer_account_id, ctx.env.postmasterPayerId);
     c.eq('message (base64, byte-for-byte)', current?.message, want.bytes);
     const body = JSON.parse(Buffer.from(current?.message ?? '', 'base64').toString('utf8')) as Record<string, unknown>;
     c.eq('p', body['p'], 'hcs-2');
@@ -638,14 +638,14 @@ const registryEntryStep: Step<RegisterWant> = {
   async create(ctx, want) {
     const r = await submit(
       ctx.client,
-      ctx.env.operatorId,
+      ctx.env.postmasterPayerId,
       new TopicMessageSubmitTransaction()
         .setTopicId(want.topic)
         .setMessage(Buffer.from(want.bytes, 'base64'))
         .setTransactionMemo(want.txMemo),
       [ctx.agent],
     );
-    return { ...r, signedBy: ['operator', 'agent'] };
+    return { ...r, signedBy: ['postmaster payer', 'agent'] };
   },
 };
 
@@ -692,11 +692,11 @@ const accountMemoStep: Step<MemoWant> = {
   async create(ctx, want) {
     const r = await submit(
       ctx.client,
-      ctx.env.operatorId,
+      ctx.env.postmasterPayerId,
       new AccountUpdateTransaction().setAccountId(want.account).setAccountMemo(want.memo),
       [ctx.agent],
     );
-    return { ...r, signedBy: ['operator', 'agent'] };
+    return { ...r, signedBy: ['postmaster payer', 'agent'] };
   },
 };
 
@@ -746,7 +746,7 @@ function schemaSteps(source: SchemaSource): readonly AnyStep[] {
     want: (ctx) => ({
       name: n,
       memo: source.file.memo,
-      submitKey: publicHex(ctx.operator),
+      submitKey: publicHex(ctx.postmasterPayer),
       adminKey: null,
       sha256: source.sha256,
       blobSha: source.blobSha,
@@ -766,12 +766,12 @@ function schemaSteps(source: SchemaSource): readonly AnyStep[] {
       return c.result;
     },
     async create(ctx, want) {
-      const r = await submit(ctx.client, ctx.env.operatorId, new TopicCreateTransaction()
+      const r = await submit(ctx.client, ctx.env.postmasterPayerId, new TopicCreateTransaction()
         .setTopicMemo(want.memo)
-        .setSubmitKey(ctx.operator.publicKey)
-        .setAutoRenewAccountId(ctx.env.operatorId)
-        .setMaxTransactionFee(new Hbar(ctx.env.constants.feeCaps.plainTopicCreate)), [ctx.operator]);
-      return { ...r, signedBy: ['operator'] };
+        .setSubmitKey(ctx.postmasterPayer.publicKey)
+        .setAutoRenewAccountId(ctx.env.postmasterPayerId)
+        .setMaxTransactionFee(new Hbar(ctx.env.constants.feeCaps.plainTopicCreate)), [ctx.postmasterPayer]);
+      return { ...r, signedBy: ['postmaster payer'] };
     },
   };
 
@@ -802,25 +802,25 @@ function schemaSteps(source: SchemaSource): readonly AnyStep[] {
     async create(ctx, want) {
       let last: Submitted | undefined;
       for (const chunk of want.chunks) {
-        last = await submit(ctx.client, ctx.env.operatorId, new TopicMessageSubmitTransaction()
+        last = await submit(ctx.client, ctx.env.postmasterPayerId, new TopicMessageSubmitTransaction()
           .setTopicId(want.topic)
-          .setMessage(Buffer.from(JSON.stringify(chunk), 'utf8')), [ctx.operator]);
+          .setMessage(Buffer.from(JSON.stringify(chunk), 'utf8')), [ctx.postmasterPayer]);
         if (!last.ok) break;
       }
       if (last === undefined) throw new Error(`${want.name} produced no chunks`);
-      return { ...last, signedBy: ['operator'] };
+      return { ...last, signedBy: ['postmaster payer'] };
     },
   };
 
-  // The registry is an ordinary HCS-2 topic under the operator's keys, so it
+  // The registry is an ordinary HCS-2 topic under the postmasterPayer's keys, so it
   // reuses topicStep rather than restating its readback: the same nine field
   // assertions run on it as on every other topic this build creates.
   const registry = topicStep(`schema.${n}.registry`, `${n} schema registry (HCS-2)`, [], (ctx) => ({
     memo: schemaRegistryMemo(HCS10_TTL),
-    submitKey: publicHex(ctx.operator), adminKey: publicHex(ctx.operator), feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
+    submitKey: publicHex(ctx.postmasterPayer), adminKey: publicHex(ctx.postmasterPayer), feeScheduleKey: null,
+    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.postmasterPayerId,
     warrant: 'hcs-13.md:138 step 2 — an HCS-2 topic to manage versions OF THE SCHEMA; indexed 0 so every schemaRef stays resolvable at its sequence number',
-  }), (c) => c.operator);
+  }), (c) => c.postmasterPayer);
 
   const register: Step<SchemaRegisterWant> = {
     key: `schema.${n}.register`, kind: 'message', role: `${n} schema registration`,
@@ -861,11 +861,11 @@ function schemaSteps(source: SchemaSource): readonly AnyStep[] {
       return c.result;
     },
     async create(ctx, want) {
-      const r = await submit(ctx.client, ctx.env.operatorId, new TopicMessageSubmitTransaction()
+      const r = await submit(ctx.client, ctx.env.postmasterPayerId, new TopicMessageSubmitTransaction()
         .setTopicId(want.topic)
         .setMessage(Buffer.from(want.bytes, 'base64'))
-        .setTransactionMemo(want.txMemo), [ctx.operator]);
-      return { ...r, signedBy: ['operator'] };
+        .setTransactionMemo(want.txMemo), [ctx.postmasterPayer]);
+      return { ...r, signedBy: ['postmaster payer'] };
     },
   };
 
@@ -895,16 +895,16 @@ export const STEPS: readonly AnyStep[] = [
     'D-140: the service’s own Correspondent identity; an operational choice, not a spec role')),
   anon(tokenStep),
   anon(mintStep),
-  anon(assocStep('operator.association', 'operator ↔ $POSTAGE', (c) => c.env.operatorId, () => [],
+  anon(assocStep('postmasterPayer.association', 'postmasterPayer ↔ $POSTAGE', (c) => c.env.postmasterPayerId, () => [],
     '§4.4: the sender transfers a stamp to the Postmaster, which then pays the doorbell fee (D-140)')),
   anon(assocStep('agent.association', 'postmaster-agent ↔ $POSTAGE', (c) => c.agentId(), (c) => [c.agent],
     'the agent buys and affixes postage like any Correspondent')),
   anon(topicStep('prices.topic', 'price topic', [], (ctx) => ({
     memo: PRICE_TOPIC_MEMO,
-    submitKey: publicHex(ctx.operator), adminKey: publicHex(ctx.operator), feeScheduleKey: null,
-    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.operatorId,
-    warrant: 'D-142: the price list is the service speaking, so its keys are the operator’s; §4.6 and T-P17-1 do not reach it (D-146)',
-  }), (c) => c.operator)),
+    submitKey: publicHex(ctx.postmasterPayer), adminKey: publicHex(ctx.postmasterPayer), feeScheduleKey: null,
+    fee: null, feeExemptKeys: [], autoRenewAccount: ctx.env.postmasterPayerId,
+    warrant: 'D-142: the price list is the service speaking, so its keys are the postmasterPayer’s; §4.6 and T-P17-1 do not reach it (D-146)',
+  }), (c) => c.postmasterPayer)),
   anon(priceListStep),
   anon(topicStep('agent.doorbell', 'doorbell (HCS-10 inbound)', ['postage.token', 'agent.account'],
     (ctx) => template.doorbell(subject(ctx)), (c) => c.agent)),

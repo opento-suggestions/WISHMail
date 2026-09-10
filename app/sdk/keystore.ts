@@ -25,6 +25,7 @@
  *     the keystore holds a MAP of epochs from the first run and not one key.
  */
 import fs from 'node:fs';
+import path from 'node:path';
 import { createPrivateKey, createPublicKey } from 'node:crypto';
 import { PrivateKey } from '@hashgraph/sdk';
 import { b64u } from '../src/core/canonical.js';
@@ -108,7 +109,7 @@ export function agentSigner(home: Home): Signer {
  *
  * It is a different party from the agent and is named as one: "the agent signs;
  * the operator pays" (§3.5). It is read here rather than in `home.ts` for the
- * same reason `ops/env.ts` hands `OPERATOR_DER_KEY` to `ops/identity.ts` and no
+ * same reason `ops/env.ts` hands `POSTMASTER_PAYER_DER_KEY` to `ops/identity.ts` and no
  * further — the value exists in one module and leaves it only as a closure.
  */
 export function payerSigner(home: Home): Signer {
@@ -138,6 +139,57 @@ export function withPayerKey(config: Record<string, unknown>, der: string): Reco
   const payer = { ...((config['payer'] as Record<string, unknown> | undefined) ?? {}) };
   payer[PAYER_KEY_FIELD] = der;
   return { ...config, payer };
+}
+
+/**
+ * A payer wallet BORN IN THIS PROCESS, and installed into a home without
+ * anyone else holding it.
+ *
+ * Written for the demo-operator funding run, which has to create two testnet
+ * accounts and put each account’s own key into that Correspondent’s config.
+ * The obvious shape — generate a key, hand the DER string to the caller, let
+ * the caller write the file — would put private-key material in a third
+ * module and make the gate’s allowed list grow by one. So the key never
+ * leaves this closure: the caller gets a `Signer` to create the account with
+ * and an `install` to write the config once the account id is known, and it
+ * cannot print, log or persist what it does not have.
+ *
+ * This is `ops/identity.ts`’s discipline for the Postmaster’s side, extended
+ * to a wallet that has to be persisted rather than merely used (P-13,
+ * T-P13-1). It is a payer’s key and never an agent’s: an agent’s keys are born
+ * by `ensureKeys` on that agent’s first run, in that agent’s own process, and
+ * nothing may hand one to anybody (§3.3).
+ */
+export interface BornWallet {
+  readonly signer: Signer;
+  /**
+   * Write `<dir>/config.json` from a template object, with this wallet in it.
+   *
+   * Refuses to overwrite an existing config: a home is an agent (D-165), and a
+   * config written over a home whose keystore already exists would give a
+   * living agent a payer it never had — or, worse, be read as a second agent.
+   */
+  readonly install: (dir: string, template: Record<string, unknown>, accountId: string) => string;
+}
+
+export function bornPayerWallet(): BornWallet {
+  const key = PrivateKey.generateED25519();
+  return {
+    signer: wrap('payer (born here)', key),
+    install: (dir, template, accountId) => {
+      const configPath = path.join(dir, 'config.json');
+      if (fs.existsSync(configPath)) {
+        throw new Error(`${configPath} already exists; a home is an agent and this run does not overwrite one (D-165)`);
+      }
+      fs.mkdirSync(dir, { recursive: true });
+      const payer = { ...((template['payer'] as Record<string, unknown> | undefined) ?? {}), accountId };
+      const config = withPayerKey({ ...template, payer }, key.toStringDer());
+      const tmp = configPath + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(config, null, 2) + '\n', { mode: 0o600 });
+      fs.renameSync(tmp, configPath);
+      return configPath;
+    },
+  };
 }
 
 /** Whether a parsed config carries the operator's key. Returns a boolean, never the key. */

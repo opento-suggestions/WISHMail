@@ -92,7 +92,7 @@ export interface Requirement {
   readonly quote: Quote;
   readonly count: number;
   readonly holder: Holder;
-  /** The account the price is debited from — the Correspondent's operator (§3.5). */
+  /** The account the price is debited from — the Correspondent's postmasterPayer (§3.5). */
   readonly buyer: string;
   readonly provision: boolean;
   /**
@@ -259,7 +259,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
   // leg 3 — the registration fee, from the Postmaster into the account the
   // purchase just created, so the agent pays for its own registration (T-P13-4).
   if (feeTinybar > 0n) {
-    tx.addHbarTransfer(ctx.operatorId, Hbar.fromTinybars(-feeTinybar));
+    tx.addHbarTransfer(ctx.postmasterPayerId, Hbar.fromTinybars(-feeTinybar));
     tx.addHbarTransfer(target, Hbar.fromTinybars(feeTinybar));
   }
 
@@ -276,7 +276,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
     buyer,
     provision,
     node: node.toString(),
-    ...(provision ? { carriedBy: ctx.operatorId } : {}),
+    ...(provision ? { carriedBy: ctx.postmasterPayerId } : {}),
     expiresAt: new Date(Date.now() + QUOTE_SECONDS * 1000).toISOString(),
   };
 
@@ -293,7 +293,7 @@ export async function quotePurchase(ctx: CounterContext, req: PurchaseRequest): 
  * public key has no account to pay from — the purchase is what creates one —
  * so the buyer and the holder are different parties and the buyer must be
  * named. In this window that is the Correspondent's OPERATOR, which is the same
- * relation §3.5 fixes everywhere else: the agent signs, the operator pays.
+ * relation §3.5 fixes everywhere else: the agent signs, the postmasterPayer pays.
  */
 function buyerOf(req: PurchaseRequest): string {
   if (req.buyer !== undefined) return req.buyer;
@@ -364,7 +364,7 @@ export async function settlePurchase(
   // here for it to be a valid signature of.
   frozen.addSignature(PublicKey.fromString(buyerPublicKey), Buffer.from(signature, 'base64'));
 
-  const r = await submit(ctx.client, ctx.operatorId, frozen, [ctx.treasury, ctx.operator]);
+  const r = await submit(ctx.client, ctx.postmasterPayerId, frozen, [ctx.treasury, ctx.postmasterPayer]);
   if (!r.ok) {
     // Nothing landed; the quote stays outstanding so the buyer may retry.
     throw new CounterRefusal('STAMP_PAYMENT_FAILED', `the purchase returned ${r.status} (tx ${r.transactionId})`);

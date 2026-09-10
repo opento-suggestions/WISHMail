@@ -337,12 +337,12 @@ Ruled 2026-09-08, before the Step 2 signature. **`.env` holds secrets, the netwo
 
 | Tier | Holds | Why there |
 |---|---|---|
-| `.env` (git-ignored) | the three private keys, `OPERATOR_ID`, `HEDERA_NETWORK`, `WISHMAIL_STATE_DIR`, `MCP_BIND`, `MCP_PORT`, an optional `MIRROR_NODE_URL` | secrets, which network, and where things run |
+| `.env` (git-ignored) | the three private keys, `POSTMASTER_PAYER_ID`, `HEDERA_NETWORK`, `WISHMAIL_STATE_DIR`, `MCP_BIND`, `MCP_PORT`, an optional `MIRROR_NODE_URL` | secrets, which network, and where things run |
 | `app/src/ops/networks.ts` | per-network constants keyed by `HEDERA_NETWORK` — mirror URL, USDC asset, facilitator and its fee payer, rate source, fee caps — **each with its citation** | true of the *network*, not of our deployment on it |
 | `spec/pins.json` | §18.4's set: the standards pins, and the stamp token and treasury per network | §4.1 puts the stamp token there, and T-P9-2 gates every claim on it |
 | `app/deployment/<network>.json` | every other fact about one deployment | a pin is a fact about a specification version; this is a fact about one deployment of it (D-144) |
 
-`OPERATOR_ID` is the one account id in `.env`, and it belongs there because it is an **input** to provisioning rather than a product of it — the single account this deployment did not create (D-140: reused). Every other entity id is read from the ops record for the selected network, and the token id additionally from `spec/pins.json` per §4.1.
+`POSTMASTER_PAYER_ID` is the one account id in `.env`, and it belongs there because it is an **input** to provisioning rather than a product of it — the single account this deployment did not create (D-140: reused). Every other entity id is read from the ops record for the selected network, and the token id additionally from `spec/pins.json` per §4.1.
 
 **Removed from `.env` and `.env.example`:** `POSTAGE_TOKEN_ID` and `PRICE_TOPIC_ID` (entity ids, and both held literal placeholder text from an earlier project); the three `AGENT_*_TOPIC_ID` names and `TREASURY_ID`/`AGENT_ID` (entity ids); `HEDERA_RPC_URL`, `POSTAGE_ADDR` and `OPERATOR_EVM_ADDR` (EVM coordinates, and there is no Solidity and no contract in this project); and `OPERATOR_HEX_KEY`, which was a **second encoding of a secret already present** — a duplicate of a private key is strictly worse than useless, since it doubles the surface without adding a capability. `MIRROR_NODE_URL` survives as a blank optional override; its default is now the network table's.
 
@@ -350,9 +350,9 @@ Ruled 2026-09-08, before the Step 2 signature. **`.env` holds secrets, the netwo
 
 **The names kept the spelling `app/src` already used** (`*_DER_KEY` rather than `*_KEY`), per the ruling that the tiering binds and the spelling does not. The suffix says what the value is — the DER form `PrivateKey.fromStringDer` reads.
 
-**Requested finding: no path in `app/src` reads an entity id from the environment.** The audit is `grep -rE "process\.env|readSecret\(|envHas\(" app/src`, and its whole output is `identity.ts` reading the three `*_DER_KEY` names, `env.ts` reading `OPERATOR_ID`, `HEDERA_NETWORK`, `MIRROR_NODE_URL`, `WISHMAIL_STATE_DIR`, `MCP_BIND` and `MCP_PORT`, and `probe.ts` reading `PROBE_OUT` for its own log path. Entity ids already came from the ops record through `Ctx.tokenId()`, `Ctx.treasuryId()` and `Ctx.agentId()`, so nothing had to move — the ruling ratifies what the code already did rather than correcting it.
+**Requested finding: no path in `app/src` reads an entity id from the environment.** The audit is `grep -rE "process\.env|readSecret\(|envHas\(" app/src`, and its whole output is `identity.ts` reading the three `*_DER_KEY` names, `env.ts` reading `POSTMASTER_PAYER_ID`, `HEDERA_NETWORK`, `MIRROR_NODE_URL`, `WISHMAIL_STATE_DIR`, `MCP_BIND` and `MCP_PORT`, and `probe.ts` reading `PROBE_OUT` for its own log path. Entity ids already came from the ops record through `Ctx.tokenId()`, `Ctx.treasuryId()` and `Ctx.agentId()`, so nothing had to move — the ruling ratifies what the code already did rather than correcting it.
 
-**The first `PriceList` is now a committed file**, `app/price-list.hedera-testnet.json`, which the script submits. What the Postmaster charges is reviewable as a document rather than read out of a function. Exactly three fields are filled at run time, because they cannot be known at commit time: `stampToken.tokenId` and `stampToken.treasury` from the ops record, and `methods[].payTo` from `OPERATOR_ID`. They are `null` in the file, and the schema's account-id pattern means a fill that did not happen is caught by validation rather than published. `asset`, `facilitator` and `rate.source` are asserted against `networks.ts` before submission, so the file and the table cannot drift apart unnoticed. The refactor is byte-neutral: the canonical message is the same 563 bytes with the same sha256 `20aa3b01…` as the literal it replaced.
+**The first `PriceList` is now a committed file**, `app/price-list.hedera-testnet.json`, which the script submits. What the Postmaster charges is reviewable as a document rather than read out of a function. Exactly three fields are filled at run time, because they cannot be known at commit time: `stampToken.tokenId` and `stampToken.treasury` from the ops record, and `methods[].payTo` from `POSTMASTER_PAYER_ID`. They are `null` in the file, and the schema's account-id pattern means a fill that did not happen is caught by validation rather than published. `asset`, `facilitator` and `rate.source` are asserted against `networks.ts` before submission, so the file and the table cannot drift apart unnoticed. The refactor is byte-neutral: the canonical message is the same 563 bytes with the same sha256 `20aa3b01…` as the literal it replaced.
 
 **A separate, minimal `.env.example` for the Correspondent client** is at `app/sdk/.env.example`, where the SDK and CLI will ship. It is four variables — the agent's own key, an optional account id, the network, and the Postmaster's MCP URL — and it shares nothing with the Postmaster's file. It states what a Correspondent does not need: no operator key, no treasury, no supply key, no state directory. And it says the thing worth saying to whoever reads it first: the Postmaster holds no key of yours, ever (P-13); your key is born in your process and stays there.
 
@@ -846,6 +846,80 @@ that separates two agents.
 **Two funded testnet wallets, two filled home directories, and Sonic’s word are what this step now waits on.** §G-19 is
 ruled and no longer among them.
 
+## Demo-operator funding — two wallets, and it is not a sale
+
+**Written before the first signature, as everything here is.** Gate One needs two Correspondents, and a Correspondent
+needs an **Operator** in §3.3’s sense — a human or organization behind the agent — with a funded testnet wallet, because
+the agent signs and the operator pays (§3.5). In a real deployment those wallets are the operators’ own and nothing in this
+repository creates them. In the demo we are all three parties, so the Postmaster’s payer creates them.
+
+**It is funding and not a purchase, and the distinction is not cosmetic.** Nothing here touches the price list, the
+treasury, `$POSTAGE`, or the counter. No quote is issued, no reference is settled, no `StampReceipt` exists, and §14.3 is
+not consulted, because nothing is being sold. The two accounts this creates are **inputs to the demo**, the way
+`0.0.8641261` was an input to Step 2 — the one account we did not create (D-140) — and they are recorded under
+`residue` beside the probes for exactly that reason. **The purchases at Gate One are the counter’s first sales, and they
+stay that way.**
+
+### What it creates, per operator
+
+| # | Act | Declared shape | Who signs / who pays | Warrant |
+|---|---|---|---|---|
+| 1 | a payer key | fresh ED25519, born in **this** process, never returned to any caller | — | P-13 · `sdk/keystore.ts::bornPayerWallet` |
+| 2 | `AccountCreateTransaction` | 35 ℏ initial balance; `maxAutomaticTokenAssociations = -1`; empty account memo | the new key signs for itself · **the Postmaster’s payer pays** | RECORD (Sonic, 2026-09-09) · HIP-542 |
+| 3 | `<home>/config.json` | the shipped template, filled: network, the counter’s URL, the account id, this operator’s key, and the agent’s name | — | CLAUDE.md §11 · D-165 |
+
+**Why unlimited auto-associations rather than an association transaction.** §4.4’s doorbell fee is a HIP-991 fixed fee in
+`$POSTAGE` debited from the **payer** of the submission (probe-observed 2026-09-08), so when an operator pays for its
+agent’s connection request the stamp leaves the operator’s account — and an account cannot hold a token it is not
+associated with. D-157’s two-hop ring therefore needs the operator associated before the first `send`. HIP-542 lets an
+account be created associating with anything, so the association happens when the first stamp arrives and costs no
+transaction and no decision. `generate_mailbox` keeps its explicit association for an operator that was **not** created
+this way, which is every real one.
+
+### What it asserts, and what it reads back
+
+From the mirror and never from the receipt, with a named predicate: the account exists and is not deleted, its balance is
+at least the 35 ℏ the create asked for, and `max_automatic_token_associations` is `-1`. The last is the whole point of the
+run and is exactly the field a receipt cannot show.
+
+**The order matters.** The key is written to the config **only after** that readback passes. A run that died between the
+create and the readback leaves an account whose key was never persisted anywhere — abandoned, at a cost of 35 ℏ of testnet
+ℏ — rather than a config pointing at an account that is not what it says it is.
+
+### What it writes, and where
+
+**Each key is written to that Correspondent’s own `config.json`, mode `0600`, outside the repository, and nowhere else.**
+The default parent is under the user’s own home directory (`~/.wishmail/demo/a`, `~/.wishmail/demo/b`); `--dir` moves it.
+Nothing reaches `.env`, nothing reaches `app/deployment/<network>.json`, and **nothing is printed**: the run’s output shows
+the two account ids, their balances, their auto-association setting and their transaction ids, and not one byte about a
+key.
+
+That is structural rather than careful. `bornPayerWallet()` returns a `Signer` and an `install`, and the private half
+exists only inside their closure — so `ops/demo-operators.ts` cannot print, log or persist a key, because it is not
+holding one. It is `ops/identity.ts`’s discipline for the Postmaster’s side, extended to a wallet that has to be persisted
+rather than merely used. `npm run p13:check` passes unchanged: the field name `derKey` is still spelled in
+`sdk/keystore.ts` and the shipped template and in no third module.
+
+### Idempotency, and every way it stops
+
+**A home is an agent** (D-165), so this refuses to overwrite one. It stops, before or instead of signing, on every one of
+these:
+
+1. `<home>/config.json` already exists — move it aside or point `--dir` elsewhere; this run does not overwrite an agent;
+2. the Postmaster’s payer holds less than the run needs, checked and printed before anything is built;
+3. the create returns any status but SUCCESS, or returns no account id;
+4. the account does not read back from the mirror with its balance and its `-1` — and in that case **the key is not
+   written**, and the message says so, because a config naming an account nobody verified is worse than no config.
+
+```
+npm run demo:operators -- [--dir <parent>] [--dry-run]
+```
+
+### The run of record
+
+<!-- RUN -->
+
+---
 ## Step 6 — the first letter: GATE TWO, written before any signature
 
 **Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.

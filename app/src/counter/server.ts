@@ -330,7 +330,7 @@ export async function serve(cfg: CounterConfig, bind: string, port: number): Pro
 }
 
 /**
- * The operator’s ABSOLUTE ceiling on a single carried body, in tinybars.
+ * The postmasterPayer’s ABSOLUTE ceiling on a single carried body, in tinybars.
  *
  * It defaults to the network’s own largest cap, because that is what a
  * fee-gated topic creation needs: 20 ℏ was observed to return
@@ -341,7 +341,7 @@ export async function serve(cfg: CounterConfig, bind: string, port: number): Pro
  * expensive rather than free.
  *
  * The effective limit for any body is the lower of this and the cap the
- * template declares for its row, so this exists for an operator who has
+ * template declares for its row, so this exists for an postmasterPayer who has
  * measured what these actually cost and wants to say so.
  */
 export function carryFeeCapTinybars(defaultHbar: number): number {
@@ -356,7 +356,7 @@ export function carryFeeCapTinybars(defaultHbar: number): number {
 export async function main(): Promise<void> {
   const env = loadEnv();
   const record = Record_.load(env.repoRoot, env.mirrorNodeUrl);
-  const operator = fromEnv('operator', 'OPERATOR_DER_KEY');
+  const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
   const treasury = persistentIdentity('treasury', 'TREASURY', { persist: false }).signer;
 
   const token = record.get('postage.token')?.id;
@@ -367,7 +367,7 @@ export async function main(): Promise<void> {
   }
 
   const client = Client.forName(env.network);
-  client.setOperatorWith(env.operatorId, operator.publicKey, operator.sign);
+  client.setOperatorWith(env.postmasterPayerId, postmasterPayer.publicKey, postmasterPayer.sign);
 
   const ctx: CounterContext = {
     repoRoot: env.repoRoot,
@@ -377,8 +377,8 @@ export async function main(): Promise<void> {
     mirrorNodeUrl: env.mirrorNodeUrl,
     client,
     stateDir: env.stateDir,
-    operatorId: env.operatorId,
-    operator,
+    postmasterPayerId: env.postmasterPayerId,
+    postmasterPayer,
     treasuryId,
     treasury,
     stampToken: token,

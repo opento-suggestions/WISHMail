@@ -8,8 +8,8 @@
   "constants": {
     "hcs10MemoTtl": 60,
     "hcs10MemoTtlSource": "D-138: a deployment fact, not specification. The modal — in fact unanimous — value recon observed on live HCS-10 inbound and outbound topics (testnet 0.0.7124410 and 0.0.7124409, mainnet 0.0.10058322). WISHMail reads no TTL and §9.5 makes the memo bind nothing.",
-    "autoRenewAccount": "operator",
-    "autoRenewAccountNote": "Every topic sets autoRenewAccountId to the operator explicitly rather than inheriting the SDK default, so the record shows a choice. This is a PAYER role and not a key: §4.6 and D-47 have the Postmaster pay, and paying a topic’s renewal is the same kind of act as paying for its creation. D-47’s rule about operator keys is therefore untouched — an auto-renew account is not an admin, submit or fee-schedule key, it signs nothing, and it authorises nothing on the topic. On an agent-owned topic the agent holds the admin key and can change it at will (T-P17-1, §4.6:583), so naming the operator here takes nothing away from the agent’s ownership."
+    "autoRenewAccount": "postmaster payer",
+    "autoRenewAccountNote": "Every topic sets autoRenewAccountId to the Postmaster's payer explicitly rather than inheriting the SDK default, so the record shows a choice. This is a PAYER role and not a key: §4.6 and D-47 have the Postmaster pay, and paying a topic’s renewal is the same kind of act as paying for its creation. D-47’s rule about the payer’s keys is therefore untouched — an auto-renew account is not an admin, submit or fee-schedule key, it signs nothing, and it authorises nothing on the topic. On an agent-owned topic the agent holds the admin key and can change it at will (T-P17-1, §4.6:583), so naming the payer here takes nothing away from the agent’s ownership."
   },
   "entities": {
     "treasury.account": {
@@ -18,7 +18,7 @@
       "id": "0.0.10426205",
       "builtBy": "AccountCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788894030.895915675",
@@ -38,7 +38,7 @@
       "id": "0.0.10426206",
       "builtBy": "AccountCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788894037.389411178",
@@ -58,7 +58,7 @@
       "id": "0.0.10426208",
       "builtBy": "TokenCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "treasury"
       ],
       "payer": "0.0.8641261",
@@ -93,7 +93,7 @@
       "id": null,
       "builtBy": "TokenMintTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "treasury"
       ],
       "payer": "0.0.8641261",
@@ -109,13 +109,13 @@
       },
       "specTag": "v0.5.2"
     },
-    "operator.association": {
+    "postmasterPayer.association": {
       "kind": "association",
-      "role": "operator ↔ $POSTAGE",
+      "role": "postmaster payer ↔ $POSTAGE",
       "id": null,
       "builtBy": "TokenAssociateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788895938.588230383",
@@ -135,7 +135,7 @@
       "id": null,
       "builtBy": "TokenAssociateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -156,8 +156,8 @@
       "id": "0.0.10426551",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788895943.054415671",
@@ -172,7 +172,7 @@
         "fee": null,
         "feeExemptKeys": [],
         "autoRenewAccount": "0.0.8641261",
-        "warrant": "D-142: the price list is the service speaking, so its keys are the operator’s; §4.6 and T-P17-1 do not reach it (D-146)"
+        "warrant": "D-142: the price list is the service speaking, so its keys are the Postmaster payer’s; §4.6 and T-P17-1 do not reach it (D-146)"
       },
       "specTag": "v0.5.2"
     },
@@ -182,7 +182,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788895947.603820976",
@@ -203,7 +203,7 @@
       "id": "0.0.10426553",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -235,7 +235,7 @@
       "id": "0.0.10426554",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -261,7 +261,7 @@
       "id": "0.0.10426591",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -287,7 +287,7 @@
       "id": "0.0.10428113",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -313,7 +313,7 @@
       "id": "0.0.10426206",
       "builtBy": "AccountUpdateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -335,7 +335,7 @@
       "id": "0.0.10428178",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -361,7 +361,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -388,7 +388,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator",
+        "postmaster payer",
         "agent"
       ],
       "payer": "0.0.8641261",
@@ -411,7 +411,7 @@
       "id": "0.0.10448471",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989634.455675060",
@@ -435,7 +435,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989645.758388054",
@@ -469,8 +469,8 @@
       "id": "0.0.10448473",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989649.352288248",
@@ -495,7 +495,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989656.242687371",
@@ -518,7 +518,7 @@
       "id": "0.0.10448477",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989657.247022718",
@@ -542,7 +542,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989670.446136080",
@@ -576,8 +576,8 @@
       "id": "0.0.10448480",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989672.264857726",
@@ -602,7 +602,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989672.155507333",
@@ -625,7 +625,7 @@
       "id": "0.0.10448482",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989677.037184009",
@@ -649,7 +649,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989684.323203792",
@@ -683,8 +683,8 @@
       "id": "0.0.10448486",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989688.794077640",
@@ -709,7 +709,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989691.659222644",
@@ -732,7 +732,7 @@
       "id": "0.0.10448487",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989692.537978847",
@@ -756,7 +756,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989702.386055851",
@@ -786,8 +786,8 @@
       "id": "0.0.10448492",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989705.359383273",
@@ -812,7 +812,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989710.244068857",
@@ -835,7 +835,7 @@
       "id": "0.0.10448498",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989716.520187760",
@@ -859,7 +859,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989723.017392266",
@@ -893,8 +893,8 @@
       "id": "0.0.10448503",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989725.217809970",
@@ -919,7 +919,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989730.839086949",
@@ -942,7 +942,7 @@
       "id": "0.0.10448507",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989733.389471505",
@@ -966,7 +966,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989742.908595517",
@@ -1000,8 +1000,8 @@
       "id": "0.0.10448509",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989745.079428860",
@@ -1026,7 +1026,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989746.853431088",
@@ -1049,7 +1049,7 @@
       "id": "0.0.10448510",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989751.534107081",
@@ -1073,7 +1073,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989755.014814052",
@@ -1103,8 +1103,8 @@
       "id": "0.0.10448513",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989759.211125225",
@@ -1129,7 +1129,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989761.126118189",
@@ -1152,7 +1152,7 @@
       "id": "0.0.10448514",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989761.181427427",
@@ -1176,7 +1176,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989769.282149816",
@@ -1206,8 +1206,8 @@
       "id": "0.0.10448518",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989772.544515454",
@@ -1232,7 +1232,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989781.298160536",
@@ -1255,7 +1255,7 @@
       "id": "0.0.10448526",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989781.570686045",
@@ -1279,7 +1279,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989794.456637575",
@@ -1309,8 +1309,8 @@
       "id": "0.0.10448529",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989798.701647270",
@@ -1335,7 +1335,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989804.559105499",
@@ -1358,7 +1358,7 @@
       "id": "0.0.10448532",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989807.272511015",
@@ -1382,7 +1382,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989821.321363779",
@@ -1416,8 +1416,8 @@
       "id": "0.0.10448537",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989821.071684636",
@@ -1442,7 +1442,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989826.326376789",
@@ -1465,7 +1465,7 @@
       "id": "0.0.10448540",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989830.693222646",
@@ -1489,7 +1489,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989838.106080324",
@@ -1515,8 +1515,8 @@
       "id": "0.0.10448544",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989840.160726958",
@@ -1541,7 +1541,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989848.467161735",
@@ -1564,7 +1564,7 @@
       "id": "0.0.10448547",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989852.733301699",
@@ -1588,7 +1588,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989861.080402189",
@@ -1618,8 +1618,8 @@
       "id": "0.0.10448551",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989866.189110035",
@@ -1644,7 +1644,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989878.031674370",
@@ -1667,7 +1667,7 @@
       "id": "0.0.10448556",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989880.098680112",
@@ -1691,7 +1691,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989886.783939271",
@@ -1721,8 +1721,8 @@
       "id": "0.0.10448560",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989886.207009986",
@@ -1747,7 +1747,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989895.404543708",
@@ -1770,7 +1770,7 @@
       "id": "0.0.10448565",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989897.372075179",
@@ -1794,7 +1794,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989911.388352296",
@@ -1828,8 +1828,8 @@
       "id": "0.0.10448570",
       "builtBy": "TopicCreateTransaction",
       "signedBy": [
-        "operator",
-        "operator"
+        "postmaster payer",
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989913.181111243",
@@ -1854,7 +1854,7 @@
       "id": null,
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989922.497332672",
@@ -1877,7 +1877,7 @@
       "id": "0.0.10426551",
       "builtBy": "TopicMessageSubmitTransaction",
       "signedBy": [
-        "operator"
+        "postmaster payer"
       ],
       "payer": "0.0.8641261",
       "transactionId": "0.0.8641261@1788989976.210208773",

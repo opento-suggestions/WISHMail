@@ -51,7 +51,7 @@ function stop(reason: string): never {
 async function main(): Promise<void> {
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
-  const operator = fromEnv('operator', 'OPERATOR_DER_KEY');
+  const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
   const record = Record_.load(env.repoRoot, env.mirrorNodeUrl);
 
   const topic = record.get('prices.topic')?.id;
@@ -121,16 +121,16 @@ async function main(): Promise<void> {
   }
 
   const client = Client.forName(env.network);
-  client.setOperatorWith(env.operatorId, operator.publicKey, operator.sign);
+  client.setOperatorWith(env.postmasterPayerId, postmasterPayer.publicKey, postmasterPayer.sign);
 
   // No transaction memo: §6.1 and T-P9-5 bound a memo to what HCS-10 defines for
   // an operation, and a price list is not an HCS-10 operation. The first message
   // carried none either.
   const r = await submit(
     client,
-    env.operatorId,
+    env.postmasterPayerId,
     new TopicMessageSubmitTransaction().setTopicId(topic).setMessage(bytes),
-    [operator],
+    [postmasterPayer],
   );
   if (!r.ok) stop(`the submission returned ${r.status} (tx ${r.transactionId})`);
   console.log(`\n  submitted   ${r.transactionId}  ${r.status}`);
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   const second = after?.messages?.find((x) => x.sequence_number === 2);
   if (!second) stop('the mirror does not hold a sequence 2 on the price topic');
   if (second.message !== bytes.toString('base64')) stop('sequence 2 is not the message that was submitted, byte-for-byte');
-  if (second.payer_account_id !== env.operatorId) stop(`sequence 2 was paid by ${second.payer_account_id}`);
+  if (second.payer_account_id !== env.postmasterPayerId) stop(`sequence 2 was paid by ${second.payer_account_id}`);
 
   const first = after?.messages?.find((x) => x.sequence_number === 1);
   console.log(`  confirmed   sequence 2, payer ${second.payer_account_id}, consensus ${second.consensus_timestamp}`);
@@ -157,8 +157,8 @@ async function main(): Promise<void> {
     role: 'the second PriceList — the provisioned path priced (D-159 addendum)',
     id: topic,
     builtBy: 'TopicMessageSubmitTransaction',
-    signedBy: ['operator'],
-    payer: env.operatorId,
+    signedBy: ['postmaster payer'],
+    payer: env.postmasterPayerId,
     transactionId: r.transactionId,
     consensusTimestamp: second.consensus_timestamp,
     confirmedFrom: `GET /topics/${topic}/messages`,

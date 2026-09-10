@@ -88,7 +88,7 @@ export interface Ctx {
   readonly client: Client;
   readonly mirror: Mirror;
   readonly record: Record_;
-  readonly operator: Signer;
+  readonly postmasterPayer: Signer;
   readonly treasury: Signer;
   readonly agent: Signer;
   /**

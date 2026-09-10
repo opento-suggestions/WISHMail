@@ -74,7 +74,7 @@ export interface Session {
   readonly seal: SealIdentity;
   readonly identity: ProfileIdentity;
   /**
-   * The Correspondent’s OWN operator — the wallet in this home’s config.
+   * The Correspondent’s OWN homePayer — the wallet in this home’s config.
    *
    * It is the payer of everything this agent does on its own account, and it
    * stays named even when it is not paying: it is the auto-renew account of
@@ -83,14 +83,14 @@ export interface Session {
    * purchase it signs the rows as that auto-renew account while the Postmaster
    * pays for them, which is three roles in one transaction and each one named.
    */
-  readonly operator: Signer;
-  readonly operatorId: string;
-  /** A client whose payer is the operator, for the submissions carry does not cover. */
-  readonly localClient: Client;
+  readonly homePayer: Signer;
+  readonly homePayerId: string;
+  /** A client whose payer is the homePayer, for the submissions carry does not cover. */
+  readonly homeClient: Client;
   /**
    * What pays for THIS session’s submissions. The seam (CLAUDE.md §11).
    *
-   * Ordinarily the operator above. Under a provisioning purchase it is a REMOTE
+   * Ordinarily the homePayer above. Under a provisioning purchase it is a REMOTE
    * signer over the counter’s carry leg, and the Postmaster’s account is the
    * payer on consensus (D-157, D-168). Nothing above this field knows which,
    * which is what makes it a seam rather than a shortcut.
@@ -149,7 +149,7 @@ export async function accountForKey(mirror: Mirror, publicKeyHex: string): Promi
 }
 
 /**
- * A payer that is not this home’s operator — the seam’s remote half (D-168).
+ * A payer that is not this home’s homePayer — the seam’s remote half (D-168).
  *
  * `signer` is a public key and a closure exactly like every other `Signer` in
  * this project; the closure happens to be a round trip to the counter. Nothing
@@ -166,7 +166,7 @@ export interface BorrowedPayer {
 export interface BootOptions {
   /** Skip the account lookup — for the boot that runs before the purchase. */
   readonly withoutAccount?: boolean;
-  /** Pay through someone else. Absent, the operator in this home’s config pays. */
+  /** Pay through someone else. Absent, the homePayer in this home’s config pays. */
   readonly payer?: BorrowedPayer;
 }
 
@@ -182,24 +182,24 @@ export interface BootOptions {
 export async function boot(home: Home, options: BootOptions = {}): Promise<Session> {
   const keysOrigin = ensureKeys(home);
   const agent = agentSigner(home);
-  const operator = payerSigner(home);
-  const operatorId = home.config.payer.accountId;
+  const homePayer = payerSigner(home);
+  const homePayerId = home.config.payer.accountId;
   const publicHex = agentPublicHex(home);
   const mirror = new Mirror(home.mirrorNodeUrl);
   const facts = deploymentFacts(home.constants.ledgerTag);
   const account = options.withoutAccount === true ? '' : ((await accountForKey(mirror, publicHex)) ?? '');
 
   const borrowed = options.payer;
-  const payer = borrowed?.signer ?? operator;
-  const payerId = borrowed?.accountId ?? operatorId;
+  const payer = borrowed?.signer ?? homePayer;
+  const payerId = borrowed?.accountId ?? homePayerId;
   const submitOpts: SubmitOptions = borrowed === undefined ? {} : { nodeAccountIds: borrowed.nodeAccountIds };
 
   // Two clients, because there are two payers and a client IS its payer. The
   // local one is not a fallback: §4.4’s association and anything else this
-  // agent does on its own behalf is the operator’s to pay for, carried or not.
-  const localClient = Client.forName(home.config.network);
-  localClient.setOperatorWith(operatorId, operator.publicKey, operator.sign);
-  const client = borrowed === undefined ? localClient : Client.forName(home.config.network);
+  // agent does on its own behalf is the homePayer’s to pay for, carried or not.
+  const homeClient = Client.forName(home.config.network);
+  homeClient.setOperatorWith(homePayerId, homePayer.publicKey, homePayer.sign);
+  const client = borrowed === undefined ? homeClient : Client.forName(home.config.network);
   if (borrowed !== undefined) client.setOperatorWith(payerId, payer.publicKey, payer.sign);
 
   const consensus = liveConsensus({
@@ -229,9 +229,9 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
       alias: home.config.agent.alias,
       bio: home.config.agent.bio,
     },
-    operator,
-    operatorId,
-    localClient,
+    homePayer,
+    homePayerId,
+    homeClient,
     payer,
     payerId,
     carried: borrowed !== undefined,
@@ -246,7 +246,7 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
     keysOrigin,
     close: () => {
       client.close();
-      if (localClient !== client) localClient.close();
+      if (homeClient !== client) homeClient.close();
     },
   };
 }

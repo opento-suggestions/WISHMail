@@ -32,7 +32,8 @@
     "counter": "tsx src/counter/server.ts",
     "correspondent": "tsx sdk/server.ts",
     "correspondent:provision": "tsx sdk/provision.cli.ts",
-    "check:correspondent": "tsx sdk/correspondent.check.ts"
+    "check:correspondent": "tsx sdk/correspondent.check.ts",
+    "demo:operators": "tsx src/ops/demo-operators.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

@@ -7,7 +7,7 @@
  * the agent’s and the agent signs each one.
  *
  * WHO PAYS IS NOT THIS FILE’S BUSINESS, and D-168 is what made that true rather
- * than merely tidy. Under a self-provisioned run the operator of THIS agent
+ * than merely tidy. Under a self-provisioned run the homePayer of THIS agent
  * pays, from its own config. Under a provisioning purchase the POSTMASTER pays,
  * because §G-19 is ruled (a) and §4.6’s provisioned path has the Postmaster
  * create the mailbox it sells — and the only difference visible here is that
@@ -194,7 +194,7 @@ export function topicCreateFor(
  * THREE PARTIES, AND EACH ONE NAMED. The AGENT signs, because the admin key is
  * the agent’s and the topic is the agent’s. The OPERATOR signs, because it is
  * the auto-renew account the row names and a topic that names an account takes
- * that account’s signature. The PAYER pays — the operator again on a
+ * that account’s signature. The PAYER pays — the homePayer again on a
  * self-provisioned run, the Postmaster under a purchase (D-168).
  */
 async function topicRow(
@@ -216,12 +216,12 @@ async function topicRow(
 
   const tx = topicCreateFor(want, s.agent.publicKey, s.constants.feeCaps);
 
-  // Both signatures are asked for unconditionally. Where the operator is also
+  // Both signatures are asked for unconditionally. Where the homePayer is also
   // the payer the SDK would sign with it anyway and the duplicate is dropped;
   // where it is not, the auto-renew account still has to sign. A topic with no
   // admin key takes the agent’s signature harmlessly. Two branches fewer to be
   // wrong about, on a transaction that has no second chance.
-  const r = await submit(s.client, s.payerId, tx, [s.agent, s.operator], s.submitOpts);
+  const r = await submit(s.client, s.payerId, tx, [s.agent, s.homePayer], s.submitOpts);
   if (!r.ok) throw new MailboxRefusal(`${role} was not created: ${r.status} (tx ${r.transactionId})`);
   const id = r.entityId;
   if (id === undefined) throw new MailboxRefusal(`${role} was created but the receipt names no topic`);
@@ -235,7 +235,7 @@ async function topicRow(
     role,
     id,
     builtBy: 'TopicCreateTransaction',
-    signedBy: ['agent', 'operator (auto-renew)'],
+    signedBy: ['agent', 'homePayer (auto-renew)'],
     payer: s.payerId,
     transactionId: r.transactionId,
     consensusTimestamp: '',
@@ -253,30 +253,30 @@ async function topicRow(
  * here (D-157).
  *
  * HIP-991 debits the doorbell's fee from the PAYER of the submission. When this
- * agent rings a door, the party paying for that submission is its OWN operator
+ * agent rings a door, the party paying for that submission is its OWN homePayer
  * — carry covers the mailbox it bought and nothing after it (L-5) — so the
- * operator must be able to hold a stamp. The agent’s own account needs no
+ * homePayer must be able to hold a stamp. The agent’s own account needs no
  * association: HIP-542 creates it with unlimited auto-associations, which the
  * 2026-09-09 probe observed, so the stamp transfer associates it as it arrives.
  *
  * IT IS THE OPERATOR HERE AND NOT `payerId`, deliberately. Under a provisioning
  * purchase `payerId` is the Postmaster, and associating the Postmaster with
  * $POSTAGE would be both useless and outside the carry policy — which would
- * refuse it, correctly. This association is the operator’s own act, paid by the
- * operator, on the local client.
+ * refuse it, correctly. This association is the homePayer’s own act, paid by the
+ * homePayer, on the local client.
  */
 async function ensurePayerHoldsStamps(s: Session, push: Emit): Promise<void> {
-  const a = await s.mirror.get<MAccount>(`/accounts/${s.operatorId}?limit=1`);
-  if (a === null) throw new MailboxRefusal(`the operator ${s.operatorId} is not an account on this ledger`);
+  const a = await s.mirror.get<MAccount>(`/accounts/${s.homePayerId}?limit=1`);
+  if (a === null) throw new MailboxRefusal(`the homePayer ${s.homePayerId} is not an account on this ledger`);
   if ((a.balance?.tokens ?? []).some((t) => t.token_id === s.stampToken)) return;
   const r = await submit(
-    s.localClient,
-    s.operatorId,
-    new TokenAssociateTransaction().setAccountId(s.operatorId).setTokenIds([s.stampToken]).setMaxTransactionFee(new Hbar(2)),
-    [s.operator],
+    s.homeClient,
+    s.homePayerId,
+    new TokenAssociateTransaction().setAccountId(s.homePayerId).setTokenIds([s.stampToken]).setMaxTransactionFee(new Hbar(2)),
+    [s.homePayer],
   );
-  if (!r.ok) throw new MailboxRefusal(`the operator could not associate with $POSTAGE: ${r.status}`);
-  push(line('provision.associated', { account: s.operatorId, token: s.stampToken }));
+  if (!r.ok) throw new MailboxRefusal(`the homePayer could not associate with $POSTAGE: ${r.status}`);
+  push(line('provision.associated', { account: s.homePayerId, token: s.stampToken }));
 }
 
 /** §6.4's step-2 shape, reused: the HCS-1 chunk messages onto the file topic. */
@@ -356,11 +356,11 @@ export async function generateMailbox(s: Session, record: AgentRecord, options: 
     publicKey: s.agentPublicHex,
     treasury: s.treasury,
     stampToken: s.stampToken,
-    // The Correspondent’s own operator, and never whoever is paying today. A
+    // The Correspondent’s own homePayer, and never whoever is paying today. A
     // Postmaster that named itself here would be undertaking to renew every
     // mailbox it ever sold, on consensus, where every reader can see it — and
     // the carry policy refuses a row that says so (D-168).
-    autoRenewAccount: s.operatorId,
+    autoRenewAccount: s.homePayerId,
   };
 
   // --- Rows 1-3: the three topics the profile names. -------------------------

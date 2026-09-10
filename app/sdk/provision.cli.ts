@@ -67,7 +67,7 @@ async function report(s: Session): Promise<void> {
   console.log(`  keys        ${s.keysOrigin}`);
   console.log(`  agent key   ${s.agentPublicHex.slice(0, 16)}…`);
   console.log(`  x25519      ${s.seal.x25519Pub.slice(0, 16)}… epoch ${s.seal.keyEpoch}`);
-  console.log(`  payer       ${s.payerId}   (the operator pays; the agent signs — §3.5)`);
+  console.log(`  payer       ${s.payerId}   (the homePayer pays; the agent signs — §3.5)`);
   console.log(`  counter     ${s.home.config.postmasterUrl}`);
   console.log(`  stamp token ${s.stampToken}  treasury ${s.treasury}`);
   console.log(`  hol anchor  ${s.holAnchors.join(', ') || '(none recorded)'}`);
@@ -90,7 +90,7 @@ async function report(s: Session): Promise<void> {
  * Printed before anything signs, from `ops/template.ts` itself rather than from a
  * list kept beside it, so what the dry run shows is what the run submits. The
  * payer column is the point of it under D-168: a provisioning purchase has the
- * POSTMASTER paying for nine bodies this agent signs, and an operator about to
+ * POSTMASTER paying for nine bodies this agent signs, and an homePayer about to
  * authorise that should be able to see it on one screen without reading code.
  */
 function plan(s: Session): void {
@@ -100,9 +100,9 @@ function plan(s: Session): void {
     publicKey: s.agentPublicHex,
     treasury: s.treasury,
     stampToken: s.stampToken,
-    autoRenewAccount: s.operatorId,
+    autoRenewAccount: s.homePayerId,
   };
-  const carried = buying ? 'POSTMASTER (carried)' : 'operator';
+  const carried = buying ? 'POSTMASTER (carried)' : 'homePayer';
   const rows: readonly (readonly [string, string, string, string])[] = [
     [
       'the purchase — 3 legs, 1 transaction',
@@ -110,11 +110,11 @@ function plan(s: Session): void {
       'POSTMASTER',
       'ℏ price → Postmaster · $POSTAGE treasury → the agent’s public-key alias, which CREATES the account · registration fee ℏ → that account',
     ],
-    ['1 doorbell (HCS-10 inbound)', 'agent + operator', carried, detail(template.doorbell(subject))],
-    ['2 log (HCS-10 outbound)', 'agent + operator', carried, detail(template.log(subject))],
-    ['3 manifest', 'agent + operator', carried, detail(template.manifest(subject))],
-    ['4 declaration registry (HCS-2)', 'agent + operator', carried, detail(template.declRegistry(subject, registryMemo(HCS10_TTL)))],
-    ['5 HCS-11 profile file (HCS-1)', 'agent + operator', carried, detail(template.profileFile(subject, '<sha256 of the profile>:brotli:base64'))],
+    ['1 doorbell (HCS-10 inbound)', 'agent + homePayer', carried, detail(template.doorbell(subject))],
+    ['2 log (HCS-10 outbound)', 'agent + homePayer', carried, detail(template.log(subject))],
+    ['3 manifest', 'agent + homePayer', carried, detail(template.manifest(subject))],
+    ['4 declaration registry (HCS-2)', 'agent + homePayer', carried, detail(template.declRegistry(subject, registryMemo(HCS10_TTL)))],
+    ['5 HCS-11 profile file (HCS-1)', 'agent + homePayer', carried, detail(template.profileFile(subject, '<sha256 of the profile>:brotli:base64'))],
     ['6 the profile, as HCS-1 chunks', 'agent', carried, 'one HCS message per chunk, no chunkInfo, ≤1024 bytes on the wire (§7.4)'],
     ['7 HCS-2 register entry', 'agent', carried, 'names the profile file · transaction memo hcs-2:op:register:0'],
     ['8 §9.2’s account memo', 'agent', carried, 'hcs-11:hcs://2/<the registry above> — the first link in the chain'],
@@ -131,9 +131,9 @@ function plan(s: Session): void {
   }
   console.log('');
   console.log(
-    '  Beside them, paid by this operator on its own client and never carried: the $POSTAGE association, ' +
-      'where this operator does not already hold the token. §4.4’s doorbell fee is debited from the PAYER of a ' +
-      'submission (HIP-991), and when this agent rings a door that payer is its own operator.',
+    '  Beside them, paid by this homePayer on its own client and never carried: the $POSTAGE association, ' +
+      'where this homePayer does not already hold the token. §4.4’s doorbell fee is debited from the PAYER of a ' +
+      'submission (HIP-991), and when this agent rings a door that payer is its own homePayer.',
   );
   console.log('');
 }
@@ -188,7 +188,7 @@ async function main(): Promise<void> {
     console.log(`  2. buy_stamp — skipped: ${s.account} already exists, so this agent is returning (D-165)`);
     // An account with no mailbox is a purchase that stopped between rows, or an
     // agent that brought its own account. Either way the mailbox is finished at
-    // this operator’s own expense: carry lives inside the purchase and this is
+    // this homePayer’s own expense: carry lives inside the purchase and this is
     // no longer inside one (L-5).
     const mailbox = await generateMailbox(s, s.record, { onLine: say });
     outcome = mailbox.outcome;

@@ -4,7 +4,7 @@
     "The script submits THIS FILE. It fills exactly three fields and changes nothing else:",
     "  stampToken.tokenId   from app/deployment/<network>.json, once the token exists",
     "  stampToken.treasury  likewise",
-    "  methods[].payTo      from OPERATOR_ID",
+    "  methods[].payTo      from POSTMASTER_PAYER_ID",
     "They are null here because they do not exist yet, and null is the honest form of",
     "'not known at commit time'. The schema requires the account-id pattern, so a fill",
     "that did not happen is caught by validation rather than published.",

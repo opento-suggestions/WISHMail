@@ -20,7 +20,7 @@ import { networkConstants, type NetworkConstants } from './networks.js';
  */
 export interface Env {
   /** An input to provisioning, not a product of it: the one account we did not create (D-140). */
-  readonly operatorId: string;
+  readonly postmasterPayerId: string;
   readonly network: string;
   readonly constants: NetworkConstants;
   readonly mirrorNodeUrl: string;
@@ -68,7 +68,7 @@ export function loadEnv(): Env {
   const constants = networkConstants(network);
   const port = process.env.MCP_PORT?.trim();
   return {
-    operatorId: required('OPERATOR_ID'),
+    postmasterPayerId: required('POSTMASTER_PAYER_ID'),
     network,
     constants,
     // The table is the default; the variable is an override for pointing at a

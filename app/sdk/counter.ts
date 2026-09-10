@@ -157,7 +157,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     // --- 1. Quote. Nothing is signed and nothing is charged. -----------------
     const quoted = await call(client, 'buy_stamp', {
       count: options.count,
-      payment: { method, from: s.operatorId },
+      payment: { method, from: s.homePayerId },
       holder,
       ...(options.provision === true ? { provision: true } : {}),
     });
@@ -182,10 +182,10 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     // --- 2. Sign, HERE. ------------------------------------------------------
     // The body is the counter’s; the signature is this process’s. The agent’s
     // key signs because the agent is the party whose account the price leaves —
-    // and where the holder is a bare public key, the operator’s key signs,
+    // and where the holder is a bare public key, the homePayer’s key signs,
     // because the agent has no account for the price to leave.
     const frozen = Transaction.fromBytes(Buffer.from(requirement.body, 'base64'));
-    const signer = s.account === '' ? s.operator : s.agent;
+    const signer = s.account === '' ? s.homePayer : s.agent;
     const bodies = frozen.signableNodeBodyBytesList;
     if (bodies.length !== 1) {
       throw new CounterUnavailable(
@@ -205,7 +205,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       count: options.count,
       payment: {
         method,
-        from: s.operatorId,
+        from: s.homePayerId,
         quoteRef: requirement.reference,
         signature: { publicKey: signer.publicKey.toStringDer(), value: Buffer.from(signature).toString('base64') },
       },
@@ -240,7 +240,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       async (bodyBase64) => {
         const answer = await call(client, 'buy_stamp', {
           count: options.count,
-          payment: { method, from: s.operatorId, quoteRef: requirement.reference, carry: { body: bodyBase64 } },
+          payment: { method, from: s.homePayerId, quoteRef: requirement.reference, carry: { body: bodyBase64 } },
           holder,
           provision: true,
         });
@@ -268,7 +268,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     for (let attempt = 1; attempt <= RECEIPT_ATTEMPTS; attempt += 1) {
       const asked = await call(client, 'buy_stamp', {
         count: options.count,
-        payment: { method, from: s.operatorId, quoteRef: requirement.reference, receipt: true },
+        payment: { method, from: s.homePayerId, quoteRef: requirement.reference, receipt: true },
         holder,
         provision: true,
       });

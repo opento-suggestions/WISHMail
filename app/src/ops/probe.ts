@@ -70,8 +70,8 @@ function must(s: Submitted, what: string): Submitted {
 async function main(): Promise<void> {
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
-  const operator = fromEnv('operator', 'OPERATOR_DER_KEY');
-  const client = clientFor(env, env.operatorId, operator);
+  const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
+  const client = clientFor(env, env.postmasterPayerId, postmasterPayer);
 
   const treasury = bornHere('probe treasury');
   const owner = bornHere('owner');
@@ -80,7 +80,7 @@ async function main(): Promise<void> {
 
   record('start', 'the probe is disposable; nothing here is written to pins.json or the ops record', {
     network: env.network,
-    operator: env.operatorId,
+    postmasterPayer: env.postmasterPayerId,
     mirrorNodeUrl: env.mirrorNodeUrl,
     publicKeys: {
       probeTreasury: publicHex(treasury),
@@ -100,12 +100,12 @@ async function main(): Promise<void> {
       const r = must(
         await submit(
           client,
-          env.operatorId,
+          env.postmasterPayerId,
           new AccountCreateTransaction().setKeyWithoutAlias(s.publicKey).setInitialBalance(new Hbar(hbar)),
         ),
         `create ${s.label}`,
       );
-      record(`account:${s.label}`, 'created, operator paying', {
+      record(`account:${s.label}`, 'created, postmasterPayer paying', {
         accountId: r.entityId,
         transactionId: r.transactionId,
         publicKey: publicHex(s),
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
     const tokenCreate = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TokenCreateTransaction()
           .setTokenName('WISHMail probe stamp')
           .setTokenSymbol('PROBE')
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
     const mint = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TokenMintTransaction().setTokenId(tokenId).setAmount(FLOAT),
         [treasury],
       ),
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
       must(
         await submit(
           client,
-          env.operatorId,
+          env.postmasterPayerId,
           new TokenAssociateTransaction().setAccountId(id).setTokenIds([tokenId]),
           [s],
         ),
@@ -189,29 +189,29 @@ async function main(): Promise<void> {
     const opAssoc = must(
       await submit(
         client,
-        env.operatorId,
-        new TokenAssociateTransaction().setAccountId(env.operatorId).setTokenIds([tokenId]),
+        env.postmasterPayerId,
+        new TokenAssociateTransaction().setAccountId(env.postmasterPayerId).setTokenIds([tokenId]),
       ),
-      'associate the operator',
+      'associate the postmasterPayer',
     );
-    record('associate', 'owner, stranger and the operator; the treasury is associated by construction', {
+    record('associate', 'owner, stranger and the postmasterPayer; the treasury is associated by construction', {
       operatorAssociationTx: opAssoc.transactionId,
     });
 
     const fund = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TransferTransaction()
           .addTokenTransfer(tokenId, treasuryId, -5)
           .addTokenTransfer(tokenId, ownerId, 1)
           .addTokenTransfer(tokenId, strangerId, 1)
-          .addTokenTransfer(tokenId, env.operatorId, 3),
+          .addTokenTransfer(tokenId, env.postmasterPayerId, 3),
         [treasury],
       ),
-      'fund owner, stranger and operator',
+      'fund owner, stranger and postmasterPayer',
     );
-    record('fund', 'owner 1, stranger 1, operator 3 — so a failed exemption reads as a charge, not an inability to pay', {
+    record('fund', 'owner 1, stranger 1, postmasterPayer 3 — so a failed exemption reads as a charge, not an inability to pay', {
       transactionId: fund.transactionId,
     });
 
@@ -224,14 +224,14 @@ async function main(): Promise<void> {
     const buildTopic = (): TopicCreateTransaction =>
       new TopicCreateTransaction()
         .setTopicMemo(TOPIC_MEMO)
-        .setAdminKey(operator.publicKey)
-        .setAutoRenewAccountId(env.operatorId)
+        .setAdminKey(postmasterPayer.publicKey)
+        .setAutoRenewAccountId(env.postmasterPayerId)
         .setCustomFees([fee])
         .setFeeExemptKeys([owner.publicKey])
         .setMaxTransactionFee(new Hbar(100));
 
     // First without the collector's signature, to learn whether one is required.
-    let topicCreate = await submit(client, env.operatorId, buildTopic());
+    let topicCreate = await submit(client, env.postmasterPayerId, buildTopic());
     let collectorSignatureRequired: boolean | 'unknown' = false;
     if (!topicCreate.ok) {
       record('topic:create-attempt-1', 'attempted WITHOUT the fee collector signing', {
@@ -242,14 +242,14 @@ async function main(): Promise<void> {
         // is a different question, and inferring from it would put a false
         // FETCHED into ledger §H.
         collectorSignatureRequired = true;
-        topicCreate = await submit(client, env.operatorId, buildTopic(), [treasury]);
+        topicCreate = await submit(client, env.postmasterPayerId, buildTopic(), [treasury]);
       } else {
         collectorSignatureRequired = 'unknown';
       }
     }
     must(topicCreate, 'create the probe topic');
     topicId = topicCreate.entityId!;
-    record('topic:create', 'no submit key, admin key the operator, no fee schedule key, 1 unit to the probe treasury', {
+    record('topic:create', 'no submit key, admin key the postmasterPayer, no fee schedule key, 1 unit to the probe treasury', {
       topicId,
       transactionId: topicCreate.transactionId,
       collectorSignatureRequired,
@@ -277,8 +277,8 @@ async function main(): Promise<void> {
       why: string;
     }[] = [
       { id: 'S1', payerId: strangerId, payer: stranger, signers: [], expect: 'charged 1', why: 'the fee mechanism at its simplest' },
-      { id: 'S2', payerId: env.operatorId, payer: operator, signers: [stranger], expect: 'charged 1', why: "§4.4's shape: the Postmaster pays, the sender signs" },
-      { id: 'S3', payerId: env.operatorId, payer: operator, signers: [owner], expect: 'exempt, 0', why: 'PRODUCTION SHAPE — D-137/D-139: the Postmaster pays and the owner signs' },
+      { id: 'S2', payerId: env.postmasterPayerId, payer: postmasterPayer, signers: [stranger], expect: 'charged 1', why: "§4.4's shape: the Postmaster pays, the sender signs" },
+      { id: 'S3', payerId: env.postmasterPayerId, payer: postmasterPayer, signers: [owner], expect: 'exempt, 0', why: 'PRODUCTION SHAPE — D-137/D-139: the Postmaster pays and the owner signs' },
       { id: 'S4', payerId: ownerId, payer: owner, signers: [], expect: 'exempt, 0', why: 'control: the weaker read, owner as its own payer' },
     ];
 
@@ -317,7 +317,7 @@ async function main(): Promise<void> {
     const update = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TopicUpdateTransaction().setTopicId(topicId).setFeeExemptKeys([owner2.publicKey]),
       ),
       'amend the exempt list under the admin key',
@@ -338,8 +338,8 @@ async function main(): Promise<void> {
     record('topic:readback-after-update', 'RAW mirror-node JSON', topicAfter);
 
     for (const s of [
-      { id: 'S5', payerId: env.operatorId, payer: operator, signers: [owner] as const, expect: 'charged 1 — owner no longer exempt', why: 'that the update removes an exemption' },
-      { id: 'S6', payerId: env.operatorId, payer: operator, signers: [owner2] as const, expect: 'exempt, 0 — owner2 now exempt', why: 'that the update grants one' },
+      { id: 'S5', payerId: env.postmasterPayerId, payer: postmasterPayer, signers: [owner] as const, expect: 'charged 1 — owner no longer exempt', why: 'that the update removes an exemption' },
+      { id: 'S6', payerId: env.postmasterPayerId, payer: postmasterPayer, signers: [owner2] as const, expect: 'exempt, 0 — owner2 now exempt', why: 'that the update grants one' },
     ]) {
       await runSubmission({ ...s, signers: [...s.signers] }, s.why);
     }
@@ -348,7 +348,7 @@ async function main(): Promise<void> {
   } finally {
     // ---- 8. what it leaves ------------------------------------------------
     if (topicId) {
-      const del = await submit(client, env.operatorId, new TopicDeleteTransaction().setTopicId(topicId));
+      const del = await submit(client, env.postmasterPayerId, new TopicDeleteTransaction().setTopicId(topicId));
       record('topic:delete', 'under the admin key, in a finally, on every path', {
         topicId,
         status: del.status,
@@ -356,18 +356,18 @@ async function main(): Promise<void> {
       });
     }
     if (tokenId && treasuryId) {
-      // Return whatever units the operator still holds, then dissociate, so the
+      // Return whatever units the postmasterPayer still holds, then dissociate, so the
       // one account the deployment keeps carries nothing of the probe afterwards.
       const bal = await mirror.get<{ tokens?: { token_id: string; balance: number }[] }>(
-        `/accounts/${env.operatorId}/tokens?token.id=${tokenId}`,
+        `/accounts/${env.postmasterPayerId}/tokens?token.id=${tokenId}`,
       );
       const held = bal?.tokens?.[0]?.balance ?? 0;
       if (held > 0) {
         const back = await submit(
           client,
-          env.operatorId,
+          env.postmasterPayerId,
           new TransferTransaction()
-            .addTokenTransfer(tokenId, env.operatorId, -held)
+            .addTokenTransfer(tokenId, env.postmasterPayerId, -held)
             .addTokenTransfer(tokenId, treasuryId, held),
         );
         record('cleanup:return', `returned ${held} unit(s) to the probe treasury`, {
@@ -377,10 +377,10 @@ async function main(): Promise<void> {
       }
       const dis = await submit(
         client,
-        env.operatorId,
-        new TokenDissociateTransaction().setAccountId(env.operatorId).setTokenIds([tokenId]),
+        env.postmasterPayerId,
+        new TokenDissociateTransaction().setAccountId(env.postmasterPayerId).setTokenIds([tokenId]),
       );
-      record('cleanup:dissociate', 'the operator is dissociated from the probe token', {
+      record('cleanup:dissociate', 'the postmasterPayer is dissociated from the probe token', {
         status: dis.status,
         transactionId: dis.transactionId,
       });

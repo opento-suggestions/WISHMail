@@ -21,7 +21,7 @@
  *      the balance credited, and — as D-159's addendum now requires — the ℏ leg
  *      credited in the same transaction?
  *   2. Can that account, holding only the fee it was given, sign a transfer OUT
- *      with the operator as payer, and end with its ℏ untouched?
+ *      with the postmasterPayer as payer, and end with its ℏ untouched?
  *
  * If (2) fails with INSUFFICIENT_PAYER_BALANCE against the new account, that is
  * the finding and not a failure: it means a nearly-empty account cannot be a
@@ -120,8 +120,8 @@ interface MirrorTx {
 async function main(): Promise<void> {
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
-  const operator = fromEnv('operator', 'OPERATOR_DER_KEY');
-  const client = clientFor(env, env.operatorId, operator);
+  const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
+  const client = clientFor(env, env.postmasterPayerId, postmasterPayer);
 
   // Every identity in this run is born here and dies with the process.
   const probeTreasury: Signer = bornHere('probe treasury');
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
 
   record('start', 'disposable: nothing here is written to pins.json or the ops record', {
     network: env.network,
-    operator: env.operatorId,
+    postmasterPayer: env.postmasterPayerId,
     mirrorNodeUrl: env.mirrorNodeUrl,
     feeTinybar: FEE_TINYBAR,
     publicKeys: { probeTreasury: publicHex(probeTreasury), alias: publicHex(alias) },
@@ -144,12 +144,12 @@ async function main(): Promise<void> {
     treasuryId = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new AccountCreateTransaction().setKeyWithoutAlias(probeTreasury.publicKey).setInitialBalance(new Hbar(2)),
       ),
       'create the probe treasury',
     ).entityId!;
-    record('act 0', 'probe treasury created, operator paying', { treasuryId });
+    record('act 0', 'probe treasury created, postmasterPayer paying', { treasuryId });
 
     // ---- act 1: the probe token, born at zero and minted -----------------
     // D-141's posture and D-149's birth-then-mint, so the probe mirrors the
@@ -157,7 +157,7 @@ async function main(): Promise<void> {
     tokenId = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TokenCreateTransaction()
           .setTokenName('WISHMail HIP-542 probe stamp')
           .setTokenSymbol('P542')
@@ -180,7 +180,7 @@ async function main(): Promise<void> {
     must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TokenMintTransaction().setTokenId(tokenId).setAmount(10),
         [probeTreasury],
       ),
@@ -197,11 +197,11 @@ async function main(): Promise<void> {
     const act2 = must(
       await submit(
         client,
-        env.operatorId,
+        env.postmasterPayerId,
         new TransferTransaction()
           .addTokenTransfer(tokenId, treasuryId, -1)
           .addTokenTransfer(tokenId, aliasAccount, 1)
-          .addHbarTransfer(env.operatorId, Hbar.fromTinybars(-FEE_TINYBAR))
+          .addHbarTransfer(env.postmasterPayerId, Hbar.fromTinybars(-FEE_TINYBAR))
           .addHbarTransfer(aliasAccount, Hbar.fromTinybars(FEE_TINYBAR))
           .setMaxTransactionFee(new Hbar(5)),
         [probeTreasury],
@@ -247,24 +247,24 @@ async function main(): Promise<void> {
     const parent2 = act2Tx?.transactions?.find((t) => t.name === 'CRYPTOTRANSFER') ?? act2Tx?.transactions?.[0];
     const paidBy2 = (parent2?.transfers ?? []).filter((t) => t.amount < 0).map((t) => t.account);
     predicate(
-      'the account-creation fee was charged to the operator, not to the new account',
-      paidBy2.includes(env.operatorId) && !paidBy2.includes(newAccountId),
+      'the account-creation fee was charged to the postmasterPayer, not to the new account',
+      paidBy2.includes(env.postmasterPayerId) && !paidBy2.includes(newAccountId),
       `debited: ${paidBy2.join(', ')}`,
     );
 
-    // ---- act 4: the new account signs OUT, with the operator paying -------
+    // ---- act 4: the new account signs OUT, with the postmasterPayer paying -------
     // The affix shape under D-157's seam: the agent signs as the stamps' owner
-    // (§4.3), the operator pays. Everything after step 2 of D-159 depends on it.
+    // (§4.3), the postmasterPayer pays. Everything after step 2 of D-159 depends on it.
     const act4 = await submit(
       client,
-      env.operatorId,
+      env.postmasterPayerId,
       new TransferTransaction()
         .addTokenTransfer(tokenId, newAccountId, -1)
         .addTokenTransfer(tokenId, treasuryId, 1)
         .setMaxTransactionFee(new Hbar(5)),
       [alias],
     );
-    record('act 4', 'the new account signs a transfer out; the operator is the payer', {
+    record('act 4', 'the new account signs a transfer out; the postmasterPayer is the payer', {
       transactionId: act4.transactionId,
       status: act4.status,
     });
@@ -295,8 +295,8 @@ async function main(): Promise<void> {
     );
     const paidBy4 = (parent4?.transfers ?? []).filter((t) => t.amount < 0).map((t) => t.account);
     predicate(
-      'the fee was paid by the operator and not by the signer',
-      paidBy4.includes(env.operatorId) && !paidBy4.includes(newAccountId),
+      'the fee was paid by the postmasterPayer and not by the signer',
+      paidBy4.includes(env.postmasterPayerId) && !paidBy4.includes(newAccountId),
       `debited: ${paidBy4.join(', ')}`,
     );
 

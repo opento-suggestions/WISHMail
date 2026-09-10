@@ -35,6 +35,7 @@
     "counter": "npm run counter --workspace app",
     "correspondent": "npm run correspondent --workspace app",
     "correspondent:provision": "npm run correspondent:provision --workspace app",
-    "check:correspondent": "npm run check:correspondent --workspace app"
+    "check:correspondent": "npm run check:correspondent --workspace app",
+    "demo:operators": "npm run demo:operators --workspace app"
   }
 }

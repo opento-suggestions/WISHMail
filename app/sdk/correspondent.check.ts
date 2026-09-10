@@ -506,7 +506,7 @@ function fieldsFor(_key: string): Record<string, string> {
 
   const created = new Map<string, string>();
   const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wishmail-carry-'));
-  const operator: Signer = {
+  const postmasterPayer: Signer = {
     label: 'postmaster',
     publicKey: postmasterKey.publicKey,
     sign: (m) => Promise.resolve(postmasterKey.sign(m)),
@@ -529,10 +529,10 @@ function fieldsFor(_key: string): Record<string, string> {
     mirrorNodeUrl: '',
     client,
     stateDir,
-    operatorId: POSTMASTER,
-    operator,
+    postmasterPayerId: POSTMASTER,
+    postmasterPayer,
     treasuryId: TREASURY,
-    treasury: operator,
+    treasury: postmasterPayer,
     stampToken: TOKEN,
     priceTopic: '0.0.7',
     carryFeeCap: carryFeeCapTinybars(feeCaps.feeGatedTopicCreate),

@@ -51,7 +51,7 @@ function identity(label: string, prefix: 'TREASURY' | 'AGENT'): Signer {
 async function main(): Promise<number> {
   const env = loadEnv();
   const mirror = new Mirror(env.mirrorNodeUrl);
-  const operator = fromEnv('operator', 'OPERATOR_DER_KEY');
+  const postmasterPayer = fromEnv('postmaster payer', 'POSTMASTER_PAYER_DER_KEY');
   const record = Record_.load(env.repoRoot, env.mirrorNodeUrl);
 
   const treasury = identity('treasury', 'TREASURY');
@@ -64,7 +64,7 @@ async function main(): Promise<number> {
   const seal = sealIdentity('agent-seal', 'AGENT', { persist: !flags.dryRun }).identity;
 
   const client = Client.forName(env.network);
-  client.setOperatorWith(env.operatorId, operator.publicKey, operator.sign);
+  client.setOperatorWith(env.postmasterPayerId, postmasterPayer.publicKey, postmasterPayer.sign);
 
   const idOf = (k: EntityKey): string => {
     const r = record.get(k);
@@ -73,7 +73,7 @@ async function main(): Promise<number> {
   };
 
   const ctx: Ctx = {
-    env, client, mirror, record, operator, treasury, agent, seal,
+    env, client, mirror, record, postmasterPayer, treasury, agent, seal,
     treasuryId: () => (flags.dryRun && !record.has('treasury.account') ? '0.0.PENDING' : idOf('treasury.account')),
     agentId: () => (flags.dryRun && !record.has('agent.account') ? '0.0.PENDING' : idOf('agent.account')),
     tokenId: () => (flags.dryRun && !record.has('postage.token') ? '0.0.PENDING' : idOf('postage.token')),
@@ -83,7 +83,7 @@ async function main(): Promise<number> {
   let preflight = 'no USDC asset declared for this network';
 
   // ---- pre-flight -------------------------------------------------------
-  // Row 8 publishes the operator as payTo for the x402-usdc method, and a payTo
+  // Row 8 publishes the postmasterPayer as payTo for the x402-usdc method, and a payTo
   // that cannot receive the asset is a false publication: §14.3 has the price
   // list say where the money goes, and §14.2's PAYMENT-REQUIRED carries that
   // address to the buyer. On Hedera an account must be associated with an HTS
@@ -92,16 +92,16 @@ async function main(): Promise<number> {
   const usdc = env.constants.usdc;
   if (usdc) {
     const held = await mirror.get<{ tokens?: { token_id: string; automatic_association?: boolean }[] }>(
-      `/accounts/${env.operatorId}/tokens?token.id=${usdc.assetId}`,
+      `/accounts/${env.postmasterPayerId}/tokens?token.id=${usdc.assetId}`,
     );
     const assoc = (held?.tokens ?? []).find((t) => t.token_id === usdc.assetId);
     if (!assoc) {
-      console.error(`\nSTOP — PRE-FLIGHT: the operator ${env.operatorId} is not associated with ${usdc.assetId}, the USDC asset app/src/ops/networks.ts names for ${env.network}.`);
+      console.error(`\nSTOP — PRE-FLIGHT: the postmasterPayer ${env.postmasterPayerId} is not associated with ${usdc.assetId}, the USDC asset app/src/ops/networks.ts names for ${env.network}.`);
       console.error('The first PriceList publishes that account as payTo for the x402-usdc method, and a payTo that cannot receive the asset is a false publication (§14.2, §14.3).');
       console.error('Associate it, or correct the asset in networks.ts, and re-run. Nothing was signed.');
       return 1;
     }
-    preflight = `operator associated with USDC ${usdc.assetId} (${assoc.automatic_association ? 'automatic' : 'explicit'})`;
+    preflight = `postmasterPayer associated with USDC ${usdc.assetId} (${assoc.automatic_association ? 'automatic' : 'explicit'})`;
   }
 
   journal.open(env.repoRoot);
@@ -193,7 +193,7 @@ async function main(): Promise<number> {
       }
       record.put(step.key, {
         kind: step.kind, role: step.role, id: adopted.entityId,
-        builtBy: step.builtBy, signedBy: signersFor(step.key), payer: env.operatorId,
+        builtBy: step.builtBy, signedBy: signersFor(step.key), payer: env.postmasterPayerId,
         transactionId: adopted.transactionId,
         consensusTimestamp: adopted.consensusTimestamp,
         confirmedFrom: `GET ${mirrorPathFor(step.key, adopted.entityId, ctx)}`,
@@ -216,7 +216,7 @@ async function main(): Promise<number> {
 
     const entry: EntityRecord = {
       kind: step.kind, role: step.role, id: r.entityId ?? null,
-      builtBy: step.builtBy, signedBy: r.signedBy, payer: env.operatorId,
+      builtBy: step.builtBy, signedBy: r.signedBy, payer: env.postmasterPayerId,
       transactionId: r.transactionId,
       consensusTimestamp: await consensusTimestampOf(mirror, r.transactionId),
       confirmedFrom: `GET ${mirrorPathFor(step.key, r.entityId ?? null, ctx)}`,
@@ -244,7 +244,7 @@ async function main(): Promise<number> {
     pinNote = `${unfilledPins(env.repoRoot)} pins unfilled`;
   }
 
-  report(env.operatorId, env.mirrorNodeUrl, record.path, rows, created, pinNote, preflight);
+  report(env.postmasterPayerId, env.mirrorNodeUrl, record.path, rows, created, pinNote, preflight);
 
   if (flags.dryRun && !flags.json) priceListGate(ctx);
   client.close();
@@ -300,14 +300,14 @@ function adoptionNote(how: string): string {
 
 /** Role names for an adopted row, which has no live submit to report. */
 function signersFor(k: EntityKey): readonly string[] {
-  if (k === 'postage.token') return ['operator', 'treasury'];
-  if (k === 'agent.association' || k.endsWith('.account')) return ['operator'];
+  if (k === 'postage.token') return ['postmaster payer', 'treasury'];
+  if (k === 'agent.association' || k.endsWith('.account')) return ['postmaster payer'];
   // Step 3: the declaration is the agent's, so the agent signs every act of it.
   // The Postmaster pays and owns nothing here (§3.5, P-13).
   if (k === 'agent.profileChunks' || k === 'agent.registryEntry' || k === 'agent.accountMemo') {
-    return ['operator', 'agent'];
+    return ['postmaster payer', 'agent'];
   }
-  return ['operator'];
+  return ['postmaster payer'];
 }
 
 function mirrorPathFor(k: EntityKey, id: string | null, ctx: Ctx): string {
@@ -330,7 +330,7 @@ function report(op: string, mirrorUrl: string, recordPath: string, rows: readonl
     return;
   }
   console.log(`\nWISHMail provisioning — hedera:testnet${flags.dryRun ? '  [DRY RUN — nothing is signed]' : ''}`);
-  console.log(`  operator  ${op}`);
+  console.log(`  postmasterPayer  ${op}`);
   console.log(`  mirror    ${mirrorUrl}`);
   console.log(`  record    ${recordPath}`);
   console.log(`  spec      ${SPEC_TAG} · every transaction @hashgraph/sdk, every read mirror-node REST`);

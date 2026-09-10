@@ -21,11 +21,20 @@
 import { execFileSync } from 'node:child_process';
 
 /**
- * The env names this gate watches. `OPERATOR_DER_KEY` is deliberately not among
- * them: the operator is the Postmaster's own payer (D-47, "the Postmaster
- * pays"), not an agent, so an entrypoint naming it is exactly what P-13
- * permits — and it names it only to hand it to `fromEnv`, which is in
- * identity.ts, so no key material leaves that module either way.
+ * The env names this gate watches. `POSTMASTER_PAYER_DER_KEY` is deliberately not
+ * among them: it is the Postmaster's own payer (D-47, "the Postmaster pays")
+ * and not an agent, so an entrypoint naming it is exactly what P-13 permits —
+ * and it names it only to hand it to `fromEnv`, which is in identity.ts, so no
+ * key material leaves that module either way.
+ *
+ * **It used to be spelled `OPERATOR_DER_KEY`, and the name was the hazard.**
+ * §3.3 fixes *Operator* as "the human or organization behind an agent", and the
+ * Correspondent's own operator is one; this variable is neither — it is the
+ * account the Postmaster pays from. Two roles under one word, in a repository
+ * where both now appear in the same call, is how a key gets read from the wrong
+ * side. The identifiers name the role: `POSTMASTER_PAYER_*` on the Postmaster's
+ * side, `homePayer` on the Correspondent's, and *Operator* survives in prose
+ * only, in §3.3's sense.
  *
  * The pattern is deliberately wider than the two names that exist today.
  * It read `/(AGENT|TREASURY)_DER_KEY/`, and `AGENT_X25519_DER_KEY` — the
