@@ -210,6 +210,12 @@ empty — this release claims nothing, and §1.5 says silence claims nothing.
 
 **Closed since.** The x402 testnet facilitator — D-132, 09-07: x402.org, `hedera:testnet` only. LICENSE — Apache 2.0, stated as a non-negotiable in `CLAUDE.md` §3 and present in the repository since the initial commit; `CONTRIBUTING.md` and `README.md` name it, and contributions are certified under DCO 1.1 with no CLA.
 
+---
+
+## The dated build history — earlier days, kept as the record
+
+**A resume does not need what follows.** §6, GATE ONE and TOMORROW above are the whole of where the build is and what it does next; everything from here down is what was done on 2026-09-07 and 2026-09-08, kept because the record is the point.
+
 **Where the build stands — 2026-09-08, close of day.** Everything below is done and pushed to `main`.
 
 - **Phase A** — the 0.5.1 patch (D-135 – D-138), tagged `v0.5.1`.

@@ -6,8 +6,9 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 **Read these three first, in this order. They are the record; this file is only the rules.**
 
-1. `STATUS.md` §6 — where the build is: Gate One’s register (what is on `hedera:testnet` and who paid for each
-   row), and **TOMORROW**, which is ruled.
+1. `STATUS.md`, two sections under §6: **GATE ONE — the register** (what is on `hedera:testnet` and who paid
+   for each row) and **TOMORROW** (ruled). **Stop after TOMORROW** — everything below it is dated build history
+   from earlier days and a resume does not need it.
 2. `plans/2026-09-10-gate-two.md` — what this session does, in order, with what each step reads and waits on.
 3. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link. Generated; `npm run check:entities`
    fails on a hand-edit.
