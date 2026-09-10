@@ -29,6 +29,8 @@
     "check:prefreeze": "tsx src/ops/prefreeze.check.ts",
     "prices:2": "tsx src/ops/pricelist2.ts",
     "prices:2:plan": "tsx src/ops/pricelist2.ts --dry-run",
+    "prices:4": "tsx src/ops/pricelist4.ts",
+    "prices:4:plan": "tsx src/ops/pricelist4.ts --dry-run",
     "counter": "tsx src/counter/server.ts",
     "correspondent": "tsx sdk/server.ts",
     "correspondent:provision": "tsx sdk/provision.cli.ts",

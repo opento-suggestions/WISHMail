@@ -1,0 +1,75 @@
+{
+  "_readme": [
+    "The FOURTH PriceList, as it will be submitted to the price topic 0.0.10426551.",
+    "",
+    "It is sequence 3 with ONE field changed: provisioning.unitPrice, from \"2\" to \"30\". §14.3",
+    "makes the schedule the SEQUENCE of messages and the price current at a purchase the latest",
+    "message before it, so this supersedes sequence 3 by landing after it, and sequences 1, 2 and",
+    "3 are not edited.",
+    "",
+    "WHY IT CHANGED, AND IT IS ABOUT COST RATHER THAN ABOUT MARGIN. Sequence 2 priced the",
+    "provisioned path at 2 ℏ, and sequence 3 carried that number forward untouched. Both were",
+    "written before a HIP-991 fee-gated topic had ever been created on this network, so the 2 ℏ",
+    "was an estimate of a cost nobody had paid. Gate One paid it: one mailbox costs the Postmaster",
+    "27.78102934 ℏ across its eight rows, of which the fee-gated doorbell alone is 26.31542199 ℏ.",
+    "The Postmaster was selling at 2 ℏ a thing that costs it 27.78 ℏ.",
+    "",
+    "Sequence 4 prices it at 30 ℏ — roughly eight percent over the measured cost, which is what",
+    "absorbs ordinary movement in the exchange rate between one purchase and the next. Hedera's",
+    "fee schedule is USD-denominated and charged in ℏ, so the cost this recovers is not a constant",
+    "and a flat ℏ price cannot track it exactly. See ledger §G-20: pricing the provisioned path by",
+    "reference to another asset is what methods[] already does and what provisioning cannot do,",
+    "because the registered schema gives provisioning exactly {method, unitPrice, registrationFee}",
+    "and §1.7 has fired. That is a 0.6 candidate and is not coded around here.",
+    "",
+    "registrationFee is UNCHANGED at 0.05 ℏ. It is not a margin and not a fee we set: it is the ℏ",
+    "the purchase funds into the agent's own account so the agent can pay for its own registration",
+    "submission (§4.6, D-159's addendum), and the measurement above did not move it.",
+    "",
+    "WHAT DOES NOT CHANGE, AND WHAT A READER SHOULD CHECK. Correspondent B bought under sequence 3",
+    "and is never repriced: §14.3 fixes the price at the message current at the purchase, and a",
+    "receipt is never reconstructed by the party that charged it. Everything else here is sequence",
+    "3's, byte for byte — the same stampToken, the same payTo, the same bundles, the same methods,",
+    "and the same hbar rate source, which is the network's own exchange rate a Verifier can",
+    "re-obtain at a receipt's rate.at (D-170). The runner asserts that: it fetches sequence 3 from",
+    "the mirror and refuses to submit unless the diff is exactly one leaf.",
+    "",
+    "spec is 0.5.10 because that is the text this message is published under. The specification did",
+    "not move; the deployment did. _readme is stripped before canonicalization, exactly as it is",
+    "for sequences 1, 2 and 3."
+  ],
+  "spec": "0.5.10",
+  "stampToken": {
+    "ledgerTag": "hedera:testnet",
+    "tokenId": "0.0.10426208",
+    "treasury": "0.0.10426205"
+  },
+  "methods": [
+    {
+      "method": "x402-usdc",
+      "network": "hedera:testnet",
+      "asset": "0.0.429274",
+      "payTo": "0.0.8641261",
+      "facilitator": "https://x402.org/facilitator",
+      "unitPrice": "0.10",
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    },
+    {
+      "method": "hbar",
+      "network": "hedera:testnet",
+      "asset": "0.0.0",
+      "payTo": "0.0.8641261",
+      "rate": {
+        "source": "https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate",
+        "pair": "HBAR/USD",
+        "reference": { "amount": "0.10", "asset": "USD" }
+      },
+      "bundles": [{ "count": 12, "price": "1.00" }]
+    }
+  ],
+  "provisioning": {
+    "method": "hbar",
+    "unitPrice": "30",
+    "registrationFee": "0.05"
+  }
+}

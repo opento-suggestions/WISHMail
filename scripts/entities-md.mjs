@@ -158,16 +158,34 @@ function operating(record, pins) {
     L.push(
       `| **PriceList, sequence 2** | \`${topic.id}\` #${second.policy?.sequenceNumber ?? '?'} | ${byteCount(second.policy?.bytes)} bytes, sha256 \`${second.policy?.sha256 ?? '?'}\`. Prices the provisioned path: ${prov.unitPrice ?? '?'} ℏ, registration fee ${prov.registrationFee ?? '?'} ℏ (D-159’s addendum). **This is the schedule Gate One buys at.** | ${txLink(second.transactionId)} |`,
     );
-    // A third message renders where the record holds one. The schedule is the
+    // A later message renders where the record holds one. The schedule is the
     // sequence, so this table grows by a row and never by an edit.
+    //
+    // "Current now" belongs to the LAST row that exists and to no other. §14.3
+    // makes the price current at a purchase the latest message before it, so a
+    // superseded row still labelled current would be this file — the one a judge
+    // follows — giving the wrong answer to every reader of it.
     const third = record.entities?.['prices.third'];
+    const fourth = record.entities?.['prices.fourth'];
+    const currentNow = ' **This is the schedule current now.**';
     if (third !== undefined) {
       const n = third.policy?.sequenceNumber ?? 3;
       L.push(
         `| **PriceList, sequence ${n}** | \`${topic.id}\` #${n} | ${byteCount(third.policy?.bytes)} bytes, ` +
           `sha256 \`${third.policy?.sha256 ?? '?'}\`. The hbar rate is read from the NETWORK's own exchange rate, which ` +
           `a mirror node serves with a timestamp filter — so a Verifier holding a receipt's \`rate.at\` obtains exactly ` +
-          `what the Postmaster read (D-170). **This is the schedule current now.** | ${txLink(third.transactionId)} |`,
+          `what the Postmaster read (D-170).${fourth === undefined ? currentNow : ''} | ${txLink(third.transactionId)} |`,
+      );
+    }
+    if (fourth !== undefined) {
+      const n = fourth.policy?.sequenceNumber ?? 4;
+      const p4 = fourth.policy?.provisioning ?? {};
+      L.push(
+        `| **PriceList, sequence ${n}** | \`${topic.id}\` #${n} | ${byteCount(fourth.policy?.bytes)} bytes, ` +
+          `sha256 \`${fourth.policy?.sha256 ?? '?'}\`. Reprices the provisioned path at ${p4.unitPrice ?? '?'} ℏ. ` +
+          `Sequences 2 and 3 published 2 ℏ, set before a HIP-991 fee-gated topic had been created on this network; ` +
+          `Gate One measured one mailbox at 27.78102934 ℏ, of which the doorbell alone is 26.31542199 ℏ. Registration ` +
+          `fee unchanged at ${p4.registrationFee ?? '?'} ℏ.${currentNow} | ${txLink(fourth.transactionId)} |`,
       );
     }
   }

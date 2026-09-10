@@ -40,6 +40,8 @@
     "entities:md": "node scripts/entities-md.mjs",
     "check:entities": "node scripts/entities-md.mjs --check",
     "check:exchange": "npm run check:exchange --workspace app",
-    "pricelist3": "npm run pricelist3 --workspace app"
+    "pricelist3": "npm run pricelist3 --workspace app",
+    "prices:4": "npm run prices:4 --workspace app",
+    "prices:4:plan": "npm run prices:4:plan --workspace app"
   }
 }

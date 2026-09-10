@@ -45,6 +45,10 @@ export type EntityKey =
   // rather than a DEX spot price, so a Verifier can re-obtain it at the receipt's
   // `at` and T-P11-4 is checkable on a rate-priced method (D-170).
   | 'prices.third'
+  // The fourth, sequence 4: the provisioned path priced at what it costs. Gate
+  // One measured a mailbox at 27.78 ℏ against a 2 ℏ published price, of which
+  // the HIP-991 fee-gated doorbell alone is 26.31 ℏ.
+  | 'prices.fourth'
   | 'agent.doorbell'
   | 'agent.log'
   | 'agent.manifest'
