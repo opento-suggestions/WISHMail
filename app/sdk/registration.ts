@@ -35,7 +35,7 @@ import { submit } from '../src/ops/hedera.js';
 import { TRANSACTION_OP_MEMO } from '../src/ops/hcs10.js';
 import { line } from '../src/tools/narration.js';
 import { mirrorSource, type MailCoordinates } from '../src/resolve/hcs14.js';
-import { registrationsFor, resolveHol } from '../src/resolve/hol.js';
+import { registrationsFor, resolveHol, type Registration } from '../src/resolve/hol.js';
 import type { Env } from '../src/ops/env.js';
 import type { AgentRecord } from './home.js';
 import type { Session } from './session.js';
@@ -70,6 +70,18 @@ import type { Session } from './session.js';
  * assigns `blurred` to every resolution of this agent, permanently (T-P13-4).
  */
 const REGISTRATION_MAX_FEE_TINYBAR = 2_000_000;
+
+/**
+ * The readback wait, and it has a ceiling like every other wait here.
+ *
+ * Thirty seconds in fifteen tries — long enough for a mirror node ingesting a
+ * topic with hundreds of messages, short enough that a person watching knows
+ * something is wrong. At the ceiling the run says the registration is ON
+ * CONSENSUS and a second run will find it and do nothing, because that is the
+ * true thing to say: `register_agent` reads the anchor before it submits.
+ */
+const REGISTRATION_READBACK_ATTEMPTS = 15;
+const REGISTRATION_READBACK_PAUSE_MS = 2_000;
 
 export class RegistrationRefusal extends Error {
   constructor(message: string) {
@@ -167,11 +179,32 @@ export async function registerAgent(
   if (!r.ok) throw new RegistrationRefusal(`the registration returned ${r.status} (tx ${r.transactionId})`);
   void TRANSACTION_OP_MEMO; // `register` has no HCS-10 memo enum at the pin (§6.1, D-94).
 
-  // Read it back from the anchor, and check the fact the whole act exists for:
-  // that the PAYER on the mirror is this account.
-  const after = await registrationsFor(source, anchor, inputs.uaid);
-  const landed = (after ?? []).find((x) => x.body.account_id === s.account);
-  if (landed === undefined) throw new RegistrationRefusal(`the registration did not read back from ${anchor}`);
+  // READ IT BACK FROM THE ANCHOR, WAITING, BECAUSE THIS ONE IS KNOWN TO HAVE
+  // LANDED. `submit` returned a consensus receipt, so the only question left is
+  // whether the mirror has ingested it — and the anchor carries hundreds of
+  // messages, so it is not always immediate. Gate One's sixth run read once,
+  // found nothing, and reported "the registration did not read back" for a
+  // registration that was on consensus at sequence 381. A single read is the
+  // right shape for a question whose answer might be no; this question's answer
+  // is already yes.
+  //
+  // Then the fact the whole act exists for: that the PAYER on the mirror is this
+  // account (§9.5, T-P13-4).
+  let landed: Registration | undefined;
+  for (let attempt = 0; attempt < REGISTRATION_READBACK_ATTEMPTS; attempt++) {
+    const after = await registrationsFor(source, anchor, inputs.uaid);
+    landed = (after ?? []).find((x) => x.body.account_id === s.account);
+    if (landed !== undefined) break;
+    await new Promise((res) => setTimeout(res, REGISTRATION_READBACK_PAUSE_MS));
+  }
+  if (landed === undefined) {
+    throw new RegistrationRefusal(
+      `the registration submitted as ${r.transactionId} and did not read back from ${anchor} within ` +
+        `${(REGISTRATION_READBACK_ATTEMPTS * REGISTRATION_READBACK_PAUSE_MS) / 1000}s. It is ON CONSENSUS: nothing ` +
+        'is lost and nothing will be submitted twice — a second run reads the anchor first and does nothing. ' +
+        'Run it again once the mirror has caught up.',
+    );
+  }
   if (landed.payer !== s.account) {
     throw new RegistrationRefusal(
       `the registration at ${anchor}#${landed.sequenceNumber} was paid by ${landed.payer ?? '(unknown)'} and not by ` +
