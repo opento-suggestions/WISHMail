@@ -1,0 +1,22 @@
+# Line endings are the repository's, not the checkout machine's.
+#
+# `npm run check:entities` compares ENTITIES.md byte-for-byte against what
+# scripts/entities-md.mjs generates, and the generator writes LF. Without this
+# file, a machine with core.autocrlf=true — the Git for Windows default — gets
+# CRLF on checkout and the check fails at line 1 on a difference nobody can see,
+# reporting two lines that look identical. It bites after any clone, checkout or
+# stash, and it would bite a judge cloning this repository to verify it.
+#
+# `text=auto` still normalizes to LF in the object store, which is what was
+# always committed; `eol=lf` is what stops the working tree from diverging.
+* text=auto eol=lf
+
+# Anything that is not text is left alone, so nothing is corrupted by
+# normalization it should never have had.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
+*.excalidraw binary
