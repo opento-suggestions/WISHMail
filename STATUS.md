@@ -380,24 +380,28 @@ Run of record in `app/OPERATIONS.md`.**
    A2's own agent account received 150 ℏ from the same. Recorded as funding and not a sale. `0.0.10450879` holds
    416.67021364 ℏ and `0.0.10450880` holds 459.90905168 ℏ.
 3. ~~**A′.**~~ **DONE 2026-09-10 — and it is A2.** See the register below.
-4. ~~**Gate Two.**~~ **CHECKPOINTS ONE AND TWO DONE 2026-09-10** — see both registers above. §10.4's scheduled
-   receipt and `ack` are built and on consensus; the second letter went out on the same lane ringing nothing, B acked,
-   the receipt landed on B's manifest topic at a 30-day window paid by the sender's own operator wallet, and `verify`
-   shows the envelope ACKED. **The one thing left is the plain reply B → A2**, held at the gate on ledger **§G-21**:
-   §7.1 says a lane is bidirectional and §7.1's own MUST says a reply cannot use it. Nothing signed, nothing rung,
-   waiting on a ruling.
+4. ~~**Gate Two.**~~ **DONE 2026-09-10, ALL THREE ACTS** — see the three registers above. §10.4's scheduled receipt
+   and `ack` are built and on consensus; the second letter went out on the same lane ringing nothing, B acked, the
+   receipt landed on B's manifest topic at a 30-day window paid by the sender's own operator wallet, and `verify`
+   shows the envelope ACKED. **The reply B → A2 went the other way down the same lane**, after **D-171** closed
+   §G-21 and **D-172** closed §G-22 and the specification moved to **0.5.11** — nothing rung, no second lane, and
+   A2's doorbell still holding zero messages.
 
-**Open for Sonic:** **§G-21 — the reply's lane, and it blocks the reply and nothing else** ·
+**Open for Sonic:** ~~§G-21 — the reply's lane~~ **ruled and closed by D-171, 2026-09-10** ·
 ~~sequence 4’s `provisioning.unitPrice`~~ **ruled 30 ℏ and signed 2026-09-10** · ~~whether `ack`
 and §10.4's schedule are in this window at all~~ **both built and on consensus 2026-09-10** ·
-ledger §G-22 (T-P1-8 asks for one signature and HIP-423 records three) · §G-23 (§11.4 requires a reason no test names) ·
-ledger §G-20 (the provisioned path cannot be rate-priced under a frozen schema) · the 150 ℏ now sitting in A2's own
+~~ledger §G-22 (T-P1-8 asks for one signature and HIP-423 records three)~~ **ruled and closed by D-172** ·
+**§G-25 — the evidence bundle's digest is a function of the release's PATCH version, so §11.7's MUST and T-P3-1
+hold only between Verifiers at one patch, and a recorded digest reproduces only from its own tag** ·
+**§G-24 — the pinned HCS-10 contradicts itself about which party writes the Outbound Connection Created record** ·
+§G-23 (§11.4 requires a reason no test names) ·
+ledger §G-20 (the provisioned path cannot be rate-priced under a frozen schema) · §G-18 (§5.3's gloss on
+`resolvedAt`, spec text only) · the 150 ℏ now sitting in A2's own
 agent account, against "an agent's account never holds ℏ, with one exception" · which classes
 the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
 submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
 
-**What is not done, and is not pretended to be:** the plain reply of checkpoint two, held on §G-21. The `dns` and
-`nanda` resolvers. The CLI and the
+**What is not done, and is not pretended to be:** the `dns` and `nanda` resolvers. The CLI and the
 WebMCP page. **The claim**: eighty-six tests are registered, none is expanded, zero pass, and `RELEASE.classes` is
 empty — this release claims nothing, and §1.5 says silence claims nothing.
 

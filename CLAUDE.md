@@ -6,17 +6,26 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 **Read these three first, in this order. They are the record; this file is only the rules.**
 
-1. `STATUS.md`, two sections under §6: **GATE ONE — the register** (what is on `hedera:testnet` and who paid
-   for each row) and **TOMORROW** (ruled). **Stop after TOMORROW** — everything below it is dated build history
-   from earlier days and a resume does not need it.
-2. `plans/2026-09-10-gate-two.md` — what this session does, in order, with what each step reads and waits on.
+1. `STATUS.md` §6, the five registers in order — **GATE ONE**, **GATE TWO CHECKPOINT ONE**, **CHECKPOINT TWO**,
+   **THE REPLY**, and **A2** — then **TOMORROW**, whose four items are all closed. **Stop after TOMORROW**:
+   everything below it is dated build history from earlier days and a resume does not need it.
+2. `app/OPERATIONS.md` — the gate reports and the runs of record, one pair per signed act, newest of them the
+   reply's at "Step 6 — CHECKPOINT TWO, THE REPLY". A gate report is never amended after its run.
 3. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link. Generated; `npm run check:entities`
    fails on a hand-edit.
 
-Beside them: `app/OPERATIONS.md` is the gate reports and the runs of record, and `LIMITATIONS.md` is what this
-deployment does not defend. **2026-09-09’s decisions are D-156 – D-170** in ledger §B, one ADR each in
-`spec/adr/`. **Ledger §G items 12–17 and 19 are closed; 18 is open and blocks nothing** (§5.3’s gloss on
-`resolvedAt`, spec text only, unruled).
+Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
+earlier days — history, not instructions. **Decisions run to D-172** in ledger §B, one ADR each in `spec/adr/`.
+
+**Where the build stands, 2026-09-10.** The specification is **0.5.11**, tagged `v0.5.11`; **Gate Two is run in
+all three acts** — a plain letter, a certified one carrying §10.4's return receipt with `ack` and the envelope
+ACKED, and the reply back down the same lane with nothing rung. **Twenty-one `check:*` are green**, with
+`typecheck` and `p13:check`.
+
+**Ledger §G: items 12–17, 19, 21 and 22 are closed. Open and unruled: 18, 20, 23, 24, 25.** None blocks a build
+item. **§G-25 is the one with reach**: the evidence bundle's digest is a function of the release's PATCH version,
+so §11.7's "two Verifiers MUST produce the same digest" and T-P3-1's byte-for-byte comparison hold only between
+Verifiers at one patch — and every digest already written into a run of record reproduces only from its own tag.
 
 **The harness line, and what it means.**
 
@@ -37,20 +46,21 @@ is left exactly as it stood**: one amended after the fact is not a gate report. 
 and are wholly disposable. **If a stop fires, report what is true at the stop and what is resumable, and wait** —
 never repair past it, never infer.
 
-**What this session waits on Sonic for**: sequence 4’s `provisioning.unitPrice` (30 ℏ was the lean; 27.78 ℏ is
-the measured cost of a mailbox); the two wallet top-ups; his word to run A2; and his word for Gate Two. Prepare
-all of it and sign none of it.
+**The two Correspondents, and what to call them.** **A2** — account `0.0.10462700`, home `a2`, `displayName`
+`DemoAgentA2` — is the demo's first Correspondent, and it supersedes both **A** (bought 2026-09-09, stopped after
+its transfer, kept exactly as it is) and the plans' name **"A′"**: where a plan or an earlier record says `A′`, it
+means A2. **B** — account `0.0.10452127`, home `b` — is the other. They correspond on lane `0.0.10464056`, which
+A2 opened and B answered, and which now carries letters both ways.
 
-**Superseded 2026-09-10.** Sequence 4 is on consensus at 30 ℏ, the wallets are funded from Sonic's own accounts, and
-**A2** — account `0.0.10462700`, home `a2`, `displayName` `DemoAgentA2` — is provisioned and is the demo's first
-Correspondent, superseding both A and the plan's "A′". Where a plan or an earlier record says `A′`, it means A2.
-**Gate Two is run, all three acts**: a plain letter, a certified one carrying §10.4's return receipt with `ack` and
-the schedule and the envelope ACKED, and **the reply B → A2 — done 2026-09-10, on the same lane `0.0.10464056`, with
-nothing rung and A2's doorbell still holding zero messages.** Ledger **§G-21 is closed by D-171** (a lane binds from
-the doorbell of either party, and a Verifier reads which from the lane's own memo) and **§G-22 by D-172** (T-P1-8 as
-the ledger can show it). The specification is **0.5.11**, tagged; no schema and no wire string moved. Open and unruled:
-**§G-20, §G-23, §G-24, §G-25** — §G-25 says the evidence bundle's digest is a function of the release's patch version,
-so a recorded digest reproduces only from its own tag.
+**The homes are outside the repository and gitignored**, because a home IS the agent (D-165) and carries the
+operator's payer key and the agent's own keys (P-13). Every driver takes one as its first positional argument, so
+nothing runs without knowing where they are. `app/OPERATIONS.md` writes them as `<a2 home>` and `<b home>` in every
+recorded invocation and the real paths appear nowhere in the repository — which is the convention, not an oversight.
+The Postmaster's own state is separate, at `.wishmail-state/` inside the repository.
+
+**Nothing is waiting on a signature.** Every act Sonic has authorized is run, recorded and pushed. What is open is
+ruling, not building: ledger §G items 18, 20, 23, 24 and 25, and the questions under **Open for Sonic** in
+`STATUS.md`.
 
 ## 1. The documents, and their order
 
@@ -195,3 +205,5 @@ Each is one sentence and each names where it came from. They are rules because e
 - **A receipt is never reconstructed from the ledger by the party that charged** (Correspondent A: the sale settled, its record was deleted, and nothing was assembled from consensus to replace it — §11 rests on a Verifier checking evidence the issuer did not author).
 - **The solvency precheck compares the balance to the fee the network estimates, not to the declared maximum — and our own gates still refuse below the declaration, because a gate should err stricter than the network** (probe 2026-09-09, ledger §H).
 - **Every driver that can sign defaults to DRY RUN and goes live only when `--live` ARRIVES in its own argv, which it prints before it reads a key** (2026-09-10: an appended `--dry-run` was eaten by a root script's nested `npm run … --workspace app`, the driver printed LIVE, and a Correspondent was provisioned unauthorised — so trace the script chain and prove by npm's own echo that every flag you rely on reached the process, because a flag's name is not proof it arrived).
+- **A model must wear the wire's own shapes, because a field nothing reads today is a field something reads tomorrow** (2026-09-10: `check:letter` gave its modelled lane the memo `hcs-10:1:60:3`, which is not HCS-10's connection-topic form and names no doorbell, while `watcher.ts` had always written the real one — harmless for as long as nothing read it, and a false green the hour D-171 made a Verifier read it; the fixture had been agreeing with itself).
+- **Where believing a single read would cost an irreversible act, look twice before acting and never after** (2026-09-10: a lane taken for absent is a doorbell rung, a ring that need not have happened opens a second lane, and a lane cannot be closed — so `send` re-READS where the other party has rung its door, which is Gate One's "mirror-lag read believed once" in the one place the cost is permanent).
