@@ -131,6 +131,17 @@ export interface Purchase {
    * there was nothing to read. So the buyer is handed the one that knows.
    */
   readonly session: Session;
+  /**
+   * The record the purchase WROTE, which is not the returned session's own.
+   *
+   * A provisioning purchase boots a second session once the account exists, and
+   * that session loads the home's record from disk at the moment it boots —
+   * before the mailbox rows are written. The rows go into the record this call
+   * has been holding all along, so that is the one the caller must read: Gate
+   * One's fifth run had a complete mailbox on consensus, a receipt in hand, and
+   * a session whose in-memory record predated all of it.
+   */
+  readonly record: AgentRecord;
 }
 
 /**
@@ -353,7 +364,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       }
       if (receipt !== undefined) {
         push(line('purchase.settled', { txRef: receipt.txRef, consensusTimestamp: receipt.txRef.split('@')[1] ?? '', holder: receipt.holder }));
-        return { receipt, session: s };
+        return { receipt, session: s, record };
       }
       if (requirement.carriedBy === undefined) {
         throw new CounterUnavailable('STAMP_PAYMENT_FAILED', 'the counter is carrying this purchase and named no payer for it');
@@ -391,7 +402,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       if (receipt !== undefined) {
         remember(s, record, { reference, node, carriedBy, account, state: 'settled' }, receipt.txRef);
         push(line('purchase.settled', { txRef: receipt.txRef, consensusTimestamp: receipt.txRef.split('@')[1] ?? '', holder: receipt.holder }));
-        return { receipt, session: s };
+        return { receipt, session: s, record };
       }
       const carrying = resumed._meta?.['wishmail/carrying'] as { readonly account: string; readonly node?: string } | undefined;
       if (carrying === undefined) {
@@ -452,7 +463,7 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       if (issued !== undefined) {
         remember(s, record, { reference, node, carriedBy, account, state: 'settled' }, issued.txRef);
         push(line('purchase.settled', { txRef: issued.txRef, consensusTimestamp: issued.txRef.split('@')[1] ?? '', holder: issued.holder }));
-        return { receipt: issued, mailbox, session: carried };
+        return { receipt: issued, mailbox, session: carried, record };
       }
       const open = asked._meta?.['wishmail/outstanding'] as readonly string[] | undefined;
       if (open === undefined) {

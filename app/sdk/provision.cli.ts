@@ -170,6 +170,11 @@ async function main(): Promise<void> {
 
   // --- 2. The purchase, and the mailbox it pays for. -------------------------
   let outcome = 'existing';
+  // THE RECORD THE RUN WROTE, WHICH IS NOT ALWAYS THE SESSION'S OWN. A
+  // provisioning purchase boots a second session once the account exists, and
+  // that session loads the home's record from disk before the mailbox rows are
+  // written into it. `buyStamps` hands back the one it wrote.
+  let record = s.record;
   // AN ACCOUNT IS NOT THE SAME QUESTION AS A PURCHASE. An account with no
   // mailbox is either a purchase that stopped between rows — in which case the
   // Postmaster sold this mailbox and pays for the rest of it — or an agent that
@@ -189,6 +194,7 @@ async function main(): Promise<void> {
     // asked for them predates both, so the one the purchase returns is taken.
     open.add(bought.session);
     s = bought.session;
+    record = bought.record;
     if (s.account === '') stop('the purchase settled and no account under this agent’s key is on the mirror');
     outcome = bought.mailbox?.outcome ?? outcome;
     say(
@@ -202,17 +208,17 @@ async function main(): Promise<void> {
     // agent that brought its own account. Either way the mailbox is finished at
     // this the operator’s own expense: carry lives inside the purchase and this is
     // no longer inside one (L-5).
-    const mailbox = await generateMailbox(s, s.record, { onLine: say });
+    const mailbox = await generateMailbox(s, record, { onLine: say });
     outcome = mailbox.outcome;
     if (mailbox.outcome === 'existing') say('nothing was created; consensus already carries this agent’s declaration');
   }
 
   // --- 3. The registration, paid by the agent. -------------------------------
   console.log('  3. register_agent — on the HOL anchor, with the agent as payer (T-P13-4)');
-  const uaid = s.record.get('profileChunks')?.policy['uaid'] as string | undefined;
-  const declRegistry = s.record.get('declRegistry')?.id;
+  const uaid = record.get('profileChunks')?.policy['uaid'] as string | undefined;
+  const declRegistry = record.get('declRegistry')?.id;
   if (uaid === undefined || !declRegistry) stop('the record carries no uaid or declaration registry; generate_mailbox did not complete');
-  const registration = await registerAgent(s, s.record, { uaid, declRegistry }, say);
+  const registration = await registerAgent(s, record, { uaid, declRegistry }, say);
 
   // --- 4. Both resolutions, and the fact the whole order exists for. ---------
   console.log('  4. resolve — self, under hcs14 and hol');
