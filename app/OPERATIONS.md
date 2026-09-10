@@ -1369,6 +1369,210 @@ as the two probes before it. Neither is an entity of record.
 
 ---
 
+## PriceList sequence 4 — the provisioned path priced at what it costs: gate report, written before any signature
+
+**NOTHING IS SIGNED.** This is what a `npm run prices:4` would submit, what it asserts before it would, where it
+writes, how it is idempotent, and every way it stops. The run of record goes beneath it afterwards and this report is
+left exactly as it stands.
+
+### 1. Why, and it is a measurement and not a decision about margin
+
+Sequence 2 priced the provisioned path at **2 ℏ** and sequence 3 carried that number forward untouched. Both were
+written before a HIP-991 fee-gated topic had ever been created on this network, so 2 ℏ was an estimate of a cost
+nobody had paid. **Gate One paid it.** One mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows, of
+which the fee-gated doorbell alone is **26.31542199 ℏ**, against **15.09094832 ℏ** taken for the sale. The Postmaster
+was selling at 2 ℏ a thing that costs it 27.78 ℏ.
+
+CLAUDE.md §12 states the rule the doorbell taught: *measure what a new topic type costs on the network before anything
+is priced against it.* It is measured now, so the path is repriced.
+
+**`provisioning.unitPrice` = `"30"`** — RECORD, Sonic 2026-09-10. Roughly eight percent over the measurement, which is
+what absorbs ordinary movement in the exchange rate between one purchase and the next.
+
+**`registrationFee` is unchanged at `"0.05"`.** It is not a margin and not a fee we set: it is the ℏ the purchase funds
+into the agent's own account so the agent can pay for its own registration submission (§4.6, §14.3, D-159's addendum).
+The measurement did not move it.
+
+**Nothing is repriced retroactively.** §14.3 fixes the price at the message current at the purchase. Correspondent B
+bought under sequence 3 and stays bought under it; its `StampReceipt` is not touched, not reissued and not
+recomputed — a receipt is never reconstructed by the party that charged it.
+
+**And this is why sequence 4 goes first today.** §14.3: the Postmaster MUST publish a price message before charging
+under it. A′ is provisioned at this schedule, so A′ waits on this message reaching consensus.
+
+### 2. What is created, and what is not
+
+**Created:** one message on the price topic `0.0.10426551`, sequence 4. Nothing else. No topic, no account, no token,
+no transfer.
+
+**Not touched:** `spec/schemas/` · `spec/pins.json`, because a price is a deployment fact and not a specification fact
+(D-144) · sequences 1, 2 and 3, which are on consensus and are never edited — §14.3 makes the schedule the *sequence*
+of messages, so a new schedule is a new message · any topic but `0.0.10426551` · any wallet · A′.
+
+**No transaction memo.** §6.1 and T-P9-5 bound a memo to what HCS-10 defines for an operation, and a price list is not
+an HCS-10 operation. Sequences 1, 2 and 3 carried none either.
+
+### 3. The exact bytes
+
+```
+topic       0.0.10426551          memo wishmail:prices:1
+payer       0.0.8641261           POSTMASTER_PAYER_ID
+submit key  960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460
+            the price topic's sole submit key, the Postmaster payer's (D-142)
+canonical   667 bytes (RFC 8785)
+sha256      03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec
+```
+
+```json
+{"methods":[{"asset":"0.0.429274","bundles":[{"count":12,"price":"1.00"}],"facilitator":"https://x402.org/facilitator","method":"x402-usdc","network":"hedera:testnet","payTo":"0.0.8641261","unitPrice":"0.10"},{"asset":"0.0.0","bundles":[{"count":12,"price":"1.00"}],"method":"hbar","network":"hedera:testnet","payTo":"0.0.8641261","rate":{"pair":"HBAR/USD","reference":{"amount":"0.10","asset":"USD"},"source":"https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate"}}],"provisioning":{"method":"hbar","registrationFee":"0.05","unitPrice":"30"},"spec":"0.5.10","stampToken":{"ledgerTag":"hedera:testnet","tokenId":"0.0.10426208","treasury":"0.0.10426205"}}
+```
+
+`spec` is `0.5.10` because that is the text this message is published under. **The specification did not move; the
+deployment did.** No wire string changes and no schema changes, so this is not a version event of any kind (§1.7).
+
+### 4. What it asserts from the mirror before it would sign
+
+**The claim this message makes to a reader is that one leaf moved, and a document built from a local file cannot prove
+that by itself** — the file is what a hand touched. So the assertion is made against consensus:
+
+```
+GET /topics/0.0.10426551/messages?limit=25&order=asc   -> sequence_number === 3, base64-decoded
+
+  THE DIFF, against sequence 3 as the mirror holds it (topic 0.0.10426551)
+
+    provisioning.unitPrice: "2" -> "30"
+
+  exactly one leaf moved
+  canonical   667 bytes, sha256 03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec
+  which is sequence 3's 666, less "2", plus "30"
+```
+
+**It reaches further than a comparison against the sibling file.** `buildPriceList` fills `stampToken.tokenId`,
+`stampToken.treasury` and each method's `payTo` from the environment and the deployment record. A wrong environment
+would otherwise reach consensus inside a message that validates against its registered schema and hashes correctly —
+which is the shape of every defect this project has had. Any second difference is a **stop**, not a note. Verified by
+running it: perturbing `rate.reference.amount` from `0.10` to `0.11` printed both leaves and stopped with exit 3.
+
+**The length is asserted as arithmetic, not as a range.** Sequence 3 is 666 bytes with a one-character price, so
+sequence 4 is `665 + len("30")` = 667. A length that is merely close is a second change nobody looked at.
+
+### 5. Running the reader on the writer's output, before it is signed
+
+A schema validates a document against its shape, never against the rule that reads it (CLAUDE.md §9). So the two
+functions the counter calls at `buy_stamp` are run over these bytes here — not reimplemented, and not shortcut past.
+`currentPriceList` takes a `Mirror` because §14.3 has the price read from consensus at every purchase, so the mirror is
+modelled and the reader is the real one.
+
+```
+currentPriceList(fake, topic, repoRoot)  ->  quote(current, 'hbar', 1, true)
+
+  one stamp      1.32152769 0.0.0
+  rate           0.07567 HBAR/USD at 1789052462.238239154
+  rate source    https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate
+  provisioning   30 0.0.0, registrationFee 0.05
+  stampToken     0.0.10426208 / 0.0.10426205
+```
+
+Asserted: the provisioned path quotes **30 ℏ** and funds **0.05 ℏ**, both compared **by value and never by spelling**
+(§14.3, D-169); the currency is ℏ; the stamp line is unchanged and still rate-priced against the network's own
+exchange rate, which is what a Verifier re-obtains at a receipt's `rate.at` (D-170); and the `stampToken` is the
+deployment's `$POSTAGE` and treasury. `readRate` fetched the source **live**, which is what the counter does at
+purchase and what makes this a reading of the schedule rather than of our expectations about it.
+
+### 6. Idempotence — from consensus, and it is `publishPriceList`'s own stop
+
+Sequence 4 goes through `publishPriceList` in `app/src/ops/pricelist2.ts`, unchanged and unforked. Its stop is that
+**this message is sequence N only if the topic holds exactly N−1 messages now**, read from the mirror before anything
+is signed:
+
+- fewer than 3 → stop, "publish the earlier ones first"
+- exactly 3 → this is sequence 4, proceed
+- more than 3 → compare `messages[3]` byte-for-byte against the composed bytes. **Identical** → "already published,
+  byte-for-byte identical. Nothing to do", clean return. **Different** → stop, because publishing would make one more
+  and a schedule is the sequence of messages (§14.3).
+
+A second spelling of that rule would be a second place for it to be wrong, so there is one.
+
+### 7. The submit→learn window, and how a run resumes from inside it
+
+**The window is between `submit()` returning and the mirror readback confirming.** Inside it the message may be on
+consensus while this process knows nothing — the SDK call may have thrown, the process may have been killed, the
+network may have answered a receipt this process never read. No offline check reaches it, because there is no offline
+consensus node.
+
+**What is true at every point inside it:**
+
+| Where it stops | On consensus | In the record | Resume |
+|---|---|---|---|
+| before `submit()` | 3 messages | no `prices.fourth` | rerun; the N−1 stop sees 3 and proceeds |
+| after `submit()`, before consensus | 3 or 4 | no `prices.fourth` | rerun; see below |
+| after consensus, before readback | 4 | no `prices.fourth` | rerun; the N−1 stop sees 4, byte-compares, returns clean |
+| after readback, before `record.put` | 4 | no `prices.fourth` | rerun; same, then `record.put` runs |
+| complete | 4 | `prices.fourth` | rerun; byte-identical, clean return, `record.put` is a no-op rewrite |
+
+**A rerun never posts a sequence 5.** The stop reads the topic before composing anything, and where the topic already
+holds 4 it compares byte-for-byte. **That comparison is exact because sequence 4 is a fixed document on disk**:
+`app/price-list-4.hedera-testnet.json` plus the same environment composes the same 667 bytes and the same
+`03a5538…` digest every time. The digest is printed twice in a run — once by the assertion, once by the publisher —
+from two independent composes, so a reader of the output can see they agree.
+
+**The only cost the window can carry is a `record.put` that did not happen**, and the rerun performs it. Nothing on
+consensus can be left half-written: a `PriceList` is one HCS message, it is 667 bytes against a 1024-byte cap, and it
+either lands whole or does not land.
+
+**If the byte-compare finds sequence 4 present and different, that is a stop and not a repair.** Report what is true
+at the stop and wait: something else published to the price topic, and no rerun of this should decide what to do
+about it.
+
+### 8. Every way it stops
+
+Each of these refuses before anything is signed, and each names what it found:
+
+1. the price topic, the stamp token or the treasury is missing from the deployment record
+2. the mirror holds no sequence 3 to diff against
+3. the diff against sequence 3 is not exactly `provisioning.unitPrice: "2" -> "30"` — including any constant filled
+   from this machine's environment that disagrees with what consensus holds
+4. the composed message is not 667 canonical bytes
+5. the reader returns no `provisioning` line for a `provision: true` quote
+6. the reader quotes anything but 30 ℏ by value, or a `registrationFee` that is not 0.05 by value
+7. the reader quotes the provisioned path in something other than ℏ
+8. the stamp line is not rate-priced against the network's own exchange rate, or its pair is not `HBAR/USD`
+9. the message names a `stampToken` that is not this deployment's `$POSTAGE` and treasury
+10. the message does not validate against the registered `PriceList` schema
+11. the message exceeds 1024 bytes, the cap past which the SDK splits and a half-message is not a price list
+12. the topic holds the wrong number of messages, or sequence 4 exists and is not these bytes
+13. the submission returns anything but SUCCESS
+14. the mirror does not hold sequence 4 after polling, or holds bytes that are not what was signed, or names a payer
+    that is not `0.0.8641261`
+
+### 9. What is written, and where
+
+`app/deployment/hedera-testnet.json`, one new entity `prices.fourth`, in the same `policy` shape as `prices.third`:
+`sequenceNumber`, `sha256`, `bytes` as a **count**, the `provisioning` line, and a `warrant` restating §4's reasoning.
+`specTag` stamps `v0.5.10` — correct, because the specification did not move.
+
+Then `npm run entities:md` regenerates `ENTITIES.md`, whose price table gains a fourth row and whose bold **"This is
+the schedule current now"** moves from row 3 to row 4. Leaving it on row 3 would make the one file a judge follows
+name the superseded schedule as current. `npm run check:entities` asserts the file is exactly what the record and
+`spec/pins.json` produce.
+
+### 10. What this gate does not answer
+
+**The provisioned path cannot be rate-priced, and 30 ℏ is a flat number carrying a guess at drift.** What
+`provisioning.unitPrice` recovers is a cost the Postmaster pays to the network, and Hedera's fee schedule is
+USD-denominated and charged in ℏ at the rate in force — which is precisely why sequence 3 moved the *stamp's* rate
+source onto the network's own `ExchangeRateSet` (D-170). The stamp is priced the right way and the provisioned path,
+which is the leg with the large network cost in it, is the one that cannot say so: the registered `PriceList` schema
+gives `provisioning` exactly `{method, unitPrice, registrationFee}`, closed, with no `rate` slot. §1.7 has fired, so
+that is **0.6 and never a patch**. It is written up as ledger **§G-20**, marked MINE, and awaits a ruling. **It is not
+coded around here** and no file in `spec/schemas/` is touched.
+
+### 11. The gate
+
+**Nothing signs until Sonic says the word.** `npm run prices:4:plan` is the dry run and has been run; `npm run
+prices:4` is the submission and has not.
+
+---
 ## Step 6 — the first letter: GATE TWO, written before any signature
 
 **Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.

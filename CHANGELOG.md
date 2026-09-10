@@ -2,6 +2,66 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Sequence 4] — 2026-09-10 — the provisioned path priced at what it costs
+
+**No version bump.** Nothing here changes the specification, a schema, or a wire string. A price is a deployment fact
+and not a specification fact (D-144), and §14.3 makes a new schedule a new message rather than an edit. **[S]** ruled
+the number; **[CC]** built the runner and wrote the gate report.
+
+### Prepared and UNSIGNED
+
+- **`PriceList` sequence 4** on `0.0.10426551` — sequence 3 with **one leaf changed**: `provisioning.unitPrice`
+  `"2"` → `"30"`. 667 canonical bytes, sha256 `03a553856cbae698c21c622a89f3711410dc55a7f8f1eda843134524c04330ec`.
+  `registrationFee` unchanged at `"0.05"`; every method, bundle, rate source and `stampToken` unchanged.
+  **Why:** sequences 2 and 3 published 2 ℏ, set before a HIP-991 fee-gated topic had ever been created on this
+  network. Gate One measured it: one mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows, of which
+  the fee-gated doorbell alone is **26.31542199 ℏ**, against 15.09094832 ℏ taken for the sale. CLAUDE.md §12's rule —
+  measure what a topic type costs before pricing against it — is now satisfiable, so the path is repriced. 30 ℏ is
+  roughly eight percent over the measurement, which is what absorbs ordinary movement in the exchange rate.
+  **Nothing is repriced retroactively:** Correspondent B bought under sequence 3 and stays bought under it, and its
+  `StampReceipt` is not touched — a receipt is never reconstructed by the party that charged it.
+- **The gate report is in `app/OPERATIONS.md`, written before any signature**, with the submit→learn window and the
+  resume from every point inside it. **Nothing signs until [S] says the word.**
+
+### The one-leaf claim is asserted against consensus, not against a file
+
+- `app/src/ops/pricelist4.ts` reuses `publishPriceList(options)` unchanged — the N−1 idempotence stop, the schema
+  validation, the 1024-byte cap, the byte-for-byte readback and the record write are not reforked. What it adds runs
+  before anything could be signed: it **fetches sequence 3 from the mirror**, decodes it, and diffs it leaf by leaf
+  against what this run composed. Exactly one leaf, or it stops.
+- **That reaches further than a diff against the sibling file.** `buildPriceList` fills `stampToken.tokenId`,
+  `stampToken.treasury` and each method's `payTo` from the environment and the deployment record, so a wrong
+  environment would otherwise reach consensus inside a message that validates and hashes correctly. Proven by
+  perturbing `rate.reference.amount`: both leaves printed, exit 3, nothing signed.
+- **The reader is run on the writer's output before it is signed** (CLAUDE.md §9). Not the validator alone and not a
+  reimplementation: `currentPriceList` and `quote` — the two the counter calls at `buy_stamp` — run over these bytes
+  through a modelled mirror, and `readRate` fetches the source the message names, live. The quote reads 30 ℏ for the
+  provisioned path and 0.05 ℏ funded, compared **by value and never by spelling** (D-169).
+- Length asserted as arithmetic and not as a range: sequence 3's 666, less `"2"`, plus `"30"` = 667.
+
+### Fixed
+
+- **`ENTITIES.md` reported `PriceList` sequence 1 as 752 bytes; it is 563.** `prices.first.policy.bytes` holds the
+  base64 *body* while `prices.second` and `.third` hold a *count* — one field name, two meanings, written a day
+  apart — and `byteCount()` measured the encoding. 752 is `ceil(563/3) × 4`, the length of the transport form. The
+  recorded sha256 is over the real 563 bytes and was always right; the count beside it was not, in the one file a
+  reader is meant to trust because it is the readable one. **Fixed in the rendering, not in the record**: a record of
+  what was submitted is not rewritten. **[S]** ruled the correction.
+- `entities-md.mjs` now puts the bold **"This is the schedule current now"** on the last price row that exists rather
+  than on sequence 3. §14.3 makes the current price the latest message before a purchase, so a superseded row still
+  labelled current would be the file a judge follows giving the wrong answer to every reader of it.
+
+### Raised, not coded around
+
+- **Ledger §G-20 — the provisioned path cannot be rate-priced, and the frozen `PriceList` schema is why** (**[CC]**,
+  MINE, unruled; blocks nothing). What `provisioning.unitPrice` recovers is a cost the Postmaster pays to the network,
+  and Hedera's fee schedule is USD-denominated and charged in ℏ at the rate in force — which is exactly why sequence 3
+  moved the *stamp's* rate source onto the network's own `ExchangeRateSet` (D-170). The stamp is priced the right way;
+  the provisioned path, which is the leg carrying the large network cost, cannot say so, because the registered schema
+  gives `provisioning` exactly `{method, unitPrice, registrationFee}`, closed, with no `rate` slot. §1.7 has fired, so
+  the fix is **0.6 and never a patch**, across fourteen schemas now on consensus. So 30 ℏ is a flat number carrying a
+  guess at drift, and it is written down as that. No file in `spec/schemas/` is touched.
+
 ## [Gate One] — 2026-09-09 — the counter's first sales, on `hedera:testnet`
 
 **No version bump.** Nothing here changes the specification, a schema, or a wire string. It is what happened when the
