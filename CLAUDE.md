@@ -2,12 +2,50 @@
 
 You are building WISHMail: certified mail for agents on Hedera, and a bridge between registries — HOL ↔ NANDA first, other ledgers by extension. You are working with Sonic (Nick Altemeyer). This file is what binds you in this repository. Read it before anything else, every session.
 
+## 0. How to resume
+
+**Read these three first, in this order. They are the record; this file is only the rules.**
+
+1. `STATUS.md` §6 — where the build is: Gate One’s register (what is on `hedera:testnet` and who paid for each
+   row), and **TOMORROW**, which is ruled.
+2. `plans/2026-09-10-gate-two.md` — what this session does, in order, with what each step reads and waits on.
+3. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link. Generated; `npm run check:entities`
+   fails on a hand-edit.
+
+Beside them: `app/OPERATIONS.md` is the gate reports and the runs of record, and `LIMITATIONS.md` is what this
+deployment does not defend. **2026-09-09’s decisions are D-156 – D-170** in ledger §B, one ADR each in
+`spec/adr/`. **Ledger §G items 12–17 and 19 are closed; 18 is open and blocks nothing** (§5.3’s gloss on
+`resolvedAt`, spec text only, unruled).
+
+**The harness line, and what it means.**
+
+```
+$ npm run conformance
+  register 86 · files 86 present · passed 0 · failed 86 · report conformance/reports/all.json
+```
+
+Eighty-six registered, none expanded, zero passing, and a report now emitted because no pin in `spec/pins.json`
+is null. **That is correct output and not a defect**: `RELEASE.classes` is empty, so this release claims nothing
+(§1.5), and the gate T-P9-2 holds is whether a release may make a claim at all — never whether tests pass.
+
+**The gate discipline, and it is not negotiable.** Nothing signs on `hedera:testnet` until its gate report is
+written and committed in `app/OPERATIONS.md` — what it creates, what it asserts from the mirror, what it writes
+and where, how it is idempotent, and every way it stops — **and Sonic has said the word**. After the run a **run
+of record** goes beneath that report with every transaction id and every mirror readback, and **the gate report
+is left exactly as it stood**: one amended after the fact is not a gate report. Probes get the same in miniature
+and are wholly disposable. **If a stop fires, report what is true at the stop and what is resumable, and wait** —
+never repair past it, never infer.
+
+**What this session waits on Sonic for**: sequence 4’s `provisioning.unitPrice` (30 ℏ was the lean; 27.78 ℏ is
+the measured cost of a mailbox); the two wallet top-ups; his word to run A′; and his word for Gate Two. Prepare
+all of it and sign none of it.
+
 ## 1. The documents, and their order
 
-1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.9 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text); wire strings carry `0.5`, because a patch changes none (§1.7). Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
-2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (86 tests: 81 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-167 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.10 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167), 0.5.9 (D-167’s §10.2 text) and 0.5.10 (D-169: decimal amounts compare by value); wire strings carry `0.5`, because a patch changes none (§1.7). **The fourteen schemas are registered on consensus and frozen for the life of 0.5** (Step 4): after that, the smallest field is 0.6. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (86 tests: 81 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-170 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
 3. `provenance/recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
-4. `provenance/` — `WISHMAIL SPEC v0 3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.
+4. `provenance/` — `WISHMAIL-SPEC-v0.3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.
 5. `STATUS.md` — the build set as Sonic ranks it, and the demo shape. The one file where "what we build first" is an ordering.
 6. The Excalidraw scope map — the ratified scope line: green/blue = BUILD, orange = STRETCH, dashed = SPEC or VENUE. Do not re-propose scoping down. Full product is the judging posture, and the registry layer is load-bearing.
 
@@ -108,17 +146,17 @@ Do not reopen: broadcast; a broker dependency; Solidity; a Postmaster that attes
 
 ## 11. The MVP build, and the line between us and an operator
 
-This section is the 2026-09-09 rulings (D-156 – D-165). It governs `app/` for this window. Where it and the spec appear to differ, the spec is what binds and this is what we ship.
+This section is the 2026-09-09 rulings (D-156 – D-170). It governs `app/` for this window. **What HAPPENED under them is STATUS §6 and `app/OPERATIONS.md`, not here** — this section is the rules and they are the record. Where it and the spec appear to differ, the spec is what binds and this is what we ship.
 
-**Roles, and the vocabulary.** Three human roles: **OPERATOR** — us, running the Postmaster: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, the counter. **C1OPERATOR** and **C2OPERATOR** — the two Correspondents' operators, each bringing a funded testnet wallet. Beside them, **Correspondent A** and **B**, the agents. *The agent signs; the operator pays.* Use these words consistently in ADRs, STATUS, README, LIMITATIONS, plans, and commit messages.
+**Roles, and the vocabulary.** Three human roles: **OPERATOR** — us, running the Postmaster: treasury, the `$POSTAGE` supply key, the price topic, the Postmaster-agent, the counter. **C1OPERATOR** and **C2OPERATOR** — the Correspondents' operators, each bringing a funded testnet wallet. Beside them the agents: **Correspondent B**, provisioned; **A**, whose purchase stopped and which stays as it is; and **A′**, provisioned under C1OPERATOR's wallet. **An operator may own many agents** — the wallet is the operator's, the home is the agent's, and a fresh home is a new agent (D-165). *The agent signs; the operator pays.* Use these words consistently in ADRs, STATUS, README, LIMITATIONS, plans, and commit messages.
 
 **"Operator" is a word of §3.3 and survives in prose only.** §3.3 fixes an *Operator* as "the human or organization behind an agent", and all three roles above are Operators in that sense — we are the Postmaster-agent's. What is **not** an Operator is an account, and the repository used to call the Postmaster's payer account one: `OPERATOR_ID`, `OPERATOR_DER_KEY`, `env.operatorId`, `ctx.operator`. Two roles under one word, in a codebase where a Correspondent's payer now appears in the same call, is how a key gets read from the wrong side. **Identifiers name the role**: `POSTMASTER_PAYER_ID` and `POSTMASTER_PAYER_DER_KEY` in the environment, `postmasterPayerId` / `postmasterPayer` in the Postmaster's code, `homePayerId` / `homePayer` in the Correspondent's, and `payer` in a Correspondent's config — which is what §3.5 has always called it. **HCS-10's `operator_id` keeps its name**: it is a pinned standard's field and it names the agent, not a person, which §2.2 already says in as many words.
 
 **Config boundary.** Every private key, every payer wallet, and every operator-specific value the Correspondent MCP reads comes from that operator's own configuration file or environment — never from code. `OPERATOR`, `C1OPERATOR`, `C2OPERATOR` are **demo labels, not identifiers**: they must not appear in `app/` as a value, constant, default, enum member, or filename. A third party plugs in its own keys and its own payer from its own configuration. The repository ships a config **template** for a Correspondent; a filled config is gitignored, and `npm run p13:check` is what keeps it that way. `app/deployment/<network>.json` is the Postmaster's ops record only — no Correspondent entity ID goes in it.
 
-**The payer seam, and its remote half is now exercised.** Every consensus submission an agent makes is constructed *agent signs, payer signs*, with the payer an injected signer. Nothing above the seam may know which. **Under a provisioning purchase the payer is REMOTE** (D-168): for each frozen body the agent has signed, the Correspondent sends the body bytes and the purchase reference to the counter and receives the Postmaster’s payer signature, and the transaction id names the Postmaster as payer. That is §6.1’s carry, and it is why the seam was built as a seam and not as a shortcut — the same `generateMailbox` runs over a local wallet and a carried one, unchanged. Everything **outside** a purchase is paid by that agent’s own operator, from that operator’s own configuration (§4.4, §6.1, D-157, L-5).
+**The payer seam, and its remote half is exercised against the network.** Every consensus submission an agent makes is constructed *agent signs, payer signs*, with the payer an injected signer. Nothing above the seam may know which. **Under a provisioning purchase the payer is REMOTE** (D-168): for each frozen body the agent has signed, the Correspondent sends the body bytes and the purchase reference to the counter and receives the Postmaster’s payer signature, and the transaction id names the Postmaster as payer. That is §6.1’s carry, and it is why the seam was built as a seam and not as a shortcut — the same `generateMailbox` runs over a local wallet and a carried one, unchanged. **Gate One ran all eight bodies of one mailbox through it on `hedera:testnet`, every one signed by the agent and paid for by the Postmaster** (STATUS §6). Everything **outside** a purchase is paid by that agent’s own operator, from that operator’s own configuration (§4.4, §6.1, D-157, L-5).
 
-**Provisioning order** (D-159, amended the same day, and D-168), per agent: boot the keys in the agent’s own process → **`buy_stamp` with `provision`**, which is the whole of §4.6’s provisioned path — the three-legged transfer, then the mailbox with the counter as payer, then the receipt — → `register_agent`, the agent as its own payer and signer → `resolve` its own address under `hcs14` and `hol`. **The purchase is one atomic transaction with three legs**: ℏ from the buyer to the Postmaster for the price, `$POSTAGE` from the treasury to the agent's public-key alias, and the registration fee in ℏ from the Postmaster to that same alias. The account is *bought, not funded*, and is born holding stamps and exactly one fee. The agent holds ℏ once, to sign its own name on the anchor, and never again. The price list prices the fee (`provisioning.registrationFee`) and the receipt records it, so a Verifier sees it as a leg of the purchase and not as a gift. `generate_mailbox` and `register_agent` live on the Correspondent MCP and are **not** among §6.1's six; they are §4.6 affordances and no class is tested against them. **`generate_mailbox` is the SELF-PROVISIONED path** — an agent that brings its own account and pays for its own mailbox — and the demo does not say it: `buy_stamp` with `provision` does the whole thing and returns the receipt (D-168). `register_agent` emits `{p, op, account_id, uaid, t_id, m}` — the pinned fields plus the two the deployed anchor's readers parse; the pin forbids no additional field (D-164, ledger §H).
+**Provisioning order** (D-159, amended the same day, and D-168), per agent: boot the keys in the agent’s own process → **`buy_stamp` with `provision`**, which is the whole of §4.6’s provisioned path — the three-legged transfer, then the mailbox with the counter as payer, then the receipt — → `register_agent`, the agent as its own payer and signer → `resolve` its own address under `hcs14` and `hol`. **The purchase is one atomic transaction with three legs**: ℏ from the buyer to the Postmaster for the price, `$POSTAGE` from the treasury to the agent's public-key alias, and the registration fee in ℏ from the Postmaster to that same alias. The account is *bought, not funded*, and is born holding stamps and exactly one fee. The agent holds ℏ once, to sign its own name on the anchor, and never again. **That submission declares an explicit maximum below the balance** (0.02 ℏ against 0.05 ℏ): the precheck compares the balance to the fee it *estimates* and would accept more (probe 2026-09-09, ledger §H), but a declared maximum is what a reader of the transaction sees on consensus, and one far above the balance says something false about what that agent can afford. The price list prices the fee (`provisioning.registrationFee`) and the receipt records it, so a Verifier sees it as a leg of the purchase and not as a gift. `generate_mailbox` and `register_agent` live on the Correspondent MCP and are **not** among §6.1's six; they are §4.6 affordances and no class is tested against them. **`generate_mailbox` is the SELF-PROVISIONED path** — an agent that brings its own account and pays for its own mailbox — and the demo does not say it: `buy_stamp` with `provision` does the whole thing and returns the receipt (D-168). `register_agent` emits `{p, op, account_id, uaid, t_id, m}` — the pinned fields plus the two the deployed anchor's readers parse; the pin forbids no additional field (D-164, ledger §H).
 
 **An agent that outlives the demo** (D-165). **The Correspondent home directory is the agent's identity**: config (the operator's payer, the network, runtime locations), keystore (the account key, and every epoch's X25519 key, retained — §7.6, L-1), and the durable store (sent envelopes for F-3 retry, pending receipt requests, the inbox cursor). A fresh home is a new agent; an existing home is a returning one. **Keys are born once**, on first run, into the keystore; every later boot loads them. A process that regenerated on boot would make every restart a new agent.
 
@@ -128,6 +166,19 @@ This section is the 2026-09-09 rulings (D-156 – D-165). It governs `app/` for 
 
 **One template, three readers** (D-162). The lines `send` logs as consensus facts land, the text block `send` returns beside its structured `Postmark`, and `narrate()`'s sentences over a bundle come from one template file. Same sentence, three readers. **None of the three may imply receipt or delivery** — §2.3 reserves *delivery* for the lane, and §11.8 forbids turning silence into refusal. goose renders tool-call cards and final payloads and does *not* render `notifications/progress`, so the Correspondent's own log is the live surface and the result's text block is the retrospective one.
 
+**The demo is recorded, not performed.** Provisioning happens before recording: the demo shows it as facts already on consensus — the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger’s `verify`. Everything shown as a fact was signed.
+
 **MVP scoping, and who is named for it.** This window covers pre-funded operator paths only. Deferred: the `x402-usdc` purchase leg; Postmaster-pays carry for an agent's own submissions, so **T-P4-2 is untested**; carry exists only inside `buy_stamp`; the WebMCP send side; `dns` and `nanda` in the letter path; HCS-25; rotation. **LIMITATIONS names our scoping as the reason for each — never Hedera, never the spec.** A deferred claim is honest; a widened specification or an invented deployment artifact is not.
 
-**Probes are disposable.** Throwaway keys; the inert 2026-09-08 probe token and its treasury where reusable; never the real `$POSTAGE` and never the real doorbell. Each probe gets its own small gate report before anything signs.
+**Probes are disposable.** Throwaway keys, born in the run and discarded with it; never the real `$POSTAGE` and never the real doorbell, which the runner carries in a `FORBIDDEN` list and stops on. Each probe gets its own small gate report before anything signs, and a run of record after. **A probe leaves nothing reusable and that is the point**: its keys are gone, so nobody can move what it left, including us — the 2026-09-08 token was assumed reusable and is not, which is how we know.
+
+## 12. What the build taught, as rules
+
+Each is one sentence and each names where it came from. They are rules because each was learned by something going wrong, or nearly. What happened is in STATUS §6 and `app/OPERATIONS.md`; this is only what it obliges.
+
+- **The fourteen schemas are frozen: a field the build needs and a schema lacks is a §G entry and a 0.6 candidate, never coded around** (§1.7, Step 4's HCS-13 registration; §G-19 is the worked example, where the code refused the sale rather than inventing a receipt).
+- **Every gate report for a consensus write names the window between a signature leaving this process and its outcome being learned, and says how a run resumes from inside it** (Gate One: eight defects, every one in that window, and no offline check can reach it because there is no offline consensus node).
+- **Measure what a new topic type costs on the network before anything is priced against it** (the doorbell: 26.31542199 ℏ, against a 2 ℏ published price, discovered by selling one).
+- **Protobuf field numbers are probed against the SDK's own bytes, never recalled** (`core/protokey.ts`, `counter/body.ts`; a confident memory put `CryptoUpdateTransactionBody.memo` at 26 and it is 14).
+- **A receipt is never reconstructed from the ledger by the party that charged** (Correspondent A: the sale settled, its record was deleted, and nothing was assembled from consensus to replace it — §11 rests on a Verifier checking evidence the issuer did not author).
+- **The solvency precheck compares the balance to the fee the network estimates, not to the declared maximum — and our own gates still refuse below the declaration, because a gate should err stricter than the network** (probe 2026-09-09, ledger §H).
