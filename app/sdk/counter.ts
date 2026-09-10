@@ -133,8 +133,30 @@ export interface Purchase {
   readonly session: Session;
 }
 
-/** How many times the receipt is asked for while the mirror catches up with the last row. */
-const RECEIPT_ATTEMPTS = 12;
+/**
+ * THE RECEIPT WAIT HAS A CEILING, AND WHAT HAPPENS AT IT IS NAMED.
+ *
+ * The counter will not issue a receipt until it can read every row it paid for
+ * back from a mirror node AND the holder resolves under §9.2 from its own
+ * reader (D-168). Both are mirror-node lag after the last row lands, so the
+ * ordinary case is one or two seconds — but the wait must not be open, because
+ * an open wait is indistinguishable from a hang, and this one happens after a
+ * transfer has settled and a mailbox is on consensus. A caller that cannot tell
+ * "still ingesting" from "never coming" will eventually kill the process, and
+ * killing it is the one thing that makes the outcome unclear.
+ *
+ * **At the ceiling the run stops and says exactly what is true**: the transfer
+ * settled, the mailbox exists, nothing is lost, nothing will be charged twice,
+ * and the reference is OUTSTANDING and resumable from either side —
+ * `buy_stamp` with the same `quoteRef` and `receipt: true` from here, or
+ * `issueReceipt` at the counter. Neither side re-derives anything from the
+ * other: the counter reads the mirror under the transaction ids its own
+ * signature carried, and this side re-boots from consensus (D-165).
+ *
+ * Thirty seconds, in fifteen tries. Long enough for a mirror node that is
+ * behind, short enough that a person watching knows something is wrong.
+ */
+const RECEIPT_ATTEMPTS = 15;
 const RECEIPT_PAUSE_MS = 2_000;
 
 /**
@@ -285,13 +307,20 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       if (attempt === RECEIPT_ATTEMPTS) {
         throw new CounterUnavailable(
           'STAMP_PAYMENT_UNSETTLED',
-          `the mailbox is on consensus and the counter still reports ${outstanding.join(', ')} outstanding. Nothing is ` +
-            'lost: the reference stays open and the receipt is recoverable by it.',
+          `the receipt is not issued after ${(RECEIPT_ATTEMPTS * RECEIPT_PAUSE_MS) / 1000}s: the counter still ` +
+            `reports ${outstanding.join(', ')} outstanding. NOTHING IS LOST AND NOTHING WILL BE CHARGED TWICE. ` +
+            `The transfer settled, the mailbox is on consensus, and the reference ${requirement.reference} is ` +
+            'OUTSTANDING — ask for the receipt again with the same quoteRef, or have the counter issue it; a ' +
+            'replayed reference returns the receipt it already bought (T-P11-5). The two sides reconcile from ' +
+            'consensus and never from each other, so neither has to be restarted for the other to catch up.',
         );
       }
       await new Promise((r) => setTimeout(r, RECEIPT_PAUSE_MS));
     }
-    throw new CounterUnavailable('STAMP_PAYMENT_UNSETTLED', 'unreachable');
+    // Unreachable: the loop returns or throws on its last attempt. Kept as a
+    // total function rather than a fall-through, so a future edit to the ceiling
+    // cannot turn this into a silent success.
+    throw new CounterUnavailable('STAMP_PAYMENT_UNSETTLED', 'the receipt loop ended without an answer');
   } finally {
     await client.close();
   }

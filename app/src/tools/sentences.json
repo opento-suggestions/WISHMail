@@ -21,6 +21,7 @@
   "provision.already": "{account} already has coordinates on consensus; its doorbell is {doorbell}. Nothing to create.",
   "provision.existing": "{role} is already {id}, and its shape on consensus is the one it was created under.",
   "provision.created": "{role} created as {id} — {detail}.",
+  "provision.autoassociates": "{account} associates with anything (HIP-542), so it will hold {token} when the first one arrives; no association was submitted.",
   "provision.associated": "{account} associated with {token}, so it can hold the stamp a doorbell's fee is taken from.",
   "provision.profile": "profile written to {topic} in {chunks} chunk(s); its plaintext hashes to {digest}.",
   "provision.registered": "registered on {registry} at sequence {sequenceNumber}, naming file topic {fileTopic}.",

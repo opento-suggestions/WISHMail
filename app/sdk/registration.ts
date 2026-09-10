@@ -40,6 +40,37 @@ import type { Env } from '../src/ops/env.js';
 import type { AgentRecord } from './home.js';
 import type { Session } from './session.js';
 
+/**
+ * THE ONE FEE AN AGENT EVER PAYS, DECLARED EXPLICITLY AND BELOW WHAT FUNDS IT.
+ *
+ * §4.6 has the agent pay for its own registration, and D-159’s addendum funds
+ * exactly that one fee — **0.05 ℏ** — as the third leg of the purchase. So this
+ * is the only submission in the project whose payer holds almost nothing, and
+ * the only one where the declared maximum fee is not a formality.
+ *
+ * It declared **2 ℏ** until 2026-09-09, which is forty times the balance funding
+ * it. Whether that would have failed depends on a fact I cannot cite: **I do not
+ * know, from a source I can name, whether Hedera’s solvency precheck compares
+ * the payer’s balance to the fee it ESTIMATES or to the maximum the transaction
+ * DECLARES.** The 2026-09-08 probe observed `INSUFFICIENT_TX_FEE` — the network
+ * comparing a declared maximum against a required fee — which is a different
+ * check and settles nothing here; and the HIP-542 probe observed the bought
+ * account only as a signer, never as a payer, so the one run that could have
+ * answered this did not.
+ *
+ * **So the maximum is declared explicitly, below the balance, and both readings
+ * are safe.** 0.02 ℏ against a measured submission cost of about 0.0015 ℏ —
+ * thirteen times the cost and under half the funding. The anchor
+ * `0.0.6913983` carries no custom fee and no submit key (mirror, 2026-09-09), so
+ * a registration on it is an ordinary HCS message submission and nothing else
+ * is owed.
+ *
+ * A borrowed payer is refused rather than offered, and that is the point of the
+ * whole arrangement: the mirror must record THIS account as the payer, or §9.5
+ * assigns `blurred` to every resolution of this agent, permanently (T-P13-4).
+ */
+const REGISTRATION_MAX_FEE_TINYBAR = 2_000_000;
+
 export class RegistrationRefusal extends Error {
   constructor(message: string) {
     super(message);
@@ -102,10 +133,13 @@ export async function registerAgent(
 
   // --- The agent pays for its own name. --------------------------------------
   const balance = await hbarBalance(s);
-  if (balance <= 0n) {
+  if (balance < BigInt(REGISTRATION_MAX_FEE_TINYBAR)) {
     throw new RegistrationRefusal(
-      `${s.account} holds no ℏ, and §4.6 has the agent pay for its own registration so that §9.5 does not ` +
-        'assign `blurred`. The purchase funds exactly this one fee (D-159 addendum); buy the mailbox first.',
+      `${s.account} holds ${balance} tinybars and this submission declares a maximum of ${REGISTRATION_MAX_FEE_TINYBAR}. ` +
+        'It is refused here rather than at the network, because a precheck that compares the balance to the ' +
+        'DECLARED maximum would refuse it there and a run would learn that after the mailbox was already on ' +
+        'consensus. §4.6 has the agent pay for its own registration so that §9.5 does not assign `blurred`, and the ' +
+        'purchase funds exactly this one fee (D-159 addendum): buy the mailbox first.',
     );
   }
 
@@ -127,7 +161,7 @@ export async function registerAgent(
     new TopicMessageSubmitTransaction()
       .setTopicId(anchor)
       .setMessage(Buffer.from(JSON.stringify(body), 'utf8'))
-      .setMaxTransactionFee(new Hbar(2)),
+      .setMaxTransactionFee(Hbar.fromTinybars(REGISTRATION_MAX_FEE_TINYBAR)),
     [s.agent],
   );
   if (!r.ok) throw new RegistrationRefusal(`the registration returned ${r.status} (tx ${r.transactionId})`);

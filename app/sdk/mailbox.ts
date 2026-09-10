@@ -87,6 +87,8 @@ interface MAccount {
   readonly account: string;
   readonly memo?: string;
   readonly balance?: { readonly tokens?: readonly { readonly token_id: string }[] };
+  /** HIP-542. `-1` is "associate with anything"; a positive number is free slots. */
+  readonly max_automatic_token_associations?: number | null;
 }
 
 /** Raised where the verb refuses. Every refusal names the sentence it is obeying. */
@@ -269,6 +271,19 @@ async function ensurePayerHoldsStamps(s: Session, push: Emit): Promise<void> {
   const a = await s.mirror.get<MAccount>(`/accounts/${s.homePayerId}?limit=1`);
   if (a === null) throw new MailboxRefusal(`the operator ${s.homePayerId} is not an account on this ledger`);
   if ((a.balance?.tokens ?? []).some((t) => t.token_id === s.stampToken)) return;
+
+  // AN ACCOUNT THAT AUTO-ASSOCIATES NEEDS NO ASSOCIATION, and paying for one
+  // would be paying for nothing. HIP-542: `-1` associates with anything and a
+  // positive number is free slots, either of which means the stamp associates
+  // itself as it arrives. The demo operators are created that way on purpose
+  // (`ops/demo-operators.ts`), so on that path this transaction never happens;
+  // the branch below is for a real operator, whose wallet is its own and was
+  // not created by us.
+  const slots = a.max_automatic_token_associations ?? 0;
+  if (slots === -1 || slots > (a.balance?.tokens ?? []).length) {
+    push(line('provision.autoassociates', { account: s.homePayerId, token: s.stampToken }));
+    return;
+  }
   const r = await submit(
     s.homeClient,
     s.homePayerId,

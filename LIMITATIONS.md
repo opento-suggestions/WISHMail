@@ -77,6 +77,16 @@ cap and to succeed at 100 ℏ, charged far less (FETCHED 2026-09-08). So the aut
 the actual charge is what the network charges, which we have not measured. An operator who has can lower it with
 `WISHMAIL_CARRY_MAX_HBAR`, which may only lower. **That is our scoping — a measurement we did not take — and not a
 property of Hedera or of the specification.**
+**Every leg of a purchase but the receipt is flagged as an error on the wire, and that is MCP’s rule rather than ours.**
+A tool that declares an `outputSchema` must return `structuredContent` matching it on any result not flagged as an
+error; the client rejects the response otherwise, with a protocol error and not a tool one. §6.3 makes `buy_stamp`’s
+output a `StampReceipt`, and §14.2 makes the purchase a multi-round-trip exchange whose intermediate legs are not
+receipts — so a quote, a carried signature and a still-outstanding reference each arrive flagged, carrying their
+payload in `_meta` under a state code (`PAYMENT_REQUIRED`, `PAYMENT_CARRYING`, `PAYMENT_CARRIED`). **A caller tells an
+exchange state from a §6.3 failure by the fact that §6.3’s all begin `STAMP_`**, which is a convention this release
+holds and the specification does not require. Nothing in WISHMail is at fault and nothing in MCP is wrong: a transport
+that types a tool’s output has to say what a result that is not that output is, and "error" is the word it has.
+
 ## L-6 — Refusal leaves no mark
 
 A Postmaster that will not sell, a doorbell that does not answer, a registry that delists, a recipient that does not sign: none is on consensus as a refusal (§15.3). This release records what happened and never what was intended; it produces slips for unanswered first contact and reports unsigned receipts as `unclaimed`, and nothing else.

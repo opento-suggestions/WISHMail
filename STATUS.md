@@ -155,6 +155,9 @@ shape before any signature, in the form Steps 2-4 follow.
   for a row of `ops/template.ts` naming this holder’s key, a chunk on the file topic it paid for, the register entry on the
   registry it paid for, or the account-memo update on the holder’s account. Every field number in the decoder was probed off
   a body the SDK froze, and `check:correspondent` re-probes them on every run.
+- **`npm run check:exchange` — 49 assertions over a real Streamable HTTP socket**, the first in this project to open
+  one. It found that MCP refuses a non-error result from a tool declaring an `outputSchema`, so every leg of the purchase
+  but the receipt is now flagged and carries a state code. The two submissions are Gate One’s.
 - **What Gate One waits on: Sonic’s word.** The two Operators’ wallets exist — `0.0.10450879` and `0.0.10450880`, 35 ℏ
   each, unlimited auto-associations, recorded in `app/OPERATIONS.md` as funding and not a sale — and their two homes are
   filled and boot. The purchases are

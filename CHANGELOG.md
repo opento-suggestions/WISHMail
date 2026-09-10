@@ -2,6 +2,32 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Before Gate One, second pass] — 2026-09-09 — the fee an agent can afford, and the first socket
+
+**Not a specification version.** Nothing signed.
+
+- **`register_agent` declares 0.02 ℏ, not 2 ℏ.** It is the only submission whose payer holds almost nothing — the 0.05 ℏ
+  the purchase funds — and it was declaring forty times that. Whether a solvency precheck compares a balance to the
+  **estimated** fee or the **declared** maximum is a fact this project cannot cite: the 2026-09-08 probe’s
+  `INSUFFICIENT_TX_FEE` is a different check, and the HIP-542 probe observed the bought account only as a signer. **So the
+  maximum is declared below the balance and both readings are safe** — thirteen times a measured cost of ~0.0015 ℏ. The
+  verb also refuses before submitting if the balance is under the declared maximum.
+- **`npm run check:exchange` — the first thing in this project to open a socket.** 49 assertions over real Streamable
+  HTTP on loopback, the counter’s own server and the MCP SDK’s own transports, against a modelled ledger. **It found a
+  defect on its first run**: MCP requires a tool declaring an `outputSchema` to return `structuredContent` on any result
+  it does not flag as an error, so the carry leg and the settled-but-carrying leg — written as plain successes — would
+  have failed at the client mid-purchase, with three topics already created. Each now carries its payload in `_meta`
+  under a state code. Recorded in L-5’s neighbourhood and in the gate report.
+- **The receipt wait has a ceiling and a named stop**: thirty seconds, then the reference is reported OUTSTANDING and
+  resumable from either side, because an open wait after a settled transfer is indistinguishable from a hang.
+- **An account that auto-associates is not made to associate.** The two demo Operators were created with
+  `maxAutomaticTokenAssociations = -1` precisely so §4.4’s stamp needs no association transaction; `generate_mailbox` now
+  reads that field and submits nothing, saying so. The explicit path stays for a real operator’s own wallet.
+- **Balances read from the mirror before the gate.** `0.0.8641261` holds 3229.72 ℏ against a floor of 382 ℏ stated in
+  declared terms; the two Operators hold 35 ℏ each against ~15.1 ℏ of purchase; the treasury holds 10,000 `$POSTAGE`
+  against 24. **Nothing needs topping up.**
+- **One observation for a test not yet written**: a receipt’s `price.amount` is the normalised decimal (`"1"`), not the
+  literal the schedule spelled (`"1.00"`). T-P11-4 must compare fixed-point values, not strings.
 ## [Before Gate One] — 2026-09-09 — the payer role named, two demo wallets, and ENTITIES.md
 
 **Not a specification version.** No sentence, no schema, no wire string and no test changed. Two `AccountCreate`

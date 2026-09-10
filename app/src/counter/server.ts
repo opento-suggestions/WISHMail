@@ -107,6 +107,24 @@ function errorResult(code: string, message: string): Record<string, unknown> {
  * and would say that carry exists outside a purchase, which is exactly what
  * L-5 records that it does not.
  *
+ * **EVERY LEG THAT IS NOT THE RECEIPT IS FLAGGED `isError`, AND THAT IS MCP’S
+ * RULE RATHER THAN OURS.** A tool that declares an `outputSchema` must return
+ * `structuredContent` matching it on any result not flagged as an error — the
+ * client refuses the response otherwise, with a protocol error and not a tool
+ * one. `buy_stamp`’s declared output is a `StampReceipt` (§6.3), and a quote, a
+ * carried signature and a still-outstanding reference are none of them. So each
+ * carries its payload in `_meta` under an `isError` flag, exactly as the quote
+ * always did.
+ *
+ * It reads oddly for a leg that succeeded, so the codes say what happened:
+ * `PAYMENT_REQUIRED`, `PAYMENT_CARRYING` and `PAYMENT_CARRIED` are exchange states
+ * in §14.2’s family and are not §6.3 failures — §6.3’s failures all begin
+ * `STAMP_`, and a caller can tell the two apart by that alone. **This was found
+ * by `check:exchange`, the first thing in this project to put the exchange over a
+ * real socket**; every leg but the quote had been written as a plain success and
+ * would have failed at the client, mid-purchase, with three topics already
+ * created.
+ *
  *   no quoteRef              → QUOTE. The requirement comes back in `_meta` —
  *                              never in `structuredContent`, which MCP validates
  *                              against the tool’s `outputSchema` and which is a
@@ -139,9 +157,11 @@ async function buyStamp(cfg: CounterConfig, input: BuyStampInput): Promise<Recor
     if (typeof carried.body !== 'string') return errorResult('STAMP_PAYMENT_FAILED', 'payment.carry.body is the frozen body to be carried, base64');
     const decision = await carrySignature(cfg.ctx, reference, carried.body);
     return {
-      isError: false,
+      // Not a failure: a signature was issued. Flagged because MCP requires a
+      // result it does not flag to carry a StampReceipt, and this is not one.
+      isError: true,
       content: [{ type: 'text' as const, text: decision.statement }],
-      _meta: { 'wishmail/carried': decision, 'wishmail/spec': RELEASE.spec },
+      _meta: { 'wishmail/code': 'PAYMENT_CARRIED', 'wishmail/carried': decision, 'wishmail/spec': RELEASE.spec },
     };
   }
 
@@ -172,7 +192,8 @@ async function buyStamp(cfg: CounterConfig, input: BuyStampInput): Promise<Recor
     // receipt saying otherwise would be a receipt for something that has not
     // happened, so the reference stays open and the buyer is told where it is.
     return {
-      isError: false,
+      // Not a failure: the transfer landed. Flagged for the same reason.
+      isError: true,
       content: [
         {
           type: 'text' as const,
@@ -183,6 +204,7 @@ async function buyStamp(cfg: CounterConfig, input: BuyStampInput): Promise<Recor
         },
       ],
       _meta: {
+        'wishmail/code': 'PAYMENT_CARRYING',
         'wishmail/carrying': { reference: settled.carry.reference, account: settled.carry.account, node: settled.carry.node, feeCap: settled.carry.feeCap },
         'wishmail/spec': RELEASE.spec,
       },

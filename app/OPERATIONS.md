@@ -670,7 +670,7 @@ Per agent, and D-159 as amended is what forces the order. Nothing may be reorder
 | 8 | `registryEntry` | `{p: "hcs-2", op: "register", t_id: <profileFile>}`, transaction memo `hcs-2:op:register:0` | agent signs · **Postmaster pays**, carried | §H:359 · D-168 |
 | 9 | `accountMemo` | `hcs-11:hcs://2/<declRegistry>` | agent signs · **Postmaster pays**, carried | §9.2:1284's MUST · D-168 |
 | 10 | **buy_stamp**, last leg — the receipt | §5.4's `provisioning` line, every coordinate read back from the mirror under a transaction id this counter's own signature carried | nothing signs | §5.4 · §6.3 · D-168 |
-| 11 | `holRegistration` | `{p, op, account_id, uaid, t_id, m}` on the anchor `0.0.6913983`, **no transaction memo** | **agent signs AND pays** | §4.6 · D-164 · T-P13-4 |
+| 11 | `holRegistration` | `{p, op, account_id, uaid, t_id, m}` on the anchor `0.0.6913983`, **no transaction memo**, **max fee declared at 0.02 ℏ** | **agent signs AND pays**, from the 0.05 ℏ the purchase funded | §4.6 · D-164 · T-P13-4 |
 
 **Rows 1 through 10 are one call — `buy_stamp` with `provision`** — and row 11 is `register_agent`. goose says two things, and
 they are the two things a person would say: buy me a mailbox, then register me.
@@ -690,9 +690,54 @@ tested against either and no claim names them. `generate_mailbox` remains on the
 **self-provisioned** path — an agent that brings its own account and pays for its own mailbox, at its own operator’s expense —
 and this step does not take it. Its tool description says which path it is.
 
+**Row 11 declares a maximum fee of 0.02 ℏ, and that is not a detail.** It is the only submission in the project whose
+payer holds almost nothing — 0.05 ℏ, funded as the third leg of the purchase — so it is the only one where the declared
+maximum is not a formality. It declared **2 ℏ** until 2026-09-09, forty times the balance funding it.
+
+**Whether that would have failed depends on a fact this project cannot cite.** I do not know, from a source I can name,
+whether Hedera’s solvency precheck compares the payer’s balance to the fee it **estimates** or to the maximum the
+transaction **declares**. The 2026-09-08 probe observed `INSUFFICIENT_TX_FEE` — a declared maximum against a *required*
+fee — which is a different check and settles nothing here; and the HIP-542 probe observed the bought account only as a
+**signer**, never as a payer, so the one run that could have answered this did not. **So the maximum is declared
+explicitly and below the balance, and both readings are safe**: 0.02 ℏ against a measured submission cost of about
+0.0015 ℏ — thirteen times the cost and under half the funding. The anchor `0.0.6913983` carries no custom fee and no
+submit key (mirror, 2026-09-09), so a registration on it is an ordinary HCS message submission and nothing else is owed.
+
+`register_agent` now refuses **before submitting** if the agent’s balance is under that declared maximum, and says so in
+those terms. Refusing here rather than at the network matters: a precheck that reads the declared maximum would refuse it
+there, and the run would learn it with the mailbox already on consensus.
+
 **Row 11 is the one place an agent pays.** "An agent's account never holds ℏ, with one exception" — this is it, and it is why the purchase funds exactly one fee and no more (§3.9: funding is a payment and not a party). The payer seam is deliberately *not* used: the whole value of the act is that the mirror records **this account** as the payer, and a borrowed payer would put `blurred` on every `hol` resolution of this agent forever.
 
 **One act is not in the table because it is not always needed, and it is NOT carried.** `generate_mailbox` associates the OPERATOR's account with `$POSTAGE` on first run if it is not already, paid by the operator on the operator's own client. Carry covers the mailbox and nothing beside it, and the counter would refuse this body — correctly. §4.4's doorbell fee is debited from the **payer** of the submission (HIP-991), so when the operator pays for the agent's connection request the stamp leaves the operator's account — which means the operator must be able to hold one (D-157). The agent's own account needs no association: HIP-542 creates it with unlimited auto-associations, which the probe observed, so the stamp transfer associates it as it arrives. The config template says so.
+
+### 1a. What it costs, and the balances that must carry it — read 2026-09-09
+
+Every one of the eighteen submissions below is paid by an account this project can name, and every one of them declares a
+maximum. **The floor is stated in DECLARED terms**, for the same reason row 11’s fee is: if a precheck compares a balance
+to a declared maximum, the declared maxima are what must be affordable, and a floor computed from expected cost would be
+a floor computed from the reading I cannot cite.
+
+| Payer | Pays for | Declared, per agent | Read 2026-09-09 | Verdict |
+|---|---|---|---|---|
+| `0.0.8641261` — the Postmaster’s payer | the transfer (5 ℏ), the doorbell (**100 ℏ**), four plain topics (20 ℏ each), the chunks, the register entry and the account memo (2 ℏ each) | **191 ℏ** | **3229.72 ℏ** | **8× the floor for both agents. No top-up.** |
+| `0.0.10450879` / `0.0.10450880` — the two Operators | leg 1 of their own purchase: the price plus the provisioned path | ~15.1 ℏ at the rate current 2026-09-09 | **35 ℏ each** | ample |
+| `0.0.10426205` — the treasury | signs the stamp leg; pays nothing | — | **10,000 $POSTAGE**, 20 ℏ | 24 stamps needed |
+| each agent’s own account | row 11, and nothing else, ever | **0.02 ℏ** | 0.05 ℏ, funded by leg 3 | 2.5× |
+
+**The floor for `0.0.8641261` is 382 ℏ** — both agents’ declared maxima, the strictest reading, since a precheck that
+reserved against declared totals would need all of it. The account holds **3229.72 ℏ**. The expected *actual* outflow is
+far smaller: the two registration fees are 0.1 ℏ and eighteen transaction fees are a few ℏ, against which the Postmaster
+**receives** two purchase prices. **Nothing needs topping up before Gate One.**
+
+**The doorbell’s 100 ℏ is the largest single declaration and it is deliberate.** `networks.ts` records that a fee-gated
+topic creation returned `INSUFFICIENT_TX_FEE` at a 20 ℏ cap and succeeded at 100 ℏ charged far less (FETCHED 2026-09-08).
+The carry policy’s ceiling reads that same number, so the counter authorises up to 100 ℏ per doorbell and is charged what
+the network charges — stated in LIMITATIONS as a measurement we have not taken.
+
+**The two Operators auto-associate.** Both were created with `maxAutomaticTokenAssociations = -1`, so the `$POSTAGE`
+association D-157’s two-hop ring needs costs no transaction: `generate_mailbox` reads that field and submits nothing,
+saying so. The explicit association it kept is for a real operator, whose wallet is its own and was not created by us.
 
 ### 2. What it asserts, and what it reads back
 
@@ -777,14 +822,47 @@ The counter writes one thing of its own: §14.2's durable requirement and settle
 15. the account the counter names as its payer is controlled by more than one key on consensus, or by a key the mirror does
     not agree with;
 16. **the receipt is not issued** while any row is outstanding, or while the holder does not resolve under §9.2 from the
-    counter’s reader. The reference stays open and the receipt is recoverable by it; nothing is lost and nothing is charged
-    twice.
+    counter’s reader;
+17. **the buyer stops waiting for it after thirty seconds**, in fifteen tries. The wait has a ceiling because an open
+    wait is indistinguishable from a hang, and this one happens *after* a transfer has settled and a mailbox is on
+    consensus — a caller that cannot tell "still ingesting" from "never coming" eventually kills the process, and killing
+    it is the one thing that makes the outcome unclear. **At the ceiling the run stops and says what is true**: the
+    transfer settled, the mailbox exists, nothing is lost, nothing will be charged twice, and the reference is
+    OUTSTANDING and **resumable from either side** — `buy_stamp` with the same `quoteRef` from the Correspondent, or
+    `issueReceipt` at the counter. Neither side re-derives anything from the other: the counter reads the mirror under
+    the transaction ids its own signature carried, and the Correspondent re-boots from consensus (D-165). A replayed
+    reference returns the receipt it already bought (T-P11-5).
 
-**A refusal leaves no mark** (§3.5): every refusal above happens before a submission, except (10), (12) and (16), which are reported with what did land because a transfer on consensus cannot be withdrawn.
+**A refusal leaves no mark** (§3.5): every refusal above happens before a submission, except (10), (12), (16) and (17), which are reported with what did land because a transfer on consensus cannot be withdrawn.
 
 ### 5. What is built, and what is checked before the gate
 
 Built: `app/src/counter/` — the carry policy (`carry.ts`), the `TransactionBody` decoder it reads its evidence with (`body.ts`), and what both halves of the counter share (`context.ts`); `app/sdk/carry.ts` — the remote `Signer`. Beside them, `app/sdk/` — the home directory and its record, the keystore, the live `Consensus` over a mirror node and the payer seam, the counter client, `generate_mailbox`, `register_agent`, the doorbell watcher, the stdio MCP server, and the provisioning driver. `app/src/counter/` — §14.3's pricing read from consensus, the three-legged purchase, and the Streamable HTTP MCP server serving `buy_stamp`, `verify` and `resolve`. `app/src/resolve/hol.ts` — §9.5's rule, which Gate One needs because "resolve self under `hol`" is step 5 of the order.
+
+`npm run check:exchange` is **49 assertions over a real Streamable HTTP socket on loopback**, and it is new. Until it
+existed nothing in this project had ever opened a socket: `check:correspondent` calls the carry policy directly and
+`check:mcp` compiles schemas, and between them no byte had crossed a transport. It stands the counter’s own `build()` up
+on an ephemeral loopback port with the MCP SDK’s own server and client transports, against a modelled ledger — a small
+in-memory `Mirror` seeded with the committed sequence-2 schedule and a complete §9.2 declaration chain — and drives the
+whole exchange: the quote, a body that survives the transport, a signature made on one side that verifies on the other,
+every row of the provisioning template carried, every near-miss refused as a code rather than a transport error, and a
+receipt built from the counter’s own readback that validates against the registered schema. **The two submissions are
+not exercised and cannot be** — there is no offline consensus node — so the settle leg runs down the replay path a landed
+transfer takes, and `submit()` itself is Gate One’s.
+
+**It found a defect on its first run, and it is the kind only a socket finds.** MCP requires a tool that declares an
+`outputSchema` to return `structuredContent` matching it on any result **not flagged as an error** — the client rejects
+the response otherwise, with a protocol error rather than a tool one. `buy_stamp`’s declared output is a `StampReceipt`,
+and a quote, a carried signature and a still-outstanding reference are none of them. The quote leg already returned
+`PAYMENT_REQUIRED` as an error-flagged result and worked; **the carry leg and the settled-but-carrying leg were written
+as plain successes and would have failed at the client, mid-purchase, with three topics already created.** Each now
+carries its payload in `_meta` under a flag, with a state code — `PAYMENT_CARRYING`, `PAYMENT_CARRIED` — that a caller
+tells from a §6.3 failure by the fact that §6.3’s all begin `STAMP_`.
+
+**And one observation for a test that does not exist yet.** A receipt’s `price.amount` is the NORMALISED decimal, not the
+literal the price message spelled: the schedule publishes `"1.00"` and the receipt says `"1"`. Nothing is contradicted —
+§14.3 requires no literal echo — but **T-P11-4, when it is written, must compare these as fixed-point values and not as
+strings**, or it will fail a receipt that is exactly right. Recorded in the check itself, beside the assertion.
 
 `npm run check:correspondent` is **105 assertions with no network and no key** — it was 53 before D-168 —: D-147's six rows from the one template; a mirror-node key list decoded so §7.1's threshold lane can be checked at all; §14.3's arithmetic in integers with bundles at exactly their count; the §G-19 refusal read out of the registered schema; one sentence template that implies no delivery and no receipt; the doorbell rule over messages alone; and a home directory that is the agent — keys born once, loaded ever after.
 
