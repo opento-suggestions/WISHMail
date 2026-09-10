@@ -349,11 +349,15 @@ export async function settlePurchase(
   const row = requirements.get<Requirement>(key);
   if (row === undefined) throw new CounterRefusal('STAMP_PAYMENT_FAILED', `no quote is outstanding under ${reference}`);
   const requirement = row.value;
-  if (Date.parse(requirement.expiresAt) < Date.now()) {
-    requirements.remove(key);
-    throw new CounterRefusal('STAMP_PAYMENT_FAILED', `the quote ${reference} has expired; ask for another`);
-  }
-
+  // A QUOTE EXPIRES; A PURCHASE ON CONSENSUS DOES NOT. This order is the whole
+  // of the difference. An expiry says "you may no longer sign this and submit
+  // it", which is a true thing to say about a quote nobody answered and a false
+  // one about a transfer that has already landed — the money is spent, the
+  // account exists, and the counter owes the rest of what it sold. Gate One's
+  // third run met the expiry on a reference whose transfer was on consensus, so
+  // consensus is asked first and the expiry governs only the path that could
+  // still submit something.
+  //
   // THE REFERENCE IS THE TRANSACTION ID, SO CONSENSUS IS ASKED BEFORE ANYTHING
   // IS SUBMITTED. `openPurchase` freezes the transfer and takes its id as the
   // payment reference (§14.2), so the one question "has this reference already
@@ -370,6 +374,12 @@ export async function settlePurchase(
   if (landed !== null && (landed.transactions ?? []).some((x) => x.result === 'SUCCESS')) {
     return await afterTransfer(ctx, requirement, reference);
   }
+
+  if (Date.parse(requirement.expiresAt) < Date.now()) {
+    requirements.remove(key);
+    throw new CounterRefusal('STAMP_PAYMENT_FAILED', `the quote ${reference} has expired; ask for another`);
+  }
+
 
   // NOTHING ON CONSENSUS AND NO SIGNATURE IS A RESUME OF SOMETHING THAT NEVER
   // HAPPENED. The resume leg carries no signature because it exists for a
