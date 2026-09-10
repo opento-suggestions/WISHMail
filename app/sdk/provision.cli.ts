@@ -32,7 +32,7 @@
  * Usage:  npm run correspondent:provision -- <home directory> [--dry-run]
  */
 import path from 'node:path';
-import { buyStamps } from './counter.js';
+import { buyStamps, outstanding } from './counter.js';
 import { openHome } from './home.js';
 import { mirrorSource } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
@@ -170,8 +170,20 @@ async function main(): Promise<void> {
 
   // --- 2. The purchase, and the mailbox it pays for. -------------------------
   let outcome = 'existing';
-  if (s.account === '') {
-    console.log('  2. buy_stamp — the purchase, then the mailbox it pays for, then the receipt (D-168)');
+  // AN ACCOUNT IS NOT THE SAME QUESTION AS A PURCHASE. An account with no
+  // mailbox is either a purchase that stopped between rows — in which case the
+  // Postmaster sold this mailbox and pays for the rest of it — or an agent that
+  // brought its own account, in which case its own operator does. The home says
+  // which: a purchase reference written down before the signature left this
+  // process. Getting this wrong costs the Postmaster's carry and charges this
+  // operator for a mailbox it already bought.
+  const resuming = s.account !== '' && outstanding(s, s.record) !== undefined;
+  if (s.account === '' || resuming) {
+    console.log(
+      resuming
+        ? '  2. buy_stamp — RESUMING an outstanding purchase: the mailbox it already paid for, then the receipt (D-168)'
+        : '  2. buy_stamp — the purchase, then the mailbox it pays for, then the receipt (D-168)',
+    );
     const bought = await buyStamps(s, { count: 12, provision: true, onLine: say });
     // The account is on consensus now, and so is the mailbox; the session that
     // asked for them predates both, so the one the purchase returns is taken.

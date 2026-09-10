@@ -328,8 +328,8 @@ export type Settled =
 export async function settlePurchase(
   ctx: CounterContext,
   reference: string,
-  buyerPublicKey: string,
-  signature: string,
+  buyerPublicKey?: string,
+  signature?: string,
 ): Promise<Settled> {
   const requirements = openStore(ctx.stateDir, 'requirements');
   const payments = openStore(ctx.stateDir, 'payments');
@@ -354,6 +354,35 @@ export async function settlePurchase(
     throw new CounterRefusal('STAMP_PAYMENT_FAILED', `the quote ${reference} has expired; ask for another`);
   }
 
+  // THE REFERENCE IS THE TRANSACTION ID, SO CONSENSUS IS ASKED BEFORE ANYTHING
+  // IS SUBMITTED. `openPurchase` freezes the transfer and takes its id as the
+  // payment reference (§14.2), so the one question "has this reference already
+  // settled?" has an answer on consensus that survives anything happening on
+  // either machine. A settle leg that reached the network and then failed on
+  // its own readback would otherwise come back here with the money already
+  // spent, and try to submit the transfer a second time. It could not
+  // double-charge — a transaction id is single-use, and the network answers
+  // DUPLICATE_TRANSACTION — but it would report a network status for a purchase
+  // that in fact succeeded, and the buyer would be told the thing that is least
+  // true. This is stop condition (17)'s "resumable from either side" applied to
+  // the settle leg itself, and Gate One's second run is why it is written.
+  const landed = await ctx.mirror.get<MTransactions>(`/transactions/${toMirrorTxId(reference)}`);
+  if (landed !== null && (landed.transactions ?? []).some((x) => x.result === 'SUCCESS')) {
+    return await afterTransfer(ctx, requirement, reference);
+  }
+
+  // NOTHING ON CONSENSUS AND NO SIGNATURE IS A RESUME OF SOMETHING THAT NEVER
+  // HAPPENED. The resume leg carries no signature because it exists for a
+  // reference that has already settled; if the mirror does not hold it, there is
+  // nothing to resume and the caller is told so rather than quoted again.
+  if (buyerPublicKey === undefined || signature === undefined) {
+    throw new CounterRefusal(
+      'STAMP_PAYMENT_UNSETTLED',
+      `${reference} has not settled on consensus and this leg carries no signature. ` +
+        'Sign the body in your own process and call buy_stamp again with payment.quoteRef and payment.signature.',
+    );
+  }
+
   // THE BODY IS THE ONE THIS COUNTER BUILT. It is reconstituted from its own
   // durable row and never from anything the buyer sent (T-P13-3).
   const frozen = Transaction.fromBytes(Buffer.from(requirement.body, 'base64'));
@@ -370,14 +399,30 @@ export async function settlePurchase(
     throw new CounterRefusal('STAMP_PAYMENT_FAILED', `the purchase returned ${r.status} (tx ${r.transactionId})`);
   }
 
-  const receipt = await receiptFrom(ctx, requirement, r.transactionId);
+  return await afterTransfer(ctx, requirement, r.transactionId);
+}
+
+/**
+ * Everything that follows a transfer on consensus, whether this call put it
+ * there or found it already there.
+ *
+ * It is one function because both entrances must do the same thing. A settle
+ * leg that submitted, and a settle leg that discovered its reference had
+ * already settled, differ in exactly one respect — whether they spent a
+ * submission — and in none that a buyer can see. Two spellings of this would be
+ * two places for the receipt to be built differently from the same facts.
+ */
+async function afterTransfer(ctx: CounterContext, requirement: Requirement, transactionId: string): Promise<Settled> {
+  const key = safeKey(requirement.reference);
+  const requirements = openStore(ctx.stateDir, 'requirements');
+  const receipt = await receiptFrom(ctx, requirement, transactionId);
 
   if (requirement.provision) {
     // The account exists now, and nothing else does. The rest of §4.6’s path is
     // eight bodies the agent signs and this counter pays for, under the policy
     // in `carry.ts`, and the receipt waits for all of them.
     const carry = openCarry(ctx, {
-      reference,
+      reference: requirement.reference,
       txRef: receipt.txRef,
       count: requirement.count,
       quote: requirement.quote,
@@ -398,11 +443,13 @@ export async function settlePurchase(
     // the counter's defect and the buyer must be told which field.
     throw new CounterRefusal(
       'STAMP_PAYMENT_UNSETTLED',
-      `the purchase settled as ${r.transactionId} and its receipt does not validate against the registered schema: ${errors.join('; ')}`,
+      `the purchase settled as ${transactionId} and its receipt does not validate against the registered schema: ${errors.join('; ')}`,
     );
   }
 
-  payments.put(key, receipt, { retainUntil: new Date(Date.now() + 90 * 86_400_000).toISOString() });
+  openStore(ctx.stateDir, 'payments').put(key, receipt, {
+    retainUntil: new Date(Date.now() + 90 * 86_400_000).toISOString(),
+  });
   requirements.remove(key);
   return { kind: 'receipt', receipt };
 }
@@ -518,10 +565,31 @@ async function receiptFrom(ctx: CounterContext, requirement: Requirement, transa
   if (seen === null || !p(seen)) {
     throw new CounterRefusal('STAMP_PAYMENT_UNSETTLED', `the mirror does not yet hold ${transactionId}; the receipt is recoverable by this reference`);
   }
-  const tx = (seen.transactions ?? []).find((x) => x.result === 'SUCCESS');
-  const credited = (tx?.token_transfers ?? []).find((t) => t.token_id === ctx.stampToken && t.amount > 0);
+  // ONE TRANSACTION ID, SEVERAL RECORDS — and the credit is in whichever one
+  // carries it. A transfer to a public-key alias auto-creates the account
+  // (HIP-542), and the mirror reports that creation as a CRYPTOCREATEACCOUNT
+  // record under THE SAME transaction id as the CRYPTOTRANSFER, listed first.
+  // Reading only the first success finds a record with no token transfers at
+  // all and concludes the purchase paid for nothing — which is what Gate One's
+  // second run concluded, with the transfer already on consensus. So every
+  // success under the id is searched, and the record that carries the credit is
+  // the one the receipt's `txRef` names.
+  const successes = (seen.transactions ?? []).filter((x) => x.result === 'SUCCESS');
+  let tx: (typeof successes)[number] | undefined;
+  let credited: { readonly token_id: string; readonly account: string; readonly amount: number } | undefined;
+  for (const candidate of successes) {
+    const c = (candidate.token_transfers ?? []).find((t) => t.token_id === ctx.stampToken && t.amount > 0);
+    if (c !== undefined) {
+      tx = candidate;
+      credited = c;
+      break;
+    }
+  }
   if (credited === undefined) {
-    throw new CounterRefusal('STAMP_PAYMENT_UNSETTLED', `${transactionId} carries no credit of ${ctx.stampToken}`);
+    throw new CounterRefusal(
+      'STAMP_PAYMENT_UNSETTLED',
+      `${transactionId} carries no credit of ${ctx.stampToken} in any of its ${successes.length} record(s)`,
+    );
   }
 
   return {

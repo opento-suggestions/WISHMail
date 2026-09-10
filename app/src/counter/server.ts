@@ -183,8 +183,23 @@ async function buyStamp(cfg: CounterConfig, input: BuyStampInput): Promise<Recor
     };
   }
 
-  if (signature?.publicKey !== undefined && signature.value !== undefined && typeof reference === 'string') {
-    const settled = await settlePurchase(cfg.ctx, reference, signature.publicKey, signature.value);
+  // SETTLE, OR RESUME A REFERENCE THAT HAS ALREADY SETTLED.
+  //
+  // A quoteRef with a signature is the ordinary settle. A quoteRef WITHOUT one
+  // is a resume, and it exists because the window between "the signature left
+  // this process" and "the buyer learned what happened" is a window in which the
+  // transfer can land and the answer be lost. Gate One's second run lost one:
+  // the transfer settled, the counter failed on its own readback, and a quoteRef
+  // arriving alone afterwards fell through to `quotePurchase` and was answered
+  // with a SECOND quote — the one answer that is wrong, because the first
+  // purchase was paid for. `settlePurchase` asks consensus before it submits, so
+  // a resume finds the landed transfer and opens the carry; where the reference
+  // has NOT settled it refuses and says a signature is what is missing.
+  if (typeof reference === 'string') {
+    const settled =
+      signature?.publicKey !== undefined && signature.value !== undefined
+        ? await settlePurchase(cfg.ctx, reference, signature.publicKey, signature.value)
+        : await settlePurchase(cfg.ctx, reference);
     if (settled.kind === 'receipt') {
       return textResult(settled.receipt, { receipt: settled.receipt as unknown as Record<string, unknown> });
     }

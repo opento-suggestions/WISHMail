@@ -157,16 +157,23 @@ interface OutstandingPurchase {
   readonly node: string;
   readonly carriedBy: string;
   readonly account: string;
-  readonly state: 'carrying' | 'settled';
+  readonly state: 'signed' | 'carrying' | 'settled';
 }
 
-function outstanding(s: Session, record: AgentRecord): OutstandingPurchase | undefined {
+export function outstanding(s: Session, record: AgentRecord): OutstandingPurchase | undefined {
   const row = record.get('purchase');
   const policy = row?.policy as unknown as OutstandingPurchase | undefined;
-  if (policy === undefined || policy.state !== 'carrying') return undefined;
-  // A record naming another account is a record of another agent’s purchase,
-  // which a home that is an agent should never hold — but if it does, it is not
-  // this one’s to resume.
+  if (policy === undefined) return undefined;
+  if (policy.state !== 'signed' && policy.state !== 'carrying') return undefined;
+  // A SIGNED row names no account yet, because the purchase is what creates one.
+  // It is written before the signature leaves this process — from that moment
+  // the transfer may land no matter what this process learns next — so the
+  // account it belongs to is knowable only from consensus, and boot has already
+  // found it under this agent's key. A CARRYING row names the account the
+  // counter reported, and a record naming another one is a record of another
+  // agent's purchase: a home that is an agent should never hold one, but if it
+  // does, it is not this one's to resume.
+  if (policy.state === 'signed') return { ...policy, account: s.account };
   return policy.account === s.account ? policy : undefined;
 }
 
@@ -309,6 +316,23 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       const signature = await signer.sign((bodies[0] as { signableTransactionBodyBytes: Uint8Array }).signableTransactionBodyBytes);
       push(line('purchase.signed'));
 
+      // THE REFERENCE IS WRITTEN DOWN BEFORE THE SIGNATURE LEAVES THIS PROCESS.
+      //
+      // From the moment it does, the transfer may land whatever this process
+      // learns next — the counter may fail on its own readback, the transport
+      // may drop, the process may be killed — and the reference is the one thing
+      // in this exchange that is not on consensus in a form this agent could
+      // find again. Written after the answer came back, as it was until Gate
+      // One's second run, it is written exactly when nothing can go wrong and
+      // lost exactly when something does. The account is not known yet, because
+      // the purchase is what creates it; a resume reads it from consensus.
+      remember(
+        s,
+        record,
+        { reference: requirement.reference, node: requirement.node, carriedBy: requirement.carriedBy ?? '', account: '', state: 'signed' },
+        requirement.reference,
+      );
+
       // --- 3. Settle the transfer. -------------------------------------------
       const settled = await call(client, 'buy_stamp', {
         count: options.count,
@@ -344,6 +368,39 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       // consensus in a form this agent could find again. Written down the
       // moment the transfer lands, so a run that stops here can be resumed
       // rather than paid for twice.
+      remember(s, record, { reference, node, carriedBy, account, state: 'carrying' }, reference);
+    }
+
+    // --- 3a. A SIGNED reference has to be told what became of it. ------------
+    //
+    // A resume from `signed` knows only that a signature left this process. The
+    // counter is the party that can say whether the transfer landed — it asks
+    // consensus under the reference, which is the transaction id — so the resume
+    // leg is called with the quoteRef and no signature, and what comes back is
+    // the same `carrying` a first-time settle returns. Where the transfer did
+    // NOT land, the counter refuses and says a signature is what is missing;
+    // there is nothing to resume and nothing was charged.
+    if (resuming?.state === 'signed') {
+      const resumed = await call(client, 'buy_stamp', {
+        count: options.count,
+        payment: { method, from: s.homePayerId, quoteRef: reference },
+        holder,
+        provision: true,
+      });
+      const receipt = resumed.structuredContent?.['receipt'] as StampReceipt | undefined;
+      if (receipt !== undefined) {
+        remember(s, record, { reference, node, carriedBy, account, state: 'settled' }, receipt.txRef);
+        push(line('purchase.settled', { txRef: receipt.txRef, consensusTimestamp: receipt.txRef.split('@')[1] ?? '', holder: receipt.holder }));
+        return { receipt, session: s };
+      }
+      const carrying = resumed._meta?.['wishmail/carrying'] as { readonly account: string; readonly node?: string } | undefined;
+      if (carrying === undefined) {
+        const code = (resumed._meta?.['wishmail/code'] as string | undefined) ?? 'STAMP_PAYMENT_FAILED';
+        throw new CounterUnavailable(code, textOf(resumed));
+      }
+      account = carrying.account;
+      if (carrying.node !== undefined) node = carrying.node;
+      push(line('purchase.account', { account }));
       remember(s, record, { reference, node, carriedBy, account, state: 'carrying' }, reference);
     }
 
