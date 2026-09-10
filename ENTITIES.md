@@ -120,6 +120,20 @@ written to by any code in this repository.
 From `app/deployment/demo-agents.hedera-testnet.json`, snapshotted from each home’s own `record.json`. Every id
 below is public and nothing here is a key: a home’s config and keystore are never read (P-13).
 
+| Agent | Status | Account | Purchase reference |
+|---|---|---|---|
+| a | **stopped** | `0.0.10451893` | `0.0.8641261@1789006030.569861064` |
+| b | **provisioned** | `0.0.10452127` | `0.0.8641261@1789007373.238805114` |
+
+**`stopped` means the account was bought and paid for and the mailbox was never finished.** The transfer is on
+consensus, the account holds its stamps and its registration fee, and nothing was charged twice — a transaction
+id is single-use. What is missing is the six topics and the receipt. Gate One (2026-09-09) stopped one purchase
+this way: a defect deleted the counter’s record of the sale — the quote it charged and the rate it charged at —
+before the receipt was built, and §5.4 builds a receipt from those, so no receipt exists and none was
+reconstructed, because reconstructing it would manufacture the evidence a receipt is. The defect is fixed. The
+reference above was restored to that agent’s home from consensus alone. `app/OPERATIONS.md` Step 5 has the run
+of record.
+
 | Agent | What | Id | Payer of record |
 |---|---|---|---|
 | a | the provisioning purchase this agent was bought by | `0.0.10451893` | `0.0.8641261` |

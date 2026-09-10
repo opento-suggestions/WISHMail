@@ -1,6 +1,6 @@
 {
   "_readme": "A conformance-suite report. §5.10 ConformanceClaim.suite.reportDigest names the `digest` below, which is SHA-256 over the canonical JSON (RFC 8785) of this object with `digest` and `generated` absent (§5.1). `generated` is excluded for the reason §11.6 excludes observations: two runs at two clocks cannot agree on it. A claim naming a class whose row here is not `passed in full` is refused (T-P15-3).",
-  "spec": "0.5.9",
+  "spec": "0.5.10",
   "minorVersion": "0.5",
   "scope": "all",
   "register": {
@@ -880,6 +880,6 @@
       "outcome": "failed"
     }
   ],
-  "generated": "2026-09-09T21:43:14.585Z",
-  "digest": "f635da3fa47dab8caf0f186f73e7ca7b69a5f6ac3642bbe6003628b56c5c18dd"
+  "generated": "2026-09-10T03:24:10.231Z",
+  "digest": "a50e3b3281ddd07b26ae09bd14370fa04b981dbdb5d3346b27a3a9e1b4aaba57"
 }

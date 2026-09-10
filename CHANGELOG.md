@@ -2,6 +2,111 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate One] — 2026-09-09 — the counter's first sales, on `hedera:testnet`
+
+**No version bump.** Nothing here changes the specification, a schema, or a wire string. It is what happened when the
+reference implementation was run against the network for the first time as a buyer and a seller, and the defects that
+found. **[S]** authorised the run; **[CC]** ran it and wrote the record.
+
+### What is on consensus
+
+**Correspondent B — provisioned, receipted, registered.** Bought at `PriceList` sequence 3's price under reference
+`0.0.8641261@1789007373.238805114`: one transaction, three legs, the buyer signing in its own process, and the account
+created by the transfer itself (HIP-542).
+
+```
+account 0.0.10452127   doorbell 0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+declaration registry 0.0.10452155   profile file 0.0.10452158   registration 0.0.6913983#381
+```
+
+- **§6.1's carry ran against the network for the first time.** Eight bodies signed by the agent in its own process,
+  each decoded by the counter before it would sign it, each paid for by `0.0.8641261`. The auto-renew account on every
+  topic is B's **own operator** and never the Postmaster's.
+- **The first `StampReceipt`.** Every `provisioning` field filled from the counter's own readback under the
+  transaction ids its own signature carried, validated against the **registered** schema before it was returned. Its
+  rate is `0.07638866` at `1789005662.118530104` — D-170's, and a stranger re-obtains it from a mirror node at that
+  timestamp.
+- **The registration was paid by `0.0.10452127`, the agent itself**, charged 0.00377436 ℏ against 0.02 ℏ declared and
+  the 0.05 ℏ its purchase funded. That is the one fact the funded fee exists to buy: §9.5 assigns `blurred` where the
+  registration's payer is not the address's own account, and all 380 messages before ours on that anchor carry it.
+- **Both resolutions carry no `blurred`**, which is the acceptance test for the step. Two further runs against the same
+  home created nothing and exited 0.
+
+**Correspondent A — stopped, and it stays stopped.** Account `0.0.10451893`, bought and paid for, holding its 12
+`$POSTAGE` and its 0.05 ℏ, with no mailbox and **no receipt**. `ENTITIES.md` marks it `stopped` and LIMITATIONS says
+why the receipt is permanently absent.
+
+### Eight defects, all in one window
+
+Every one lived between "a signature left the buyer" and "the buyer learned what happened" — the window
+`check:exchange` cannot reach, because there is no offline consensus node, and which it says so in as many words.
+
+- `submit()` prepared a transaction the counter had already frozen and signed; every SDK setter it calls throws on a
+  frozen one, and a second `freezeWith` would rebuild signed bodies underneath a signature over the first ones.
+- `receiptFrom` read the first SUCCESS record under a transaction id. A transfer to a public-key alias auto-creates the
+  account (HIP-542) and the mirror reports that as a **CRYPTOCREATEACCOUNT record under the same id, listed first**,
+  with no token transfers in it — so the purchase looked as though it had paid for nothing.
+- The purchase reference was written down **after** the settle call returned, which is to say exactly when nothing can
+  go wrong and lost exactly when something does. It is now written before the signature leaves the process.
+- A `quoteRef` arriving with no signature fell through to `quotePurchase` and answered a **paid-for purchase with a
+  second quote**. The settle leg is now settle-or-resume, and asks consensus before it submits.
+- The quote-expiry check ran **ahead** of the consensus check and its `requirements.remove` **deleted the counter's
+  record of a purchase that had settled**. A quote expires; a purchase on consensus does not. **This one cost A's
+  receipt.**
+- Two reads took mirror ingestion for absence — the `account.publickey` index after a purchase, and the HOL anchor
+  after a registration. A caller that already knows the answer now waits for the mirror to agree; every other caller
+  still reads once, because for them "no" is a real answer.
+- The driver read `uaid` from the returned session's own record, which a provisioning purchase loads from disk before
+  the mailbox rows are written — reporting a complete mailbox as incomplete.
+
+`npm run check:correspondent` went from 105 assertions to **109**; the four it gained are the SDK facts the first
+defect turned on, so it cannot come back without a check going red first.
+
+### Measured
+
+- **A HIP-991 fee-gated topic creation costs 26.31542199 ℏ.** LIMITATIONS had called this a measurement we had not
+  taken. One mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows and sells for **15.09094832 ℏ**.
+  Nothing on consensus is wrong and no fee left the ceiling the carry policy authorised: `provisioning.unitPrice` was
+  set at 2 ℏ before the cost was known. **Repricing is a new `PriceList` message and touches no schema and no wire
+  string**, and is tomorrow's, on **[S]**'s number.
+- **The registration fee is 0.00377436 ℏ**, thirteen times under the declared maximum and under a tenth of the funding.
+
+### The record and the tree
+
+- **`app/OPERATIONS.md`** — the run of record under Step 5, with every transaction id and every mirror readback. The
+  gate report above it is left exactly as it stood before the first transaction: a gate report amended after the run is
+  not a gate report.
+- **`STATUS.md`** — Gate One as its own register, and tomorrow's rulings.
+- **`LIMITATIONS.md`** — the exchange window; the doorbell's measured cost; and the receipt that is permanently absent
+  and was **not** reconstructed from the ledger, because a receipt assembled by the party that charged, after the record
+  of the charge was gone, is the thing a receipt exists to not be.
+- **`ENTITIES.md`** — DEMO AGENTS filled from the two homes' own `record.json`, with a per-agent status; A is
+  `stopped`. Generated, and `check:entities` fails on a hand-edit.
+- **`plans/2026-09-10-gate-two.md`** — sequence 4, the top-ups, A′, and Gate Two, carrying **[S]**'s rulings so
+  tomorrow opens without the conversation that produced them.
+
+### Hygiene, the same day
+
+No module moved, no identifier was renamed, and `spec/schemas/` was not touched.
+
+- `recon/` → **`provenance/recon/`** and `ETHGlobal-rules.md` → **`provenance/`**, with `git mv`. The root now holds
+  `spec/`, `conformance/`, `app/`, `plans/`, `provenance/`, `scripts/`, `.githooks/` and the standing documents.
+  Three provenance files with spaces or mixed case were slugged, and the demo-flow diagram was added.
+  **Navigational links were fixed; historical citations in the CHANGELOG, ledger §B/§H and the ADRs were deliberately
+  not**, and `provenance/README.md` carries the redirect.
+- `.gitignore`: the Java/BlueJ template block removed, and the two lines in it worth keeping — `*.log`, and the probe's
+  working paper — carried into the WISHMail block with their reasons. Nothing ignored changed.
+- `probe542-observations.json` and `.env.backup-pre-0.5.2` deleted from the working tree. Both were untracked and
+  ignored; the probe's findings were already written out in full in `app/OPERATIONS.md`, and the sentences that pointed
+  at the JSON now say it is a working paper and not a record.
+- `README.md`'s first screen rewritten as the door: what is on `hedera:testnet` now, **where conformance actually
+  stands** (86 registered, 0 passing, no class claimed, a report now emitted — and why that is honest), and how to run
+  the counter, a Correspondent and goose.
+- `.env.example` and `app/sdk/config.template.json` read as a stranger would: every field says what it is and **whose**
+  it is, no value could be mistaken for a real one, and `WISHMAIL_CARRY_MAX_HBAR` is documented for the first time.
+- Every `README.md`'s first paragraph made true: `app/` still listed the counter, the SDK and the `hol` resolver as not
+  existing; `conformance/` still said 83 tests and no report.
+
 ## [0.5.10] — 2026-09-09 — decimal strings compare by value; the rate a Verifier can re-obtain
 
 **A patch under §1.7.** No wire string moves, no schema changes, no test is added, and the register stays at 86. §1.7

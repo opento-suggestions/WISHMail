@@ -297,6 +297,14 @@ function snapshotHomes(homesParent) {
         payer: e.payer ?? null,
         transactionId: e.transactionId ?? '',
         consensusTimestamp: e.consensusTimestamp ?? '',
+        // The purchase row alone carries a STATE, and it is the difference
+        // between an agent that has a mailbox and one whose purchase stopped
+        // (Gate One, 2026-09-09). Both are on consensus and both are true; only
+        // this says which. Nothing here is a key: a reference is a transaction
+        // id and a state is one of three words.
+        ...(key === 'purchase' && e.policy
+          ? { state: e.policy.state ?? null, reference: e.policy.reference ?? null }
+          : {}),
       });
     }
     if (entities.length > 0) agents.push({ slug, ledgerTag: rec.ledgerTag ?? LEDGER, entities });
@@ -350,6 +358,29 @@ function demoAgents() {
   L.push('From `app/deployment/demo-agents.hedera-testnet.json`, snapshotted from each home’s own `record.json`. Every id');
   L.push('below is public and nothing here is a key: a home’s config and keystore are never read (P-13).');
   L.push('');
+  L.push('| Agent | Status | Account | Purchase reference |');
+  L.push('|---|---|---|---|');
+  for (const a of snapshot.agents) {
+    const purchase = a.entities.find((e) => e.key === 'purchase');
+    const provisioned = a.entities.some((e) => e.key === 'doorbell');
+    const status = provisioned ? '**provisioned**' : '**stopped**';
+    L.push(
+      `| ${a.slug} | ${status} | ${purchase ? `\`${purchase.id}\`` : '—'} | ` +
+        `${purchase?.reference ? `\`${purchase.reference}\`` : '—'} |`,
+    );
+  }
+  L.push('');
+  if (snapshot.agents.some((a) => !a.entities.some((e) => e.key === 'doorbell'))) {
+    L.push('**`stopped` means the account was bought and paid for and the mailbox was never finished.** The transfer is on');
+    L.push('consensus, the account holds its stamps and its registration fee, and nothing was charged twice — a transaction');
+    L.push('id is single-use. What is missing is the six topics and the receipt. Gate One (2026-09-09) stopped one purchase');
+    L.push('this way: a defect deleted the counter’s record of the sale — the quote it charged and the rate it charged at —');
+    L.push('before the receipt was built, and §5.4 builds a receipt from those, so no receipt exists and none was');
+    L.push('reconstructed, because reconstructing it would manufacture the evidence a receipt is. The defect is fixed. The');
+    L.push('reference above was restored to that agent’s home from consensus alone. `app/OPERATIONS.md` Step 5 has the run');
+    L.push('of record.');
+    L.push('');
+  }
   L.push('| Agent | What | Id | Payer of record |');
   L.push('|---|---|---|---|');
   for (const a of snapshot.agents) {

@@ -103,7 +103,9 @@ against a receipt under them, and P-12 downgrades what cannot be replayed. **Seq
 the rate is Hedera’s own, which a mirror node serves with a timestamp filter, and §14.3 makes the price current at a
 purchase the latest message before it, so every purchase from sequence 3 onward is replayable. **The two earlier
 messages are not edited and cannot be** — a schedule is the sequence of messages — so this release states plainly
-that any receipt issued under them is unreplayable on its rate. No such receipt exists: the counter has made no sale.
+that any receipt issued under them is unreplayable on its rate. **No such receipt exists.** The counter has made two
+sales, both on 2026-09-09 and both quoted at sequence 3, and §14.3 makes the price current at a purchase the latest
+message before it — so no receipt this deployment has issued or can now issue names a DEX rate.
 
 **The DEX source was an ecosystem-partner integration, and it quoted correctly.** SaucerSwap is Hedera’s own
 DEX, and `api.saucerswap.finance` was the initial intent for exactly that reason — a WISHMail price quoted through a
@@ -111,6 +113,40 @@ partner already in the ecosystem. **The API did not fail.** It answered every ca
 right. What it cannot do — what no DEX spot feed can do — is let a Verifier re-obtain the rate at a receipt’s `at`,
 which is what T-P11-4 requires and what P-12 downgrades the absence of; the network’s own exchange rate can, because
 it is consensus data. **The partner integration is out of MVP scope for time, and the intent stands.**
+
+**THE EXCHANGE WINDOW: every defect of the first real purchase lived in it, and no offline check reaches it.** §14.2's
+purchase is a multi-round-trip exchange, and between "a signature left the buyer" and "the buyer learned what
+happened" there is a window in which the transfer can land while the answer is lost — to a failure on the counter's own
+readback, to a dropped transport, to a killed process. **Gate One found eight defects on 2026-09-09 and every one of
+them was in that window**: a transaction the counter had frozen and signed being prepared a second time; the mirror
+reporting HIP-542's account creation as a record under the same transaction id, listed first, with no token transfers
+in it; the purchase reference written down after the answer came back rather than before the signature left; a settled
+reference falling through to a second quote; a quote-expiry check deleting a purchase that had settled; two reads that
+took mirror ingestion for absence; and a record handle that reported a complete mailbox as incomplete.
+
+**This is our scoping and not a property of Hedera or of the specification.** `npm run check:exchange` stands the
+counter up on a real Streamable HTTP socket and drives the whole exchange against a modelled ledger — but **there is no
+offline consensus node**, so its settle leg runs down the replay path a landed transfer takes and the submission itself
+is never exercised. **The first real purchase is the test of that window, and nothing before it is.** What makes that
+survivable rather than merely true is the resume path: the reference is the transfer's own transaction id, so "has this
+settled?" has an answer on consensus that survives anything happening on either machine; the buyer writes the reference
+down **before** the signature leaves its process; and the counter asks consensus before it submits or expires anything.
+A purchase that stops between rows is resumable from either side by reading the ledger, and a replayed reference
+returns the receipt it already bought rather than charging twice (T-P11-5).
+
+**ONE RECEIPT IS PERMANENTLY ABSENT, and the reason is ours.** The counter's first sale — account `0.0.10451893`, under
+reference `0.0.8641261@1789006030.569861064`, 2026-09-09 — settled on consensus and has **no `StampReceipt`**. The
+transfer landed; the counter then failed on its own readback; and a defect in the ordering of its checks deleted the
+durable `Requirement` row for a reference that had already settled, taking with it the quote it charged and the rate it
+charged at. §5.4's receipt carries `price` and `rate`, and those are built from that row and from nothing else.
+
+**It was not reconstructed, and that is a decision rather than an inability.** The account, the stamps, the fee, the
+transfer and its consensus timestamp are all readable from a mirror node, and a plausible receipt could have been
+assembled from them. It would have been a document asserting what was charged, built by the party that charged it,
+after the record of the charge was gone — **which is the thing a receipt exists to not be**. §11's whole apparatus
+rests on a Verifier being able to check a receipt against evidence the issuer did not author. So the sale stands
+recorded with no receipt, the defect is fixed, and `ENTITIES.md` marks that agent `stopped`. Nothing was charged twice
+and nothing can be: a transaction id is single-use.
 
 ## L-6 — Refusal leaves no mark
 

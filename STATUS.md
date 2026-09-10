@@ -24,7 +24,7 @@ Demo shape: offered in v0.3, not chosen (v0.3 §19 item 3). Open for Sonic.
 
 ```
 0  repo outfitting: layout, DCO, Conventional Commits, CHANGELOG, ADR backfill D-1..41,
-   spec/pins.json from recon/pins.draft.json, spec/schemas/ (14 files), CLAUDE.md   [DONE 09-07]
+   spec/pins.json from provenance/recon/pins.draft.json, spec/schemas/ (14 files), CLAUDE.md   [DONE 09-07]
 1  primitives: RFC 8785 canonical JSON; SHA-256; HPKE RFC 9180 (X25519/HKDF-SHA256/AES-256-GCM);
    AAD build + id; chunker/chain (§7.4); reassembly walk (§8.5, §11.3)
    -> spec/vectors/aad.json, seal.json generated here and cross-checked (T-P1-4, T-P1-5)
@@ -89,13 +89,113 @@ The blanket DIVERGENCE is recorded once, in `app/OPERATIONS.md`, with the parame
 
 ~~**§G-19 is open, and it blocks Gate One's purchase.**~~ **Closed 2026-09-09 by D-168, reading (a): the Postmaster provisions the mailbox it sells.** The finding as it stood: A provisioning purchase cannot produce a `StampReceipt` that validates: §5.4 requires `doorbell` and `manifestTopic` inside `provisioning` because they are "the entities the Postmaster created for the holder", and D-159 as amended has the Postmaster create the **account** while the agent creates its own topics afterwards, under its own key. Carrying the line fails the registered schema; omitting it contradicts §6.3's "exactly when" and drops `registrationFee`; and §14.3 forbids charging the 2 ℏ with `provision` false. **The counter refuses before signing anything.** Two candidates, in ledger §G-19 and in `OPERATIONS.md` Step 5 §6: **(a)** the Postmaster provisions the topics after all — §4.6's path taken literally, the Postmaster paying and the agent signing each creation over the counter, **no schema moves**, CLAUDE.md §11's placement of `generate_mailbox` amended; **(b)** the two fields become optional — smaller change to the text, but **0.6**, on fourteen files now frozen on consensus.
 
-**Gate One now waits on two funded testnet wallets, two filled home directories, and your word.**
+**Gate One ran on 2026-09-09, on your word. The register below is what it left.**
 
 **Step 4 is signed. What is open is the suite.** `spec/pins.json` has no null left and the harness writes a report; the report records 86 failures, because no test is expanded. The next thing that changes the report is test bodies, not entities.
 
-**The freeze has happened, and §G is open only on the two items that block nothing.** §G items 12 through 17 are all closed — 14 and 15 by D-157 and D-160 at 0.5.5, 16 by D-163 at 0.5.6, and **17 by D-167 at 0.5.8**. `check:freeze` and `check:prefreeze` both exit 0 and the whole battery is green. **Two signatures wait, and both are yours**: Step 4's HCS-13 registration, which freezes every schema in `spec/schemas/` for the life of 0.5 — after it the smallest field is 0.6 — and the second `PriceList`, whose numbers you have now ruled and whose message is prepared and validated. `npm run check:freeze` exits 0 and the whole battery is green. **Step 4 is ready and has not signed**: registration freezes every schema in `spec/schemas/` for the life of 0.5, so the signature is yours to authorize against the gate report and not Claude Code's to take. Beside it, prepared and unsigned, is the second `PriceList` — the provisioned path cannot be sold until its price is on the topic (§14.3), and its `unitPrice` is a number only you set (§E Q-6).
+**The freeze has happened and Step 4 has signed.** §G items 12 through 17 are all closed — 14 and 15 by D-157 and
+D-160 at 0.5.5, 16 by D-163 at 0.5.6, and 17 by D-167 at 0.5.8. The fourteen schemas are registered on consensus and
+every schema in `spec/schemas/` is frozen for the life of 0.5: after it the smallest field is 0.6.
 
-Gate One's signature · demo shape · which classes the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) · submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · **Step 4's signature** and **the second `PriceList`'s `provisioning.unitPrice`**.
+---
+
+## GATE ONE — the register, 2026-09-09
+
+**Correspondent B is provisioned and clean. Correspondent A stopped after its transfer and stays exactly as it is.**
+The run of record, with every transaction id and every mirror readback, is `app/OPERATIONS.md` under Step 5; this is
+the register.
+
+### B — the counter's first completed sale, eleven rows
+
+| # | What | Id / where | Payer of record |
+|---|---|---|---|
+| 1 | the purchase — one transaction, three legs | `0.0.8641261@1789007373.238805114` | the Postmaster |
+| 2 | the account the transfer created (HIP-542) | `0.0.10452127` | — |
+| 3 | doorbell — HCS-10 inbound, HIP-991 fee, no submit key | `0.0.10452149` | `0.0.8641261` |
+| 4 | log — HCS-10 outbound | `0.0.10452150` | `0.0.8641261` |
+| 5 | manifest — §9.1 | `0.0.10452154` | `0.0.8641261` |
+| 6 | declaration registry — HCS-2, indexed 0 | `0.0.10452155` | `0.0.8641261` |
+| 7 | HCS-11 profile file — HCS-1, **no admin key** (D-150) | `0.0.10452158` | `0.0.8641261` |
+| 8 | the profile, as HCS-1 chunks | 1 chunk on `0.0.10452158` | `0.0.8641261` |
+| 9 | the HCS-2 register entry | `0.0.10452155`#1 | `0.0.8641261` |
+| 10 | §9.2's account memo — `hcs-11:hcs://2/0.0.10452155` | on `0.0.10452127` | `0.0.8641261` |
+| 11 | the registration on the HOL anchor | `0.0.6913983`#381 | **`0.0.10452127`** |
+
+**Rows 3–10 are D-168's carry, run for the first time anywhere but in a check**: eight bodies the agent signed in its
+own process, each decoded by the counter before it would sign it, each paid for by the Postmaster. **Row 11 is the one
+place an agent pays**, and it is the whole reason the purchase funds exactly one fee: §9.5 assigns `blurred` where the
+registration's payer is not the address's own account, and all 380 messages before ours on that anchor carry it.
+Charged 0.00377436 ℏ against 0.02 ℏ declared. **The auto-renew account on every topic is `0.0.10450880` — B's own
+operator, never the Postmaster's.**
+
+**The receipt** names all eight `provisioning` fields from the counter's own readback and validates against the
+registered schema. Its rate is sequence 3's: `0.07638866` at `1789005662.118530104`, which a stranger re-obtains from a
+mirror node at that timestamp. **Both resolutions carry no `blurred`**, which is the acceptance test for the step. Two
+further runs against the same home created nothing and exited 0.
+
+### A — stopped, and it stays stopped (RULED, Sonic 2026-09-09)
+
+```
+account 0.0.10451893   12 $POSTAGE   0.05 ℏ   no mailbox   NO RECEIPT
+paid    15.09094832 ℏ from 0.0.10450879
+ref     0.0.8641261@1789006030.569861064 — restored to A's home from consensus alone
+```
+
+**A is not finished.** It is recorded as the counter's first sale that stopped, and what it taught. Its home is kept.
+The receipt is permanently absent: the quote-expiry defect deleted the counter's `Requirement` row — the quote it
+charged and the rate it charged at — before the receipt was built, and §5.4's receipt is built from those. **Rebuilding
+them from the ledger would manufacture the evidence a receipt is**, so it was not done. Nothing was charged twice and
+nothing can be.
+
+### The eight defects, and the window they all lived in
+
+`submit()` mutating a transaction the counter had already frozen and signed · `receiptFrom` reading the first SUCCESS
+record under a transaction id, when HIP-542's account creation sits there first with no token transfers in it · the
+purchase reference written down after the answer came back rather than before the signature left · a settled
+`quoteRef` falling through to a second quote · the expiry check deleting a settled purchase · two mirror-lag reads
+taking ingestion for absence · a stale record handle reporting a complete mailbox as incomplete.
+
+**Every one was between "a signature left the buyer" and "the buyer learned what happened"**, which is the window no
+offline check reaches, because there is no offline consensus node. All fixed and pushed. `check:correspondent` is 109
+assertions, up from 105, and the four it gained are the SDK facts the first one turned on.
+
+### The doorbell's cost, measured
+
+**26.31542199 ℏ.** One mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows and sells for
+**15.09094832 ℏ**. Nothing on consensus is wrong, no fee left the ceiling the carry policy authorised, and the price
+charged is the price the schedule yields — `provisioning.unitPrice` was simply set at 2 ℏ before the cost of a HIP-991
+fee-gated topic was known. Repricing is a new `PriceList` message and touches no schema and no wire string.
+
+---
+
+## TOMORROW — 2026-09-10, ruled (Sonic, 2026-09-09)
+
+Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it without this conversation.
+
+1. **Sequence 4, before A′.** A new `PriceList` on `0.0.10426551`, identical to sequence 3 except
+   `provisioning.unitPrice`; `registrationFee` unchanged at 0.05. No schema, no wire string. **Prepared and validated
+   tomorrow; signed on your word. The number is OPEN — 30 ℏ was your lean, against 27.78 ℏ measured.**
+2. **Wallet top-ups, before A′.** `0.0.10450879` and `0.0.10450880` topped up from the Postmaster's payer to ~100 ℏ
+   each — a purchase at the new price with stamps is ~43 ℏ, and the ring and the letter cost more on top. Recorded as
+   funding, not sales, as the first two were.
+3. **A′.** A fresh home under C1OPERATOR's wallet `0.0.10450879` — an operator may own many agents; the wallet is the
+   operator's, the home is the agent's — provisioned through the fixed counter at the new price. **That run is the
+   end-to-end proof of the eight fixes, and nothing else is.**
+4. **Gate Two, after A′.** The first letter A′ → B with `returnReceipt`, B's `inbox` and `ack`, the receipt on B's
+   manifest topic, `verify` from an empty home, and a reply B → A′ on the same lane ringing nothing. Its gate report is
+   already written as Step 6; it is amended for A′ and sequence 4 tomorrow.
+5. **Provisioning happens before recording, not on video.** The demo shows provisioning as facts already on consensus —
+   the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger's
+   verify. Friday is goose by hand.
+
+**Open for Sonic:** sequence 4's `provisioning.unitPrice` · the precheck probe's finding, once it runs · which classes
+the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
+submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
+
+**What is not done, and is not pretended to be:** Gate Two — no letter has been sent on `hedera:testnet`, and `send`,
+`inbox` and `ack` refuse on the Correspondent's MCP naming the gate. The `dns` and `nanda` resolvers. The CLI and the
+WebMCP page. **The claim**: eighty-six tests are registered, none is expanded, zero pass, and `RELEASE.classes` is
+empty — this release claims nothing, and §1.5 says silence claims nothing.
 
 **Closed since.** The x402 testnet facilitator — D-132, 09-07: x402.org, `hedera:testnet` only. LICENSE — Apache 2.0, stated as a non-negotiable in `CLAUDE.md` §3 and present in the repository since the initial commit; `CONTRIBUTING.md` and `README.md` name it, and contributions are certified under DCO 1.1 with no CLA.
 
