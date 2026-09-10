@@ -426,7 +426,10 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     });
 
     // The account is on consensus now and the session that bought it predates it.
-    const carried = await boot(s.home, { payer: legs });
+    // `expectAccount` because it IS on consensus: the transfer landed and the
+    // counter named what it created, so a mirror that does not yet show it is
+    // behind rather than disagreeing (Gate One, and a few seconds).
+    const carried = await boot(s.home, { payer: legs, expectAccount: true });
     if (carried.account !== account) {
       throw new CounterUnavailable(
         'STAMP_PAYMENT_FAILED',

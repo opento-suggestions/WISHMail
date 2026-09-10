@@ -135,8 +135,22 @@ interface MAccounts {
  * than resolved: a second account would mean a second purchase, and choosing
  * between them would strand one.
  */
-export async function accountForKey(mirror: Mirror, publicKeyHex: string): Promise<string | null> {
-  const r = await mirror.get<MAccounts>(`/accounts?account.publickey=${publicKeyHex}&balance=false&limit=5`);
+export async function accountForKey(mirror: Mirror, publicKeyHex: string, expected?: 'exists'): Promise<string | null> {
+  const path = `/accounts?account.publickey=${publicKeyHex}&balance=false&limit=5`;
+  // A CALLER THAT KNOWS AN ACCOUNT EXISTS WAITS FOR THE MIRROR TO AGREE.
+  //
+  // The re-boot after a purchase is that caller: the transfer is on consensus,
+  // the counter has named the account it created, and the only question is
+  // whether the mirror's public-key index has caught up — which Gate One
+  // measured at a few seconds. Reading once there turns ordinary ingestion lag
+  // into "the mirror says this key owns nothing", which is the one sentence
+  // that is false. Every other caller reads once and takes null for an answer,
+  // because for them "no account" is a real answer and waiting for it would be
+  // waiting for something that is not coming.
+  const r =
+    expected === 'exists'
+      ? await mirror.poll<MAccounts>(path, (v) => (v.accounts ?? []).some((a) => a.deleted !== true))
+      : await mirror.get<MAccounts>(path);
   const live = (r?.accounts ?? []).filter((a) => a.deleted !== true);
   if (live.length === 0) return null;
   if (live.length > 1) {
@@ -166,6 +180,12 @@ export interface BorrowedPayer {
 export interface BootOptions {
   /** Skip the account lookup — for the boot that runs before the purchase. */
   readonly withoutAccount?: boolean;
+  /**
+   * The account is known to exist, so wait for the mirror rather than reading
+   * once. Set by the re-boot after a purchase, where the transfer is already on
+   * consensus and only the mirror's index can be behind.
+   */
+  readonly expectAccount?: boolean;
   /** Pay through someone else. Absent, the payer in this home’s config pays. */
   readonly payer?: BorrowedPayer;
 }
@@ -187,7 +207,10 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
   const publicHex = agentPublicHex(home);
   const mirror = new Mirror(home.mirrorNodeUrl);
   const facts = deploymentFacts(home.constants.ledgerTag);
-  const account = options.withoutAccount === true ? '' : ((await accountForKey(mirror, publicHex)) ?? '');
+  const account =
+    options.withoutAccount === true
+      ? ''
+      : ((await accountForKey(mirror, publicHex, options.expectAccount === true ? 'exists' : undefined)) ?? '');
 
   const borrowed = options.payer;
   const payer = borrowed?.signer ?? homePayer;
