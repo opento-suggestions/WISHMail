@@ -32,7 +32,7 @@ import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
 import { ack } from '../src/tools/ack.js';
 import { inbox } from '../src/tools/inbox.js';
-import { lanesFromDoorbell, send } from '../src/tools/send.js';
+import { lanesBetween, send } from '../src/tools/send.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
 import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
@@ -274,16 +274,24 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           // no fee (§7.1), and a hop with no fee to pay strands a stamp.
           //
           // Asked by §7.1's OWN rule, the one `send` is about to use: the lane is
-          // found on the RECIPIENT's doorbell, not on this agent's. A second
+          // found on the doorbell of whichever party answered — the recipient's,
+          // or this agent's own where the letter is a reply (D-171). A second
           // spelling of that rule here would be a second place for it to be
-          // wrong, and the two would disagree on exactly the case that matters.
+          // wrong, and the two would disagree on exactly the case that matters:
+          // a reply rings nothing, so a hop for a reply strands a stamp.
+          const ctx = senderContext(s);
           const willRing =
-            (await lanesFromDoorbell(liveReader(s.home.mirrorNodeUrl, s.ledgerTag), r.coordinates.doorbell, s.account))
-              .length === 0;
+            (
+              await lanesBetween(
+                liveReader(s.home.mirrorNodeUrl, s.ledgerTag),
+                { doorbell: ctx.doorbell, account: s.account },
+                { doorbell: r.coordinates.doorbell, account: r.coordinates.account },
+              )
+            ).length === 0;
           const hop = await ringStamp(s, willRing);
           if (hop !== null) console.error(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
 
-          const out = await send(senderContext(s), {
+          const out = await send(ctx, {
             coordinates: r.coordinates,
             manifest: r.manifest as unknown as Record<string, unknown>,
             payload: Buffer.from(payload, 'utf8'),

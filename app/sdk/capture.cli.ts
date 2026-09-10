@@ -22,6 +22,7 @@ import { repoRoot } from '../src/ops/env.js';
 import { decodeScheduledSubmission } from '../src/core/schedulebody.js';
 import { verify } from '../src/tools/verify.js';
 import { liveReader } from './live.js';
+import { connectionTopicMemoOf } from '../src/ops/hcs10.js';
 
 const argv = process.argv.slice(2);
 const flag = (n: string): string | undefined => {
@@ -93,6 +94,18 @@ async function main(): Promise<void> {
       payer: m.payer,
     }));
   };
+  // THE LANE'S BIRTH DOORBELL, which §11.4 reads the binding from (D-171).
+  //
+  // A Verifier follows the lane's own memo to the doorbell it was born on, that
+  // doorbell's memo to its owner, and the `connection_created` there to the
+  // other party. A fixture without that doorbell's messages is a fixture that
+  // cannot try the binding at all — which the checkpoint-one and checkpoint-two
+  // captures could not, and did not notice, because a release claiming no
+  // profile never reaches the check.
+  const laneInfo = await reader.topic(lane);
+  const bornAt = laneInfo === null ? null : connectionTopicMemoOf(laneInfo.memo);
+  if (bornAt !== null) await grab(bornAt.doorbell);
+
   for (const t of schemaTopics) {
     await grab(t);
     // The registry entry names the HCS-1 file topic the schema itself lives on.

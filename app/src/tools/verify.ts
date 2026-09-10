@@ -39,7 +39,7 @@ import { isProofLocation } from '../core/locator.js';
 import { manifestAmong } from '../core/proof.js';
 import { envelopeIdOfRequest, receiptManifest, returnReceiptOf, type ReturnReceipt } from '../core/receipt.js';
 import { decodeScheduledSubmission } from '../core/schedulebody.js';
-import { accountOf, operatorId as operatorIdOf } from '../ops/hcs10.js';
+import { accountOf, connectionTopicMemoOf, inboundTopicMemoOf, operatorId as operatorIdOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
 import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
 import { line } from './narration.js';
@@ -49,7 +49,7 @@ import {
   type MailCoordinates,
   type ProfileSource,
 } from '../resolve/hcs14.js';
-import { lanesFromDoorbell, closedBy } from './send.js';
+import { closedBy } from './send.js';
 import {
   before,
   compareTimestamps,
@@ -136,6 +136,7 @@ const REASON_ORDER = [
   'T-P10-1',
   'T-P9-11',
   'T-P10-2',
+  'T-P17-2',
   'T-P9-6',
   'T-P1-10',
   'T-P7-1',
@@ -159,6 +160,7 @@ const REASON_STANDING: Readonly<Record<string, Standing>> = {
   'T-P10-1': 'unbound',
   'T-P9-11': 'unbound',
   'T-P10-2': 'unbound',
+  'T-P17-2': 'unbound',
   'T-P9-6': 'unbound',
   'T-P1-10': 'unbound',
   'T-P7-1': 'unstamped',
@@ -190,6 +192,69 @@ function lowest(reasons: readonly string[]): Standing {
 function ordered(reasons: readonly string[]): readonly string[] {
   const seen = new Set(reasons);
   return REASON_ORDER.filter((r) => seen.has(r));
+}
+
+/** A lane's birth, as §11.4 reads it from the lane itself (D-171). */
+export interface LaneBirth {
+  /** The doorbell the lane's own memo names. */
+  readonly doorbell: string;
+  /** The account that doorbell's own memo names — the party that answered. */
+  readonly owner: string;
+  /** The account the `connection_created` names — the party that rang. */
+  readonly requester: string;
+  readonly createdAt: string;
+}
+
+/**
+ * §11.4's binding walk, and the whole of what it needs is the lane (D-171).
+ *
+ * The lane's memo names the doorbell it was born on; that doorbell's memo names
+ * its owner; the `connection_created` on it naming this lane, submitted under
+ * that owner's own `operator_id`, names the other party. Four reads of public
+ * data, no resolution of anybody, and the same walk whichever direction a letter
+ * travelled — because a lane has one birth however many letters cross it.
+ *
+ * `null` where any step fails: a memo that is not HCS-10's, a doorbell that does
+ * not exist or does not say whose it is, or a doorbell holding no answer for
+ * this lane. The caller reports T-P10-2; §11.4 has no finer reason and §11.5
+ * gives none.
+ */
+export async function laneBirth(reader: Reader, lane: string): Promise<LaneBirth | null> {
+  const laneInfo = await reader.topic(lane);
+  if (laneInfo === null) return null;
+  const memo = connectionTopicMemoOf(laneInfo.memo);
+  if (memo === null) return null;
+
+  const doorInfo = await reader.topic(memo.doorbell);
+  if (doorInfo === null) return null;
+  const door = inboundTopicMemoOf(doorInfo.memo);
+  if (door === null) return null;
+
+  for (const m of await reader.messages(memo.doorbell)) {
+    let op: Record<string, unknown>;
+    try {
+      op = JSON.parse(m.contents) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    if (op['p'] !== 'hcs-10' || op['op'] !== 'connection_created') continue;
+    if (op['connection_topic_id'] !== lane) continue;
+    // Submitted by the doorbell's owner: an answer is the owner's act, and a
+    // message anyone could post on a public doorbell is not one.
+    const operator = op['operator_id'];
+    if (typeof operator !== 'string' || accountOf(operator) !== door.account) continue;
+    const requester = op['connected_account_id'];
+    if (typeof requester !== 'string') continue;
+    return { doorbell: memo.doorbell, owner: door.account, requester, createdAt: m.consensusTimestamp };
+  }
+  return null;
+}
+
+/** Whether two key lists name the same set — §7.1's "exactly", not an ordering. */
+function sameKeys(got: readonly string[], want: readonly string[]): boolean {
+  const a = [...got].map((k) => k.toLowerCase()).sort();
+  const b = [...want].map((k) => k.toLowerCase()).sort();
+  return a.length === b.length && a.every((k, i) => k === b[i]);
 }
 
 /** A manifest as read off a manifest topic. */
@@ -800,8 +865,37 @@ export async function verify(
             topicsRead.add(doorbell);
             const senderAccount = settlement?.from;
             if (senderAccount !== undefined) {
-              const born = await lanesFromDoorbell(reader, doorbell, senderAccount);
-              if (!born.some((l) => l.topicId === lane)) reasons.push('T-P10-2');
+              // §11.4, D-171. The two parties are read from the envelope — the
+              // recipient from the coordinates the replay recomputed, the sender
+              // from the account that affixed the postage (§7.2's fourth weld) —
+              // and the lane's own birth is read from the lane. A lane is
+              // bidirectional, so its birth is at whichever door answered: the
+              // recipient's on first contact, the sender's own on a reply. Both
+              // satisfy the same equality, because {owner, requester} is a set.
+              const birth = await laneBirth(reader, lane);
+              if (birth === null) {
+                reasons.push('T-P10-2');
+              } else {
+                topicsRead.add(birth.doorbell);
+                const born = new Set([birth.owner, birth.requester]);
+                const parties = new Set([account, senderAccount]);
+                const same = born.size === parties.size && [...parties].every((p) => born.has(p));
+                if (!same) reasons.push('T-P10-2');
+              }
+
+              // The key list is the other half of the binding test, and it is
+              // what makes reading EITHER doorbell safe: a third party can post
+              // a `connection_created` on its own doorbell naming anyone, but it
+              // cannot make a topic key name two keys it does not hold and have
+              // those two be these two (§7.1, T-P17-2).
+              const senderKey = await reader.accountKey(senderAccount);
+              const recipientAccountKey = await reader.accountKey(account);
+              const laneInfo = await reader.topic(lane);
+              if (senderKey === null || recipientAccountKey === null || laneInfo === null) {
+                reasons.push('T-P17-2');
+              } else if (!sameKeys(laneInfo.submitKeys, [senderKey, recipientAccountKey])) {
+                reasons.push('T-P17-2');
+              }
             }
             const closed = await closedBy(reader, lane, chunkZeroAt);
             if (closed !== null) reasons.push('T-P9-6');

@@ -33,6 +33,12 @@ export const TRANSACTION_MEMO = {
   close_connection: `hcs-10:op:5:${TOPIC_TYPE.connection}`,
   /** `index.md:646` — on the connection topic; this is what an envelope chunk rides in. */
   message: `hcs-10:op:6:${TOPIC_TYPE.connection}`,
+  /**
+   * `index.md:547` — the requester's own RECORD of its ring, on its outbound
+   * topic. A different operation from the ring itself, with a different memo and
+   * a different body (FETCHED 2026-09-10 at the pin, `index.md:549-556`).
+   */
+  outbound_connection_request: `hcs-10:op:3:${TOPIC_TYPE.outbound}`,
 } as const;
 
 /**
@@ -88,6 +94,76 @@ export function messageOperationBody(operatorId: string, chunkJson: string): Rec
  */
 export function connectionRequestBody(operatorId: string, memo?: string): Record<string, unknown> {
   return { p: 'hcs-10', op: 'connection_request', operator_id: operatorId, ...(memo === undefined ? {} : { m: memo }) };
+}
+
+/**
+ * The requester's own record of the ring, on its OUTBOUND topic — a different
+ * operation from the ring, and this is not the body above.
+ *
+ * FETCHED 2026-09-10 at the pin (`index.md:549-556`): `operator_id` names "the
+ * agent which is being requested … (not the agent making the request)", and
+ * `outbound_topic_id` and `connection_request_id` are both REQUIRED. The inbound
+ * form (`index.md:489`) names the requester instead, and this implementation
+ * posted that one to both topics until now — naming itself where the standard
+ * names the target, with two required fields absent. P-9 is strict HCS-10, so
+ * the shape is the standard's and not a convenience.
+ *
+ * `connection_request_id` is the sequence number the ring landed at on the
+ * TARGET's inbound topic, which is what links this record to it.
+ */
+export function outboundConnectionRequestBody(
+  targetOperatorId: string,
+  outboundTopicId: string,
+  connectionRequestId: number,
+  memo?: string,
+): Record<string, unknown> {
+  return {
+    p: 'hcs-10',
+    op: 'connection_request',
+    operator_id: targetOperatorId,
+    outbound_topic_id: outboundTopicId,
+    connection_request_id: connectionRequestId,
+    ...(memo === undefined ? {} : { m: memo }),
+  };
+}
+
+/**
+ * §7.1's connection-topic memo, built: `hcs-10:1:{ttl}:2:{inboundTopicId}:{connectionId}`
+ * (`index.md:279`). `indexed = 1` means "only the latest message should be
+ * read", and WISHMail keeps the memo and overrides the hint: §7.1's own sentence
+ * is "a lane is mail, and every message on it is read", and T-P9-10 is the test
+ * that a lane wearing this memo is nevertheless reassembled in full. Strict
+ * HCS-10 on the wire, our reading rule in the reader (D-95).
+ *
+ * It lives here, beside its parser, because D-171 made the `inboundTopicId` half
+ * load-bearing: a Verifier reads it to find the doorbell a lane was born on. A
+ * builder in one file and a reader in another is how the two drift apart.
+ */
+export function connectionTopicMemo(inboundTopicId: string, connectionId: number, ttl: number = 60): string {
+  return `hcs-10:1:${ttl}:2:${inboundTopicId}:${connectionId}`;
+}
+
+/**
+ * §7.1's connection-topic memo, parsed: `hcs-10:1:{ttl}:2:{inboundTopicId}:{connectionId}`
+ * (`index.md:279`). The `inboundTopicId` is the doorbell the lane was born on,
+ * and D-171 makes it what a Verifier reads to appraise that birth — so this is
+ * the memo's load-bearing half, not the non-indexed hint.
+ */
+export function connectionTopicMemoOf(memo: string): { readonly doorbell: string; readonly connectionId: number } | null {
+  const m = /^hcs-10:1:(\d+):2:([0-9]+\.[0-9]+\.[0-9]+):(\d+)$/.exec(memo);
+  if (m === null) return null;
+  return { doorbell: m[2] as string, connectionId: Number(m[3]) };
+}
+
+/**
+ * §4.4's inbound-topic memo, parsed: `hcs-10:0:{ttl}:0:{accountId}` (`index.md:246`).
+ * A doorbell's memo names the account it belongs to, which is how a Verifier
+ * learns whose door a lane was born at without resolving anybody (D-171).
+ */
+export function inboundTopicMemoOf(memo: string): { readonly account: string } | null {
+  const m = /^hcs-10:0:(\d+):0:([0-9]+\.[0-9]+\.[0-9]+)$/.exec(memo);
+  if (m === null) return null;
+  return { account: m[2] as string };
 }
 
 /**

@@ -15,8 +15,12 @@ import {
   TOPIC_TYPE,
   UnchunkedTopicMessageSubmitTransaction,
   accountOf,
+  connectionTopicMemo,
+  connectionTopicMemoOf,
+  inboundTopicMemoOf,
   messageOperationBody,
   operatorId,
+  outboundConnectionRequestBody,
 } from './hcs10.js';
 import { CHUNK_WIRE_MAX } from '../core/chunk.js';
 
@@ -97,14 +101,47 @@ ok(
   bodyOf(plain).consensusSubmitMessage?.chunkInfo != null,
 );
 
+// --- The outbound record, and the two memos a Verifier now reads. -----------
+//
+// FETCHED 2026-09-10 at the pin (git blob sha 0cb5d2eb…, verified against
+// spec/pins.json). The outbound `connection_request` RECORD is a different
+// operation from the ring: `index.md:553` has its `operator_id` name "the agent
+// which is being requested … (not the agent making the request)", and
+// `index.md:554-555` make `outbound_topic_id` and `connection_request_id`
+// required. This implementation posted the INBOUND body to both topics until
+// now, which is the shape `index.md:489` gives and not this one.
+const target = operatorId('0.0.5000', '0.0.5001');
+const outbound = outboundConnectionRequestBody(target, '0.0.6002', 41);
+is('the outbound record names the agent BEING requested (index.md:553)', outbound['operator_id'], target);
+is('and its own topic (index.md:554)', outbound['outbound_topic_id'], '0.0.6002');
+is('and the ring sequence number it records (index.md:555)', outbound['connection_request_id'], 41);
+is('and its memo is the outbound one, not the inbound one (index.md:547)', TRANSACTION_MEMO.outbound_connection_request, `hcs-10:op:3:${TOPIC_TYPE.outbound}`);
+ok(
+  'which is NOT the memo the ring itself carries — two operations, two memos',
+  String(TRANSACTION_MEMO.outbound_connection_request) !== String(TRANSACTION_MEMO.connection_request),
+);
+
+// §11.4's binding walk reads two memos and nothing else identifies the parties
+// to it, so both are parsed here against the forms the pin gives.
+const laneMemo = connectionTopicMemo('0.0.7100', 3);
+is('the connection-topic memo is HCS-10 form (index.md:279)', laneMemo, 'hcs-10:1:60:2:0.0.7100:3');
+is('and it round-trips to the doorbell it names', connectionTopicMemoOf(laneMemo)?.doorbell, '0.0.7100');
+is('and to the connection id', connectionTopicMemoOf(laneMemo)?.connectionId, 3);
+is('an inbound memo names the account it belongs to (index.md:246)', inboundTopicMemoOf('hcs-10:0:60:0:0.0.7101')?.account, '0.0.7101');
+is('an OUTBOUND memo is not an inbound one and does not parse as one', String(inboundTopicMemoOf('hcs-10:0:60:1')), 'null');
+is('nor does a registry memo', String(inboundTopicMemoOf('hcs-10:0:300:3')), 'null');
+is('and a connection memo is not an inbound one either', String(inboundTopicMemoOf(laneMemo)), 'null');
+is('a lane memo missing its doorbell does not parse', String(connectionTopicMemoOf('hcs-10:1:60:3')), 'null');
+
 if (failures.length > 0) {
   console.error(`check:hcs10 FAILED — ${failures.length} of ${checked} assertions:`);
   for (const f of failures) console.error(`  ${f}`);
   process.exit(1);
 }
 console.log(
-  `check:hcs10 PASS — ${checked} assertions: HCS-10's four memos at their file:line, the transaction ` +
-    'operation carrying an empty one, and a message operation whose frozen protobuf carries no chunkInfo ' +
-    'where the ordinary SDK path does.',
+  `check:hcs10 PASS — ${checked} assertions: HCS-10's memos at their file:line, the transaction ` +
+    'operation carrying an empty one, a message operation whose frozen protobuf carries no chunkInfo ' +
+    'where the ordinary SDK path does, the outbound connection record in the shape the pin gives it ' +
+    'rather than the inbound one, and the two topic memos §11.4 reads a lane birth from.',
 );
 process.exit(0);

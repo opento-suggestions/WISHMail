@@ -44,7 +44,7 @@ import { MAX_WEIGHT } from '../src/core/seal.js';
 import { CHUNK_WIRE_MAX, messageOperation } from '../src/core/chunk.js';
 import { runMode } from '../src/ops/mode.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
-import { lanesFromDoorbell } from '../src/tools/send.js';
+import { lanesBetween } from '../src/tools/send.js';
 import { SCHEDULE_MAX_LIFETIME, resumeReceipt, send } from '../src/tools/send.js';
 import { liveReader } from './live.js';
 import { openHome } from './home.js';
@@ -168,13 +168,20 @@ async function main(): Promise<void> {
     console.log('');
 
     // 2. THE LANE, from consensus and by §7.1's own rule — the earliest-created
-    //    open lane between these two, found on the RECIPIENT's doorbell.
+    //    open lane between these two, found on the doorbell of whichever party
+    //    answered: the RECIPIENT's where this agent rang, this agent's OWN where
+    //    the recipient rang first and this letter is the reply (D-171).
     const reader = liveReader(s.home.mirrorNodeUrl, s.ledgerTag);
-    const lanes = await lanesFromDoorbell(reader, c.doorbell, s.account);
+    const lanes = await lanesBetween(
+      reader,
+      { doorbell: ctx.doorbell, account: s.account },
+      { doorbell: c.doorbell, account: c.account },
+    );
+    const born = lanes[0] === undefined ? '' : lanes[0].doorbell === ctx.doorbell ? ' at THIS agent own door — a reply' : '';
     console.log(
       lanes.length === 0
         ? '  lane        NONE — this is first contact; send rings the doorbell and waits (§6.4 step 1)'
-        : `  lane        ${lanes[0]?.topicId} created ${lanes[0]?.createdAt} — reused, nothing is rung (§7.1)`,
+        : `  lane        ${lanes[0]?.topicId} created ${lanes[0]?.createdAt}${born} — reused, nothing is rung (§7.1)`,
     );
 
     // 3. WHAT THE RING WILL COST, AND WHO PAYS IT. §4.4: the HIP-991 fee is

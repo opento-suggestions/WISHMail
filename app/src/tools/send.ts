@@ -63,7 +63,9 @@ import {
 import {
   TRANSACTION_MEMO,
   TRANSACTION_OP_MEMO,
+  accountOf,
   connectionRequestBody,
+  outboundConnectionRequestBody,
   operatorId as operatorIdOf,
 } from '../ops/hcs10.js';
 import {
@@ -263,13 +265,8 @@ export interface Lane {
 }
 
 /**
- * §7.1's rule for finding the lane: "the earliest-created open lane between
- * them, creation time being the consensus timestamp of the `connection_created`
- * operation on the recipient's doorbell that names the sender's account."
- *
- * A Verifier "discovers the lanes between two agents by the same rule, from the
- * same doorbell", so this function is exported and `verify` uses it too — one
- * rule, not two implementations of one rule.
+ * One doorbell's answers naming one account — the primitive §7.1's rule is built
+ * from, and not the rule itself. `lanesBetween` is the rule.
  */
 export async function lanesFromDoorbell(
   reader: Reader,
@@ -287,6 +284,61 @@ export async function lanesFromDoorbell(
     lanes.push({ topicId, createdAt: m.consensusTimestamp, doorbell });
   }
   return lanes.sort((a, b) => compareTimestamps(a.createdAt, b.createdAt));
+}
+
+/** One party to a lane, as §7.1's discovery rule needs it. */
+export interface Party {
+  readonly doorbell: string;
+  readonly account: string;
+}
+
+/**
+ * §7.1's rule for finding the lane, as D-171 states it for both directions: the
+ * earliest-created open lane between two agents, creation time being the
+ * consensus timestamp of the `connection_created` that created it, "on the
+ * doorbell of whichever party answered: on the recipient's doorbell naming the
+ * sender's account, where the recipient answered, and on the sender's own
+ * doorbell naming the recipient's account, where the sender did."
+ *
+ * Both doorbells are read because a lane is bidirectional and only one of them
+ * holds its birth: for first contact the recipient's, for a reply the sender's
+ * own. Reading one was the whole of §G-21.
+ *
+ * This is DISCOVERY, and it is what `send` and the ring decision use. It is not
+ * the binding test — a Verifier appraises a particular lane's birth from the
+ * lane's own memo (§11.4), which needs neither party supplied to it. Two rules,
+ * deliberately, because they answer different questions.
+ */
+export async function lanesBetween(reader: Reader, a: Party, b: Party): Promise<readonly Lane[]> {
+  const found = [
+    ...(await lanesFromDoorbell(reader, a.doorbell, b.account)),
+    ...(await lanesFromDoorbell(reader, b.doorbell, a.account)),
+  ];
+  const seen = new Set<string>();
+  const lanes: Lane[] = [];
+  for (const lane of found) {
+    if (seen.has(lane.topicId)) continue;
+    seen.add(lane.topicId);
+    lanes.push(lane);
+  }
+  return lanes.sort((x, y) => compareTimestamps(x.createdAt, y.createdAt));
+}
+
+/**
+ * Whether the other party has ever rung this agent's door.
+ *
+ * If it has, a lane between the two may have been born HERE — at a door this
+ * agent owns — and an answer that has not been ingested yet is the one case
+ * where believing a single read costs a ring that should never happen.
+ */
+export async function rangUs(reader: Reader, myDoorbell: string, theirAccount: string): Promise<boolean> {
+  for (const m of await reader.messages(myDoorbell)) {
+    const op = operationOf(m);
+    if (op === null || op['p'] !== 'hcs-10' || op['op'] !== 'connection_request') continue;
+    const operator = op['operator_id'];
+    if (typeof operator === 'string' && accountOf(operator) === theirAccount) return true;
+  }
+  return false;
 }
 
 /** Whether a lane carries a `close_connection` at or before a moment (§7.1, §8.2). */
@@ -427,14 +479,28 @@ async function firstContact(
   let logEntry: TopicMessage;
   let reusedRequest = false;
 
+  // The agent being RUNG, as HCS-10 names it on the requester's own outbound
+  // record — which is not the same identifier the ring itself carries.
+  const targetOperator = operatorIdOf(coordinates.doorbell, coordinates.account);
+
   if (standing !== null) {
     reusedRequest = true;
     request = standing;
     // The sender's own record of its own ring (§5.9). Where the ring is being
     // re-read rather than re-rung, the log entry this run would have written is
     // already there; the slip's inputs name it, so it is found the same way.
+    //
+    // Matched on `connection_request_id`, which is the sequence number the ring
+    // landed at, and falling back to the operator match for records written
+    // before the outbound shape was corrected — those name the REQUESTER where
+    // the standard names the target, and they are on consensus and cannot be
+    // rewritten.
     const own = await ctx.consensus.messages(ctx.log);
-    logEntry = own.find((m) => operationOf(m)?.['operator_id'] === operator) ?? standing;
+    logEntry =
+      own.find((m) => operationOf(m)?.['connection_request_id'] === standing.sequenceNumber) ??
+      own.find((m) => operationOf(m)?.['operator_id'] === targetOperator) ??
+      own.find((m) => operationOf(m)?.['operator_id'] === operator) ??
+      standing;
   } else {
     // The ringer, where one is given, is the Postmaster paying the doorbell's fee
     // from its own stamp (§6.4 step 1); otherwise the sender pays it (§4.4).
@@ -443,7 +509,23 @@ async function firstContact(
 
     // §5.9: the slip binds the request on the doorbell to the sender's own record
     // of it. The log entry is the sender's, always — it is the sender's topic.
-    logEntry = await ctx.consensus.submitMessage(ctx.log, body, TRANSACTION_MEMO.connection_request);
+    //
+    // AND IT IS A DIFFERENT OPERATION FROM THE RING, which this implementation
+    // did not know until the pin was read again on 2026-09-10. HCS-10 gives the
+    // outbound record its own shape (`index.md:549-556`) and its own transaction
+    // memo `hcs-10:op:3:2`: `operator_id` names the agent BEING requested rather
+    // than the one requesting, and `outbound_topic_id` and
+    // `connection_request_id` are required. The inbound body was being posted to
+    // both topics — the agent naming itself, two required fields missing. P-9 is
+    // strict HCS-10, so this is the standard's shape and not ours.
+    //
+    // The sequence number is known only after the ring lands, which is why this
+    // submission follows it rather than being built beside it.
+    logEntry = await ctx.consensus.submitMessage(
+      ctx.log,
+      outboundConnectionRequestBody(targetOperator, ctx.log, request.sequenceNumber),
+      TRANSACTION_MEMO.outbound_connection_request,
+    );
   }
 
   // ATTEMPTS, and every one of them is a re-READ. The ring above happened at
@@ -712,12 +794,38 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
   if (recipientKey === null) refuse('SEND_UNRESOLVED', `no key on consensus for ${coordinates.account}`);
 
   // --- 1. Lane. --------------------------------------------------------------
-  let lane: Lane | undefined;
-  for (const candidate of await lanesFromDoorbell(ctx.consensus, coordinates.doorbell, ctx.account)) {
-    if ((await laneRefusal(ctx.consensus, candidate, ctx.publicKey, recipientKey)) === null) {
-      lane = candidate;
-      break;
+  // BOTH doorbells (§7.1, D-171). The lane between these two was born on
+  // whichever of them answered: on the recipient's where this agent rang, and on
+  // this agent's own where the recipient rang first and this letter is a reply.
+  // A reply therefore reuses the lane and rings nothing, which is the whole of
+  // what §G-21 was about.
+  const mine: Party = { doorbell: ctx.doorbell, account: ctx.account };
+  const theirs: Party = { doorbell: coordinates.doorbell, account: coordinates.account };
+  const pick = async (): Promise<Lane | undefined> => {
+    for (const candidate of await lanesBetween(ctx.consensus, mine, theirs)) {
+      if ((await laneRefusal(ctx.consensus, candidate, ctx.publicKey, recipientKey)) === null) return candidate;
     }
+    return undefined;
+  };
+
+  let lane = await pick();
+
+  // A LANE TAKEN FOR ABSENT IS A DOORBELL RUNG, so where one could exist this
+  // looks again before it rings. A mirror node that has not ingested a message
+  // yet answers "no" in exactly the words it uses for "never", and two of Gate
+  // One's eight defects were that read believed once. The cost here is worse
+  // than a wasted read: a ring that did not need to happen opens a SECOND lane
+  // between two agents who already had one, a lane cannot be closed
+  // retroactively, and "a reply rings nothing" (§7.1, D-171) would be false
+  // forever for an ingestion delay.
+  //
+  // Only where the other party has rung THIS agent's door, because that is the
+  // one case in which a lane may have been born at a door this agent owns and
+  // may not have been ingested yet. First contact — nobody has rung us — is
+  // untouched, and rings at once as it always did.
+  if (lane === undefined && (await rangUs(ctx.consensus, ctx.doorbell, coordinates.account))) {
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    lane = await pick();
   }
 
   if (lane === undefined) {

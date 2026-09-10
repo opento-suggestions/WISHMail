@@ -30,22 +30,23 @@
 import { Hbar, KeyList, PublicKey, TopicCreateTransaction } from '@hashgraph/sdk';
 import { submit } from '../src/ops/hedera.js';
 import { HCS10_TTL } from '../src/ops/template.js';
-import { TRANSACTION_MEMO, accountOf, connectionCreatedBody, operatorId as operatorIdOf } from '../src/ops/hcs10.js';
+import {
+  TRANSACTION_MEMO,
+  accountOf,
+  connectionCreatedBody,
+  connectionTopicMemo as connectionTopicMemoAt,
+  operatorId as operatorIdOf,
+} from '../src/ops/hcs10.js';
 import { operationOf, type TopicMessage } from '../src/tools/consensus.js';
 import type { Session } from './session.js';
 
 /**
- * HCS-10's connection-topic memo: `hcs-10:1:{ttl}:2:{inboundTopicId}:{connectionId}`
- * (recon 2026-09-06, `index.md:279`, ledger §H).
- *
- * `indexed = 1` means "only the latest message should be read", and WISHMail
- * keeps the memo and overrides the hint: §7.1's own sentence is "a lane is mail,
- * and every message on it is read", and T-P9-10 is the test that a lane wearing
- * this memo is nevertheless reassembled in full. Strict HCS-10 on the wire, our
- * reading rule in the reader (D-95).
+ * HCS-10's connection-topic memo at this deployment's TTL. The form and its
+ * reasoning now live in `ops/hcs10.ts` beside the parser §11.4 reads it with
+ * (D-171): one place for the memo a lane's birth is found from.
  */
 export function connectionTopicMemo(inboundTopicId: string, connectionId: number): string {
-  return `hcs-10:1:${HCS10_TTL}:2:${inboundTopicId}:${connectionId}`;
+  return connectionTopicMemoAt(inboundTopicId, connectionId, HCS10_TTL);
 }
 
 /** A request on the doorbell that no `connection_created` answers. */

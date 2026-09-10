@@ -434,6 +434,20 @@ export class MemoryLedger {
     topic.messages[index] = { ...(topic.messages[index] as TopicMessage), contents };
   }
 
+  /**
+   * Rewrite a topic's submit-key list in place, for the same reason and no other.
+   *
+   * §7.1's key list is half of D-171's binding test, and a lane that fails it is
+   * a lane `send` refuses to use — so the only way to put a real, posted
+   * envelope on one is to alter the lane after the envelope is on it. That is
+   * the HARDER case, as every alteration here is: on the network a topic's keys
+   * are fixed at creation, so nothing can do this at all.
+   */
+  overwriteSubmitKeys(topicId: string, submitKeys: readonly string[]): void {
+    const topic = this.topicOf(topicId);
+    topic.submitKeys = [...submitKeys];
+  }
+
   /** Rewrite one settlement in place, for the same reason and no other. */
   overwriteTransfer(ref: string, patch: Partial<Settlement>): void {
     const existing = this.transfers.get(ref);

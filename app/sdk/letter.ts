@@ -32,6 +32,7 @@ import { epochKeys } from './keystore.js';
 import { liveReader } from './live.js';
 import { open as openStore } from '../src/state/store.js';
 import { operationOf } from '../src/tools/consensus.js';
+import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import type { AckContext } from '../src/tools/ack.js';
 import type { InboxContext } from '../src/tools/inbox.js';
 import type { SenderContext, SentEnvelope, SentEnvelopes } from '../src/tools/send.js';
@@ -222,25 +223,55 @@ async function payerStamps(s: Session): Promise<number> {
  * This agent's lanes, FROM CONSENSUS and never from a local file.
  *
  * §7.1 fixes the rule and `send` exports it, so `inbox` and `verify` and this
- * all read one implementation of it: a lane between two agents is found from
- * the `connection_created` operations on the recipient's own doorbell. A wiped
- * local file therefore loses no lane, which is the same reason every
- * provisioning verb asks the ledger first (D-165).
+ * all read one implementation of it. A lane's birth sits on ONE door — the door
+ * of whichever party answered — so an agent's lanes are of two kinds and until
+ * D-171 this listed only the first:
  *
- * `withAccount` narrows to the lanes shared with one correspondent; without it,
- * every lane this doorbell ever answered.
+ *   ACCEPTED   a `connection_created` on THIS agent's own doorbell. This agent
+ *              answered, so the record is here, and it always was.
+ *   REQUESTED  a `connection_created` on the OTHER agent's doorbell, naming this
+ *              account. This agent rang; the record is at the door it rang.
+ *
+ * Without the second kind, an agent that rang once and was answered cannot list
+ * the lane it opened — which is exactly the position A2 was in when a reply had
+ * nowhere to be read.
+ *
+ * WHOM comes from the home's own record of what it has sent; WHICH LANE always
+ * comes from consensus. The home is an address book, never an authority over the
+ * ledger (D-165): a wiped home forgets who it wrote to, not what it wrote. The
+ * lanes survive on consensus; only the enumeration does not, and nothing in
+ * `verify` depends on it, because a Verifier reads by lane.
+ *
+ * `withAccount` narrows to the lanes shared with one correspondent — and needs
+ * no address book at all, because it already knows whom to ask.
  */
 export async function lanesOf(s: Session, withAccount?: string): Promise<readonly string[]> {
   const reader = liveReader(s.home.mirrorNodeUrl, s.ledgerTag);
-  const doorbell = mine(s, 'doorbell');
-  const messages = await reader.messages(doorbell);
   const lanes: string[] = [];
-  for (const m of messages) {
-    const op = operationOf(m);
-    if (op === null || op['p'] !== 'hcs-10' || op['op'] !== 'connection_created') continue;
-    if (withAccount !== undefined && op['connected_account_id'] !== withAccount) continue;
-    const topicId = op['connection_topic_id'];
-    if (typeof topicId === 'string' && !lanes.includes(topicId)) lanes.push(topicId);
+
+  const answersOn = async (doorbell: string, naming?: string): Promise<void> => {
+    for (const m of await reader.messages(doorbell)) {
+      const op = operationOf(m);
+      if (op === null || op['p'] !== 'hcs-10' || op['op'] !== 'connection_created') continue;
+      if (naming !== undefined && op['connected_account_id'] !== naming) continue;
+      const topicId = op['connection_topic_id'];
+      if (typeof topicId === 'string' && !lanes.includes(topicId)) lanes.push(topicId);
+    }
+  };
+
+  // The lanes this agent ACCEPTED, at its own door.
+  await answersOn(mine(s, 'doorbell'), withAccount);
+
+  // The lanes this agent REQUESTED, at the doors it rang.
+  const correspondents =
+    withAccount !== undefined
+      ? [withAccount]
+      : [...new Set(sentEnvelopeRows(s).map((row) => row.recipientAccount))].filter((a) => a !== s.account);
+  for (const account of correspondents) {
+    const r = await resolveHcs14(mirrorSource(s.mirror), s.ledgerTag, account, mine(s, 'manifest'));
+    if ('failure' in r) continue;
+    await answersOn(r.coordinates.doorbell, s.account);
   }
+
   return lanes;
 }

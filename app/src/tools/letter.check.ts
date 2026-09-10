@@ -17,16 +17,27 @@
  * party holding a lane key can only add a competing message and can never alter
  * one already on consensus. A reader that holds against this holds against that.
  *
+ * BOTH DIRECTIONS travel here as of D-171. A lane is bidirectional and its birth
+ * sits at one door only, so a reply is found through the REPLIER's own doorbell;
+ * three further lanes are refused beside it, each wrong in exactly one way.
+ *
  * Conformance (reference side): T-P1-1, T-P1-2, T-P1-6, T-P1-10, T-P1-11,
  * T-P3-1, T-P3-3, T-P3-4, T-P4-1, T-P4-2, T-P7-1, T-P9-5, T-P9-10, T-P10-1,
- * T-P12-2, T-P12-5, T-P14-1, T-P17-2.
+ * T-P10-2, T-P12-2, T-P12-5, T-P14-1, T-P17-2.
  */
 import type { KeyObject } from 'node:crypto';
 import { sha256hex, canonicalBytes } from '../core/canonical.js';
 import { generateRecipientKey } from '../core/seal.js';
 import { settlementMemo } from '../core/envelope.js';
 import { isToolFailure } from '../core/failure.js';
-import { TRANSACTION_MEMO, connectionCreatedBody, operatorId as operatorIdOf } from '../ops/hcs10.js';
+import {
+  TRANSACTION_MEMO,
+  connectionCreatedBody,
+  connectionTopicMemo,
+  inboundTopicMemoOf,
+  connectionTopicMemoOf,
+  operatorId as operatorIdOf,
+} from '../ops/hcs10.js';
 import { proofInputs } from '../core/proof.js';
 import { proofLocation } from '../core/proof.js';
 import { hcs1File } from '../ops/hcs1.js';
@@ -102,7 +113,14 @@ const RECIPIENT_KEY = 'b0b1' + 'c2'.repeat(30);
 /** Everything the two agents own, stood up as §4.6 provisions it. */
 interface World {
   readonly ledger: MemoryLedger;
-  readonly sender: { account: string; doorbell: string; log: string; manifestTopic: string };
+  readonly sender: {
+    account: string;
+    doorbell: string;
+    log: string;
+    manifestTopic: string;
+    x25519Pub: string;
+    key: KeyObject;
+  };
   readonly recipient: {
     account: string;
     doorbell: string;
@@ -118,22 +136,44 @@ interface World {
   readonly ctx: SenderContext;
 }
 
-async function stand(): Promise<World> {
-  const ledger = new MemoryLedger();
-  const recipientEncryption = generateRecipientKey();
+/** One agent's mailbox, as §4.6 provisions it and §9.2 declares it. */
+interface Declared {
+  readonly account: string;
+  readonly doorbell: string;
+  readonly log: string;
+  readonly manifestTopic: string;
+  readonly registry: string;
+  readonly profileFile: string;
+  readonly x25519Pub: string;
+  readonly key: KeyObject;
+}
 
-  // The recipient: an account, a fee-gated doorbell (§4.4), a log, a manifest
-  // topic, an HCS-2 registry of profile versions and the HCS-1 file it names.
-  const recipientAccount = ledger.createAccount(RECIPIENT_KEY, 0);
-  const recipientDoorbell = ledger.createTopic({
-    memo: 'hcs-10:0:60:1',
+/**
+ * Provision and declare one agent.
+ *
+ * BOTH correspondents are declared, and 2026-09-10 is why: under D-171 a reply
+ * travels the other way down the same lane, so the agent that was the recipient
+ * must be able to RESOLVE the agent that was the sender. A fixture that declares
+ * only one side can try first contact and nothing else.
+ *
+ * The HCS-10 topic memos are the pinned forms and were not, until now: an
+ * inbound topic is `hcs-10:0:{ttl}:0:{accountId}` (`index.md:246`) and an
+ * outbound topic `hcs-10:0:{ttl}:1` (`index.md:263`), and this fixture wrote
+ * `…:1` on the doorbell and `…:2` on the log — neither of which is either. It
+ * did not matter while nothing read them. §11.4 reads them now.
+ */
+function declare(ledger: MemoryLedger, key: string, stamps: number, displayName: string): Declared {
+  const encryption = generateRecipientKey();
+  const account = ledger.createAccount(key, stamps);
+  const doorbell = ledger.createTopic({
+    memo: `hcs-10:0:60:0:${account}`,
     submitKeys: [],
     customFees: [{ amount: 1, tokenId: ledger.stampToken, collector: ledger.treasury }],
     // D-137, D-138: the owner answers its own door and is not charged for it.
-    feeExemptKeys: [RECIPIENT_KEY],
+    feeExemptKeys: [key],
   });
-  const recipientLog = ledger.createTopic({ memo: 'hcs-10:0:60:2', submitKeys: [RECIPIENT_KEY] });
-  const recipientManifests = ledger.createTopic({ submitKeys: [RECIPIENT_KEY] });
+  const log = ledger.createTopic({ memo: 'hcs-10:0:60:1', submitKeys: [key] });
+  const manifestTopic = ledger.createTopic({ submitKeys: [key] });
 
   // The HCS-11 profile, written into a real HCS-1 file (D-167). Until 0.5.8 this
   // fixture created the file TOPIC and never put a profile in it, because
@@ -145,30 +185,50 @@ async function stand(): Promise<World> {
   // anything.
   const profileDoc = {
     version: '1.0',
-    display_name: 'Correspondent B',
-    inboundTopicId: recipientDoorbell,
-    outboundTopicId: recipientLog,
+    display_name: displayName,
+    inboundTopicId: doorbell,
+    outboundTopicId: log,
     properties: {
-      wishmail: {
-        manifestTopic: recipientManifests,
-        x25519Pub: recipientEncryption.x25519Pub,
-        keyEpoch: 1,
-      },
+      wishmail: { manifestTopic, x25519Pub: encryption.x25519Pub, keyEpoch: 1 },
     },
   };
   const file = hcs1File(Buffer.from(JSON.stringify(profileDoc), 'utf8'), 'application/json');
-  const profileFile = ledger.createTopic({ memo: file.memo, submitKeys: [RECIPIENT_KEY], adminKey: null });
-  for (const chunk of file.chunks) ledger.submit(recipientAccount, profileFile, JSON.stringify(chunk));
-  const registry = ledger.createTopic({ memo: 'hcs-2:0:60', submitKeys: [RECIPIENT_KEY], adminKey: RECIPIENT_KEY });
-  const registryEntry = ledger.submit(recipientAccount, registry, JSON.stringify({ p: 'hcs-2', op: 'register', t_id: profileFile }));
-  const accountMemo = `hcs-11:hcs://2/${registry}`;
-  ledger.setAccountMemo(recipientAccount, accountMemo);
+  const profileFile = ledger.createTopic({ memo: file.memo, submitKeys: [key], adminKey: null });
+  for (const chunk of file.chunks) ledger.submit(account, profileFile, JSON.stringify(chunk));
+  const registry = ledger.createTopic({ memo: 'hcs-2:0:60', submitKeys: [key], adminKey: key });
+  ledger.submit(account, registry, JSON.stringify({ p: 'hcs-2', op: 'register', t_id: profileFile }));
+  ledger.setAccountMemo(account, `hcs-11:hcs://2/${registry}`);
 
-  // The sender: an account with stamps, its own doorbell, log and manifest topic.
-  const senderAccount = ledger.createAccount(SENDER_KEY, 10);
-  const senderDoorbell = ledger.createTopic({ memo: 'hcs-10:0:60:1', customFees: [{ amount: 1, tokenId: ledger.stampToken, collector: ledger.treasury }] });
-  const senderLog = ledger.createTopic({ memo: 'hcs-10:0:60:2', submitKeys: [SENDER_KEY] });
-  const senderManifests = ledger.createTopic({ submitKeys: [SENDER_KEY] });
+  return {
+    account,
+    doorbell,
+    log,
+    manifestTopic,
+    registry,
+    profileFile,
+    x25519Pub: encryption.x25519Pub,
+    key: encryption.keyPair.privateKey,
+  };
+}
+
+async function stand(): Promise<World> {
+  const ledger = new MemoryLedger();
+
+  const recipientSide = declare(ledger, RECIPIENT_KEY, 0, 'Correspondent B');
+  const senderSide = declare(ledger, SENDER_KEY, 10, 'Correspondent A');
+
+  const recipientAccount = recipientSide.account;
+  const recipientDoorbell = recipientSide.doorbell;
+  const recipientLog = recipientSide.log;
+  const recipientManifests = recipientSide.manifestTopic;
+  const registry = recipientSide.registry;
+  const profileFile = recipientSide.profileFile;
+  const recipientEncryption = { x25519Pub: recipientSide.x25519Pub, keyPair: { privateKey: recipientSide.key } };
+
+  const senderAccount = senderSide.account;
+  const senderDoorbell = senderSide.doorbell;
+  const senderLog = senderSide.log;
+  const senderManifests = senderSide.manifestTopic;
 
   // THE RESOLUTION, RUN RATHER THAN RESTATED (D-167). This fixture used to build
   // the manifest by hand — a second spelling of §9.2's rule, beside the
@@ -204,7 +264,14 @@ async function stand(): Promise<World> {
 
   return {
     ledger,
-    sender: { account: senderAccount, doorbell: senderDoorbell, log: senderLog, manifestTopic: senderManifests },
+    sender: {
+      account: senderAccount,
+      doorbell: senderDoorbell,
+      log: senderLog,
+      manifestTopic: senderManifests,
+      x25519Pub: senderSide.x25519Pub,
+      key: senderSide.key,
+    },
     recipient: {
       account: recipientAccount,
       doorbell: recipientDoorbell,
@@ -227,21 +294,39 @@ async function stand(): Promise<World> {
  * the acceptor's own inbound topic (D-137).
  */
 function answerTheDoor(w: World): string {
+  return answerAt(w, { account: w.recipient.account, doorbell: w.recipient.doorbell }, w.sender.account);
+}
+
+/**
+ * One party answering its own door, whichever party it is.
+ *
+ * The memo is HCS-10's connection-topic memo at the pin —
+ * `hcs-10:1:{ttl}:2:{inboundTopicId}:{connectionId}` (`index.md:279`) — and this
+ * fixture wrote `hcs-10:1:60:3` until 2026-09-10, which is not that form and
+ * names no doorbell at all. `watcher.ts` had always written the real one, so the
+ * MODEL diverged from the network on exactly the field D-171 makes a Verifier
+ * read. Nothing checked it, because nothing read it.
+ *
+ * `submitKeys` may be overridden to build a lane that is not a threshold of
+ * exactly the two parties' keys — T-P17-2's other half.
+ */
+function answerAt(
+  w: World,
+  acceptor: { account: string; doorbell: string },
+  requesterAccount: string,
+  options: { connectionId?: number; submitKeys?: readonly string[] } = {},
+): string {
+  const connectionId = options.connectionId ?? 1;
   const lane = w.ledger.createTopic({
-    memo: 'hcs-10:1:60:3',
-    submitKeys: [SENDER_KEY, RECIPIENT_KEY],
+    memo: connectionTopicMemo(acceptor.doorbell, connectionId),
+    submitKeys: [...(options.submitKeys ?? [SENDER_KEY, RECIPIENT_KEY])],
     adminKey: RECIPIENT_KEY,
   });
   w.ledger.submit(
-    w.recipient.account,
-    w.recipient.doorbell,
+    acceptor.account,
+    acceptor.doorbell,
     JSON.stringify(
-      connectionCreatedBody(
-        operatorIdOf(w.recipient.doorbell, w.recipient.account),
-        lane,
-        1,
-        w.sender.account,
-      ),
+      connectionCreatedBody(operatorIdOf(acceptor.doorbell, acceptor.account), lane, connectionId, requesterAccount),
     ),
   );
   return lane;
@@ -498,8 +583,253 @@ async function main(): Promise<void> {
   await theReceipt();
   await theProbeAgainstTheSdk();
   await theLongLetter();
+  await theReply();
+  await theLaneRefusals();
 
   report();
+}
+
+/**
+ * D-171: the letter that comes back.
+ *
+ * The acceptor writes to the requester on the lane the requester opened. Its
+ * `connection_created` is on the ACCEPTOR's doorbell, so under the rule as it
+ * stood the replier could find no lane at all — §7.1 ¶5 looked only at the
+ * recipient's door, and the reply's recipient is the agent that rang. That was
+ * ledger §G-21, found by the dry run of a real reply before anything signed.
+ *
+ * What this proves: the lane is FOUND, it is the same lane, NOTHING is rung, the
+ * envelope binds, and a Verifier claiming `hcs14` reports no T-P10-2 — in the
+ * direction that had never been exercised anywhere.
+ */
+async function theReply(): Promise<void> {
+  const w = await stand();
+
+  // The first letter, so a lane exists and the reply has somewhere to go.
+  const flight = send(w.ctx, { coordinates: w.coordinates, manifest: w.manifest, payload: PAYLOAD, windowSeconds: 10 });
+  await new Promise((r) => setTimeout(r, 50));
+  const lane = answerTheDoor(w);
+  const first = await flight;
+  if (first.kind !== 'postmark') {
+    failures.push('the reply fixture could not post its first letter');
+    return;
+  }
+
+  // THE INGESTION LAG IS ON, at the REPLIER's own doorbell — the door the reply
+  // must now read, and the one nothing had ever read twice.
+  w.ledger.lag(w.recipient.doorbell, 1);
+
+  // The replier resolves the agent that wrote to it. Both sides are declared
+  // (D-171), so this is §9.2's own rule and not a fixture shortcut.
+  const back = await resolveHcs14(
+    readerSource(w.ledger.as(w.recipient.account)),
+    w.ledger.ledgerTag,
+    w.sender.account,
+    w.recipient.manifestTopic,
+  );
+  if ('failure' in back) {
+    failures.push(`the reply could not resolve its recipient: ${back.failure} — ${back.detail}`);
+    return;
+  }
+
+  w.ledger.mint(w.recipient.account, 5);
+  const replyCtx: SenderContext = {
+    consensus: w.ledger.as(w.recipient.account),
+    ledgerTag: w.ledger.ledgerTag,
+    account: w.recipient.account,
+    doorbell: w.recipient.doorbell,
+    log: w.recipient.log,
+    manifestTopic: w.recipient.manifestTopic,
+    treasury: w.ledger.treasury,
+    stampToken: w.ledger.stampToken,
+    schemaRef: 'hcs://13/0.0.10428113#1',
+    publicKey: RECIPIENT_KEY,
+  };
+
+  const doorsBefore = (await w.ledger.reader().messages(w.sender.doorbell)).length;
+  const stampsBefore = w.ledger.balance(w.recipient.account);
+  const REPLY = Buffer.from('The Proclamation arrived whole, and I have signed for it. Thank God for Lincoln.', 'utf8');
+
+  const answer = await send(replyCtx, {
+    coordinates: back.coordinates as unknown as Coordinates,
+    manifest: back.manifest as unknown as Record<string, unknown>,
+    payload: REPLY,
+    windowSeconds: 10,
+  });
+  if (answer.kind !== 'postmark') {
+    failures.push('the reply was not posted — the lane was not found from the sender own doorbell (D-171)');
+    return;
+  }
+
+  is('the reply travels the lane the first letter opened, and no other (§7.1, D-171)', answer.lane, lane);
+  is(
+    'NOTHING is rung: the reply recipient door is untouched, and it is proved by an absence',
+    (await w.ledger.reader().messages(w.sender.doorbell)).length,
+    doorsBefore,
+  );
+  is(
+    'and the only stamps that moved are the postage — none at any door',
+    w.ledger.balance(w.recipient.account),
+    stampsBefore - answer.settlement.amount,
+  );
+  is('the reply is bound to the lane it was submitted on', answer.envelope.lane, lane);
+
+  // The lane memo names the door this lane was actually born at (§7.1, D-171) —
+  // the fact the whole binding walk turns on.
+  const laneInfo = await w.ledger.reader().topic(lane);
+  const memo = laneInfo === null ? null : connectionTopicMemoOf(laneInfo.memo);
+  ok('the lane memo is HCS-10 connection-topic memo and parses', memo !== null);
+  is('and it names the doorbell the connection_created is on', memo?.doorbell, w.recipient.doorbell);
+  const doorInfo = await w.ledger.reader().topic(w.recipient.doorbell);
+  is(
+    'and that doorbell own memo names its owner, which is how a Verifier learns whose door it was',
+    doorInfo === null ? null : inboundTopicMemoOf(doorInfo.memo)?.account,
+    w.recipient.account,
+  );
+
+  // The original sender opens what came back.
+  const opened = (await inbox(
+    {
+      reader: w.ledger.reader(),
+      account: w.sender.account,
+      keys: new Map<number, KeyObject>([[1, w.sender.key]]),
+      treasury: w.ledger.treasury,
+      stampToken: w.ledger.stampToken,
+    },
+    { lanes: [lane] },
+  )) as readonly Delivery[];
+  const mine = opened.find((d) => d.envelope.aadHash === answer.envelope.aadHash);
+  ok('the agent that rang opens the letter that came back', mine?.opened === true);
+  is('byte for byte', mine?.payload?.toString('utf8'), REPLY.toString('utf8'));
+
+  // And a Verifier claiming the profile binds it — the whole point of D-171.
+  const v = await verify(
+    w.ledger.reader(),
+    { lane, stampToken: { tokenId: w.ledger.stampToken, treasury: w.ledger.treasury }, claims: ['hcs14'] },
+    {},
+  );
+  const entry = v.bundle.correspondence.find((c) => c.envelope.aadHash === answer.envelope.aadHash);
+  ok('the reply is reconciled', entry !== undefined);
+  is(
+    'and it is NOT unbound: a lane born at the sender own door binds (T-P10-2, D-171)',
+    (entry?.appraisal.appraised.reasons ?? []).includes('T-P10-2'),
+    false,
+  );
+  is(
+    'nor is its key list refused (T-P17-2)',
+    (entry?.appraisal.appraised.reasons ?? []).includes('T-P17-2'),
+    false,
+  );
+  // The first letter of this fixture stands at unverified/T-P9-3, because the
+  // modelled ledger carries no HCS-13 registry for the schemaRef to resolve in.
+  // The claim worth making is not that the reply is verified — it is that the
+  // reply stands in EXACTLY the same place, with no reason of its own.
+  is(
+    'so the reply stands exactly where the first letter stood, and gains no reason for coming back',
+    (entry?.appraisal.appraised.reasons ?? []).join(',') + ' / ' + String(entry?.appraisal.appraised.standing),
+    'T-P9-3 / unverified',
+  );
+}
+
+/**
+ * The three ways a lane fails the binding test D-171 states, each under a
+ * claimed profile, because that is where §11.4 replays coordinates at all.
+ *
+ * Each is built by pointing a real, posted envelope at a lane that is wrong in
+ * exactly one way — never by altering the envelope, which the seven alterations
+ * already cover.
+ */
+async function theLaneRefusals(): Promise<void> {
+  const cases: readonly {
+    readonly what: string;
+    readonly reason: string;
+    /** Returns the lane `send` will discover. Called before the letter is sent. */
+    readonly before: (w: World) => string;
+    /** Applied after the letter is on the lane, where the case needs it. */
+    readonly after?: (w: World, lane: string) => void;
+  }[] = [
+    {
+      what: 'a lane whose memo names a doorbell that holds no answer for it',
+      reason: 'T-P10-2',
+      // Discoverable — the recipient really did answer, on its own door — but the
+      // lane's memo points somewhere else, and the door it points at holds no
+      // `connection_created` for this lane. A memo is a claim; a doorbell is the
+      // evidence, and the claim is what a Verifier is told to follow.
+      before: (w) => {
+        const lane = w.ledger.createTopic({
+          memo: connectionTopicMemo(w.sender.doorbell, 7),
+          submitKeys: [SENDER_KEY, RECIPIENT_KEY],
+          adminKey: RECIPIENT_KEY,
+        });
+        w.ledger.submit(
+          w.recipient.account,
+          w.recipient.doorbell,
+          JSON.stringify(
+            connectionCreatedBody(operatorIdOf(w.recipient.doorbell, w.recipient.account), lane, 7, w.sender.account),
+          ),
+        );
+        return lane;
+      },
+    },
+    {
+      what: 'a lane born at a THIRD party door',
+      reason: 'T-P10-2',
+      // The stranger's door really does hold an answer for this lane, and the
+      // lane's memo really does name it — so the walk completes and yields
+      // {stranger, sender}, which is not this envelope's pair. The recipient's
+      // door carries a copy so `send` can discover the lane at all.
+      before: (w) => {
+        const stranger = declare(w.ledger, 'f00d' + '11'.repeat(30), 0, 'A stranger');
+        const lane = answerAt(w, { account: stranger.account, doorbell: stranger.doorbell }, w.sender.account, {
+          connectionId: 3,
+        });
+        w.ledger.submit(
+          w.recipient.account,
+          w.recipient.doorbell,
+          JSON.stringify(
+            connectionCreatedBody(operatorIdOf(w.recipient.doorbell, w.recipient.account), lane, 3, w.sender.account),
+          ),
+        );
+        return lane;
+      },
+    },
+    {
+      what: 'a lane whose submit key carries a THIRD key',
+      reason: 'T-P17-2',
+      // `send` refuses such a lane outright (§7.1), so the only way to put a
+      // real envelope on one is to widen the key list after the fact — which the
+      // network cannot do at all, and which is therefore the harder case.
+      before: (w) => answerTheDoor(w),
+      after: (w, lane) => w.ledger.overwriteSubmitKeys(lane, [SENDER_KEY, RECIPIENT_KEY, 'f00d' + '11'.repeat(30)]),
+    },
+  ];
+
+  for (const c of cases) {
+    const w = await stand();
+    const lane = c.before(w);
+    const posted = await send(w.ctx, {
+      coordinates: w.coordinates,
+      manifest: w.manifest,
+      payload: PAYLOAD,
+      windowSeconds: 10,
+    });
+    if (posted.kind !== 'postmark') {
+      failures.push(`${c.what} — the fixture could not post onto it`);
+      continue;
+    }
+    is(`${c.what} — the letter went on the lane under test`, posted.lane, lane);
+    if (c.after !== undefined) c.after(w, lane);
+
+    const v = await verify(
+      w.ledger.reader(),
+      { lane, stampToken: { tokenId: w.ledger.stampToken, treasury: w.ledger.treasury }, claims: ['hcs14'] },
+      {},
+    );
+    const entry = v.bundle.correspondence.find((x) => x.envelope.aadHash === posted.envelope.aadHash);
+    const reasons = entry?.appraisal.appraised.reasons ?? [];
+    ok(`  …replay reports ${c.reason}`, reasons.includes(c.reason));
+    is(`  …and the envelope is unbound (§11.5)`, entry?.appraisal.appraised.standing, 'unbound');
+  }
 }
 
 /**
@@ -729,7 +1059,12 @@ function report(): void {
       'the envelope ACKED (T-P1-8), a schedule expired unsigned reported unclaimed and nothing else (T-P15-5), ' +
       'step 7 reusing a standing request rather than making a second, a multi-chunk letter opened byte for byte ' +
       'and both halves of its chain refused when broken (T-P1-11), and the SchedulableTransactionBody codec ' +
-      'courted against @hashgraph/sdk own frozen bytes.',
+      'courted against @hashgraph/sdk own frozen bytes. AND THE LETTER THAT COMES BACK (D-171): a reply on the ' +
+      'lane the first letter opened, found through the REPLIER own doorbell and through an ingestion lag, ' +
+      'ringing nothing and opening no second lane, opened byte for byte by the agent that rang, and bound by a ' +
+      'Verifier claiming the profile — with three lanes refused beside it, one whose memo names a door holding ' +
+      'no answer for it, one born at a third party door, and one whose submit key carries a third key ' +
+      '(T-P10-2, T-P17-2).',
   );
 }
 
