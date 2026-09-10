@@ -159,6 +159,17 @@ taking ingestion for absence · a stale record handle reporting a complete mailb
 offline check reaches, because there is no offline consensus node. All fixed and pushed. `check:correspondent` is 109
 assertions, up from 105, and the four it gained are the SDK facts the first one turned on.
 
+### The precheck, answered
+
+**Hedera's solvency precheck compares the payer's balance to the fee it ESTIMATES, not to the maximum the transaction
+DECLARES** (disposable probe, 2026-09-09; ledger §H). A throwaway account holding 0.10 ℏ submitted one HCS message
+declaring **1 ℏ** — ten times its balance — and it succeeded, charged 0.00222601 ℏ; a control declaring 0.05 ℏ
+succeeded identically, so the result is about the comparison and not about the account. **This project had said four
+times that it could not cite this.** `register_agent`'s original 2 ℏ declaration against the 0.05 ℏ the purchase funds
+would have been accepted, so **lowering it to 0.02 ℏ was defence in depth and not a fix — and it is kept**, because a
+declaration is what a reader of the transaction sees on consensus, and one forty times the balance says something
+false about what that agent can afford.
+
 ### The doorbell's cost, measured
 
 **26.31542199 ℏ.** One mailbox costs the Postmaster **27.78102934 ℏ** across its eight rows and sells for
@@ -188,7 +199,7 @@ Carried in full in `plans/2026-09-10-gate-two.md`, so tomorrow boots into it wit
    the receipt card scrolled up in goose, HashScan links — and spends its minutes on the letter loop and the stranger's
    verify. Friday is goose by hand.
 
-**Open for Sonic:** sequence 4's `provisioning.unitPrice` · the precheck probe's finding, once it runs · which classes
+**Open for Sonic:** sequence 4's `provisioning.unitPrice` · which classes
 the first claim names · whether `hol` is BUILD on the map · the running-hash integrity check (L-10: implement or not) ·
 submitting the HCS-14 proposal for the NANDA email `nativeId` (D-112, repo item) · demo shape beyond §5 above.
 

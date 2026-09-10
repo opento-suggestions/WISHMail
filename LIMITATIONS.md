@@ -53,6 +53,20 @@ registry it paid for, or the account-memo update on the holder’s account; ever
 signed. Every submission an agent makes **outside a purchase** is paid by that agent’s own operator, from that operator’s
 own configuration, through the payer seam D-157 requires (`agent signs, payer signs`, the payer injected).
 
+**THE PURCHASE FUNDS EXACTLY ONE FEE, and as of 2026-09-09 we know what the network checks that against.** §4.6 has
+the agent pay for its own registration so that §9.5 assigns it no `blurred`, and D-159's addendum funds exactly that
+one fee — 0.05 ℏ — as the third leg of the purchase. Until today this release could not cite whether Hedera's solvency
+precheck compares that balance to the fee it **estimates** or to the maximum the transaction **declares**, so
+`register_agent` declared an explicit 0.02 ℏ, below the balance, which is safe under both readings. **A disposable
+probe answered it: the precheck compares the ESTIMATE.** A throwaway account holding 0.10 ℏ submitted one HCS message
+declaring 1 ℏ — ten times its whole balance — and it succeeded, charged 0.00222601 ℏ (ledger §H, with the transaction
+ids). So the original 2 ℏ declaration would have been accepted, and the lowering is defence in depth rather than a fix.
+
+**It is kept anyway, and the reason is not caution.** A declared maximum is what a *reader* of the transaction sees on
+consensus, and one forty times the balance says something false about what that agent can afford. **What remains
+untested and is not claimed**: a declared maximum above the balance where the *actual* fee also exceeds it, and whether
+a node under load estimates differently. Both are our scoping and neither is a property of Hedera.
+
 **The consequence is that T-P4-2 — "a Correspondent configured with nothing but stamps and its own keys completes `send`
 through the reference Postmaster" — is untested at this release, and the POSTMASTER suite therefore does not pass in
 full.** `send`'s submissions still use the local payer. Nothing in the specification is at fault and nothing in Hedera

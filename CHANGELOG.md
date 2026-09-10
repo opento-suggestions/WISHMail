@@ -70,6 +70,15 @@ defect turned on, so it cannot come back without a check going red first.
   set at 2 ℏ before the cost was known. **Repricing is a new `PriceList` message and touches no schema and no wire
   string**, and is tomorrow's, on **[S]**'s number.
 - **The registration fee is 0.00377436 ℏ**, thirteen times under the declared maximum and under a tenth of the funding.
+- **The solvency precheck compares the balance to the fee the network ESTIMATES, not to the maximum the transaction
+  DECLARES** — a disposable probe, 2026-09-09, ledger §H. A throwaway account holding 0.10 ℏ submitted one HCS message
+  declaring **1 ℏ**, ten times its balance, and it succeeded; a control declaring 0.05 ℏ succeeded identically, so the
+  result is about the comparison and not about the account. **This project had said four times it could not cite this.**
+  It is the opposite comparison to the 09-08 probe’s `INSUFFICIENT_TX_FEE`, which is a declaration BELOW what was
+  required. Consequence: `register_agent`’s original 2 ℏ declaration against a 0.05 ℏ balance would have been accepted,
+  so lowering it to 0.02 ℏ was defence in depth and not a fix — **and it is kept**, because a declared maximum is what a
+  reader of the transaction sees on consensus, and one forty times the balance says something false about what that
+  agent can afford.
 
 ### The record and the tree
 

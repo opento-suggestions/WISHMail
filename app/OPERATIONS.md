@@ -1304,6 +1304,71 @@ All on the Postmaster's payer, which held 3229.7 ℏ before Gate One.
 
 ---
 
+## The precheck probe — the run of record, 2026-09-09
+
+**Run and answered. The precheck compares the fee the network ESTIMATES, not the maximum the transaction DECLARES.**
+`npm run probe:precheck`, four submissions, three mirror reads, **5 of 5 predicates held**, exit 0. Every figure below
+was read from a mirror node and none from an SDK receipt.
+
+**Entities of the run.** Topic `0.0.10452759`, account `0.0.10452761` — key born in the run's process and discarded
+with it. Both disposable, neither in `app/deployment/hedera-testnet.json` and neither in `spec/pins.json`.
+
+```
+act 0   topic   0.0.10452759                       tx 0.0.8641261@1789011389.561485675
+act 1   account 0.0.10452761   10,000,000 tinybars tx 0.0.8641261@1789011393.645569873
+        read back from GET /accounts/0.0.10452761 — exactly the balance under test, not deleted
+
+act 2   THE QUESTION
+        payer      0.0.10452761        balance   10,000,000 tinybars
+        max_fee   100,000,000 tinybars           TEN TIMES THE BALANCE
+        result     SUCCESS             charged      222,601 tinybars
+        consensus  1789011399.899761108
+
+act 3   THE CONTROL
+        max_fee     5,000,000 tinybars — below the balance
+        result     SUCCESS             charged      222,601 tinybars
+        consensus  1789011401.878301127
+
+        balance after both: 9,554,798 tinybars
+```
+
+| Predicate | Read |
+|---|---|
+| the account holds exactly the balance under test | `balance.balance` **10,000,000** |
+| and is not deleted | `deleted` false |
+| act 2's outcome answers the question | `SUCCESS` — one of the two, and not `INSUFFICIENT_TX_FEE` |
+| the control succeeds, so act 2 was about the comparison | `SUCCESS` |
+| the actual cost is far below the balance | 222,601 against 10,000,000 — 2.2% |
+
+**The finding, stated as narrowly as the evidence allows.** A transaction declaring a maximum fee **ten times its
+payer's whole balance** was accepted by the node and reached consensus, and the network charged what the operation
+actually cost. Therefore **the solvency precheck is against the estimate and not against the declaration.** The control
+rules out the alternative explanation — that this account could not have paid at all — because the same account, on the
+same topic, with a declaration inside its balance, was charged the identical fee.
+
+**This is the opposite comparison to the 2026-09-08 probe's `INSUFFICIENT_TX_FEE`**, which is a declared maximum below
+what the network *required*. The two statuses answer different questions and neither implies the other; that they were
+easy to conflate is why this probe declared 1 ℏ against a cost of 0.002 ℏ rather than anything close to it.
+
+**What it changes.** `register_agent` declared **2 ℏ** against the 0.05 ℏ the purchase funds until 2026-09-09, and it
+would have been accepted. **Lowering it to 0.02 ℏ was defence in depth and not a fix, and it is kept** — a declared
+maximum is what a reader of the transaction sees on consensus, and one forty times the balance says something false
+about what that agent can afford. Nothing else in the build changes: the balance gate in `registration.ts` that refuses
+below the declared maximum is now known to be stricter than the network, which is the direction a gate should err.
+
+**What is NOT settled, and is not claimed.** A declared maximum above the balance where the **actual** fee also exceeds
+the balance — the probe's actual fee was 2.2% of it. And whether a node under load estimates differently. Both are our
+scoping.
+
+**Cost.** 0.5 ℏ or so for the topic, 0.1 ℏ of balance and its creation fee, and two submissions at 0.00222601 ℏ. All on
+the Postmaster's payer.
+
+**What it left on `hedera:testnet`.** Topic `0.0.10452759`, which nobody keyed, and account `0.0.10452761` holding
+0.09554798 ℏ whose key is gone — nobody can move it, including us, which is the same posture and the same consequence
+as the two probes before it. Neither is an entity of record.
+
+---
+
 ## Step 6 — the first letter: GATE TWO, written before any signature
 
 **Renumbered 2026-09-09.** This was Step 5 when the letter was the next thing to sign. Two Correspondents provisioned through the counter now stand before it as Gate One, so this is Step 6 and the letter is Gate Two. **§1 below is superseded in one respect and left standing as the record of what was planned**: the "fixture" it describes is the Correspondent of Step 5, its account is BOUGHT rather than funded (D-159 as amended), and its provisioning is that step's, not this one's. Rows 9-11 — the lane, the settlement, the chunks — are still this step's and are unchanged.
