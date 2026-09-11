@@ -169,9 +169,54 @@ export async function chunksOnLane(reader: Reader, lane: string): Promise<readon
 
 /** The identifiers of every envelope any chunk on a lane claims to be of. */
 export function envelopeIdsOf(observed: readonly ObservedChunk[]): readonly string[] {
-  const ids = new Set<string>();
-  for (const o of observed) ids.add(o.chunk.id);
-  return [...ids].sort();
+  // IN CONSENSUS ORDER OF THEIR CHUNK 0, AND NOT BY IDENTIFIER.
+  //
+  // This returned `[...ids].sort()` — the identifiers ordered as hex strings —
+  // and an identifier is a SHA-256, so that ordering says nothing about when a
+  // letter was posted. §11.4 has one rule that depends on which envelope came
+  // first: "no envelope with an EARLIER canonical chunk 0 names the same
+  // settlement" (T-P7-2), and `verify` decides it in the order this function
+  // yields. Whichever envelope reached the check first claimed the settlement,
+  // so the rule held only where an arbitrary sort happened to agree with
+  // consensus — and where it did not, the earlier letter was silently let
+  // through and nothing was flagged at all. Found by T-P7-2's conformance body.
+  //
+  // Consensus order is total, so the earliest chunk 0 of each identifier is a
+  // fact and not a judgement. An identifier whose chunk 0 is not on the lane
+  // sorts by its earliest chunk of any index, and identical timestamps cannot
+  // occur on one topic — the tie-break on the identifier is there so that the
+  // order is total whatever a caller hands in.
+  // `seconds.nanos` does not compare as a string — `100.5` sorts after `1000.1`
+  // lexically and before it in time — so every comparison here goes through
+  // `compareTimestamps`, which is in `consensus.ts` for exactly this reason.
+  interface First {
+    readonly isZero: boolean;
+    readonly at: string;
+  }
+  const earliest = new Map<string, First>();
+  for (const o of observed) {
+    const candidate: First = { isZero: o.chunk.i === 0, at: o.consensusTimestamp };
+    const seen = earliest.get(o.chunk.id);
+    if (seen === undefined) {
+      earliest.set(o.chunk.id, candidate);
+      continue;
+    }
+    // A chunk 0 outranks any other index, whenever it landed.
+    if (seen.isZero !== candidate.isZero) {
+      if (candidate.isZero) earliest.set(o.chunk.id, candidate);
+      continue;
+    }
+    if (compareTimestamps(candidate.at, seen.at) < 0) earliest.set(o.chunk.id, candidate);
+  }
+
+  return [...earliest.keys()].sort((a, b) => {
+    const first = earliest.get(a) as First;
+    const second = earliest.get(b) as First;
+    if (first.isZero !== second.isZero) return first.isZero ? -1 : 1;
+    const byTime = compareTimestamps(first.at, second.at);
+    if (byTime !== 0) return byTime;
+    return a < b ? -1 : 1;
+  });
 }
 
 /**

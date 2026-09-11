@@ -294,7 +294,17 @@ export function reassemble(
   for (let i = 1; i < n; i += 1) {
     const want = previous.chunk.nx;
     if (want === undefined) break; // the previous chunk claims to be last
-    const next = ordered.find((o) => !used.has(o) && o.chunk.i === i && sha256(unb64u(o.chunk.d)) === want);
+    // §8.5: "a chunk whose `n` differs from chunk 0's is a conflicting chunk and
+    // is not of this envelope." It was not compared, so such a chunk was taken
+    // onto the chain whenever it landed before the sender's — and the sender's
+    // own was then filed as its duplicate. Nothing observable moved, because a
+    // candidate must still hash to the previous chunk's `nx`; what moved was the
+    // EVIDENCE, since §5.7's postmark is taken from the message the walk used,
+    // so the bundle cited a stranger's sequence number for a link the sender
+    // posted. Found by T-P3-2's corpus and by T-P3-3.
+    const next = ordered.find(
+      (o) => !used.has(o) && o.chunk.i === i && o.chunk.n === n && sha256(unb64u(o.chunk.d)) === want,
+    );
     if (next === undefined) break;
     used.add(next);
     chain.push(next);
@@ -307,7 +317,12 @@ export function reassemble(
   const canonicalBytes = new Set(chain.map((c) => `${c.chunk.i}:${c.chunk.d}`));
   for (const o of ordered) {
     if (used.has(o)) continue;
-    if (canonicalBytes.has(`${o.chunk.i}:${o.chunk.d}`)) duplicates.push(o);
+    // A CONFLICTING CHUNK IS NOT A DUPLICATE, and the duplicate test alone could
+    // not tell them apart: it compares `(index, slice)` and `n` is in neither.
+    // So a chunk declaring another count but carrying the same slice was filed
+    // as a byte-identical repeat of something it is not of (§8.5).
+    if (o.chunk.n !== n) offChain.push(o);
+    else if (canonicalBytes.has(`${o.chunk.i}:${o.chunk.d}`)) duplicates.push(o);
     else offChain.push(o);
   }
 
