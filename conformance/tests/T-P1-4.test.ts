@@ -3,6 +3,7 @@
  *
  * Classes: all.
  * Register: NAMED (§7.2)
+ * @fixture-kind artifact
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):

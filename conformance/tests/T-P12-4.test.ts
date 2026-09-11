@@ -3,6 +3,7 @@
  *
  * Classes: VERIFIER.
  * Register: NAMED (§9.6)
+ * @fixture-kind captured
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):

@@ -12,8 +12,8 @@
   "counts": {
     "registered": 87,
     "selected": 87,
-    "passed": 0,
-    "failed": 87,
+    "passed": 30,
+    "failed": 57,
     "notRun": 0
   },
   "passedInFull": false,
@@ -71,7 +71,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-10",
@@ -81,7 +84,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-11",
@@ -92,7 +98,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-12",
@@ -101,7 +110,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-2",
@@ -111,7 +123,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-3",
@@ -120,7 +135,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-4",
@@ -129,7 +147,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P1-5",
@@ -139,7 +160,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P1-6",
@@ -150,7 +174,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-7",
@@ -160,7 +187,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P1-8",
@@ -170,7 +200,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P1-9",
@@ -179,7 +213,11 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured",
+        "reconstructed"
+      ]
     },
     {
       "test": "T-P10-1",
@@ -189,7 +227,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P10-2",
@@ -199,7 +240,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P11-1",
@@ -209,7 +254,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P11-2",
@@ -218,7 +266,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P11-3",
@@ -228,7 +279,11 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P11-4",
@@ -238,7 +293,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P11-5",
@@ -247,7 +305,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P11-6",
@@ -256,7 +317,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P11-7",
@@ -265,7 +329,10 @@
         "POSTMASTER"
       ],
       "extension": true,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P12-1",
@@ -274,7 +341,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P12-2",
@@ -283,7 +353,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P12-3",
@@ -292,7 +366,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P12-4",
@@ -301,7 +378,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P12-5",
@@ -311,7 +391,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P12-6",
@@ -320,7 +403,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P12-7",
@@ -329,7 +415,10 @@
         "VERIFIER"
       ],
       "extension": true,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P13-1",
@@ -338,7 +427,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P13-2",
@@ -348,7 +440,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P13-3",
@@ -357,7 +452,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P13-4",
@@ -366,7 +464,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P14-1",
@@ -375,7 +476,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P15-1",
@@ -384,7 +488,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P15-2",
@@ -393,7 +500,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P15-3",
@@ -402,7 +512,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P15-4",
@@ -411,7 +524,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P15-5",
@@ -420,7 +536,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P16-1",
@@ -430,7 +549,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P16-2",
@@ -440,7 +562,11 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P17-1",
@@ -451,7 +577,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P17-2",
@@ -461,7 +590,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P17-3",
@@ -472,7 +605,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P2-1",
@@ -482,7 +618,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P2-2",
@@ -491,7 +630,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P2-3",
@@ -501,7 +643,10 @@
         "VERIFIER"
       ],
       "extension": true,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P2-4",
@@ -510,7 +655,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P3-1",
@@ -520,7 +668,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P3-2",
@@ -530,7 +681,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P3-3",
@@ -539,7 +693,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P3-4",
@@ -548,7 +705,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P3-5",
@@ -557,7 +717,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P3-6",
@@ -566,7 +729,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P4-1",
@@ -575,7 +741,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P4-2",
@@ -585,7 +754,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P4-3",
@@ -594,7 +766,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P5-1",
@@ -603,7 +778,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P5-2",
@@ -612,7 +790,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P5-3",
@@ -621,7 +802,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P5-5",
@@ -630,7 +814,10 @@
         "CORRESPONDENT"
       ],
       "extension": true,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-1",
@@ -640,7 +827,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-2",
@@ -650,7 +840,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P6-3",
@@ -659,7 +853,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-4",
@@ -668,7 +865,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-5",
@@ -677,7 +877,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-6",
@@ -686,7 +889,10 @@
         "CORRESPONDENT"
       ],
       "extension": true,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P6-7",
@@ -695,7 +901,11 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured",
+        "altered"
+      ]
     },
     {
       "test": "T-P7-1",
@@ -706,7 +916,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P7-2",
@@ -716,7 +929,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P7-3",
@@ -726,7 +942,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P7-4",
@@ -736,7 +955,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P7-5",
@@ -745,7 +967,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P8-1",
@@ -754,7 +979,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P8-2",
@@ -763,7 +991,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P8-3",
@@ -772,7 +1003,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P8-4",
@@ -781,7 +1015,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P9-1",
@@ -790,7 +1027,11 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact",
+        "captured"
+      ]
     },
     {
       "test": "T-P9-10",
@@ -800,7 +1041,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P9-11",
@@ -811,7 +1055,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P9-2",
@@ -820,7 +1067,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P9-3",
@@ -829,7 +1079,11 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured",
+        "artifact"
+      ]
     },
     {
       "test": "T-P9-4",
@@ -838,7 +1092,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     },
     {
       "test": "T-P9-5",
@@ -849,7 +1106,10 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "none"
+      ]
     },
     {
       "test": "T-P9-6",
@@ -859,7 +1119,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "altered"
+      ]
     },
     {
       "test": "T-P9-7",
@@ -869,7 +1132,10 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P9-8",
@@ -878,7 +1144,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "passed",
+      "fixtureKinds": [
+        "captured"
+      ]
     },
     {
       "test": "T-P9-9",
@@ -887,9 +1156,12 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed"
+      "outcome": "failed",
+      "fixtureKinds": [
+        "artifact"
+      ]
     }
   ],
-  "generated": "2026-09-11T04:21:27.561Z",
-  "digest": "2cc2d48243dcb3c4aecf74d95c99f415592ec0b546cb99f0db12a7c3c5b44410"
+  "generated": "2026-09-11T06:12:31.800Z",
+  "digest": "c4aaaa10dfac1ad030126186441d8c65d20ad444a4ae7b05cc5c1e4ec9de3ee2"
 }

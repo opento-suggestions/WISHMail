@@ -21,7 +21,40 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import canonicalize from 'canonicalize';
-import { EXPECTED_EXTENSION, EXPECTED_TOTAL } from './register.mjs';
+import { EXPECTED_EXTENSION, EXPECTED_TOTAL, REPO_ROOT } from './register.mjs';
+
+/**
+ * The kind of fixture a body was expanded against, read from the body itself.
+ *
+ * `conformance/DERIVATION.md` fixes six kinds — captured, altered,
+ * reconstructed, artifact, model, none — and each expanded body carries its own
+ * as an `@fixture-kind` tag in its header. It is read from the file rather than
+ * kept in a table here, so that the kind cannot drift away from the body it
+ * describes.
+ *
+ * It is in the report because a claim rests on the report: a row expanded
+ * against the MODELLED ledger counts toward no profile claim (RECORD,
+ * 2026-09-10), and a reader of the report has to be able to see which those are
+ * without opening ninety files.
+ *
+ * @param {string} id
+ * @returns {string[]}
+ */
+function fixtureKinds(id) {
+  const file = path.join(REPO_ROOT, 'conformance', 'tests', `${id}.test.ts`);
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch {
+    return ['none'];
+  }
+  const m = /@fixture-kind[ \t]+([^\r\n*]+)/.exec(text);
+  if (m === null) return ['none'];
+  return m[1]
+    .split(',')
+    .map((k) => k.trim())
+    .filter((k) => k !== '');
+}
 
 /** §5.1's hashing rule. */
 function digestOf(value) {
@@ -63,7 +96,9 @@ export function writeReport({ reportsDir, results, counts, pins, wantClass }) {
       ),
       unfilled: 0,
     },
-    results: [...results].sort((a, b) => a.test.localeCompare(b.test)),
+    results: [...results]
+      .map((r) => ({ ...r, fixtureKinds: fixtureKinds(r.test) }))
+      .sort((a, b) => a.test.localeCompare(b.test)),
   };
 
   const report = { ...body, generated: new Date().toISOString(), digest: digestOf(body) };

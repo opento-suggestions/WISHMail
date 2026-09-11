@@ -3,6 +3,7 @@
  *
  * Classes: CORRESPONDENT, POSTMASTER.
  * Register: NAMED (§7.4)
+ * @fixture-kind captured
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
