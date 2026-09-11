@@ -5417,6 +5417,70 @@ exactly what D-170 put the rate and its instant into the receipt for.
 The counter was stopped again afterwards and port 4600 is closed. **It is Sonic’s to start at the gate**, and the
 quote above expires on its own; a purchase resumes from a reference or it does not happen.
 
+### 8. The default with no flag, and a junction that does not work — 2026-09-11
+
+**With NEITHER `--dry-run` NOR `--live`, the server is DRY. It is not a refusal to start, and it is not live.**
+`app/src/ops/mode.ts:46-47` reads the two flags independently; `:51` exits 2 only when BOTH arrive; and
+`app/sdk/server.ts:566` is the line that decides everything else:
+
+```ts
+  const dryRun = !mode.live;
+```
+
+**The default is keyed off `--live` ALONE**, so anything that is not an arriving `--live` — a missing flag, a
+misspelled flag, a flag eaten by a forwarding script — leaves the process DRY. That is §12's rule as written
+(*"a flag that does not arrive now leaves the process in DRY RUN, which is the only arrangement where losing an
+argument is safe"*), and it is what the 2026-09-10 incident bought. Demonstrated rather than read:
+
+```
+  $ node <tsx> <server.ts> ~/.wishmail/demo/gz-x          # no flag at all
+
+    wishmail correspondent — DRY RUN: nothing will be signed
+    argv as received  ["C:/Users/Sonic/.wishmail/demo/gz-x"]
+    DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+```
+
+No §12 violation, and no code change is needed for it.
+
+**A JUNCTION AT A SPACE-FREE PATH DOES NOT WORK, and it fails SILENTLY.** A junction
+`C:\Users\Sonic\wishmail-repo` → the repo root was created (no administrator rights needed) and the server launched
+through it. **It printed nothing and exited 0.** Not a crash, not a refusal — a process that starts, does nothing,
+and goes away, which under goose is an extension that never answers.
+
+The cause is the entrypoint guard, `app/sdk/server.ts`:
+
+```ts
+  const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+```
+
+**Node resolves a junction to its real path for `import.meta.url` and leaves `process.argv[1]` as given**, so the two
+never match through a link and `main()` is never called. Measured, not inferred:
+
+```
+  via the junction     argv[1]          C:\Users\Sonic\wishmail-repo\probe.mjs
+                       import.meta.url  file:///C:/The_Fountain/ETHGlobal%20Hackathon/.../probe.mjs
+                       MATCH            false
+  via the real path    MATCH            true
+```
+
+`--preserve-symlinks` and `--preserve-symlinks-main` do **not** help: tsx is the main module and its loader resolves
+the real path regardless. All three combinations were tried and all three exited 0 in silence.
+
+**Two launch shapes DO work, and both were proved from an unrelated working directory (`C:\Windows`), with the real
+path and no junction.** One command string with the space-bearing paths quoted, run through `cmd`; and a command
+plus an argument array, where the space needs no quoting because each path is one element. Both print the banner,
+answer `initialize` on stdout, and exit 0 when stdin closes.
+
+**What would make the junction work is one line** — comparing real paths in that guard rather than strings — and
+**it is not made here**, because the ruling for today is that no code moves unless the default-mode question demands
+it, and it did not. Recorded for a decision rather than taken.
+
+**One further thing checked while here, because the stop condition now rests on it.** Between `buyStamps` entry
+(`app/sdk/counter.ts:244`) and its `connect()` to the counter (`:273`) **nothing signs, submits, transfers, freezes
+or executes.** So a LIVE session meeting a counter that is down fails at the connection, before any signature — which
+is what makes "a connection error to `127.0.0.1:4600` means that session is LIVE" a safe thing to stop on.
+
+
   **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
 ## Entities
