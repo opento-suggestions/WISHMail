@@ -118,12 +118,36 @@ topic. A stranger read it back twice at one digest, `34b314c4…`, **under speci
 record for the first time. All three outbound records fired live and matched their predictions. Gate report and both
 runs of record are `app/OPERATIONS.md` **Step 7**.
 
+**THE PARENT FOLDER WAS RENAMED on 2026-09-11 evening** — `ETHGlobal Hackathon` → `ETHGlobal_Hackathon` — because
+Goose Desktop takes an extension command as one string and splits it, so a path with a space cannot be given to it
+unquoted. **Nothing on consensus is affected and no home, key or id depends on the path**; all eighteen files under
+`~/.wishmail/demo/` were searched and none names the repository. A junction was tried and **abandoned**: Node
+resolves a link for `import.meta.url` but leaves `argv[1]` as given, so `app/sdk/server.ts:681`'s entrypoint guard
+never matches and the process starts, does nothing and exits 0 with no banner. **That is a real trap for anyone who
+symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
+it is build work for after submission.
+
 **GATE ZERO IS WRITTEN AND WAITS ON SONIC'S WORD** (2026-09-11). Its report is `app/OPERATIONS.md`, committed before
 anything can sign, fill-in unfilled. It is the first time **goose** drives the Correspondent MCP server on
 consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack → verify — and
 it is deliberately separate from Gate Four so that Gate Four can ask its own question: whether a brand-new HBAR-only
 wallet survives the lifecycle. **It is a gate and not a probe** (real `$POSTAGE`, real counter, real anchor,
 permanent entities); its entities are recorded as **residue**.
+
+**What a cold session needs to resume it, in one paragraph.** The two homes are **outside the repo** at
+`~/.wishmail/demo/gz-x` (**SENDER**, C2OPERATOR `0.0.10450880`) and `~/.wishmail/demo/gz-y` (**RECIPIENT**,
+C1OPERATOR `0.0.10450879`); keys **born**, both **unprovisioned**. **The roles are reversed from the gate report on
+purpose** (RECORD): the sender's operator holds zero `$POSTAGE`, so §4.4's hop fires under goose for the first time.
+**No flag means DRY** — `app/sdk/server.ts:566`, verified by an actual no-flag run. **The DRY pre-flight passed
+under a reference MCP client and NOT under goose**, so goose's own client is untested; the **two Goose Desktop
+entries are written and UNTESTED** in `app/OPERATIONS.md` Gate Zero §9, against the post-rename path, and **the
+first act of the next session is the from-anywhere proof at that path**. **The stop condition is in the goose
+conversation, not stderr**: the first call in each DRY session is `buy_stamp` and its card must say DRY / would-do,
+a connection error to `127.0.0.1:4600` means that session is LIVE and is the stop, `send` must refuse *no account
+yet*, and `generate_mailbox` and `register_agent` are not called in pre-flight. **The counter stays down until the
+fill-in.** **One extension per goose session.** **GREEN** is `executed_timestamp` on the schedule and the receipt
+manifest at its topic + sequence on DemoAgentY's manifest topic, chained back to chunk 0's postmark — not `send`
+returning, and not the card. **The fill-in is unfilled.**
 
 **The goose seam had never been exercised, and that is where the defects were.** All three gates were driven by
 CLIs. On 2026-09-11 the MCP surface was read end to end (`provenance/PROBES-2026-09-11.md`) and five things were

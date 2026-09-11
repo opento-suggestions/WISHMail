@@ -2,6 +2,46 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Zero, prepared] — 2026-09-11 — the goose seam, a mode that cannot sign, and a folder renamed
+
+**[S]** ruled; **[CC]** read, built, proved and recorded. **Nothing signed on `hedera:testnet`.** Gate Zero's report
+is committed with its fill-in unfilled, and the gate stays NOT YET through the rename.
+
+### Changed
+
+- **The parent folder is renamed** `ETHGlobal Hackathon` → `ETHGlobal_Hackathon`. Goose Desktop takes an extension's
+  command as one string and splits it, so a path with a space cannot be handed to it unquoted. **Nothing on
+  consensus is affected and nothing off it except paths**: all eighteen files under `~/.wishmail/demo/` were
+  searched and not one names the repository, no lock or PID file exists anywhere under it, and goose's own two
+  path-bearing entries name other projects.
+
+### Recorded, and not fixed
+
+- **The entrypoint guard is a trap for anyone who symlinks this repository.** `app/sdk/server.ts:681` compares
+  `process.argv[1]` against `import.meta.url`, and Node resolves a junction or symlink for the second and not the
+  first — so a launch through a link **starts, does nothing and exits 0 with no banner**, which under goose is an
+  extension that never answers. Measured both ways; `--preserve-symlinks` and `--preserve-symlinks-main` do not help
+  because tsx is the main module and its loader resolves the real path regardless. **The one-line fix — compare real
+  paths — is deliberately not made before the gate** (the golden-path rule) and is build work for after submission.
+  The junction that was tried is removed.
+- **`inbox` answers a missing mailbox with `INBOX_MIRROR_UNREACHABLE`**, naming the wrong cause on the one surface a
+  caller reads codes from. The mirror is reachable; the agent has no doorbell.
+- **DRY `buy_stamp` stops before §14.2's quote leg** rather than after it, so a rehearsal needs no counter standing —
+  a deviation from the ruling that shaped the mode, whose cost is that the counter's liveness is unproved by the
+  pre-flight. It was proved separately, once, with a quote.
+
+### Verified rather than asserted
+
+- **With neither `--dry-run` nor `--live` the server is DRY, which is §12's rule.** `app/sdk/server.ts:566` is
+  `const dryRun = !mode.live;` — keyed off `--live` alone, so a missing, misspelled or forwarding-eaten flag all land
+  in DRY. Demonstrated by an actual no-flag run.
+- **A LIVE session meeting a downed counter fails before any signature.** Between `buyStamps` entry
+  (`app/sdk/counter.ts:244`) and its `connect()` (`:273`) nothing signs, submits, transfers, freezes or executes —
+  which is what makes "a connection error to `127.0.0.1:4600` means LIVE" safe to stop on.
+- **The counter stands and quotes what sequence 4 says**: 13.52746875 ℏ for the twelve-stamp bundle at HBAR/USD
+  0.07392366 from the network's own `ExchangeRateSet`, plus 30 ℏ provisioning and a 0.05 ℏ registration fee, priced
+  from sequence 4 at consensus `1789055861.123389104`. Stopped again afterwards.
+
 ## [The record corrected] — 2026-09-11 — three things the record said that the code does not do
 
 **Docs only. No normative text moves, no schema moves, no version rides this**, and nothing on consensus is touched.

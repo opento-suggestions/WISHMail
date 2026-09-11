@@ -35,6 +35,16 @@ every class from ever passing here** — it compares a fresh Verifier at another
 this one, and this deployment has one implementation. That is what publishing a specification is for, and ledger
 §G-30 records it as not a defect.
 
+**THE PARENT FOLDER IS RENAMED, and if you are reading this in a fresh session that is why.** `ETHGlobal Hackathon`
+became `ETHGlobal_Hackathon` on the evening of 2026-09-11. The reason is the space: Goose Desktop takes an
+extension's command as one string and splits it, so a path with a space cannot be handed to it unquoted, and the
+junction that would have avoided the space **does not work** — Node resolves a link for `import.meta.url` but not
+for `argv[1]`, so `app/sdk/server.ts:681`'s entrypoint guard never matches and the process starts, does nothing and
+exits 0 with no banner (`app/OPERATIONS.md`, Gate Zero §8). That is a latent trap for anyone who symlinks this
+repository; **the one-line fix — compare real paths — is deliberately NOT made before the gate** and is build work
+for after submission. **Nothing on consensus is affected by the rename**, and nothing off it except paths: all
+eighteen files under `~/.wishmail/demo/` were searched and not one names the repository's path.
+
 **ONE THING IS WAITING ON A SIGNATURE, and it is GATE ZERO.** Its report is `app/OPERATIONS.md`, written 2026-09-11
 before anything can sign, with its fill-in unfilled. It is the first time **goose** drives the Correspondent MCP
 server on consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack →
@@ -42,6 +52,33 @@ verify — and it exists as its own gate so that Gate Four can ask its own quest
 HBAR-only wallet survives the lifecycle. It is **a gate and not a probe**: it uses the real `$POSTAGE`, the real
 counter and the real anchor, and creates permanent entities, one of them an HCS-1 topic with no admin key. Its
 entities are recorded as **residue**.
+
+**Where Gate Zero actually stands, for a cold session.** The two homes exist **outside the repository** at
+`~/.wishmail/demo/gz-x` and `~/.wishmail/demo/gz-y`: **`gz-x` is the SENDER** under C2OPERATOR `0.0.10450880`,
+**`gz-y` is the RECIPIENT** under C1OPERATOR `0.0.10450879`. Keys are **born**; both are **unprovisioned** — config
+and keystore only, no `record.json`. The roles are **reversed from the gate report on purpose** (RECORD, Sonic):
+the sender's operator holds **zero** `$POSTAGE`, so §4.4's hop fires under goose for the first time; the recipient's
+operator holds the stray stamp from checkpoint two and never spends it on the answering side. The corrected
+arithmetic is in Gate Zero §2.
+
+- **No flag means DRY.** `app/sdk/server.ts:566` is `const dryRun = !mode.live;` — the default is keyed off `--live`
+  alone, so a missing, misspelled or forwarding-eaten flag all land in DRY. Verified by an actual no-flag run, not
+  read off the source.
+- **The DRY pre-flight passed under a REFERENCE MCP client and NOT under goose.** Both banners DRY with their argv,
+  zero calls rejected, `send` accepting coordinates straight from `resolve`. goose's own client is untested.
+- **The two Goose Desktop entries are written and UNTESTED** — Gate Zero §9, against the post-rename path. **The
+  first act of the next session is the from-anywhere proof at the new path**; until it passes they are drafts.
+- **The stop condition is in the goose conversation, not stderr.** First call in each DRY session is `buy_stamp` and
+  its card must say DRY / would-do; **a connection error to `127.0.0.1:4600` means that session is LIVE — stop**
+  (safe to rely on: nothing signs between `counter.ts:244` and its `connect()` at `:273`). `send` must refuse
+  *no account yet*. `generate_mailbox` and `register_agent` are not called in pre-flight.
+- **The counter stays down until the fill-in.** It was proved standing once, with one quote — a read — at
+  43.52746875 ℏ against `PriceList` sequence 4 (Gate Zero §7), then stopped.
+- **One extension per goose session.** Two in one session is one agent holding two mailboxes. The per-home lock
+  cannot enforce it; two homes take two locks.
+- **GREEN is `executed_timestamp` on the schedule and the receipt manifest at its topic + sequence on DemoAgentY's
+  manifest topic, chained back to chunk 0's postmark.** Not `send` returning, and not the card.
+- **The fill-in is still unfilled.**
 
 **The afternoon of 2026-09-11 was the goose seam, and it was never clean.** Three gates have run and **every one was
 driven by a CLI**, so the MCP surface had never been exercised — and that is exactly where the defects were.

@@ -5481,6 +5481,94 @@ or executes.** So a LIVE session meeting a counter that is down fails at the con
 is what makes "a connection error to `127.0.0.1:4600` means that session is LIVE" a safe thing to stop on.
 
 
+### 9. ADDENDUM — the folder is renamed, and the goose entries. 2026-09-11, after the pre-flight and before the gate
+
+**The gate report is not edited by this**, nor is anything it asserts changed by it. What follows is dated and sits
+beneath it, as a correction or an addition to a run of record does.
+
+**The repository's parent folder is renamed** from `ETHGlobal Hackathon` to `ETHGlobal_Hackathon`, by Sonic, after
+this session reports done and every process holding the folder is closed. The reason is the space: Goose Desktop
+takes an extension's command as one string and splits it, so a path with a space in it cannot be given to it
+unquoted, and the junction that would have avoided the space **does not work** (§8 above). Removing the space from
+the real path is the remedy that needs no code and no link.
+
+**NOTHING ON CONSENSUS IS AFFECTED, and nothing off it either except paths.** No entity, no account, no topic, no
+transaction id, no home and no key depends on where this repository sits on a disk:
+
+- **`~/.wishmail/demo/` is outside the repository and always has been.** All eighteen files under it were searched
+  and **not one references the repository's path**: a home carries a network name, a mirror URL (null, meaning the
+  network's own), the counter's loopback address, an operator's payer and the agent's public identity, and nothing
+  else. The six homes — `a`, `a2`, `b`, `c`, `gz-x`, `gz-y` — are unaffected.
+- **No lock or PID file exists anywhere under `~/.wishmail`**, which is itself the confirmation that a DRY run takes
+  no lock: both Gate Zero homes were booted in DRY today and neither left a `run.lock`.
+- **The junction at `C:\Users\Sonic\wishmail-repo` is removed** (`rmdir`, which removes a link and never its target;
+  the target was counted before and after and is intact). It would have dangled after the rename.
+- **goose's own configuration is unaffected.** Its two path-bearing extension entries name
+  `C:/The_Fountain/hologlass/...` and `C:/The_Fountain/ontologic-x402-bounty/...`, which are other projects and are
+  not under `ETHGlobal Hackathon`.
+- The Postmaster's own state, `.wishmail-state/`, is **inside** the repository and moves with it.
+
+#### The two Goose Desktop entries — UNTESTED UNTIL THE RENAME
+
+Written against the **post-rename** real path. **The first act of the next session is the from-anywhere proof at that
+path**; until it passes, these are drafts and not entries.
+
+```
+  Name         DemoAgentX
+  Type         STDIO
+  Description  DemoAgentX (SENDER, DRY RUN — signs nothing): resolves addresses, reads its inbox and
+               verifies on hedera:testnet; buy_stamp, send and ack report what they would do.
+  Command      node C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/node_modules/tsx/dist/cli.mjs C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/app/sdk/server.ts C:/Users/Sonic/.wishmail/demo/gz-x --dry-run
+  Timeout      900
+
+  Name         DemoAgentY
+  Type         STDIO
+  Description  DemoAgentY (RECIPIENT, DRY RUN — signs nothing): resolves addresses, reads its inbox and
+               verifies on hedera:testnet; buy_stamp, send and ack report what they would do.
+  Command      node C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/node_modules/tsx/dist/cli.mjs C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/app/sdk/server.ts C:/Users/Sonic/.wishmail/demo/gz-y --dry-run
+  Timeout      900
+```
+
+**For the gate**, the same two entries with the last argument changed and the description telling the truth about it:
+
+```
+  Description  DemoAgentX (SENDER, LIVE — CAN SIGN AND SPEND): buys its mailbox, rings doorbells, posts
+               certified mail and acks, paying from operator 0.0.10450880.
+  Command      … C:/Users/Sonic/.wishmail/demo/gz-x --live
+
+  Description  DemoAgentY (RECIPIENT, LIVE — CAN SIGN AND SPEND): buys its mailbox, answers its doorbell,
+               opens certified mail and signs for it, paying from operator 0.0.10450879.
+  Command      … C:/Users/Sonic/.wishmail/demo/gz-y --live
+```
+
+**No quoting is needed**, because after the rename no path in either command contains a space — which is the whole
+purpose of the rename. `--dry-run` and `--live` together exit 2 rather than choosing (`app/src/ops/mode.ts:51`).
+
+**Why `node …/tsx/dist/cli.mjs` and not `npx tsx`.** The existing witness entry in goose's configuration uses
+`cmd: npx` with `args: [tsx, <file>]`, and matching it would be reasonable; the absolute form is used here because
+it is **the one that was proved to run from an unrelated working directory** — no PATH lookup, no `.cmd` shim, no
+possibility of npx resolving a different tsx or reaching for the network. Module resolution is unaffected either
+way: the imports in `server.ts` are resolved from the file's own location, never from the working directory, and
+there is **no `process.cwd()` anywhere in `app/`**.
+
+**One extension per goose session.** Two extensions in one session is one agent holding two mailboxes, which is not
+two agents. The per-home lock cannot enforce this — two homes take two different locks and both start happily — so
+it is discipline, not a guard.
+
+#### The stop condition, as it now stands
+
+It is **in the goose conversation** and not on stderr, because Goose Desktop does not surface an extension's stderr
+where a reader is looking.
+
+- **The first call in each DRY session is `buy_stamp`, and its card must say DRY / would-do.**
+- **A connection error to `127.0.0.1:4600` means that session is LIVE — stop.** The counter stays down until the
+  fill-in, so a session that tries to reach it is a session that is not in DRY. This is safe to rely on: between
+  `buyStamps` entry (`app/sdk/counter.ts:244`) and its `connect()` (`:273`) **nothing signs, submits, transfers,
+  freezes or executes**, so a LIVE session meeting a downed counter fails at the connection and before any signature.
+- **`send` must refuse `no account yet`** — these homes are unprovisioned.
+- **`generate_mailbox` and `register_agent` are not called in pre-flight.**
+
+
   **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
 ## Entities
