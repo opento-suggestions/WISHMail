@@ -272,15 +272,36 @@ export function recoverEnvelope(
   const header = zero.hdr;
   if (header === undefined) throw new Error('envelope: chunk 0 carries no header (§5.6)');
 
-  const rebuilt = rebuildAad(header, lane, version);
+  // A HEADER THAT WILL NOT BUILD IS A HEADER THAT DOES NOT BIND, AND THIS
+  // FUNCTION SAYS SO RATHER THAN RAISING.
+  //
+  // `buildAad` refuses a ledger tag §5.1 does not define (T-P9-11), which is
+  // correct where an envelope is being MADE and wrong where one is being
+  // described: a reader that met such an envelope raised out of `verify` and out
+  // of `inbox` instead of appraising it, and §11.5's table has a rung for
+  // exactly this condition — unbound — while §6.5 has `INBOX_UNBOUND`. P-12 is
+  // explicit that a Verifier reports and never errors where a downgrade will do
+  // (§6.7). Found by the P-12 conformance body itself, T-P12-2, and confirmed
+  // from the other side by T-P9-11.
+  //
+  // Where the rebuild fails there is no AAD to name, so the envelope is
+  // described with the identifier its own chunks carry and `bound` is false —
+  // which is the caller's cue to report the reason §11.5 names.
+  let rebuilt: { bytes: Buffer; id: string } | null;
+  try {
+    rebuilt = rebuildAad(header, lane, version);
+  } catch {
+    rebuilt = null;
+  }
+
   const envelope: Envelope = {
     ledgerTag: header.l,
     lane,
     profile: header.pr,
     resolutionProof: { hash: header.rp.h, uri: header.rp.u },
     nonce: header.nc,
-    aad: b64u(rebuilt.bytes),
-    aadHash: rebuilt.id,
+    aad: rebuilt === null ? '' : b64u(rebuilt.bytes),
+    aadHash: rebuilt === null ? zero.id : rebuilt.id,
     keyEpoch: header.ke,
     ephemeralPub: header.ep,
     ciphertextDigest: header.h,
@@ -290,7 +311,7 @@ export function recoverEnvelope(
     schemaRef: zero.s,
     chunkCount: zero.n,
   };
-  return { envelope, bound: rebuilt.id === zero.id };
+  return { envelope, bound: rebuilt !== null && rebuilt.id === zero.id };
 }
 
 /** §7.5's postage for a header as read: `w + (rr ? 1 : 0)`. */

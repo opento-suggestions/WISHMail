@@ -127,8 +127,30 @@ export interface Narrative {
   readonly text: string;
 }
 
-/** §11.5's order. A reason is a test identifier and the table is the order. */
-const REASON_ORDER = [
+/**
+ * §11.5's order. A reason is a test identifier and the table is the order.
+ *
+ * THIS LIST IS A FILTER, and that is why it has to be complete. `ordered()`
+ * keeps the ids it finds here and drops the rest, so an id the table names and
+ * this constant omits is computed by §11.4 and then silently discarded — and
+ * `lowest()` reads the companion map below, so the downgrade never reaches the
+ * envelope either. §11.5's MUST is broken in both halves by one omission: "a
+ * Verifier MUST report every reason that any check yielded and MUST NOT report a
+ * standing higher than the lowest any check yielded."
+ *
+ * `T-P6-7` was such an omission. D-163 added the row to §11.5's table — "a
+ * message at the manifest's location hashes to the proof … unverified" — and
+ * these two constants were never widened, so a manifest found nowhere near the
+ * address it claims left the resolution `unverified` with an EMPTY reason list
+ * and the envelope `verified`. Found by T-P6-7's own conformance body, which now
+ * also checks these constants against the specification's table so the drift
+ * cannot recur silently.
+ *
+ * The order is §11.5's table read top to bottom, row by row, which is what
+ * §11.7 fixes for `reasons`.
+ */
+export const REASON_ORDER = [
+  // unbound
   'T-P1-1',
   'T-P1-11',
   'T-P3-3',
@@ -136,23 +158,27 @@ const REASON_ORDER = [
   'T-P10-1',
   'T-P9-11',
   'T-P10-2',
-  'T-P17-2',
   'T-P9-6',
+  'T-P17-2',
   'T-P1-10',
+  // unstamped
   'T-P7-1',
   'T-P11-1',
   'T-P7-3',
   'T-P7-2',
+  // unverified
   'T-P6-2',
   'T-P9-8',
+  'T-P6-7',
   'T-P6-1',
   'T-P12-4',
   'T-P9-3',
+  // §11.5's sanctioned answer for a condition its table does not name.
   'T-P12-2',
 ] as const;
 
 /** The standing each reason yields, per §11.5's table. */
-const REASON_STANDING: Readonly<Record<string, Standing>> = {
+export const REASON_STANDING: Readonly<Record<string, Standing>> = {
   'T-P1-1': 'unbound',
   'T-P1-11': 'unbound',
   'T-P3-3': 'unbound',
@@ -169,11 +195,35 @@ const REASON_STANDING: Readonly<Record<string, Standing>> = {
   'T-P7-2': 'unstamped',
   'T-P6-2': 'unverified',
   'T-P9-8': 'unverified',
+  'T-P6-7': 'unverified',
   'T-P6-1': 'unverified',
   'T-P12-4': 'unverified',
   'T-P9-3': 'unverified',
   'T-P12-2': 'unverified',
 };
+
+/**
+ * The two tables above name the same reasons, and this says so where a reader
+ * can see it rather than leaving it to be noticed.
+ *
+ * One may be widened and the other forgotten — that is exactly how `T-P6-7` came
+ * to be computed and dropped — and the consequences differ: an id missing from
+ * `REASON_ORDER` is not reported, and one missing from `REASON_STANDING` does
+ * not lower the standing. Either alone breaks half of §11.5's MUST.
+ */
+{
+  const ordered = new Set<string>(REASON_ORDER);
+  const standing = new Set(Object.keys(REASON_STANDING));
+  const onlyOrdered = [...ordered].filter((r) => !standing.has(r));
+  const onlyStanding = [...standing].filter((r) => !ordered.has(r));
+  if (onlyOrdered.length > 0 || onlyStanding.length > 0) {
+    throw new Error(
+      '§11.5: REASON_ORDER and REASON_STANDING disagree — ' +
+        `${onlyOrdered.join(', ') || 'none'} carry an order and no standing; ` +
+        `${onlyStanding.join(', ') || 'none'} carry a standing and no order`,
+    );
+  }
+}
 
 const STANDING_ORDER: readonly Standing[] = ['verified', 'unverified', 'unstamped', 'unbound'];
 
@@ -617,7 +667,14 @@ async function appraiseOneRequest(
   // §10.4's mechanism, checked rather than assumed: the receipt landed on a
   // topic only the recipient's key can write to.
   const topic = await reader.topic(inner.topicId);
-  if (topic === null || !topic.submitKeys.includes(recipientKey ?? ' ')) reasons.push('T-P1-8');
+  // An account whose key consensus does not hold cannot be the one key a topic
+  // admits, so it fails this check rather than being compared against a
+  // sentinel. It used to be compared against one — a literal NUL in the source,
+  // which no key can equal and which also made `git grep` treat this whole file
+  // as binary, so `p13:check`'s sweep over `app/src` could not read it (T-P13-1).
+  if (topic === null || recipientKey === null || !topic.submitKeys.includes(recipientKey)) {
+    reasons.push('T-P1-8');
+  }
 
   // Where a profile WAS claimed, the coordinates and the manifest must name one
   // recipient. Where none was, this check is not made and the gate report says so.
@@ -741,8 +798,23 @@ export async function verify(
       // chunk of `id` is canonical; such chunks are recorded as unrooted."
       if (zero === undefined) {
         const claimed = observed.find((o) => o.chunk.i === 0 && o.chunk.hdr !== undefined);
-        if (claimed === undefined) continue; // chunks with no header: recorded on no entry
+        // CHUNKS WITH NO CHUNK 0 AT ALL ARE RECORDED NOWHERE, AND THAT IS A
+        // FROZEN-SCHEMA LIMIT RATHER THAN A CHOICE. §8.5 records such chunks as
+        // unrooted, but §5.10's `CorrespondenceEntry` reaches them only through
+        // an `Envelope`, and the registered Envelope schema requires all fifteen
+        // of its fields — a ledger tag from an enum of two, a non-empty nonce and
+        // ephemeral key, a key epoch at or above zero, a ciphertext length,
+        // weight and chunk count at or above one. An envelope with no chunk 0
+        // has no header and therefore none of them, so the entry cannot be built
+        // without inventing values. Raised as a ledger §G item and a 0.6
+        // candidate (§1.7) rather than coded around; T-P3-2's corpus measures it.
+        if (claimed === undefined) continue;
         const recovered = recoverEnvelope(claimed.chunk, lane);
+        // §11.5's table has a rung for a ledger tag §5.1 does not define, and it
+        // is a different rung from a header that does not rebuild. Naming the
+        // right one is what keeps a reason a test identifier (T-P9-11).
+        const header = claimed.chunk.hdr as ChunkHeader;
+        const undefinedTag = !(LEDGER_TAGS as readonly string[]).includes(header.l);
         entries.push({
           envelope: recovered.envelope,
           state: 'SUBMITTED',
@@ -751,7 +823,7 @@ export async function verify(
           requests: [],
           appraisal: {
             declared: { trustClass: 'math', endorsements: [] },
-            appraised: { standing: 'unbound', reasons: ['T-P1-1'] },
+            appraised: { standing: 'unbound', reasons: [undefinedTag ? 'T-P9-11' : 'T-P1-1'] },
             resolution: { standing: 'unverified', reasons: ['T-P6-2'] },
             receipt: { status: 'none', reasons: [] },
           },

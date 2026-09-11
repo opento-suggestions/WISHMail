@@ -34,9 +34,11 @@
  * yields `unbound` and a manifest not found at its location yields `unverified`.
  */
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { test } from 'node:test';
-import { verify } from '../../app/src/tools/verify.js';
-import { chunksOn, copy, fixture, readerOver, repack, type Fixture } from '../support/fixtures.js';
+import { REASON_ORDER, REASON_STANDING, verify } from '../../app/src/tools/verify.js';
+import { REPO_ROOT, chunksOn, copy, fixture, readerOver, repack, type Fixture } from '../support/fixtures.js';
 
 const FIXTURE = 'gate-three-resolved';
 const ENVELOPE = '2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01';
@@ -140,6 +142,42 @@ test('T-P6-7 — Resolution is a proof', async () => {
       },
     },
   ];
+
+  // --- THE CONSTANTS AGAINST THE TABLE, SO THE DRIFT CANNOT RECUR. --------
+  //
+  // This row was computed and dropped for as long as §11.5's table named
+  // `T-P6-7` and `verify.ts`'s `REASON_ORDER` did not. `REASON_ORDER` is a
+  // FILTER, so an id the table names and the constant omits is discarded after
+  // the check that produced it has run; `REASON_STANDING` is what `lowest()`
+  // reads, so an omission there leaves the envelope's standing untouched. One
+  // omission breaks both halves of §11.5's MUST. The fix was to widen the
+  // constants; this is what keeps them widened.
+  {
+    const spec = fs.readFileSync(path.join(REPO_ROOT, 'spec', 'WISHMAIL_SPEC_v0_5.md'), 'utf8');
+    const section = spec.split('### 11.5')[1]?.split('### 11.6')[0] ?? '';
+    assert.ok(section.length > 0, 'the specification carries §11.5');
+
+    // The table rows, which are the lines that name a standing and the tests
+    // that yield it. The `Conformance:` notes beneath the table are not rows.
+    const named = new Set<string>();
+    for (const line of section.split('\n')) {
+      if (!/\b(unbound|unstamped|unverified)\b/.test(line)) continue;
+      if (line.trimStart().startsWith('`Conformance:`')) continue;
+      for (const id of line.match(/T-P\d+-\d+/g) ?? []) named.add(id);
+    }
+    assert.ok(named.size >= 15, `§11.5's table names ${named.size} tests`);
+
+    const order = new Set<string>(REASON_ORDER);
+    const standing = new Set(Object.keys(REASON_STANDING));
+    for (const id of named) {
+      assert.ok(order.has(id), `§11.5's table names ${id} and REASON_ORDER omits it — the reason would be dropped`);
+      assert.ok(
+        standing.has(id),
+        `§11.5's table names ${id} and REASON_STANDING omits it — the downgrade would not reach the envelope`,
+      );
+    }
+    assert.ok(named.has('T-P6-7'), 'and this row is one of them (D-163)');
+  }
 
   const measured: { what: string; standing: string; reasons: readonly string[]; appraised: string }[] = [];
   for (const negative of negatives) {
