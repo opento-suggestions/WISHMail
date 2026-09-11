@@ -2,7 +2,11 @@
 
 The suite. One test per `T-<P-ID>-<n>`, keyed to the invariant in its `P-ID` (§12), serving the requirement whose `Conformance:` note names it.
 
-**All 87 files exist; none is expanded.** Every one fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim. A test that is not written must not report that it passed.
+**All 87 files exist. 53 are expanded and 44 pass** (2026-09-11). A row with no body still fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim: a test that is not written must not report that it passed.
+
+**How a body is derived, and it is not from the code.** `conformance/DERIVATION.md` is the table — written before any body was — giving all 87 rows the fixture that reaches each, what it expects, and why the expectation follows from the specification's text. **The code is the defendant, not the judge**: where a sketch and the implementation disagree, the body follows the sketch, fails, and the failure is a finding brought rather than adjusted. On their first run these bodies found eleven defects in the reference implementation, every one since fixed and proved by the body that found it.
+
+**A body covers its whole sketch, or it fails saying which clause it could not reach.** Nine do, and each names what it waits on — a second implementation, a capture nobody has taken, a field the frozen schemas do not carry. "Not expanded, because X" and "expanded, and failing on X" are both correct lines on the harness. A body that faked X would not be.
 
 **A reference-side check is not a test, and is not counted as one.** `app/` carries a growing set of `npm run check:*` scripts — the seal against RFC 9180's Appendix A.1, the chunker against §11.3's worked example, a whole letter against a modelled ledger — and they hold the reference implementation to the specification as it is written. They are not the suite: they run the reference against itself, where a conformance test runs a *release* against evidence it did not produce. None of them moves a count here.
 
@@ -70,8 +74,8 @@ Because of that, nothing in an ordinary run reaches `report.mjs`, so the report 
   register        87 tests (82 core + 5 extension), §A
   files           87 present, 0 missing, 0 unregistered
   selected        87
-  passed          0
-  failed          87
+  passed          44
+  failed          43
 
   report          conformance/reports/all.json
 ```

@@ -19,19 +19,43 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 4. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link, including all three Correspondents.
    Generated; `npm run check:entities` fails on a hand-edit.
 
+5. `conformance/DERIVATION.md` — **the suite's own record**, and read it before touching a test. §A is the table
+   written before any body was: all 87 rows against the fixture that reaches each, what it expects, and why the
+   expectation follows from the specification rather than from the code. §E is the night the resolution chain was
+   captured; §F is where it landed. A body not in that table is not written.
+
 Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
-earlier days — history, not instructions. **Decisions run to D-176** in ledger §B, one ADR each in `spec/adr/`.
+earlier days — history, not instructions. **Decisions run to D-177** in ledger §B, one ADR each in `spec/adr/`.
 
-**Where the build stands, 2026-09-10.** The specification is **0.5.12**, tagged `v0.5.12`; **Gate Two is run in
-all three acts** — a plain letter, a certified one carrying §10.4's return receipt with `ack` and the envelope
-ACKED, and the reply back down the same lane with nothing rung. **Twenty-two `check:*` are green** — `check:gate3` joined them with Gate Three — with
-`typecheck` and `p13:check`. The whole battery is the loop to run after any change:
-`npm run typecheck`, then every `check:*` in `package.json`, then `npm run p13:check`.
+**Where the build stands, 2026-09-11.** The specification is **0.5.13**, tagged `v0.5.13`; **three gates are run**
+and nothing waits on a signature. **Twenty-two `check:*` are green** with `typecheck` and `p13:check`. The whole
+battery is the loop to run after any change: `npm run typecheck`, then every `check:*` in `package.json`, then
+`npm run p13:check`, then `npm run conformance`.
 
-**Ledger §G is ruled through, 2026-09-10.** Items 12–19 and 21–25 are **closed** — 18, 23 and 25 by the 0.5.12
-patch (D-175, D-176, D-173) and 24 by D-174 — and **§G-20 stays RULED and unacted**, a 0.6 candidate that waits on a
-minor version rather than on a decision. **Only §G-8 stands open** — the P-16 seam on a Hedera network, ruled a spec
-question and not a build item on 2026-09-07 and deliberately unpatched since.
+**THE SUITE IS EXPANDED AND THE FINDINGS ARE THE POINT.** 53 of the 87 registered rows have bodies; 44 pass. They
+were written from §A's sketches and never from the code — "the code is the defendant, not the judge" — and on their
+first run they found eleven defects in the reference implementation, every one of which is now fixed and proved by
+the body that found it. **A failing body is a finding brought, not a chore**: 9 expanded rows fail on a clause they
+name, and `conformance/DERIVATION.md` §F lists what each waits on. Do not make one pass by narrowing it.
+
+**Ledger §G runs to 31, and five of them are open.** Items 12–19 and 21–26 are **closed** — 26 by D-177 in the
+0.5.13 patch. What stands open: **§G-20** (the provisioned path cannot be rate-priced while `PriceList` is frozen)
+and **§G-29** (§5.10's bundle entry has no slot for a duplicate chunk or for an envelope with no chunk 0), both
+**0.6 candidates under §1.7** that wait on a minor version rather than on a decision; **§G-27** (T-P7-2 cannot
+isolate itself, because §4.3's memo already binds a settlement to one envelope) and **§G-28** (T-P1-10's `inbox`
+clause asks a recipient to replay its own resolution), both sketch questions for Sonic; **§G-31**, the F-3 orphan,
+which is **build work and not a spec question** — D-160 gave §11.2 the treasury route on 2026-09-09 and this
+implementation has not taken it; and **§G-8**, the P-16 seam, ruled a spec question on 2026-09-07 and deliberately
+unpatched since. **§G-30 is not a defect**: T-P3-1 compares two implementations and this deployment has one, which
+is the honest reason the claim is empty.
+
+**The 0.5.13 patch is the first where the implementation was right and the register was wrong** (D-177). §A's
+sketch for T-P6-1 said a resolution proof whose inputs are altered leaves the envelope *unbound*; §11.5's table says
+*unverified*, and so does §11.5's own reading paragraph. The table wins, the sketch is amended, and no code changed.
+It is also the first patch that changes **no normative text** — the only line that moved in `spec/` is the ledger's,
+so there is no `CHANGED` marker to place — and it rides a version anyway because §5.10's claim names the suite
+version and §A's sketch is the scope of the test that suite runs. D-177 records that reasoning; §1.7 does not speak
+to it.
 
 **The 0.5.12 patch has landed, and the probe decided its version.** The frozen `evidence-bundle` schema types `spec`
 as a bare `{"type": "string"}` — `spec/schemas/evidence-bundle.schema.json:9-11`, verified against `spec/pins.json`
@@ -45,12 +69,21 @@ number, as does LIMITATIONS L-1. The records are not rewritten.
 
 ```
 $ npm run conformance
-  register 87 · files 87 present · passed 0 · failed 87 · report conformance/reports/all.json
+  register 87 · files 87 present · passed 44 · failed 43 · report conformance/reports/all.json
 ```
 
-Eighty-seven registered — T-P1-12 joined them at 0.5.12 (D-176) — none expanded, zero passing, and a report emitted
-because no pin in `spec/pins.json` is null. **That is correct output and not a defect**: `RELEASE.classes` is empty, so this release claims nothing
-(§1.5), and the gate T-P9-2 holds is whether a release may make a claim at all — never whether tests pass.
+Eighty-seven registered — T-P1-12 joined them at 0.5.12 (D-176). **53 expanded, 44 passing**; of the 43 failures, 34
+are rows with no body that throw `NOT EXPANDED` saying what they are for, and 9 are bodies failing on a clause they
+name. A report is emitted because no pin in `spec/pins.json` is null.
+
+**NO CLASS PASSES IN FULL, SO NOTHING IS CLAIMED, AND THAT IS CORRECT OUTPUT AND NOT A SHORTFALL.**
+`RELEASE.classes` and `RELEASE.profiles` are empty (§1.5: silence claims nothing), and **T-P3-1 alone would keep
+every class from passing** — it compares a fresh Verifier at another patch, time and mirror node against this one,
+and this deployment has one implementation. That is not a defect to be closed by us; it is what publishing a
+specification is for. The gate T-P9-2 holds is whether a release may make a claim at all — never whether tests pass.
+
+**Setting `RELEASE.classes` is the one thing in `app/` that needs Sonic's word**, and it is set from the report and
+from nothing else (T-P15-3).
 
 **The gate discipline, and it is not negotiable.** Nothing signs on `hedera:testnet` until its gate report is
 written and committed in `app/OPERATIONS.md` — what it creates, what it asserts from the mirror, what it writes
@@ -83,10 +116,20 @@ topic. A stranger read it back twice at one digest, `34b314c4…`, **under speci
 record for the first time. All three outbound records fired live and matched their predictions. Gate report and both
 runs of record are `app/OPERATIONS.md` **Step 7**.
 
-**Nothing is waiting on a signature.** What is open is ruling, not building: ledger §G-20 (a 0.6 candidate) and
-§G-8. Three divergences from Gate Three stand recorded and unrepaired, all above the ledger: the provisioning driver
-does not exit after talking to the counter, `inbox.cli.ts` renders no pending receipt request, and one run's console
-output was lost to a `tail` pipe.
+**Nothing is waiting on a signature.** What is open is ruling and building, in that order: the five §G items above,
+and the build work the suite named and nobody has ruled on yet — chief among it **T-P10-2's gap**, where
+`laneRefusal` checks a lane's deletion, close, fees and key list and does not walk its birth, so discovery offers a
+lane that binding refuses and a sender can pay postage for letters that will every one appraise unbound.
+**§G-31's orphan** is the other: `Reader` has no method that reaches an account's transfers, so `orphans` is always
+empty. Three divergences from Gate Three stand recorded and unrepaired, all above the ledger: the provisioning
+driver does not exit after talking to the counter, `inbox.cli.ts` renders no pending receipt request, and one run's
+console output was lost to a `tail` pipe.
+
+**Two more captures exist and they are not records of a gate.** `gate-three-resolved` and
+`checkpoint-two-resolved` were taken on 2026-09-10 night — a mirror read, no key, no signature — with the
+declaration registry and profile file of A2, B and C named by `--topic`, so §9.2's rule can be re-run from a
+fixture. With them a Verifier claiming `hcs14` reaches **verified**, which nothing offline could try before. **The
+four original captures and their digests are untouched.**
 
 ## 1. The documents, and their order
 

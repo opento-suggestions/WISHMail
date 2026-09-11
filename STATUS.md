@@ -1,8 +1,8 @@
 # STATUS — WISHMail, ETHOnline 2026
 
-The one file in this repository where ordering is allowed. Specification: **0.5.12** — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text), 0.5.10 on 2026-09-09 (D-169, D-170), 0.5.11 on 2026-09-10 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it), and **0.5.12** the same day (D-173: the evidence bundle’s `spec` is the minor version; D-174: the outbound `connection_created` on both parties’ logs; D-175: §5.3’s `resolvedAt` gloss; D-176: T-P1-12, the register’s eighty-seventh row); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+The one file in this repository where ordering is allowed. Specification: **0.5.13** — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text), 0.5.10 on 2026-09-09 (D-169, D-170), 0.5.11 on 2026-09-10 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it), **0.5.12** the same day (D-173: the evidence bundle’s `spec` is the minor version; D-174: the outbound `connection_created` on both parties’ logs; D-175: §5.3’s `resolvedAt` gloss; D-176: T-P1-12, the register’s eighty-seventh row), and **0.5.13** on 2026-09-11 (D-177: §11.5’s table wins — a resolution that does not replay leaves the envelope *unverified*, not unbound; a ledger sketch amended, no normative text changed); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
 
-## 0. Where it stands, 2026-09-10
+## 0. Where it stands, 2026-09-11
 
 **Three gates are run on `hedera:testnet`, each under a gate report committed before its first signature.** Gate One
 bought a mailbox through the counter; Gate Two ran the letter loop with a return receipt and a reply; Gate Three
@@ -13,9 +13,52 @@ provisioned a third Correspondent and did the whole of §6.4 in **one `send()` c
 `app/OPERATIONS.md` — one gate report and one run of record per signed act, the report never amended — and
 `ENTITIES.md`, which is generated and fails its check on a hand-edit.
 
-**Nothing is waiting on a signature.** Twenty-two `check:*` are green with `typecheck` and `p13:check`; the
-conformance harness reports 87 registered, 0 expanded, 0 passing, and that is the honest state (§1.5: silence claims
-nothing). What is open is ruling, not building: ledger §G-20, a 0.6 candidate, and §G-8.
+**The conformance suite is expanded, and it is what moved on 2026-09-11.**
+
+```
+$ npm run conformance
+  register 87 · files 87 present · passed 44 · failed 43
+```
+
+53 rows have bodies and 44 pass. It said `passed 0` on the morning of 2026-09-10 and had said it since the register
+was written. The bodies were derived from §A's sketches and never from the implementation — `conformance/DERIVATION.md`
+is the table, written before any of them — and on their first run they found **eleven defects in the reference
+implementation**, all now fixed and each proved by the body that found it. Three were violations of a normative MUST:
+§11.5's reason tables omitted `T-P6-7`, so a manifest found nowhere near the address it claims left the resolution
+`unverified` with an empty reason list and the envelope `verified`; an undefined ledger tag made `verify` and
+`inbox` **raise** where §11.5 has a rung, against P-12; and §11.4's "earlier canonical chunk 0" was decided by a
+lexical sort of SHA-256 identifiers, so on the wrong lane neither letter was flagged at all.
+
+**Nothing is claimed, and that is the honest state rather than a shortfall.** `RELEASE.classes` and
+`RELEASE.profiles` are empty (§1.5: silence claims nothing). No class passes in full, and **T-P3-1 alone would keep
+every class from ever passing here** — it compares a fresh Verifier at another patch, time and mirror node against
+this one, and this deployment has one implementation. That is what publishing a specification is for, and ledger
+§G-30 records it as not a defect.
+
+**Nothing is waiting on a signature.** Twenty-two `check:*` are green with `typecheck` and `p13:check`, and
+`check:captured` and `check:receipt` are byte-identical in their recorded digests through every fix — which was the
+acceptance test the whole day was run against.
+
+**What is open**, in the order it wants attention:
+
+- **Two sketch questions for Sonic.** §G-27: T-P7-2 cannot isolate itself, because §4.3's memo already binds a
+  settlement to one envelope — re-sketch it as the case the memo rule does not close, or retire it as redundant with
+  T-P1-2. §G-28: T-P1-10's `inbox` clause asks a recipient to replay its own resolution, which §6.5 gives to nobody
+  — does the clause belong to VERIFIER alone.
+- **Two 0.6 candidates**, waiting on a minor version and not on a decision: §G-20 (the provisioned path cannot be
+  rate-priced while `PriceList` is frozen) and §G-29 (§5.10's bundle entry has no slot for a duplicate chunk, nor
+  for an envelope with no chunk 0 — the registered Envelope schema requires all fifteen of its fields).
+- **Two pieces of build work the suite named.** T-P10-2's gap: `laneRefusal` checks a lane's deletion, close, fees
+  and key list and does not walk its birth, so discovery offers a lane that binding refuses and a sender can pay
+  postage for letters that will every one appraise unbound. And §G-31, the F-3 orphan: §11.2 has had the treasury
+  route since D-160 on 2026-09-09, `Reader` has no method that reaches an account's transfers, and `orphans` is
+  always empty.
+- **§G-8**, the P-16 seam, ruled a spec question on 2026-09-07 and deliberately unpatched since.
+
+**Two captures were added on 2026-09-10 night** — a mirror read, no key, no signature — carrying the declaration
+registry and profile file of A2, B and C, so §9.2's rule can be re-run from a fixture. With them a Verifier claiming
+`hcs14` reaches **verified**, which nothing offline could try before. The four original captures and every digest
+they recorded are untouched.
 
 ## 1. Scope line (RECORD)
 
