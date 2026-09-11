@@ -5531,13 +5531,13 @@ which was the condition they were drafts until. The transcript is beneath them. 
 
 #### The from-anywhere proof at the renamed path — 2026-09-11, DRY, signing nothing
 
-Run from `C:Windows`, an unrelated working directory, with the real path and no junction. **Both launch shapes were
+Run from `C:\Windows`, an unrelated working directory, with the real path and no junction. **Both launch shapes were
 run**: the argument-array shape, and — because Goose Desktop takes the command as ONE STRING and splits it on
 whitespace — the single-string shape through `cmd`, unquoted, which is the shape the Command field above actually
 becomes. The two produced byte-identical output.
 
 ```
-  $ cd /d C:Windows
+  $ cd /d C:\Windows
   $ node C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/node_modules/tsx/dist/cli.mjs C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/app/sdk/server.ts C:/Users/Sonic/.wishmail/demo/gz-x --dry-run
 
   stderr:
@@ -5545,7 +5545,7 @@ becomes. The two produced byte-identical output.
     argv as received  ["C:/Users/Sonic/.wishmail/demo/gz-x","--dry-run"]
     to go live        restart with --live, and check the line above says it arrived
 
-  wishmail correspondent — home C:UsersSonic.wishmaildemogz-x, keys loaded, account (not bought yet), payer 0.0.10450880
+  wishmail correspondent — home C:\Users\Sonic\.wishmail\demo\gz-x, keys loaded, account (not bought yet), payer 0.0.10450880
     DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
 
   stdout (the JSON-RPC channel, and NOTHING else is on it):
@@ -5560,9 +5560,11 @@ becomes. The two produced byte-identical output.
 ```
 
 **Four things that proof carries, and one it does not.** The banner arrives and names the mode. `argv as received`
-shows the home **and** `--dry-run`, so the flag reached the process and was not eaten — which is §12's rule, proved
-by npm's own echo standing in for goose's. `initialize` is answered on stdout with one well-formed JSON-RPC frame
-and **no banner text on that channel**, which is why the banner is on stderr. The process exits **0** when stdin
+shows the home **and** `--dry-run`, so the flag reached the process and was not eaten — which is §12's rule met
+on this surface. **No npm was involved**: `node` was invoked directly, so there is no forwarding script between
+the command and the process, and the argv line is the process's own report of what reached it. `initialize` is
+answered on stdout with one well-formed JSON-RPC frame and **no banner text on that channel**, which is why the
+banner is on stderr. The process exits **0** when stdin
 closes and says where it stopped. It does **not** prove goose's own client: this was a file on stdin, not Goose
 Desktop, and whether goose validates `structuredContent` the way the reference client does is still what the gate
 is for.
