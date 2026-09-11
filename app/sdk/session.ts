@@ -99,6 +99,13 @@ export interface Session {
   readonly payerId: string;
   /** True where the payer is remote. Named so a record can say who paid a row. */
   readonly carried: boolean;
+  /**
+   * True where this process read no payer key and gave no client an operator.
+   *
+   * Read it to REFUSE EARLY and say so plainly; do not read it to decide
+   * whether to sign. Nothing here can sign either way, which is the point.
+   */
+  readonly dryRun: boolean;
   /** Passed to every submission: a pinned node where the payer is remote (D-168). */
   readonly submitOpts: SubmitOptions;
   /** The agent's account, once it exists. Empty before the purchase creates it. */
@@ -177,9 +184,51 @@ export interface BorrowedPayer {
   readonly nodeAccountIds: readonly AccountId[];
 }
 
+/**
+ * A payer that does not exist, for a process that must not be able to pay.
+ *
+ * DRY RUN is a property of what this process CONSTRUCTS and not of what it
+ * checks (CLAUDE.md §12, 2026-09-10). A flag consulted at the moment of signing
+ * is a flag that can be forgotten at one call site; a process that never read
+ * the operator's key and never gave a client an operator cannot sign at all,
+ * whatever any later branch believes.
+ *
+ * So in a dry run `payerSigner()` is NOT called — the key stays in the config
+ * file and never enters this process — and this stands in its place. Its
+ * `publicKey` THROWS rather than returning a plausible value: there is no payer
+ * public key here, and a fabricated one is the kind of thing that gets written
+ * into a topic memo by a code path nobody expected to run.
+ */
+export class DryRunRefusal extends Error {
+  constructor(what: string) {
+    super(
+      `DRY RUN: ${what}. This process read no payer key and gave no client an operator, ` +
+        'so it cannot sign or spend. Restart with --live to sign.',
+    );
+    this.name = 'DryRunRefusal';
+  }
+}
+
+function refusingPayer(): Signer {
+  return {
+    label: 'payer (dry run — absent)',
+    get publicKey(): never {
+      throw new DryRunRefusal('the payer’s public key was asked for');
+    },
+    sign: () => Promise.reject(new DryRunRefusal('a payer signature was asked for')),
+  };
+}
+
 export interface BootOptions {
   /** Skip the account lookup — for the boot that runs before the purchase. */
   readonly withoutAccount?: boolean;
+  /**
+   * DRY RUN: read no payer key, and give no client an operator (C0.5,
+   * 2026-09-11). Reads still work — a mirror node is a read interface and
+   * decrypting under this agent's own X25519 key is not a signature — and every
+   * path that would submit fails by construction rather than by discipline.
+   */
+  readonly dryRun?: boolean;
   /**
    * The account is known to exist, so wait for the mirror rather than reading
    * once. Set by the re-boot after a purchase, where the transfer is already on
@@ -200,9 +249,12 @@ export interface BootOptions {
  * coordinates is a caller about to provision a second one.
  */
 export async function boot(home: Home, options: BootOptions = {}): Promise<Session> {
+  const dryRun = options.dryRun === true;
   const keysOrigin = ensureKeys(home);
   const agent = agentSigner(home);
-  const homePayer = payerSigner(home);
+  // The one place the operator's key is read, and the one condition under which
+  // it is not. Everything below is unchanged by the branch.
+  const homePayer = dryRun ? refusingPayer() : payerSigner(home);
   const homePayerId = home.config.payer.accountId;
   const publicHex = agentPublicHex(home);
   const mirror = new Mirror(home.mirrorNodeUrl);
@@ -220,8 +272,13 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
   // Two clients, because there are two payers and a client IS its payer. The
   // local one is not a fallback: §4.4’s association and anything else this
   // agent does on its own behalf is the operator’s to pay for, carried or not.
+  //
+  // IN A DRY RUN NEITHER CLIENT IS GIVEN AN OPERATOR. A client IS its payer, so
+  // one without an operator cannot freeze a transaction, let alone submit it —
+  // which is what makes "nothing can sign" a fact about this process rather
+  // than a promise about its branches.
   const homeClient = Client.forName(home.config.network);
-  homeClient.setOperatorWith(homePayerId, homePayer.publicKey, homePayer.sign);
+  if (!dryRun) homeClient.setOperatorWith(homePayerId, homePayer.publicKey, homePayer.sign);
   const client = borrowed === undefined ? homeClient : Client.forName(home.config.network);
   if (borrowed !== undefined) client.setOperatorWith(payerId, payer.publicKey, payer.sign);
 
@@ -258,6 +315,7 @@ export async function boot(home: Home, options: BootOptions = {}): Promise<Sessi
     payer,
     payerId,
     carried: borrowed !== undefined,
+    dryRun,
     submitOpts,
     account,
     stampToken: facts.stampToken,

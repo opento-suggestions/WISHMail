@@ -34,6 +34,7 @@
     "check:prefreeze": "npm run check:prefreeze --workspace app --",
     "counter": "npm run counter --workspace app --",
     "correspondent": "npm run correspondent --workspace app --",
+    "correspondent:live": "npm run correspondent:live --workspace app --",
     "correspondent:provision": "npm run correspondent:provision --workspace app --",
     "check:correspondent": "npm run check:correspondent --workspace app --",
     "demo:operators": "npm run demo:operators --workspace app --",

@@ -63,3 +63,38 @@ export function runMode(name: string): RunMode {
 
   return { live, argv };
 }
+
+/**
+ * The same decision, announced on STDERR — for a stdio MCP server.
+ *
+ * `runMode` writes to stdout, which is right for a CLI and catastrophic for a
+ * server whose stdout IS the JSON-RPC channel: a banner there is a parse error
+ * at the client, not a banner. So the Correspondent's server gets this instead,
+ * with the same rule and the same two printed facts.
+ *
+ * It exists because the one surface goose touches had no mode at all until
+ * 2026-09-11, while every CLI that can sign has had one since the day one of
+ * them signed by accident. A gate line that changes nothing in the process is
+ * not a gate, and `AUTHORIZED` has to mean something a process does
+ * differently — here, that it was restarted with `--live` and said so.
+ */
+export function runModeOnStderr(name: string): RunMode {
+  const argv = process.argv.slice(2);
+  const live = argv.includes('--live');
+  const dry = argv.includes('--dry-run');
+
+  if (live && dry) {
+    console.error(`\nSTOP — ${name} was given both --live and --dry-run, and it will not choose between them.`);
+    process.exit(2);
+  }
+
+  console.error('');
+  console.error(`  ${name} — ${live ? 'LIVE: this run CAN SIGN and CAN SPEND' : 'DRY RUN: nothing will be signed'}`);
+  console.error(`  argv as received  ${JSON.stringify(argv)}`);
+  if (!live) {
+    console.error('  to go live        restart with --live, and check the line above says it arrived');
+  }
+  console.error('');
+
+  return { live, argv };
+}

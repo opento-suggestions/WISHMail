@@ -22,7 +22,12 @@
     "window": {
       "type": "integer",
       "minimum": 1,
-      "description": "Seconds to wait at first contact for the recipient to answer the doorbell. When it closes, send returns an AttemptedDeliverySlip and stops - a result, not a failure (F-6, P-14)."
+      "description": "Seconds to wait at first contact for the recipient to answer the doorbell. When it closes, send returns an AttemptedDeliverySlip and stops - a result, not a failure (F-6, P-14). Default 30, tried three times."
+    },
+    "receiptWindow": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Seconds the scheduled receipt submission of section 10.4 stays signable before it expires. Not a wait: send never waits for the acknowledgment (P-14), it creates the schedule and returns. Default is the ledger's maximum schedule lifetime."
     }
   },
   "required": ["coordinates", "payload"],

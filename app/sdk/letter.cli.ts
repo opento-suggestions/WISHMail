@@ -45,7 +45,7 @@ import { CHUNK_WIRE_MAX, messageOperation } from '../src/core/chunk.js';
 import { runMode } from '../src/ops/mode.js';
 import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { lanesBetween } from '../src/tools/send.js';
-import { SCHEDULE_MAX_LIFETIME, resumeReceipt, send } from '../src/tools/send.js';
+import { DEFAULT_WINDOW_SECONDS, SCHEDULE_MAX_LIFETIME, resumeReceipt, send } from '../src/tools/send.js';
 import { liveReader } from './live.js';
 import { openHome } from './home.js';
 import { inboxContext, lanesOf, ringStamp, senderContext, sentEnvelopeRows } from './letter.js';
@@ -257,7 +257,12 @@ async function main(): Promise<void> {
       manifest: r.manifest as unknown as Record<string, unknown>,
       payload,
       returnReceipt,
-      windowSeconds: Number(flag('window') ?? 120),
+      // §6.4's window, from the one place it is defined. This read 120 while
+      // the MCP path took `send`'s own default of 30 — so a letter sent through
+      // goose waited 90 seconds for a door and the same letter sent from here
+      // waited 360, and nothing reconciled them. The tool's default is the
+      // default; a caller that wants longer passes --window.
+      windowSeconds: Number(flag('window') ?? DEFAULT_WINDOW_SECONDS),
       receiptWindowSeconds,
     });
     console.log('');

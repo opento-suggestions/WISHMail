@@ -27,13 +27,14 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { repoRoot } from '../src/ops/env.js';
+import { runModeOnStderr } from '../src/ops/mode.js';
 import { RELEASE } from '../src/release.js';
 import { bundled } from '../src/mcp/bundle.js';
 import { verify } from '../src/tools/verify.js';
 import { ack } from '../src/tools/ack.js';
 import { inbox } from '../src/tools/inbox.js';
 import { lanesBetween, send } from '../src/tools/send.js';
-import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
+import { mirrorSource, resolveHcs14, type MailCoordinates } from '../src/resolve/hcs14.js';
 import { resolveHol } from '../src/resolve/hol.js';
 import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
 import { CounterUnavailable, buyStamps } from './counter.js';
@@ -93,6 +94,34 @@ function detailFor(e: unknown): string {
     );
   }
   return message;
+}
+
+/**
+ * WHAT A DRY RUN ANSWERS WITH, and why it is not an error.
+ *
+ * A verb that would sign says what it WOULD do and returns it as a result. It
+ * is not a refusal: nothing went wrong, the input was accepted, and the caller
+ * asked a question this process is able to answer. Making it an error would
+ * teach a caller to retry, which is the opposite of the point.
+ *
+ * The `plan` is whatever the verb can say without signing — usually a quote or
+ * a set of ids read from consensus. The one thing it never says is that
+ * something happened.
+ */
+function planned(verb: string, what: string, plan: Record<string, unknown> = {}): Record<string, unknown> {
+  const body = {
+    dryRun: true,
+    verb,
+    wouldDo: what,
+    ...plan,
+    note:
+      'Nothing was signed and nothing was spent: this process read no payer key and gave no client an operator. ' +
+      'Restart the server with --live to sign.',
+  };
+  return {
+    content: [{ type: 'text' as const, text: `DRY RUN — ${verb} would ${what}\n\n${JSON.stringify(body, null, 2)}` }],
+    _meta: { 'wishmail/dryRun': true, 'wishmail/spec': RELEASE.spec },
+  };
 }
 
 function refuse(code: string, message: string): Record<string, unknown> {
@@ -206,13 +235,31 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
         }
 
         case 'buy_stamp': {
+          const count = (args['count'] as number | undefined) ?? 1;
+          if (!Number.isInteger(count) || count < 1) {
+            return refuse('STAMP_HOLDER_INVALID', `count must be a whole number of at least 1, not ${String(count)} (§6.3)`);
+          }
+          if (s.dryRun) {
+            // §14.2's exchange begins with a QUOTE, which is read-only — but it
+            // is a round trip to the counter, and standing a counter up is not
+            // something a dry run should require of whoever is rehearsing. So
+            // this reports the purchase it would make and stops before the
+            // first leg rather than before the transfer.
+            return planned('buy_stamp', `buy ${count} stamp(s)${args['provision'] === true ? ' and provision this agent’s mailbox' : ''}`, {
+              count,
+              provision: args['provision'] === true,
+              holder: s.account === '' ? { publicKey: s.agentPublicHex } : { account: s.account },
+              buyer: s.homePayerId,
+              counter: s.home.config.postmasterUrl,
+            });
+          }
           const hadNoAccount = s.account === '';
           // With `provision`, this is the whole of §4.6’s provisioned path: the
           // transfer, then the mailbox — signed here, paid for at the counter —
           // then the receipt naming what the counter created (D-168). goose sees
           // one call, because it is one purchase.
           const bought = await buyStamps(s, {
-            count: (args['count'] as number | undefined) ?? 1,
+            count,
             ...(args['provision'] === true ? { provision: true } : {}),
             onLine: (l) => console.error(`  ${l}`),
           });
@@ -227,7 +274,10 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 
         case 'generate_mailbox': {
           const r = await generateMailbox(s, s.record, {
-            ...(args['dryRun'] === true ? { dryRun: true } : {}),
+            // The server's own mode wins over the argument, and cannot be
+            // overridden upward: a caller may ask a live server for a dry run,
+            // and may not ask a dry server to sign.
+            ...(args['dryRun'] === true || s.dryRun ? { dryRun: true } : {}),
             onLine: (l) => console.error(`  ${l}`),
           });
           // The door is watched from the moment there is a door.
@@ -244,6 +294,25 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
               'this agent has published no declaration yet; run generate_mailbox first (§9.5 registers what §9.2 declared)',
             );
           }
+          // THE FLAG THIS TOOL PUBLISHED AND DID NOT HONOUR, until 2026-09-11.
+          // Its schema has always declared `dryRun` — "report whether a
+          // registration exists and what would be submitted, and submit
+          // nothing" — and this handler never read it, so a caller asking for a
+          // dry run submitted on the anchor and spent the agent's only ℏ. It is
+          // the smallest instance of the thing the server's own mode fixes, and
+          // both are honoured here: either one withholds the signature.
+          if (args['dryRun'] === true || s.dryRun) {
+            const anchor = s.holAnchors[0] ?? '(no anchor pinned for this ledger)';
+            return planned('register_agent', `submit this agent’s registration on the HOL anchor ${anchor}`, {
+              anchor,
+              account: s.account,
+              uaid,
+              declRegistry,
+              payer: s.account,
+              whyTheAgentPays:
+                '§9.5 assigns `blurred` where the registration’s payer is not the address’s own account, so this is the one submission the agent pays for itself (§4.6).',
+            });
+          }
           const r = await registerAgent(s, s.record, { uaid, declRegistry }, (l) => console.error(`  ${l}`));
           return ok({ outcome: r.outcome, coordinates: r.coordinates, log: r.lines });
         }
@@ -252,21 +321,54 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           // §6.4 in order, over the live seam. The tools are the ones
           // `check:letter` exercises; `sdk/letter.ts` only hands them this
           // agent's own ids. Nothing here knows it is on a network.
-          const address = args['address'];
-          if (typeof address !== 'string' || address === '') {
-            return refuse('SEND_UNRESOLVED', 'address is required: `send` takes one resolved recipient (§6.4)');
+          //
+          // THIS HANDLER TAKES WHAT ITS PUBLISHED SCHEMA SAYS IT TAKES, and
+          // until 2026-09-11 it did not. The schema declares §6.4's own
+          // signature — `coordinates`, a base64 `payload`, `window` — and this
+          // read `address`, utf8 and `windowSeconds`, so a client that built its
+          // call from the published schema got SEND_UNRESOLVED on its first
+          // letter. It was reachable only from an MCP client, and every gate so
+          // far was driven by a CLI, which is why three clean gates never met
+          // it. T-P15-4's premise is that the surface is defined once.
+          const coordinates = args['coordinates'] as MailCoordinates | undefined;
+          if (coordinates === undefined || typeof coordinates !== 'object' || typeof coordinates.address !== 'string') {
+            return refuse(
+              'SEND_UNRESOLVED',
+              '`coordinates` is required: §6.4 takes the coordinates `resolve` returned, which carry a resolution proof',
+            );
           }
           const payload = args['payload'];
           if (typeof payload !== 'string') {
-            return refuse('SEND_UNRESOLVED', 'payload is required, as text or base64 (§6.4)');
+            return refuse('SEND_UNRESOLVED', '`payload` is required, base64 — §6.4: "payload is bytes", and a tool input is JSON');
           }
           // The recipient is resolved HERE, by this agent, from a mirror node —
           // and the proof that resolution produces is what `send` welds into the
           // AAD. A letter to an address nobody resolved is what §10 exists to
           // make impossible.
+          //
+          // THE MANIFEST IS NEVER CARRIED IN-BAND (§5.3), so it is rebuilt here
+          // and then checked against the proof the caller handed over. §6.4 step
+          // 2 publishes the manifest, and coordinates carry only its hash and a
+          // locator that is null until that happens — so a `send` given
+          // coordinates and nothing else would have nothing to publish.
+          //
+          // Re-resolving is therefore the check and not a redundancy: the
+          // caller's coordinates become an input this process VERIFIES rather
+          // than one it trusts. That is strictly stronger than what stood here
+          // before, which resolved from an address and ignored whatever
+          // coordinates the caller was holding.
           const mine = s.record.get('manifest')?.id ?? s.account;
-          const r = await resolveHcs14(mirrorSource(s.mirror), s.ledgerTag, address, mine);
+          const r = await resolveHcs14(mirrorSource(s.mirror), s.ledgerTag, coordinates.address, mine);
           if ('failure' in r) return refuse(r.failure, r.detail);
+          const claimed = coordinates.resolutionProof?.hash;
+          if (typeof claimed === 'string' && claimed !== r.manifest.hash) {
+            return refuse(
+              'SEND_UNRESOLVED',
+              `these coordinates carry resolution proof ${claimed}, and resolving ${coordinates.address} now yields ` +
+                `${r.manifest.hash}. Re-resolve and send the coordinates that come back: §7.2 welds the proof's hash ` +
+                'into the AAD, so a letter under a proof this agent cannot reproduce would not bind.',
+            );
+          }
 
           // §4.4's first hop, where the payer is not the sender's own account:
           // the fee is debited from the PAYER, so the payer must hold a stamp.
@@ -288,23 +390,55 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
                 { doorbell: r.coordinates.doorbell, account: r.coordinates.account },
               )
             ).length === 0;
+          if (s.dryRun) {
+            // Everything above this line is a READ, and every read has run: the
+            // recipient was resolved, the proof the caller carried was checked
+            // against it, and §7.1's own rule was asked whether a door would be
+            // rung. So the plan is measured rather than assumed, and the first
+            // thing that would move a stamp is the line below.
+            return planned('send', `post one ${args['returnReceipt'] === true ? 'certified ' : ''}envelope to ${coordinates.address}`, {
+              recipient: {
+                address: coordinates.address,
+                account: r.coordinates.account,
+                doorbell: r.coordinates.doorbell,
+                manifestTopic: r.coordinates.manifestTopic,
+                keyEpoch: r.coordinates.keyEpoch,
+              },
+              resolution: {
+                profile: r.coordinates.profile,
+                trustClass: r.coordinates.trustClass,
+                endorsements: r.coordinates.endorsements,
+                proofHash: r.manifest.hash,
+              },
+              lane: willRing ? 'NONE — this is first contact, and a doorbell would be rung' : 'an open lane exists and would be reused; nothing would be rung',
+              wouldRing: willRing,
+              payloadBytes: Buffer.from(payload, 'base64').length,
+              returnReceipt: args['returnReceipt'] === true,
+              stamps: willRing ? 'the envelope’s weight, plus one at the door (§4.4)' : 'the envelope’s weight',
+            });
+          }
           const hop = await ringStamp(s, willRing);
           if (hop !== null) console.error(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
 
           const out = await send(ctx, {
             coordinates: r.coordinates,
             manifest: r.manifest as unknown as Record<string, unknown>,
-            payload: Buffer.from(payload, 'utf8'),
+            payload: Buffer.from(payload, 'base64'),
             // §6.4 step 7, and §7.7's header bit with it. The postage the
             // envelope affixes includes the receipt fee when this is true, so a
             // caller that asks for one pays for one (§4.2, §7.5).
             returnReceipt: args['returnReceipt'] === true,
-            ...(typeof args['windowSeconds'] === 'number' ? { windowSeconds: args['windowSeconds'] } : {}),
-            ...(typeof args['receiptWindowSeconds'] === 'number'
-              ? { receiptWindowSeconds: args['receiptWindowSeconds'] }
-              : {}),
+            // §6.4's own name for it, which is what the schema publishes.
+            ...(typeof args['window'] === 'number' ? { windowSeconds: args['window'] } : {}),
+            ...(typeof args['receiptWindow'] === 'number' ? { receiptWindowSeconds: args['receiptWindow'] } : {}),
           });
-          return ok(out, out as unknown as Record<string, unknown>);
+          // §6.4's result, in the ONE FIELD the published `outputSchema` names.
+          // MCP types a tool's output as an object, so each of §6's outputs is
+          // carried in a named field (`src/mcp/tools.ts`'s `wrap`); this handler
+          // returned the bare result and would have been rejected by any client
+          // that validates `structuredContent` — which the reference SDK does.
+          // The other five verbs already wrapped; `send` was the odd one out.
+          return ok(out, { result: out as unknown as Record<string, unknown> });
         }
 
         case 'inbox': {
@@ -338,8 +472,28 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
               `no envelope ${envelopeId} is on this agent's lanes; §6.6 acknowledges what this agent's own inbox opened`,
             );
           }
+          if (s.dryRun) {
+            // The envelope was read, reassembled and opened to get here, and
+            // every one of §6.6's preconditions has been checked. What is
+            // withheld is the ScheduleSign — which is the whole act, since the
+            // network executes the receipt the instant it lands.
+            return planned('ack', `sign the scheduled receipt for envelope ${envelopeId}`, {
+              envelopeId,
+              lane: delivery.lane,
+              opened: delivery.opened,
+              scheduleId: delivery.returnReceipt?.scheduleId ?? null,
+              receiptWouldLandOn: s.record.get('manifest')?.id ?? null,
+              cost: 'nothing to this agent: the sender named its own side as the inner transaction’s payer (T-P16-2).',
+            });
+          }
           const out = await ack(ackContext(s), delivery);
-          return ok(out.receipt, { receipt: out.receipt as unknown as Record<string, unknown> });
+          // The schedule this signed, and whether the network had already
+          // executed it, are facts the caller asked for and used to be dropped
+          // here. `receipt` stays the structured output its schema names.
+          return ok(
+            { receipt: out.receipt, schedule: out.schedule, alreadyExecuted: out.alreadyExecuted },
+            { receipt: out.receipt as unknown as Record<string, unknown> },
+          );
         }
 
         default:
@@ -358,12 +512,20 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 }
 
 export async function main(): Promise<void> {
-  const dir = process.env['WISHMAIL_HOME'] ?? process.argv[2];
+  // FIRST, BEFORE A KEY IS READ. Every CLI that can sign has printed its mode
+  // and its received argv since 2026-09-10; the one surface goose touches had
+  // no mode at all until 2026-09-11, which meant a gate line changed nothing in
+  // the process it was gating. On stderr, because stdout is the JSON-RPC
+  // channel and a banner there is a parse error at the client.
+  const mode = runModeOnStderr('wishmail correspondent');
+  const dryRun = !mode.live;
+
+  const dir = process.env['WISHMAIL_HOME'] ?? process.argv.slice(2).find((a) => !a.startsWith('--'));
   if (dir === undefined) {
     throw new Error('name the home directory: WISHMAIL_HOME=<dir>, or as the first argument. A home IS the agent (D-165).');
   }
   const home = openHome(path.resolve(dir));
-  const s = await boot(home);
+  const s = await boot(home, dryRun ? { dryRun: true } : {});
 
   // The watcher starts as soon as there is a doorbell to watch, and is started
   // once: a second watcher would answer the same request twice and §7.1's
@@ -372,7 +534,7 @@ export async function main(): Promise<void> {
     s,
     reboot: async () => {
       const previous = box.s;
-      box.s = await boot(home);
+      box.s = await boot(home, dryRun ? { dryRun: true } : {});
       // The old session's clients hold the event loop; a server that re-booted
       // on every purchase and kept them would leak one pair per sale.
       previous.close();
@@ -381,6 +543,12 @@ export async function main(): Promise<void> {
 
   let watcher: Watcher | undefined;
   const ensureWatcher = (): Watcher | undefined => {
+    // THE WATCHER SIGNS, so a dry run does not start one. `answer()` creates
+    // the lane with a TopicCreateTransaction — the auto-accepter is the one
+    // part of this server that acts without a tool call, and a DRY server whose
+    // watcher went on birthing lanes would be the exact defect the mode exists
+    // to prevent.
+    if (dryRun) return undefined;
     const doorbell = box.s.record.get('doorbell')?.id;
     if (doorbell === null || doorbell === undefined) return undefined;
     watcher ??= watchDoorbell(box.s, doorbell, {
@@ -393,7 +561,10 @@ export async function main(): Promise<void> {
 
   console.error(
     `wishmail correspondent — home ${home.dir}, keys ${s.keysOrigin}, ` +
-      `account ${s.account === '' ? '(not bought yet)' : s.account}, payer ${s.payerId}`,
+      `account ${s.account === '' ? '(not bought yet)' : s.account}, payer ${s.payerId}` +
+      (dryRun
+        ? '\n  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.'
+        : `\n  LIVE — the doorbell watcher ${watcher === undefined ? 'starts when there is a door' : 'is running'}.`),
   );
 
   await build(box, ensureWatcher).connect(new StdioServerTransport());
