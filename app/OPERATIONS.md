@@ -5220,6 +5220,171 @@ green, and the conformance report at 44 passing with digest `51453eea…` unmove
 
   **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
+## GATE ZERO — the roles as ruled, the pre-flight, and what GREEN is. Written 2026-09-11, before any signature
+
+**The gate report above is not edited.** It was written before the first signature and it stays as it stood, roles
+and arithmetic included. This section supersedes two of its numbers on Sonic's ruling (RECORD, 2026-09-11) and adds
+the two things it did not carry: the pre-flight, and the exact observable that means the run is done.
+
+**No code moves from here until the gate runs.** Preparation is read-only; the homes below are local files and local
+keys and touch no ledger. After the run, the only code that may move is a **goose-surface break found in the run**;
+anything else found is recorded here and not fixed.
+
+---
+
+### 1. The roles, reversed on purpose
+
+| | Home | Agent | Operator | Why this way round |
+|---|---|---|---|---|
+| **SENDER** | `gz-x` | `DemoAgentX` | **C2OPERATOR `0.0.10450880`** | It holds **zero `$POSTAGE`** — Gate Three's ring consumed the one it had. So §4.4's hop, through the MCP handler's own pre-check, **runs for the first time under goose**. |
+| **RECIPIENT** | `gz-y` | `DemoAgentY` | **C1OPERATOR `0.0.10450879`** | It holds the **stray stamp** checkpoint two's defect bought. On the answering side it is never spent, so the run shows it sitting untouched. |
+
+The gate report above has these the other way round, and under that arrangement the hop would not have fired at all —
+the sender's payer would already have held a stamp and `ringStamp` would have returned null. **Reversing them is what
+makes the untested path the one that runs.**
+
+Both homes were created 2026-09-11 under `~/.wishmail/demo/`, outside the repository and gitignored. Each carries its
+operator's payer block, copied from a home that already runs on that wallet, and nothing else; the agent's own keys
+were **born on the first boot of the pre-flight below**, in the agent's own process, and no key was printed, logged
+or written inside the repository (P-13; `npm run p13:check` green).
+
+### 2. The arithmetic, corrected for those roles
+
+Payload: **one short sentence, well under 200 bytes**, so chunk 0 is the only chunk. Certified, `returnReceipt`
+requested. The recipient acks from its own goose.
+
+```
+  weight            1 ounce  (one chunk)
+  postage           weight 1 + receipt fee 1          = 2 stamps to the treasury
+  the door          1 stamp at the RECIPIENT's door   (HIP-991, consumed to the treasury)
+
+  X   12 -> 9       two as postage, one hopped to its payer for the ring
+  C2OPERATOR  0 -> receives 1 -> the doorbell fee consumes it -> 0
+  Y   12 -> 12      the recipient is charged nothing, at any step, including across the ack (T-P16-2)
+  C1OPERATOR  1 -> 1  the stray stamp is NOT spent: the answering side pays in ℏ, and Y's own key is
+                      fee-exempt on Y's own doorbell (D-137), so `connection_created` costs no stamp
+  treasury    9,961 -> 9,964
+```
+
+**The hop is the line to watch.** `ringStamp` fires only where a door will actually be rung *and* the payer holds no
+stamp — both true here for the first time on this surface. If it does not fire, or fires for a reply, that is a
+finding.
+
+### 3. The pre-flight, in DRY — verbatim
+
+Both homes, each its own process, each built from the schemas the server itself published.
+
+```
+---------------- SENDER  (~/.wishmail/demo/gz-x) ----------------
+
+  wishmail correspondent — DRY RUN: nothing will be signed
+  argv as received  ["C:/Users/Sonic/.wishmail/demo/gz-x","--dry-run"]
+  to go live        restart with --live, and check the line above says it arrived
+
+wishmail correspondent — home C:\Users\Sonic\.wishmail\demo\gz-x, keys born, account (not bought yet), payer 0.0.10450880
+  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+
+---------------- RECIPIENT  (~/.wishmail/demo/gz-y) ----------------
+
+  wishmail correspondent — DRY RUN: nothing will be signed
+  argv as received  ["C:/Users/Sonic/.wishmail/demo/gz-y","--dry-run"]
+  to go live        restart with --live, and check the line above says it arrived
+
+wishmail correspondent — home C:\Users\Sonic\.wishmail\demo\gz-y, keys born, account (not bought yet), payer 0.0.10450879
+  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+```
+
+`keys born` on both: this was each agent's first boot, and the keystore is written once (D-165).
+
+The four verbs, each called as its published schema describes:
+
+```
+  resolve     in { address, profile }                                     required ["address"]
+  buy_stamp   in { count, payment, holder, provision }                    required ["count","payment","holder"]
+  send        in { coordinates, payload, returnReceipt, window, receiptWindow }
+                                                                          required ["coordinates","payload"]
+  inbox       in { since, lane }                                          required []
+
+  SENDER    buy_stamp  -> DRY RUN — would buy 12 stamp(s) and provision this agent’s mailbox
+                          holder { publicKey 22cd19c2… }  buyer 0.0.10450880
+  RECIPIENT buy_stamp  -> DRY RUN — would buy 12 stamp(s) and provision this agent’s mailbox
+                          holder { publicKey 20ae2f8e… }  buyer 0.0.10450879
+  SENDER    resolve 0.0.10468684
+                       -> coordinates, proof 5ed559e1…, doorbell 0.0.10468687, manifest 0.0.10468692
+  SENDER    send { coordinates from resolve, base64 payload, returnReceipt }
+                       -> SEND_UNRESOLVED: this agent has no account yet; the purchase creates it (§4.6, HIP-542)
+  RECIPIENT inbox {}   -> INBOX_MIRROR_UNREACHABLE: this agent has no doorbell on consensus; buy a mailbox first
+
+  calls rejected by the protocol: 0
+  both processes DRY: true
+```
+
+**Every call was accepted and answered.** The two refusals are the correct states of an unprovisioned home and not
+rejections: `send` accepted coordinates straight from `resolve` — the handoff that returned *"address is required"*
+this morning — and refused only because there is no account to send from yet.
+
+### 4. Three things this pre-flight does NOT show, named rather than implied
+
+1. **The counter was never contacted.** `buy_stamp` in DRY reports the purchase it would make and **stops before the
+   first leg**, so it does not run §14.2's quote. That is a deviation from the ruling that shaped this mode, which
+   said the quote step — being read-only — should run; it was built to stop earlier so that a rehearsal does not
+   require a counter to be standing. **The consequence is that the counter's liveness and the quote it would issue
+   are unproved here**, and the first thing the live run does is find out. The price is not unknown: `PriceList`
+   sequence 4 was read from consensus today (`{method: hbar, unitPrice: 30, registrationFee: 0.05}`, stamps rate-priced
+   at 0.10 USD with a twelve-for-1.00 bundle). Changing the DRY leg is a code change and is not made now.
+2. **`inbox` answers a missing mailbox with `INBOX_MIRROR_UNREACHABLE`.** The mirror is reachable; the agent has no
+   doorbell. The code is a declared failure of the tool and the message says the real reason, so nothing is broken —
+   but the code names the wrong cause on the one surface a caller reads codes from. **Recorded, not fixed.**
+3. **This was driven by a reference MCP client over real stdio, not by goose.** The protocol, the schemas and the
+   banners are the same; what is untested is goose's own client. **Sonic's own pre-flight under goose should print
+   the same two banners**, and if it does not, that is the stop.
+
+### 5. WHAT GREEN IS
+
+The golden path is **chunk 0's consensus postmark → the recipient's `ScheduleSign` executing the receipt manifest.**
+The run is done when **both** of these are true on a mirror node, read after the ack and not before:
+
+**(a) The schedule has executed.**
+
+```
+  GET /api/v1/schedules/<scheduleId>      ->  executed_timestamp   NOT null
+  https://hashscan.io/testnet/schedule/<scheduleId>
+```
+
+**(b) The receipt manifest is on the RECIPIENT's own manifest topic**, at a sequence number, with the hash the
+schedule carried:
+
+```
+  GET /api/v1/topics/<Y's manifest topic>/messages?limit=25&order=asc
+      ->  one message whose decoded bytes hash to the receipt manifest's hash
+  https://hashscan.io/testnet/topic/<Y's manifest topic>
+```
+
+And the chain that joins them, each read from consensus:
+
+```
+  chunk 0        lane <lane>  sequence 1   consensus <ts>     https://hashscan.io/testnet/topic/<lane>
+  the request    lane <lane>  sequence 2   the `transaction` operation naming <scheduleId>
+  the execution  <executed_timestamp>      strictly after chunk 0
+  the receipt    <Y's manifest topic> #<n>
+```
+
+**That is the stop-touching-code moment.** When (a) and (b) hold, the run of record is written from the mirror and
+nothing else is changed. If either is absent, report what is true at the stop and what is resumable, and **wait** —
+`ack` on an executed schedule is refused by the network, so a second attempt is safe but is a decision, not a
+reflex.
+
+**What GREEN is not.** It is not `send` returning; `send` returns after the ScheduleCreate and before anyone signs
+(P-14, T-P14-1). It is not the card saying a receipt was requested. It is the execution, on consensus, read back.
+
+### 6. The gate
+
+Nothing has signed. The pre-flight above ran with both servers in DRY, where no payer key is read and no client has
+an operator. **`AUTHORIZED` means stopping both servers and restarting them with `--live`**, each banner saying so
+with the argv that carried the flag, and the counter up.
+
+  **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
