@@ -1,6 +1,6 @@
 {
   "_readme": "A conformance-suite report. §5.10 ConformanceClaim.suite.reportDigest names the `digest` below, which is SHA-256 over the canonical JSON (RFC 8785) of this object with `digest` and `generated` absent (§5.1). `generated` is excluded for the reason §11.6 excludes observations: two runs at two clocks cannot agree on it. A claim naming a class whose row here is not `passed in full` is refused (T-P15-3).",
-  "spec": "0.5.12",
+  "spec": "0.5.13",
   "minorVersion": "0.5",
   "scope": "all",
   "register": {
@@ -12,8 +12,8 @@
   "counts": {
     "registered": 87,
     "selected": 87,
-    "passed": 30,
-    "failed": 57,
+    "passed": 44,
+    "failed": 43,
     "notRun": 0
   },
   "passedInFull": false,
@@ -135,7 +135,7 @@
         "RECIPIENT"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "altered"
       ]
@@ -227,9 +227,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "altered"
+        "altered",
+        "model"
       ]
     },
     {
@@ -353,7 +354,7 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "captured",
         "altered"
@@ -366,9 +367,9 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "none"
+        "model"
       ]
     },
     {
@@ -393,7 +394,7 @@
       "extension": false,
       "outcome": "failed",
       "fixtureKinds": [
-        "none"
+        "model"
       ]
     },
     {
@@ -476,9 +477,10 @@
         "all"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "none"
+        "model",
+        "captured"
       ]
     },
     {
@@ -562,10 +564,11 @@
         "POSTMASTER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "captured",
-        "altered"
+        "altered",
+        "model"
       ]
     },
     {
@@ -618,9 +621,10 @@
         "CORRESPONDENT"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "none"
+        "model",
+        "captured"
       ]
     },
     {
@@ -693,7 +697,7 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "altered"
       ]
@@ -827,9 +831,9 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "none"
+        "altered"
       ]
     },
     {
@@ -901,7 +905,7 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "captured",
         "altered"
@@ -916,9 +920,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "altered"
+        "altered",
+        "model"
       ]
     },
     {
@@ -929,9 +934,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "altered"
+        "altered",
+        "model"
       ]
     },
     {
@@ -942,9 +948,10 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
-        "altered"
+        "altered",
+        "model"
       ]
     },
     {
@@ -1055,7 +1062,7 @@
         "VERIFIER"
       ],
       "extension": false,
-      "outcome": "failed",
+      "outcome": "passed",
       "fixtureKinds": [
         "altered"
       ]
@@ -1162,6 +1169,6 @@
       ]
     }
   ],
-  "generated": "2026-09-11T06:12:31.800Z",
-  "digest": "c4aaaa10dfac1ad030126186441d8c65d20ad444a4ae7b05cc5c1e4ec9de3ee2"
+  "generated": "2026-09-11T07:10:10.159Z",
+  "digest": "51453eea7d11dee8a5cfa71b84de826682d8283c543be48ec65c95625daeb6ec"
 }
