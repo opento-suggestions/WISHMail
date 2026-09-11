@@ -23,14 +23,14 @@ implementation agrees with itself, which nobody doubted.
 | **altered** | A deliberately altered copy of captured bytes, with the alteration named in the body. | No |
 | **reconstructed** | A §5 or §6.5 object rebuilt from captured bytes where the capture cannot itself produce it — because producing it needs a key the capture deliberately does not carry. Used once (T-P1-9). | No, but flagged |
 | **artifact** | A repository file the sketch itself names: `spec/vectors/*.json`, `spec/schemas/`, `spec/pins.json`, `LIMITATIONS.md`, `app/src/release.ts`, the tool-schema tables, the report. | No — the sketch names the file |
-| **model** | The modelled ledger, `app/src/tools/memory.ts`. | **YES — unfilled** |
+| **model** | The modelled ledger, `app/src/tools/memory.ts`. | **It was open when this was written; §E records the ruling** |
 | **none** | Nothing reaches the sketch. The row is not expanded and the reason is named. | — |
 
-**`model` is the open question.** The prompt's fill-in is blank, so no row below is expanded against the
-model. Ten rows wait on it and are marked `model — pending`. The drafting lean was: permitted for
-RECIPIENT and CORRESPONDENT rows whose case is behaviour — a refusal, an order, a window — and refused for
-VERIFIER rows, whose whole claim is replay of consensus; every model-backed body marked as such in the
-report and counting toward no profile claim.
+**`model` was the open question when section A was written**, so no row below it is expanded against the
+model and ten are marked `model — pending`. **It was ruled the same night and §E carries the ruling**:
+permitted for a clause whose sketch is behaviour — a refusal, an ordering, a window, a price computation —
+in any class; refused for any clause whose claim is replay of consensus; every model-backed body marked
+`model` in the report and counting toward no profile claim.
 
 ## Three rules this table follows
 
@@ -323,3 +323,107 @@ Named in full, the distance from here to a claimed VERIFIER class is:
 5. rotation — T-P8-4.
 
 One through five are five different kinds of work, and only the second is a night's.
+
+---
+
+## E. ADDENDUM, 2026-09-10 night — the re-capture, and the six rows it moved
+
+**Written after section A and against it.** Section A's rows are left exactly as they stood: each records
+why it was blocked when the table was written, which is worth more than a tidy table. This section says
+what changed and which rows move.
+
+### What was captured, and what it cost
+
+RECORD (Sonic, 2026-09-10 night): a mirror read only — the declaration registry and profile file of A2, B
+and C — no key, no account, no signature; the four existing fixtures and their digests are records and are
+not rewritten; the new capture stands beside them.
+
+```
+gate-three-resolved.json       lane 0.0.10468898   1 envelope    28 KB
+checkpoint-two-resolved.json   lane 0.0.10464056   3 envelopes   55 KB
+```
+
+Six topics named with `--topic`: `0.0.10462719` / `0.0.10462723` (A2), `0.0.10452155` / `0.0.10452158`
+(B), `0.0.10468693` / `0.0.10468695` (C) — the HCS-2 registry and the HCS-1 profile file each account's
+HCS-11 memo leads to.
+
+**The HOL anchor `0.0.6913983` was NOT captured**, and the reason is the same ruling: `hol` is deferred
+from any claim, and T-P6-5 and T-P13-4 stay not expanded because of it. The anchor holds some hundreds of
+messages and no body would read them. One command away if that changes.
+
+### Two things the capture confirmed on the way past
+
+**The extra topics do not enter the evidence.** `gate-three-resolved`'s bundle digest is
+`34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017` — **identical** to the original
+gate-three capture's. `--topic` stores topics beside the evidence and `bundle.topics` still holds only
+what a Verifier followed, which is what the flag was built to guarantee.
+
+**D-173, confirmed arithmetically and not by argument.** `checkpoint-two-resolved`'s digest today is
+`473cba1ba05db658c5e19929bdbfd5d96131e187fa390092830d2187a15b5374`, and the reply's run of record printed
+`1c4359e5…`. The same evidence with `spec` substituted to `"0.5.11"` hashes to
+`1c4359e5bf6fbbe00fc82e4e5b358500d307572891a1be89dfd47d493f13d648` — **byte for byte the number the run of
+record printed**. So the only thing that moved between the two readings is the one field D-173 moved, and
+every other byte of the evidence is unchanged across a re-read of the mirror at a different time. That is
+the dated note beside `1c4359e5…` in `app/OPERATIONS.md` and LIMITATIONS L-1, shown rather than asserted.
+
+### The replay completes, and reaches `verified`
+
+```
+gate-three-resolved      claims []          unverified  [T-P12-4]
+                         claims ['hcs14']   VERIFIED    []          returnReceipt present
+checkpoint-two-resolved  claims []          unverified  [T-P12-4]   x3
+                         claims ['hcs14']   VERIFIED    []          x3, the reply among them
+```
+
+**This is the first `verified` standing this deployment has produced**, and it is worth saying exactly what
+it means and what it does not. It means §11.4's resolution paragraph ran end to end offline: the account's
+memo, the registry entry, the profile file, the declaration inside it, the recomputed coordinates, and the
+digest the proof declares. It means D-171's symmetric binding walked the reply's lane from the sender's own
+doorbell to the same pair of parties. It does **not** mean this release claims `hcs14`: `claims` is the
+scope a body hands a Verifier (§6.7), and `RELEASE.profiles` is what the release says of itself. §1.5's
+silence is untouched.
+
+### The six rows that move
+
+| Test | Was | Is | Why |
+|---|---|---|---|
+| T-P1-10 | not expanded | **partial** | The replay half is now reachable: `hdr.ke` altered against coordinates the rule recomputes. The `inbox` half is not, and that is a finding — see F-7 |
+| T-P3-5 | not expanded | **full** | A window whose `from` follows the settlement, the `connection_created` and the manifest, with chunks inside it, now appraises `verified` |
+| T-P6-7 | partial | **full** | The positive clause needed a resolution that appraises verified, and there is one |
+| T-P9-6 | partial | **full** | Both clauses: `laneRefusal` gives the `send` refusal over a `Reader` alone, and the replay half fires now that the claimed-profile branch is reachable |
+| T-P10-2 | partial | **full** | Same: the discovery half through `lanesBetween`, the binding half through the claimed branch |
+| T-P17-2 | partial | **full** | Same: `laneRefusal` for the key list, the claimed branch for the replay |
+
+### Revised counts
+
+| | Rows |
+|---|---|
+| Registered | **87** |
+| Expanded — full | **34** *(was 29)* |
+| Expanded — partial | **15** *(was 18)* |
+| **Expanded, total** | **49** *(was 47)* |
+| Not expanded | **38** *(was 40)* |
+
+### The model, now ruled
+
+RECORD (Sonic, 2026-09-10 night): the modelled ledger is permitted for a clause whose sketch is
+**behaviour** — a refusal, an ordering, a window, a price computation — in any class; refused for any
+clause whose claim is **replay of consensus**. A row with both halves runs the model for the behaviour
+clause and is an honest partial for the replay clause. Every model-backed body is marked `model` in the
+report and counts toward no profile claim.
+
+So the ten rows section A marked `model — pending` are now eligible, and so is the `rejected at send`
+clause of every partial above, because a refusal is behaviour. Two of those ten stay closed for another
+reason — **T-P6-5** and **T-P13-4**, because `hol` is deferred from any claim and from the venue narrative
+(RECORD, same night): HOL's testnet anchor is privileged, registration works under a key found in recon,
+and the production posture is unknown. Nothing is un-built — the three registrations are on consensus, the
+fee is in every receipt, and `register_agent` stays in the provisioning path. LIMITATIONS says so.
+
+### F-7, a new finding
+
+**`inbox` cannot reach T-P1-10's first clause, and it is not clear it should.** §A requires an envelope
+whose `hdr.ke` differs from its bound resolution's `keyEpoch` to be returned `INBOX_UNBOUND`. A recipient
+does not replay its own resolution — `InboxContext` carries a key map and no coordinates — so what `inbox`
+answers for an unknown epoch is `INBOX_EPOCH_UNKNOWN` (§6.5), and for a *known* epoch that the coordinates
+do not name, it opens. Either §6.5 owes the recipient a resolution of its own address, or T-P1-10's first
+clause belongs to the Verifier alone. A §G question, raised rather than coded around.

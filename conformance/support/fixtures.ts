@@ -26,15 +26,41 @@ import type {
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** The four correspondences captured from `hedera:testnet`. */
-export const FIXTURE_NAMES = [
+/**
+ * The four correspondences captured from `hedera:testnet` while the gates ran.
+ *
+ * Each stops where §11.2's ingestion table stops: the lane, the birth doorbell,
+ * the manifests, the settlements, the schedules, and the HCS-13 registration a
+ * chunk's `schemaRef` resolves through. None of them carries the HCS-2 registry
+ * or the HCS-1 profile file behind an account's HCS-11 memo, so no replay of
+ * §9.2's rule can run over one.
+ */
+export const RUN_FIXTURE_NAMES = [
   'checkpoint-one-letter',
   'checkpoint-two-receipt',
   'checkpoint-two-reply',
   'gate-three-certified',
 ] as const;
 
+/**
+ * The two captured on 2026-09-10 night with the resolution chain included.
+ *
+ * A mirror read and nothing else — no key, no account, no signature — naming
+ * the declaration registry and the profile file of A2, B and C with `--topic`,
+ * so that §9.2's rule can be re-run from the fixture. **The four above are
+ * records and are not rewritten**; these stand beside them, and the digests the
+ * runs of record printed still reproduce from the tags those runs name.
+ *
+ * With them, a Verifier claiming `hcs14` reaches `verified` — which is what
+ * §11.4's resolution paragraph has always described and what nothing offline
+ * could try until now.
+ */
+export const RESOLVED_FIXTURE_NAMES = ['gate-three-resolved', 'checkpoint-two-resolved'] as const;
+
+export const FIXTURE_NAMES = [...RUN_FIXTURE_NAMES, ...RESOLVED_FIXTURE_NAMES] as const;
+
 export type FixtureName = (typeof FIXTURE_NAMES)[number];
+export type ResolvedFixtureName = (typeof RESOLVED_FIXTURE_NAMES)[number];
 
 /**
  * One captured correspondence, in the shape `sdk/capture.cli.ts` writes.
@@ -75,6 +101,11 @@ export function fixture(name: FixtureName): Fixture {
 /** Every captured correspondence, in the order they were run. */
 export function allFixtures(): readonly { readonly name: FixtureName; readonly f: Fixture }[] {
   return FIXTURE_NAMES.map((name) => ({ name, f: fixture(name) }));
+}
+
+/** The two that carry the resolution chain, for a body that claims a profile. */
+export function resolvedFixtures(): readonly { readonly name: ResolvedFixtureName; readonly f: Fixture }[] {
+  return RESOLVED_FIXTURE_NAMES.map((name) => ({ name, f: fixture(name) }));
 }
 
 /** A deep copy, so one alteration never leaks into the next. */
