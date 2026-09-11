@@ -5383,6 +5383,40 @@ Nothing has signed. The pre-flight above ran with both servers in DRY, where no 
 an operator. **`AUTHORIZED` means stopping both servers and restarting them with `--live`**, each banner saying so
 with the argv that carried the flag, and the counter up.
 
+### 7. The counter, proved standing — one quote, 2026-09-11
+
+**A quote is §14.2’s first leg and it is a READ.** The counter prices the purchase from the `PriceList` on
+consensus and writes down a requirement it would honour; nothing is signed, nothing is transferred, and no
+consensus write happens. It answers the one thing the DRY pre-flight cannot (§4 above), which is whether the
+counter is up and what it would charge.
+
+```
+  $ npm run counter
+    the counter is at http://127.0.0.1:4600/  — buy_stamp, verify, resolve (§14.2)
+
+  buy_stamp { count 12, provision true, payment { method hbar, from 0.0.10450880 },
+              holder { publicKey <DemoAgentX’s agent key, DER> } }
+
+  -> PAYMENT_REQUIRED, flagged as an error, which is MCP’s rule and not ours (L-5)
+
+     reference     0.0.8641261@1789158553.982134520     expires 2026-09-11T20:30:59.059Z
+     stamps        13.52746875 ℏ   (the 12-for-$1.00 bundle, at HBAR/USD 0.07392366
+                                     read from the network’s own ExchangeRateSet at 1789156861.328314291)
+     provisioning  30 ℏ
+     registrationFee 0.05 ℏ       funded by the Postmaster into the account the purchase creates
+     from          PriceList sequence 4, consensus 1789055861.123389104
+     node          0.0.8            carriedBy 0.0.8641261
+```
+
+**It matches sequence 4 as consensus holds it**, read independently from the mirror the same day:
+`provisioning {method hbar, unitPrice "30", registrationFee "0.05"}`, and `hbar` stamps rate-priced against
+`reference 0.10 USD` with a twelve-for-`1.00` bundle. **So the buyer’s two ℏ legs come to 43.52746875 ℏ**, against
+Gate Three’s 43.38282123 ℏ on 2026-09-10 — the difference being the ℏ rate moving between the two days, which is
+exactly what D-170 put the rate and its instant into the receipt for.
+
+The counter was stopped again afterwards and port 4600 is closed. **It is Sonic’s to start at the gate**, and the
+quote above expires on its own; a purchase resumes from a reference or it does not happen.
+
   **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
 ## Entities
