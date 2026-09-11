@@ -4087,6 +4087,181 @@ This report is committed before the first signature. The 0.5.12 patch it runs un
 
 ---
 
+## Step 7 — GATE THREE, ACT ONE: C is provisioned. Run of record, 2026-09-10, and the send dry run the gate report could not carry
+
+**C is on `hedera:testnet` and resolves under both profiles with no `blurred`.** The gate report above is left exactly
+as it stood. This section records what act one did, the one divergence it turned up, and — committed **before B signs
+anything** — the send dry run §11 of that report could not produce, because `letter:plan` resolves the recipient from
+consensus and C did not exist until now.
+
+### C, as consensus holds it
+
+```
+  account     0.0.10468684    memo hcs-11:hcs://2/0.0.10468693    12 $POSTAGE · 0.04614148 ℏ
+  doorbell    0.0.10468687    hcs-10:0:60:0:0.0.10468684          0 messages
+  log         0.0.10468689    hcs-10:0:60:1                       0 messages
+  manifest    0.0.10468692    wishmail:manifest:1                 0 messages
+  registry    0.0.10468693    hcs-2:0:60                          1 message
+  profile     0.0.10468695    92e536324e042f1a11399831eafd5029ced33160f7397c40fc0cb8b08ca217da:brotli:base64
+  uaid        uaid:aid:4suEWWSMHkLQheR6fkGYfbsfqNdJbEkx4MB1MQ3ts9FobsYLuYgnohXePbqcrp2N57
+              ;uid=0.0.10468687@0.0.10468684;registry=self;proto=hcs-10;nativeId=hedera:testnet:0.0.10468684
+```
+
+**C's ℏ is 0.05 minus what it spent on its own name**: the registration fee arrived as a leg of the purchase and
+`register_agent` consumed 0.00385852 of it. The agent holds ℏ once, spends it on one submission of its own, and holds
+the remainder (§3.5, D-156).
+
+### The purchase — one transaction, three legs, at sequence 4's price
+
+```
+reference     0.0.8641261@1789088736.041814712
+consensus     1789088741.818406607        CRYPTOTRANSFER  SUCCESS
+              43.38282123 ℏ   0.0.10450880 → the Postmaster
+                              (12 stamps at 13.38282123, plus 30 ℏ for the provisioned path)
+              12 $POSTAGE     0.0.10426205 → the agent's public-key alias, WHICH CREATED 0.0.10468684
+              0.05 ℏ          the Postmaster → 0.0.10468684    (the registration fee, as a leg of the sale)
+```
+
+The `CRYPTOCREATEACCOUNT SUCCESS` record sits **first** under the same transaction id, at
+`1789088741.818406606`, with no token transfers in it — HIP-542, and Gate One's second defect is why the counter reads
+past it.
+
+**The quote the gate report wrote down was 43.29198051 ℏ and the charge was 43.38282123 ℏ.** The difference is
+0.09084072 ℏ, two tenths of one percent, and it is the exchange rate moving between the quote and the purchase — which
+is exactly what §14.3 means by pricing a bundle in USD and charging in ℏ, and what `rate.at` in the receipt exists to
+let a Verifier re-obtain (D-170). Nothing was mispriced.
+
+### The eight carried rows, and the reprice answered again
+
+Each body signed by C's agent key in C's own process, decoded by the counter before it would sign, paid for by
+`0.0.8641261`. The payer on the mirror is the Postmaster for all eight — D-168's carry, for the third agent.
+
+| Row | Entity | Charged |
+|---|---|---|
+| doorbell | `0.0.10468687` | **26.90214481 ℏ** |
+| log | `0.0.10468689` | 0.40416115 ℏ |
+| manifest | `0.0.10468692` | 0.40416115 ℏ |
+| declRegistry | `0.0.10468693` | 0.40416115 ℏ |
+| profileFile | `0.0.10468695` | 0.27033295 ℏ |
+| profileChunks | 1 chunk on `0.0.10468695` | — |
+| registryEntry | `0.0.10468693` #1 | — |
+| accountMemo | `0.0.10468684` | 0.00428248 ℏ |
+| **register_agent** | `0.0.6913983` #383 | 0.00385852 ℏ, **paid by `0.0.10468684` itself** |
+
+**The doorbell came in at 26.90214481 ℏ**, against 26.61271103 for A2 and 26.31542199 for B — the same fee-gated
+topic, drifting about one percent a day, which is a USD-denominated fee schedule charged in ℏ and the reason ledger
+§G-20 says a flat price cannot track its own cost. Sequence 4's 30 ℏ still covers it, with less margin than yesterday.
+
+### The acceptance test, which is the resolver and not this process
+
+```
+  hcs14   0.0.10468684 · doorbell 0.0.10468687 · manifest 0.0.10468692 · math · endorsements []
+  hol     0.0.10468684 · math · endorsements []
+```
+
+**No `blurred` on either**, which is the whole point of `register_agent` paying with the agent's own account: §9.5
+assigns `blurred` where the registration's payer is not the address's own account, and the mirror records
+`0.0.10468684` as the payer of anchor message #383 (T-P13-4).
+
+### The idempotency test, LIVE — because a dry run cannot demonstrate that a submitting run declines to submit
+
+```
+  correspondent:provision — LIVE: this run CAN SIGN and CAN SPEND
+  argv as received  ["--live","…/demo/c"]
+
+  keys        loaded
+  account     0.0.10468684
+  hcs14       resolves · doorbell 0.0.10468687 · 0 endorsement(s)
+  hol         1 registration(s) name this account
+
+  2. buy_stamp — skipped: 0.0.10468684 already exists, so this agent is returning (D-165)
+     0.0.10468684 already has coordinates on consensus; its doorbell is 0.0.10468687. Nothing to create.
+  3. register_agent — 0.0.10468684 is already registered on the anchor 0.0.6913983; nothing was submitted.
+
+  provisioned. mailbox existing, registration existing, and no `blurred` on either resolution.
+```
+
+Exit 0. **Confirmed on consensus rather than from the process**: the HOL anchor's newest message is still **383**, the
+treasury still holds 9958 `$POSTAGE`, and every balance is where the purchase left it. Every verb asked the ledger
+first, so a wiped local file could not have caused a second doorbell or the duplicate §9.5 assigns `vague` to.
+
+### DIVERGENCE — the driver did not exit after the purchase, and its console output was lost
+
+**Everything on consensus is correct and nothing was repaired.** Two things went wrong above the ledger and both are
+ours.
+
+**First, the driver did not exit.** After `holRegistration` landed at `1789088792.075645154` the process stayed alive
+with no further writes for more than fifteen minutes and was stopped. **The idempotency rerun of the same driver, on
+the same home, exited 0 in seconds** — and the difference between them is that the rerun skips `buy_stamp` and so
+never opens a connection to the counter. So the finding is: **a run that talks to the counter leaves something
+holding the event loop open.** `Session.close()` releases the two Hedera `Client`s; nothing closes the counter's MCP
+transport. Raised, not repaired: it is a defect in our driver, it cost nothing on consensus, and repairing it inside
+a gate is exactly what the gate exists to prevent.
+
+**Second, and this one is mine rather than the code's: the run's console output is gone.** I invoked it as
+`… | tail -70`, and a pipe to `tail` delivers nothing until the writer closes — so when the process hung, every line
+it had printed was still sitting in that buffer, and stopping the process discarded it. This project already has the
+rule — *never pipe a long-running script through `tail` or `head`* — and I broke it. **Nothing was lost that matters**,
+because the record is the mirror node and not a console: every id, fee and timestamp above was read back from
+consensus, and `record.json` was written the same way, one entity at a time, as each landed. The rerun's output is
+printed in full above and is what the first run would have ended with.
+
+### The send dry run — committed BEFORE B signs anything
+
+§11 of the gate report said this could not be produced until C was on consensus, and carried the prediction it must
+match. Here it is, run against the C the purchase created.
+
+```
+$ npm run letter:plan -- "<b home>" --to 0.0.10468684 --text "Working hard or hardly working?" --receipt
+
+> tsx sdk/letter.cli.ts --dry-run <b home> --to 0.0.10468684 --text Working hard or hardly working? --receipt
+
+  letter — DRY RUN: nothing will be signed
+  argv as received  ["--dry-run","<b home>","--to","0.0.10468684","--text","Working hard or hardly working?","--receipt"]
+  to go live        pass --live, and check the line above says it arrived
+
+  sender      0.0.10452127  (home <b home>)
+  payer       0.0.10450880  — the operator pays; the agent signs (§3.5)
+  doorbell    0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+  schemaRef   hcs://13/0.0.10448509#1
+
+  recipient   0.0.10468684  doorbell 0.0.10468687  manifest 0.0.10468692
+  resolution  math · 0 endorsement(s)
+  proof hash  3eb68be6bd3d727d1a94737cafe6dc9e065c39538104fdfbf471a52ced824ee5
+  epoch       1
+
+  lane        NONE — this is first contact; send rings the doorbell and waits (§6.4 step 1)
+  stamps      the agent holds 11
+  ring        one stamp, debited from 0.0.10450880 — §4.4's two-hop, the agent transfers it first
+
+  body        inline text
+  payload     31 bytes · sha256 73d41255a5a85bae224d03e837592c5e99c09a3264c000b3b347e85fd8e6b9a9
+  ciphertext  47 bytes
+  chunks      1 · CHUNK_WIRE_MAX 1000 bytes per operation (§7.4)
+  weight      1 oz of 16 (§7.5)
+  postage     2 stamp(s) = 1 weight + 1 receipt fee · returnReceipt true
+  envelope id a1a2a60f0ea9af0bbc7183d66f5557503a90876864925d845d0d920dd149e433
+  memo        wishmail:a1a2a60f0ea9af0bbc7183d66f5557503a90876864925d845d0d920dd149e433
+  receipt     schedule paid by 0.0.10450880 — never the recipient (§10.4, T-P16-2)
+  window      30 days = 2592000s, under SCHEDULE_MAX_LIFETIME 5356800s (§1.6)
+
+  DRY RUN: nothing was signed and nothing submitted.
+```
+
+**Every stop condition §11 named is satisfied**: `lane NONE`, `ring` one stamp debited from `0.0.10450880`, postage
+**2**, the receipt schedule paid by the operator and never the recipient, and a 30-day window under
+`SCHEDULE_MAX_LIFETIME`.
+
+**One number in the gate report's prediction was wrong and it is corrected here rather than in that report**: §11 said
+the payload would be 32 bytes and it is **31** — `Working hard or hardly working?` is thirty-one characters and I
+counted one too many. It changes nothing downstream: 31 bytes is one ounce exactly as 32 would be, the postage is the
+same two stamps, and the ciphertext is 47 bytes. The prediction was wrong in the one place arithmetic could be checked
+without the network, and saying so is cheaper than leaving a reader to find it.
+
+**The envelope identifier above is not the one the live run will produce.** §7.2's AAD carries a fresh 16-byte nonce
+per envelope, so the identifier changes on every composition and is pinned only when the live run seals.
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.
