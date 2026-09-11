@@ -1,10 +1,17 @@
 # provenance/
 
-**This folder is READ-ONLY HISTORY. It has been untouched since 2026-09-07 by design, it is superseded in every
+**This folder is READ-ONLY HISTORY, with one exception added on 2026-09-10 and named below. It is superseded in every
 particular by `spec/`, and it is kept because Start Fresh permits prior thinking to guide** (CLAUDE.md §2) — prior
 thinking, never prior code. **These files bind nothing.** The only normative document is
 `spec/WISHMAIL_SPEC_v0_5.md`; where any file here disagrees with it, the specification wins, without exception and
 without argument.
+
+**The sentence above used to read "it has been untouched since 2026-09-07 by design", and that stopped being true on
+2026-09-10.** It is corrected here rather than quietly restated, because a folder whose README describes it
+inaccurately is worse than a folder with a mixed brief. What arrived is an **outbound** document — a draft addressed
+to the maintainers of a pinned standard — and outbound is a different thing from the inbound history everything else
+here is. It lives here because a draft that binds nothing and may never be sent belongs with the other things that
+bind nothing, and because `spec/` is for text that governs.
 
 They are kept for one working reason besides: the ADRs in `spec/adr/` are backfilled from them, and an ADR whose source
 is not in the repository cannot be checked.
@@ -29,6 +36,25 @@ ETHGlobal-rules.md               The venue's rules, as read on 2026-09-07. Prove
                                  because a deadline is context and binds no line of code.
 recon/                           Dated fetches of the standards, and the pins drafted from
                                  them. See its own README.
+```
+
+**And one file that is not history** — added 2026-09-10, and the reason the opening sentence changed:
+
+```
+HCS-10-OUTBOUND-CONNECTION-      DRAFT, NOT SENT. An issue report for the maintainers of
+  CREATED-2026-09-10.md          hiero-consensus-specifications: at the pinned commit, the
+                                 Outbound Connection Created operation is introduced by
+                                 prose and a table row that name the ACCEPTOR as its writer
+                                 (index.md:529, :560) and specified by three of five required
+                                 field descriptions that name the REQUESTER (:585, :586,
+                                 :587). All are required, so no implementation can satisfy
+                                 both. Written in the shape ledger §G-24 uses — file, line,
+                                 the two readings, no opinion and no preferred fix — so that
+                                 it reports rather than lobbies. Sonic's to send or not.
+                                 What THIS deployment does meanwhile is D-174: write the
+                                 record on both parties' logs and record the contradiction
+                                 FETCHED rather than resolve it. That is a decision about
+                                 our code and not a reading of the standard.
 ```
 
 **Two paths moved on 2026-09-09**, in a hygiene pass that changed no byte of any file's content: `recon/` is now

@@ -1,6 +1,21 @@
 # STATUS — WISHMail, ETHOnline 2026
 
-The one file in this repository where ordering is allowed. Specification: 0.5.9 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text), 0.5.10 on 2026-09-09 (D-169, D-170), and 0.5.11 on 2026-09-10 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+The one file in this repository where ordering is allowed. Specification: **0.5.12** — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), on 2026-09-08 to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152), and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167) and 0.5.9 (D-167’s §10.2 text), 0.5.10 on 2026-09-09 (D-169, D-170), 0.5.11 on 2026-09-10 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it), and **0.5.12** the same day (D-173: the evidence bundle’s `spec` is the minor version; D-174: the outbound `connection_created` on both parties’ logs; D-175: §5.3’s `resolvedAt` gloss; D-176: T-P1-12, the register’s eighty-seventh row); wire strings carry `0.5`. Window: Sept 4 – 16. Register: **RECORD** = Sonic said it; **MINE** = Claude's lean, unratified; **FETCHED** = from a recon, dated.
+
+## 0. Where it stands, 2026-09-10
+
+**Three gates are run on `hedera:testnet`, each under a gate report committed before its first signature.** Gate One
+bought a mailbox through the counter; Gate Two ran the letter loop with a return receipt and a reply; Gate Three
+provisioned a third Correspondent and did the whole of §6.4 in **one `send()` call** — first contact and
+`returnReceipt` together. Three agents, four letters, two lanes, and A2's doorbell still holding zero messages.
+
+**Read end to end: [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).** That is a reading. The records are
+`app/OPERATIONS.md` — one gate report and one run of record per signed act, the report never amended — and
+`ENTITIES.md`, which is generated and fails its check on a hand-edit.
+
+**Nothing is waiting on a signature.** Twenty-two `check:*` are green with `typecheck` and `p13:check`; the
+conformance harness reports 87 registered, 0 expanded, 0 passing, and that is the honest state (§1.5: silence claims
+nothing). What is open is ruling, not building: ledger §G-20, a 0.6 candidate, and §G-8.
 
 ## 1. Scope line (RECORD)
 
@@ -18,7 +33,7 @@ The Excalidraw map is the ratified scope: **green/blue = BUILD, orange = STRETCH
 
 **Out.** Broker dependency · Solidity · broadcast · agentgateway · ANS cert chain · NANDA Index write path · private hands.
 
-Demo shape: offered in v0.3, not chosen (v0.3 §19 item 3). Open for Sonic.
+Demo shape: offered in v0.3, not chosen (v0.3 §19 item 3). **RULED 2026-09-10 (Sonic): it gets Friday's own pass.**
 
 ## 3. Dependency order (MINE — what must exist before what; not a schedule)
 
@@ -481,7 +496,7 @@ and it is a patch.
 question and not a build item, and deliberately not patched since.
 
 **What is not done, and is not pretended to be:** the `dns` and `nanda` resolvers. The CLI and the
-WebMCP page. **The claim**: eighty-six tests are registered, none is expanded, zero pass, and `RELEASE.classes` is
+WebMCP page. **The claim**: eighty-seven tests are registered, none is expanded, zero pass, and `RELEASE.classes` is
 empty — this release claims nothing, and §1.5 says silence claims nothing.
 
 **Closed since.** The x402 testnet facilitator — D-132, 09-07: x402.org, `hedera:testnet` only. LICENSE — Apache 2.0, stated as a non-negotiable in `CLAUDE.md` §3 and present in the repository since the initial commit; `CONTRIBUTING.md` and `README.md` name it, and contributions are certified under DCO 1.1 with no CLA.

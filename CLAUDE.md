@@ -4,23 +4,29 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 
 ## 0. How to resume
 
-**Read these three first, in this order. They are the record; this file is only the rules.**
+**Read these four first, in this order. They are the record; this file is only the rules.**
 
-1. `STATUS.md` §6, the five registers in order — **GATE ONE**, **GATE TWO CHECKPOINT ONE**, **CHECKPOINT TWO**,
-   **THE REPLY**, and **A2** — then **TOMORROW**, whose four items are all closed. **Stop after TOMORROW**:
-   everything below it is dated build history from earlier days and a resume does not need it.
-2. `app/OPERATIONS.md` — the gate reports and the runs of record, one pair per signed act, newest of them the
-   reply's at "Step 6 — CHECKPOINT TWO, THE REPLY". A gate report is never amended after its run.
-3. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link. Generated; `npm run check:entities`
-   fails on a hand-edit.
+1. `docs/GATE-RECORD.md` — **the whole shape in one file**: three gates, what each proved, what it cost, what it
+   created, and what went wrong, with a HashScan link on every id. It is a **reading and not a record**, so where it
+   and the two below disagree, they win. Read it first anyway: it is the only place the three gates are legible end
+   to end, and it takes five minutes instead of two thousand lines.
+2. `STATUS.md` §0 for where it stands tonight, then §6's registers in order — **GATE ONE**, **GATE TWO CHECKPOINT
+   ONE**, **CHECKPOINT TWO**, **THE REPLY**, **A2**, **GATE THREE** — then the ruled list that closes it.
+   **Stop there**: everything below is dated build history from earlier days and a resume does not need it.
+3. `app/OPERATIONS.md` — the gate reports and the runs of record, one pair per signed act, newest of them Gate
+   Three's three sections at "Step 7". **A gate report is never amended after its run**; a correction to one goes in
+   the run of record beneath it, dated.
+4. `ENTITIES.md` — every entity on `hedera:testnet` with a HashScan link, including all three Correspondents.
+   Generated; `npm run check:entities` fails on a hand-edit.
 
 Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
-earlier days — history, not instructions. **Decisions run to D-172** in ledger §B, one ADR each in `spec/adr/`.
+earlier days — history, not instructions. **Decisions run to D-176** in ledger §B, one ADR each in `spec/adr/`.
 
 **Where the build stands, 2026-09-10.** The specification is **0.5.12**, tagged `v0.5.12`; **Gate Two is run in
 all three acts** — a plain letter, a certified one carrying §10.4's return receipt with `ack` and the envelope
 ACKED, and the reply back down the same lane with nothing rung. **Twenty-two `check:*` are green** — `check:gate3` joined them with Gate Three — with
-`typecheck` and `p13:check`.
+`typecheck` and `p13:check`. The whole battery is the loop to run after any change:
+`npm run typecheck`, then every `check:*` in `package.json`, then `npm run p13:check`.
 
 **Ledger §G is ruled through, 2026-09-10.** Items 12–19 and 21–25 are **closed** — 18, 23 and 25 by the 0.5.12
 patch (D-175, D-176, D-173) and 24 by D-174 — and **§G-20 stays RULED and unacted**, a 0.6 candidate that waits on a
