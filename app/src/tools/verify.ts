@@ -17,14 +17,24 @@
  *
  * WHAT THIS RELEASE DOES NOT DO, stated rather than hidden:
  *
- *  - `orphans` holds only the settlements this Verifier READ, and every
- *    settlement it reads is named by some chunk 0's `hdr.st`. §11.2's ingestion
- *    table is closed — "Nothing on that list is chosen by the Verifier or
- *    supplied to it" — and it reaches a settlement only through a chunk. So an
- *    F-3 orphan, postage affixed with no chunk ever submitted, is not reachable
- *    by that table at all. Raised as a finding rather than coded around: either
- *    §11.2 gains a route to the treasury's transfers, or F-3's "reported under
- *    `orphans`" means only what a chunk led the Verifier to. MINE, 2026-09-08.
+ *  - `orphans` is always empty, and that is this implementation falling short of
+ *    the text rather than the text falling short. It used to say the opposite,
+ *    and the correction matters because the stale sentence is what made the
+ *    finding look like a specification question for three days:
+ *
+ *    §11.2's ingestion table HAS a route to the treasury's transfers — "the
+ *    treasury's inbound transfers in the stamp token, over the window" — added
+ *    by D-160 on 2026-09-09, the day after this note was first written. §11.2
+ *    carries the MUST ("A Verifier MUST report under `orphans` every settlement
+ *    in the window, from a sender in scope, that no canonical chunk in scope
+ *    names") and `Conformance:` names T-P3-6. So the rule is complete and this
+ *    module does not implement it: `Reader` has no method that reaches an
+ *    account's transfers, and every settlement read here is still reached
+ *    through some chunk 0's `hdr.st`. Ledger §G-15 is CLOSED — by D-160, in the
+ *    text — and §G-31 records what the build still owes it. T-P3-6 is not
+ *    expanded and says why. Closing it needs a read on the `Reader` interface
+ *    and a fixture that carries the treasury's transfers, which a capture does
+ *    not yet take.
  *
  * Conformance: T-P3-1, T-P3-2, T-P3-3, T-P3-4, T-P3-5, T-P4-1, T-P4-3,
  * T-P12-2, T-P12-6, T-P15-5.

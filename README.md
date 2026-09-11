@@ -10,7 +10,7 @@ It sells two claims, separately.
 
 **Story.** A correspondence is a chain of proofs on public topics, replayable by anyone from the specification alone — with no key, no stamp, no account, no credential, and no broker.
 
-ETHOnline 2026 submission. Specification **0.5.12**; frozen at 0.5.0 on 2026-09-07 and patched twelve times since. Wire
+ETHOnline 2026 submission. Specification **0.5.13**; frozen at 0.5.0 on 2026-09-07 and patched thirteen times since. Wire
 strings carry `0.5`, because a patch changes none (§1.7). Deployed on `hedera:testnet` and no other ledger.
 
 ## What is on `hedera:testnet` right now

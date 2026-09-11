@@ -2,6 +2,84 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.13] — 2026-09-11 — the table wins, and eight read-side defects the conformance bodies found
+
+**The first patch in this ledger where the reference implementation was right and the register was wrong.** **[S]**
+ruled; **[CC]** drafted, fixed and proved. It is also the first patch that changes **no normative text**: the only
+line that moves in `spec/` is ledger §A's, and the ledger is not normative. It rides a version anyway because §5.10's
+conformance claim names `suite {version, date, reportDigest}` and §A's sketch is the scope of the test the suite runs
+— a suite at 0.5.12 and one at 0.5.13 test T-P6-1 for different standings, and a reader comparing two claims has to
+be able to tell which. D-177 records that reasoning; §1.7 does not speak to this case.
+
+### Ruled
+
+- **D-177 — §11.5's table wins.** §A's sketch for T-P6-1 said a resolution proof whose inputs are altered leaves the
+  envelope **unbound**; §11.5's table says **unverified**, and so does §11.5's own reading paragraph: "a bound and
+  stamped envelope whose resolution could not be replayed is still certified mail whose address is unappraised."
+  §A's footer already reasons exactly that way about the neighbouring row, T-P6-7. The sketch is amended; **no code
+  changes**, because `verify.ts` followed the table. Closes ledger §G-26.
+
+### Fixed — found by the conformance bodies, each proved by the body that found it
+
+Eight read-side defects, none of which moves a captured digest: `check:captured` and `check:receipt` are
+byte-identical through all of it, because no captured letter reaches any of these branches.
+
+- **§11.5's MUST, broken in both halves by one omission** (T-P6-7). `REASON_ORDER` is a filter and `REASON_STANDING`
+  is what `lowest()` reads, and both omitted `T-P6-7` — added to §11.5's table by D-163 and never carried into the
+  constants. So the reason was computed by §11.4 and then discarded, and the downgrade never reached the envelope: a
+  manifest found nowhere near the address it claims left the resolution `unverified` **with an empty reason list**
+  and the envelope **`verified`**. Both constants widened, in the table's own row order — which also moves `T-P17-2`
+  and `T-P9-6` into the order the table gives them. A module-level check now refuses to load if the two disagree, and
+  T-P6-7's body checks both against the specification's table, so the drift cannot recur silently.
+- **A tool failure where §11.5 has a rung** (T-P9-11, T-P12-2). `buildAad` refuses a ledger tag §5.1 does not define,
+  which is right when an envelope is being made and wrong when one is being described: `recoverEnvelope` raised out of
+  `verify` and out of `inbox` rather than appraising, though the table has a rung for it (`unbound`) and §6.5 has
+  `INBOX_UNBOUND`. P-12 says a Verifier reports and never errors where a downgrade will do. It now describes such an
+  envelope by the identifier its own chunks carry, and the caller names `T-P9-11` rather than `T-P1-1`.
+- **"Earlier" decided by a hex sort** (T-P7-2). §11.4's double-claim rule turns on which envelope has the earlier
+  canonical chunk 0, and `verify` decided it in the order `envelopeIdsOf` yielded — `[...ids].sort()`, identifiers
+  ordered as strings. An identifier is a SHA-256 and says nothing about when a letter was posted, so whichever
+  envelope reached the check first claimed the settlement; on a lane whose lexically-first identifier is the
+  consensus-later letter, **neither was flagged**. Now ordered by chunk 0's consensus timestamp, through
+  `compareTimestamps`, because `seconds.nanos` does not compare as a string.
+- **§8.5's fourth exception class was not implemented** (T-P3-3, T-P3-2). `reassemble` never compared a later chunk's
+  `n` against chunk 0's, so a chunk the specification says "is not of this envelope" was taken onto the chain when it
+  landed before the sender's — with the sender's own then filed as its duplicate. Nothing observable moved, since a
+  candidate must still hash to the previous chunk's `nx`; what moved was the **evidence**, because §5.7's postmark
+  comes from the message the walk used. Candidates are now filtered by `n`, and a conflicting chunk is recorded
+  off-chain rather than as a duplicate.
+- **§6.5's fifth reason did not exist** (T-P1-3). `inbox` declared `INBOX_SCHEMA_UNRESOLVED` and emitted it nowhere,
+  because it never read a chunk's `schemaRef` at all — so a delivery whose schema resolved to nothing opened anyway.
+  `schemaRefResolves` moves to `inbox.ts` and is exported, as `postageRefusals` already is: one predicate, two
+  readers. It is checked **before** the key, so a caller holding no key still learns the schema was unresolvable.
+- **A NUL byte in a source file** (T-P13-1). `verify.ts:622` carried a literal NUL inside a string, as a sentinel no
+  key could equal. It also made `git grep` treat the whole file as binary, so `p13:check`'s sweep over `app/src`
+  could not read it. The sentinel is gone.
+- **A stale comment that mis-sorted a finding for three days** (T-P3-6, ledger §G-31). `verify.ts`'s header said
+  §11.2's ingestion table could not reach an F-3 orphan. **D-160 gave it that route on 2026-09-09**, the day after the
+  note was written, and the note was never revisited — so a closed specification question went on looking open.
+  Corrected: the rule is complete and the implementation does not implement it.
+- **A model that did not wear the wire's shape** (`check:letter`). Its world carried an HCS-13 locator that resolved
+  to nothing, harmless while only `verify` read it and a false green the hour `inbox` did — the same defect as the
+  modelled lane memo of 2026-09-10, caught by the same rule. The world now registers a chunk schema as consensus has
+  since Step 4, and its letters reach `verified` rather than standing at `unverified` with `T-P9-3`.
+
+### Ledger
+
+- **§G-26 – §G-31 opened**, five of them SPEC questions raised and not coded around: T-P7-2 cannot isolate itself
+  because §4.3's memo already binds a settlement to one envelope; T-P1-10's `inbox` clause asks a recipient to replay
+  its own resolution, which §6.5 gives to nobody; §5.10's bundle entry has no slot for a duplicate chunk or for an
+  envelope with no chunk 0, which is **0.6** under §1.7; T-P3-1 is **not a defect** and is the honest reason the claim
+  is empty; and §G-31, the orphan, which is build work and not a specification question.
+- **§A's coverage line corrected** — it still read "P-1 ×11 · … Total 86" after D-176 added T-P1-12 at 0.5.12.
+- **LIMITATIONS**: L-1 gains `T-P9-6` beside `T-P1-10` and the lane binding, all dark in the same branch under a
+  claimless release; L-6 gains the two things §8.5 records that §5.10's frozen entry cannot carry.
+
+### Not changed
+
+`spec/WISHMAIL_SPEC_v0_5.md` — not one line. The fourteen registered schemas, the wire strings, and every recorded
+bundle digest. `check:captured` and `check:receipt` pass byte-identically.
+
 ## [Gate Three] — 2026-09-10 — a third Correspondent, and the whole of §6.4 in one call
 
 **No version bump.** The specification is 0.5.12 from the entry below and is unchanged by this run. **[S]** authorised

@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.12
+# WISHMail — Specification v0.5.13
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
