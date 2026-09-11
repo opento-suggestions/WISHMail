@@ -36,6 +36,7 @@ import type { CounterContext } from '../src/counter/context.js';
 import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
 import { HCS2_REGISTER_TX_MEMO, accountMemoFor, registerOperation, registryMemo } from '../src/ops/declaration.js';
 import { topicCreateFor } from './mailbox.js';
+import { HomeBusy, lockHome } from './lock.js';
 import type { Signer } from '../src/ops/identity.js';
 import { toMirrorTxId, type Mirror } from '../src/ops/mirror.js';
 import { networkConstants } from '../src/ops/networks.js';
@@ -735,6 +736,46 @@ function fieldsFor(_key: string): Record<string, string> {
 }
 
 /* ------------------------------------------------------------------ */
+/* ONE LIVE PROCESS PER HOME — because two watchers can birth two lanes */
+/* and a lane cannot be closed (2026-09-11).                            */
+/* ------------------------------------------------------------------ */
+
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wishmail-lock-'));
+  const held = lockHome(dir, 'first');
+  ok('taking the lock writes a file in the home', fs.existsSync(held.path));
+  is('and it names THIS process, so a second one can say who holds it', Number.parseInt(fs.readFileSync(held.path, 'utf8').trim().split(/\s/)[0] ?? '', 10), process.pid);
+
+  // A SECOND LIVE PROCESS, and it has to be a real one: asking this process to
+  // take its own lock twice is a restart and not a collision, and the lock says
+  // so by allowing it. The parent — npm, or the shell that ran it — is alive,
+  // is not us, and is here for the length of this check.
+  fs.writeFileSync(held.path, `${process.ppid} someone-else ${new Date().toISOString()}\n`);
+  let refused = '';
+  try {
+    lockHome(dir, 'second');
+  } catch (e) {
+    refused = e instanceof HomeBusy ? e.message : `WRONG ERROR: ${String(e)}`;
+  }
+  ok('a second LIVE process on the same home is REFUSED', refused.startsWith(dir));
+  ok('and the refusal says why a second watcher is not merely wasteful', refused.includes('a lane cannot'));
+  ok('and it names the process that holds it, so nobody has to guess', refused.includes(String(process.ppid)));
+
+  fs.writeFileSync(held.path, `${process.pid} first ${new Date().toISOString()}\n`);
+  held.release();
+  ok('releasing removes the lock', !fs.existsSync(held.path));
+
+  // A crash leaves a lock behind, and an agent that will not start after a
+  // crash is an agent whose operator learns to delete files to make it go.
+  fs.writeFileSync(held.path, `999999999 crashed ${new Date().toISOString()}\n`);
+  const after = lockHome(dir, 'third');
+  is('a STALE lock — the process is gone — is taken over, and says whose it was', after.tookOver, 999999999);
+  after.release();
+
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+/* ------------------------------------------------------------------ */
 
 console.log('');
 for (const f of failures) console.log(`  FAIL  ${f}`);
@@ -747,7 +788,8 @@ console.log(
     "§7.1's threshold lane can be checked at all; §14.3's arithmetic in integers, rounded up, with bundles at exactly " +
     'their count; a transaction body decoded off what the SDK itself froze, and the carry policy paying for every ' +
     'row of the template and refusing every near-miss (D-168); one sentence template that implies no delivery and ' +
-    'no receipt; the doorbell rule over messages alone; a home directory that is the agent — keys born once, ' +
+    'no receipt; the doorbell rule over messages alone; ONE LIVE PROCESS PER HOME, refusing a second and taking ' +
+    'over a dead one; a home directory that is the agent — keys born once, ' +
     'loaded ever after; and the Postmaster’s own HCS-11 profile still byte-identical to the one on consensus, ' +
     'after the identity refactor a Correspondent needed.',
 );

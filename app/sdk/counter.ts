@@ -271,6 +271,8 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
   }
 
   const client = await connect(s.home.config.postmasterUrl);
+  /** The carried session, while this function still owns it. See the `finally`. */
+  let carriedSession: Session | undefined;
   try {
     const holder = s.account === '' ? { publicKey: s.agent.publicKey.toStringDer() } : { account: s.account };
 
@@ -441,6 +443,15 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     // counter named what it created, so a mirror that does not yet show it is
     // behind rather than disagreeing (Gate One, and a few seconds).
     const carried = await boot(s.home, { payer: legs, expectAccount: true });
+    // A CARRIED BOOT CONSTRUCTS TWO HEDERA CLIENTS, and every Hedera `Client`
+    // arms a twenty-four-hour network-refresh timer that is not `unref`'d, so a
+    // client nobody closes keeps the process alive for a day. This session is
+    // handed back on the happy path and closed by the caller — and on EVERY
+    // throw between here and that return it used to be lost, which is nine
+    // error paths, each leaking two clients and two day-long timers.
+    // `app/OPERATIONS.md`'s 2026-09-11 section records what this fixes and what
+    // it does not: the happy-path hang of Gate Three is still unattributed.
+    carriedSession = carried;
     if (carried.account !== account) {
       throw new CounterUnavailable(
         'STAMP_PAYMENT_FAILED',
@@ -463,6 +474,8 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
       if (issued !== undefined) {
         remember(s, record, { reference, node, carriedBy, account, state: 'settled' }, issued.txRef);
         push(line('purchase.settled', { txRef: issued.txRef, consensusTimestamp: issued.txRef.split('@')[1] ?? '', holder: issued.holder }));
+        // Handed to the caller, so it is the caller's to close from here.
+        carriedSession = undefined;
         return { receipt: issued, mailbox, session: carried, record };
       }
       const open = asked._meta?.['wishmail/outstanding'] as readonly string[] | undefined;
@@ -489,5 +502,9 @@ export async function buyStamps(s: Session, options: BuyOptions): Promise<Purcha
     throw new CounterUnavailable('STAMP_PAYMENT_UNSETTLED', 'the receipt loop ended without an answer');
   } finally {
     await client.close();
+    // Set only while this function owns the carried session; cleared the moment
+    // it is handed back. So this closes it on every path that did not return it
+    // and on none that did.
+    carriedSession?.close();
   }
 }

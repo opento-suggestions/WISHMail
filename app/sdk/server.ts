@@ -39,6 +39,7 @@ import { resolveHol } from '../src/resolve/hol.js';
 import { TOOL_NAMES, tool, type ToolName } from '../src/mcp/tools.js';
 import { CounterUnavailable, buyStamps } from './counter.js';
 import { openHome } from './home.js';
+import { HomeBusy, lockHome } from './lock.js';
 import { liveReader } from './live.js';
 import { ackContext, inboxContext, lanesOf, ringStamp, senderContext } from './letter.js';
 import { MailboxRefusal, generateMailbox } from './mailbox.js';
@@ -525,6 +526,16 @@ export async function main(): Promise<void> {
     throw new Error('name the home directory: WISHMAIL_HOME=<dir>, or as the first argument. A home IS the agent (D-165).');
   }
   const home = openHome(path.resolve(dir));
+
+  // ONE LIVE PROCESS PER HOME. A dry run takes no lock: it starts no watcher
+  // and can sign nothing, so rehearsing beside a live agent is safe.
+  const lock = dryRun
+    ? { path: '(none — dry run)', tookOver: null, release: () => {} }
+    : lockHome(home.dir, 'correspondent');
+  if (lock.tookOver !== null) {
+    console.error(`  took over the lock left by process ${lock.tookOver}, which is gone.`);
+  }
+
   const s = await boot(home, dryRun ? { dryRun: true } : {});
 
   // The watcher starts as soon as there is a doorbell to watch, and is started
@@ -567,13 +578,68 @@ export async function main(): Promise<void> {
         : `\n  LIVE — the doorbell watcher ${watcher === undefined ? 'starts when there is a door' : 'is running'}.`),
   );
 
-  await build(box, ensureWatcher).connect(new StdioServerTransport());
+  // --- Shutting down on purpose, and saying where it stopped. ---------------
+  //
+  // Until 2026-09-11 this process had no way out. `Watcher.stop()` existed and
+  // was never called; there was no signal handler anywhere in `app/`, and no
+  // `onclose` on the transport. So when goose closed stdio the server did not
+  // exit — the watcher's five-second timer and the Hedera client's day-long one
+  // both hold the event loop — and it went on auto-accepting, creating lanes
+  // and spending the operator's ℏ with no client attached. The next goose put a
+  // SECOND watcher on the same doorbell.
+  //
+  // An in-flight write is NOT abandoned here. A submission that has left this
+  // process has an outcome on consensus whatever happens next, and killing the
+  // wait for it would only lose our knowledge of it — the window CLAUDE.md §12
+  // names. So shutdown stops the watcher from starting anything NEW, releases
+  // the network handles, and says plainly what was in flight.
+  let closing = false;
+  const shutdown = (why: string): void => {
+    if (closing) return;
+    closing = true;
+    const w = watcher;
+    if (w !== undefined) w.stop();
+    const answering = w === undefined ? 0 : 1;
+    console.error(
+      `\nwishmail correspondent — stopping: ${why}.\n` +
+        `  home            ${home.dir}\n` +
+        `  account         ${box.s.account === '' ? '(not bought yet)' : box.s.account}\n` +
+        `  doorbell watch  ${answering === 0 ? 'was not running' : 'stopped; it starts nothing new'}\n` +
+        `  in flight       nothing this process can lose: every submission that left it has an outcome on\n` +
+        '                  consensus, and `npm run verify -- --lane <lane>` is what reads it back.\n',
+    );
+    box.s.close();
+    lock.release();
+    process.exit(0);
+  };
+
+  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+    process.on(sig, () => shutdown(`received ${sig}`));
+  }
+
+  const transport = new StdioServerTransport();
+  // goose closing its end is the ordinary way this process ends, and it is not
+  // an error: the client went away, so the agent has nobody to serve.
+  //
+  // WATCH `process.stdin` AND NOT ONLY THE TRANSPORT, because the transport
+  // does not see it. `StdioServerTransport` subscribes to `data` and `error` on
+  // stdin and to nothing else (`server/stdio.js`), so its `onclose` fires when
+  // something calls `close()` and never when the client hangs up — which is the
+  // one case that matters here. Found by closing stdin and watching the process
+  // stay up, not by reading. `connect()` chains rather than replaces a handler
+  // already on the transport, so keeping both costs nothing and covers both.
+  transport.onclose = () => shutdown('the transport closed');
+  process.stdin.on('end', () => shutdown('the client closed stdio'));
+  process.stdin.on('close', () => shutdown('the client closed stdio'));
+  await build(box, ensureWatcher).connect(transport);
 }
 
 const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (invokedDirectly) {
   main().catch((e: unknown) => {
-    console.error(e instanceof Error ? e.message : String(e));
-    process.exit(1);
+    // A busy home is a refusal and not a crash: it says which process holds the
+    // home and what to do, and there is nothing to read a stack trace for.
+    console.error(e instanceof HomeBusy ? `\nSTOP — ${e.message}\n` : e instanceof Error ? e.message : String(e));
+    process.exit(e instanceof HomeBusy ? 3 : 1);
   });
 }

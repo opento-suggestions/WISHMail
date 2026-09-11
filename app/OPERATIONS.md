@@ -4856,6 +4856,104 @@ delivers nothing until the writer closes, and stopping the hung process discarde
 this repository and was broken. Nothing that matters was lost, because **the record is the mirror node and not a
 console**.
 
+## Process lifecycle for the demo processes. Written 2026-09-11, before Gate Zero
+
+**An ops item, not a specification one.** Nothing below is in `spec/`, nothing below changes a wire string, and none
+of it is conformance. It is how the two Correspondent processes and the counter are started, stopped and kept from
+treading on each other while goose drives them — which had never been arranged, because until today every gate was
+driven by a CLI that ran once and exited.
+
+### What was true before, and why no gate had met it
+
+The Correspondent MCP server had **no way out**. `Watcher.stop()` existed and was never called; there was no
+`process.on` for any signal anywhere in `app/`; and there was no close handler on the transport. The doorbell watcher
+is a five-second `setTimeout` that is not `unref`'d, so it alone holds the event loop open indefinitely.
+
+So when a client closed stdio, the process **did not exit**. It went on auto-accepting connection requests, creating
+lanes and spending the operator's ℏ with nobody attached — and the next client started a **second** watcher on the
+same doorbell.
+
+### The three things that now hold, each proved by a run
+
+**1. The server exits when the client hangs up, and says where it stopped.**
+
+`SIGINT`, `SIGTERM` and `SIGHUP` are handled, and so is the client closing stdio. Shutdown stops the watcher from
+starting anything new, releases the Hedera clients, prints the state it stopped at, and exits **0**.
+
+**An in-flight write is not abandoned, because it cannot be.** A submission that has left this process has an outcome
+on consensus whatever happens next; killing the wait for it loses only our knowledge of it, which is the submit→learn
+window CLAUDE.md §12 names. So the shutdown line says exactly that, and names `npm run verify -- --lane <lane>` as
+what reads it back.
+
+**A finding, and it is the SDK's rather than ours.** `transport.onclose` is not enough and a server that relies on it
+will not exit. `StdioServerTransport` subscribes to `data` and `error` on stdin **and to nothing else**
+(`@modelcontextprotocol/sdk/dist/esm/server/stdio.js:37-38`), so its `onclose` fires when something calls `close()`
+and never when the client hangs up. It was found by closing stdin and watching the process stay up for thirty
+seconds, not by reading the code. The server now listens on `process.stdin`'s own `end` and `close` as well.
+`Protocol.connect()` chains a handler already on the transport rather than replacing it
+(`shared/protocol.js:220-223`), so keeping both costs nothing.
+
+```
+$ node closeprobe.mjs <home>          # initialize, then close stdin the way goose would
+
+  wishmail correspondent — DRY RUN: nothing will be signed
+  argv as received  ["…/dryhome","--dry-run"]
+
+  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+
+  --- server answered; now closing stdin the way goose would ---
+
+  wishmail correspondent — stopping: the client closed stdio.
+    home            …/dryhome
+    account         (not bought yet)
+    doorbell watch  was not running
+    in flight       nothing this process can lose: every submission that left it has an outcome on
+                    consensus, and `npm run verify -- --lane <lane>` is what reads it back.
+
+  RESULT: the server exited with code 0
+```
+
+Before the fix that same probe printed `RESULT: STILL RUNNING after 30s — it did not exit`.
+
+**2. One live process per home.**
+
+A home IS the agent (D-165), and two processes on one home are one agent running twice. For reading that is merely
+wasteful. **For the watcher it is not recoverable**: it decides what is outstanding by reading consensus, which is
+idempotence against a *ledger* and not uniqueness against a *process*, so two watchers can both find one connection
+request unanswered and both create a lane — neither writes anything the other can see until both have signed. §7.1
+then takes the earliest-created as *the* lane and the other is permanent litter on a topic that **cannot be closed**.
+
+`<home>/run.lock` holds a PID. A second live process is refused with a message naming the one that holds it; a
+**stale** lock — the process is gone — is taken over and says whose it was, because an agent that will not start
+after a crash is an agent whose operator learns to delete files to make it go. It is the one place a Correspondent
+treats a local file as an authority, and it is an authority about *this machine's processes* and never about
+consensus.
+
+**A dry run takes no lock.** It starts no watcher and can sign nothing, so rehearsing beside a live agent is safe and
+is not made awkward.
+
+Courted in `check:correspondent` — six assertions, including a refusal against a PID that is genuinely alive and is
+not the test's own, since asking one process to take its own lock twice is a restart and not a collision.
+
+**3. A carried session is released on every path.**
+
+`buyStamps` boots a second session to stand the mailbox up, and a carried boot constructs **two** Hedera clients.
+Every `Client` arms a twenty-four-hour network-refresh timer that is not `unref`'d and is cleared only by `close()`
+(`@hashgraph/sdk/lib/client/Client.cjs:158,165,834-839,864-874`), so a client nobody closes keeps its process alive
+for a day. That session was released only by being *returned* — so every throw between the boot and the return leaked
+both clients, which is nine error paths. It is now held in the function's own scope and closed in the `finally` on
+every path that did not hand it back.
+
+**This does not explain Gate Three's hang and is not offered as if it did.** That run took the happy path. The
+superseding section above says what is known and names the `--trace-exit` run that would attribute the rest.
+
+### What is not built
+
+`start` / `stop` / `status` wrappers with a tree-aware kill are **not** built. The lock makes the failure they were
+meant to prevent refuse loudly instead of happening silently, and goose starts and stops the servers itself, so a
+wrapper would be a fourth thing to keep correct for the length of one demo. Named here rather than left to be
+noticed.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
