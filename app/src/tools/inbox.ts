@@ -266,6 +266,28 @@ export function postageRefusals(
   return reasons;
 }
 
+/**
+ * Whether a chunk's `schemaRef` resolves through HCS-13 at the pinned revision
+ * (§5.11). It resolves when the HCS-2 topic it names holds, at that sequence
+ * number, a `register` operation naming a file topic — which is what Step 4
+ * registers and has not yet signed. Until then every envelope carries the
+ * reason `T-P9-3` and appraises unverified, which is the true statement.
+ */
+export async function schemaRefResolves(reader: Reader, schemaRef: string): Promise<boolean> {
+  const m = /^hcs:\/\/13\/([0-9]+\.[0-9]+\.[0-9]+)#([0-9]+)$/.exec(schemaRef);
+  if (m === null) return false;
+  const [, topicId, sequence] = m;
+  try {
+    const messages = await reader.messages(topicId as string);
+    const entry = messages.find((x) => x.sequenceNumber === Number(sequence));
+    if (entry === undefined) return false;
+    const body = operationOf(entry);
+    return body !== null && body['op'] === 'register' && typeof body['t_id'] === 'string';
+  } catch {
+    return false;
+  }
+}
+
 /** §6.5. Reads; opens what binds; writes nothing. */
 export async function inbox(ctx: InboxContext, req: InboxRequest): Promise<readonly Delivery[]> {
   const deliveries: Delivery[] = [];
@@ -353,6 +375,27 @@ export async function inbox(ctx: InboxContext, req: InboxRequest): Promise<reado
       });
       if (postage.length > 0) {
         unopened('INBOX_UNSTAMPED', postage.join('; '));
+        continue;
+      }
+
+      // §6.5's fifth reason, F-9. The chunk declares the schema its own shape is
+      // registered under (§5.11), and a reader that cannot resolve it does not
+      // know what it is reading. It was declared in `DeliveryReason` and emitted
+      // nowhere: `inbox` never looked at `schemaRef` at all, so a delivery whose
+      // schema did not resolve opened. The Verifier's side of the same fact was
+      // reported all along (`T-P9-3`, unverified); this is the recipient's.
+      //
+      // IT IS CHECKED BEFORE THE KEY, deliberately. §6.5's Behavior paragraph
+      // fixes the order of three checks — bind, postage, decrypt — and does not
+      // place this one, so the choice is ours: a caller holding no key for the
+      // epoch would otherwise get `INBOX_EPOCH_UNKNOWN` and never learn that the
+      // schema was unresolvable either, and a reason nobody can reach is a
+      // reason that does not exist. Found by T-P1-3, which asks for all five.
+      if (!(await schemaRefResolves(ctx.reader, zero.chunk.s))) {
+        unopened(
+          'INBOX_SCHEMA_UNRESOLVED',
+          `the chunk declares the schema ${JSON.stringify(zero.chunk.s)} and it resolves to nothing through HCS-13 (§5.11, F-9)`,
+        );
         continue;
       }
 

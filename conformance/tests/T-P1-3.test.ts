@@ -4,7 +4,6 @@
  * Classes: RECIPIENT.
  * Register: NAMED (§6.6)
  * @fixture-kind altered
- * @disposition partial — one of §6.5’s five reasons is never produced
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
@@ -29,16 +28,17 @@
  * rather than for a list of the interesting ones, because there is no reason an
  * envelope comes back unopened that makes signing for it reasonable.
  *
- * §6.5 NAMES FIVE REASONS AND THIS IMPLEMENTATION PRODUCES FOUR. The body
- * builds a delivery for each of the four and requires `ACK_NOT_OPENED` on every
- * one; the fifth is the finding at the end.
+ * §6.5 NAMES FIVE REASONS AND ALL FIVE ARE BUILT. It produced four when this
+ * body was written: `inbox` declared `INBOX_SCHEMA_UNRESOLVED` and emitted it
+ * nowhere. That was the finding, and it is fixed — the fifth arrangement below
+ * is the one that could not be made.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isToolFailure } from '../../app/src/core/failure.js';
 import { ack } from '../../app/src/tools/ack.js';
 import { inbox, type Delivery, type DeliveryReason } from '../../app/src/tools/inbox.js';
-import { alterChunk, copy, fixture, readerOver, type Fixture } from '../support/fixtures.js';
+import { alterChunk, chunksOn, copy, fixture, readerOver, type Fixture } from '../support/fixtures.js';
 
 /** §6.5's reasons on an unopened delivery, as the specification lists them (spec:999). */
 const SIX_FIVE: readonly DeliveryReason[] = [
@@ -83,6 +83,22 @@ test('T-P1-3 — Binding', async () => {
         for (const ref of Object.keys(g.settlements)) {
           (g.settlements[ref] as { memo: string }).memo = `wishmail:${'a'.repeat(64)}`;
         }
+        return g;
+      },
+    },
+    {
+      // The chunk declares a schema and the locator resolves to nothing, so the
+      // reader does not know what shape it is reading (§5.11, F-9). The chunk
+      // itself is left alone: what is emptied is the HCS-13 registry its `s`
+      // points at, which is how a locator comes to resolve to nothing in life.
+      reason: 'INBOX_SCHEMA_UNRESOLVED',
+      make: () => {
+        const g = copy(pristine);
+        const zero = chunksOn(g).find((c) => c.chunk['id'] === ENVELOPE && c.chunk['i'] === 0);
+        assert.ok(zero !== undefined, 'chunk 0');
+        const ref = /^hcs:\/\/13\/([0-9]+\.[0-9]+\.[0-9]+)#/.exec(zero.chunk['s'] as string);
+        assert.ok(ref !== null, 'the chunk declares an HCS-13 locator (§5.11)');
+        g.topics[ref[1] as string] = [];
         return g;
       },
     },
@@ -139,23 +155,22 @@ test('T-P1-3 — Binding', async () => {
   // Nothing was signed, and nothing could have been: the context carries no
   // writer at all, so a path that reached a submission would have thrown
   // something other than a refusal.
-  assert.equal(produced.size, 4, 'four of §6.5’s reasons were produced and all four were refused');
+  assert.equal(produced.size, 5, '§6.5’s five reasons were produced and all five were refused');
 
-  // --- THE FIFTH REASON. --------------------------------------------------
+  // --- ALL FIVE, WHICH IS WHAT "EVERY §6.5 REASON" MEANS. -----------------
   //
-  // §6.5 (spec line 999) lists five reasons on an unopened delivery, and
-  // `inbox.ts` declares all five in `DeliveryReason`. No code path emits the
-  // fifth: `inbox` never reads a chunk's `schemaRef` at all, so a delivery whose
-  // schema does not resolve OPENS. The Verifier's side of the same fact is
-  // reported — `T-P9-3`, unverified — so this is the recipient's side only.
+  // The fifth used to be unproducible: `inbox` declared `INBOX_SCHEMA_UNRESOLVED`
+  // in `DeliveryReason` and emitted it nowhere, because it never read a chunk’s
+  // `schemaRef` at all — so a delivery whose schema did not resolve OPENED. The
+  // Verifier’s side of the same fact was reported all along (`T-P9-3`,
+  // unverified); the recipient’s was not. Found here, and fixed: `inbox` now
+  // resolves the locator before it reaches for a key, so a caller holding no key
+  // still learns that the schema was unresolvable rather than only that it could
+  // not decrypt.
   const missing = SIX_FIVE.filter((reason) => !produced.has(reason));
   assert.deepEqual(
     missing,
     [],
-    `§6.6 refuses "for every §6.5 reason", and ${missing.length} of §6.5's five cannot be produced by this ` +
-      `implementation: ${missing.join(', ')}. \`inbox\` declares the reason and emits it nowhere — it does not ` +
-      "read a chunk's `schemaRef`, so a delivery whose schema does not resolve is opened rather than returned. " +
-      'Either §6.5 owes `inbox` that check or the reason owes §6.5 an explanation. Brought, not adjusted ' +
-      '(conformance/DERIVATION.md F-1).',
+    `§6.6 refuses "for every §6.5 reason", and ${missing.length} of the five could not be produced: ${missing.join(', ')}`,
   );
 });

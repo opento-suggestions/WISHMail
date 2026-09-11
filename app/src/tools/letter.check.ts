@@ -114,6 +114,8 @@ const RECIPIENT_KEY = 'b0b1' + 'c2'.repeat(30);
 /** Everything the two agents own, stood up as §4.6 provisions it. */
 interface World {
   readonly ledger: MemoryLedger;
+  /** The HCS-13 locator this world's chunks declare, and which resolves in it. */
+  readonly schemaRef: string;
   readonly sender: {
     account: string;
     doorbell: string;
@@ -218,6 +220,30 @@ async function stand(): Promise<World> {
   const recipientSide = declare(ledger, RECIPIENT_KEY, 0, 'Correspondent B');
   const senderSide = declare(ledger, SENDER_KEY, 10, 'Correspondent A');
 
+  // THE SCHEMA REGISTRY, BECAUSE A MODEL MUST WEAR THE WIRE'S OWN SHAPES.
+  //
+  // §5.11 makes a chunk's `s` an HCS-13 version-pinned locator, and Step 4
+  // registered the fourteen schemas on consensus. This world carried a locator
+  // that resolved to nothing — harmless for as long as only `verify` read it,
+  // which reported `T-P9-3` and appraised unverified, and a false green the hour
+  // `inbox` began reading it too (§6.5's INBOX_SCHEMA_UNRESOLVED, F-9). That is
+  // the same defect as the modelled lane memo of 2026-09-10, and the same rule
+  // catches it: a field nothing reads today is a field something reads tomorrow.
+  //
+  // The registry is modelled PUBLIC, and that is a limit worth naming rather
+  // than a shortcut: who may register a schema is the Postmaster's business and
+  // is courted by `check:freeze` and by T-P9-4 against the real registration.
+  // What this world needs is only that the locator its chunks declare RESOLVES,
+  // which is the fact `inbox` and `verify` read.
+  const schemaFile = ledger.createTopic({ memo: 'chunkschema:brotli:base64', submitKeys: [], adminKey: null });
+  const schemaRegistry = ledger.createTopic({ memo: 'hcs-2:0:60', submitKeys: [] });
+  ledger.submit(
+    senderSide.account,
+    schemaRegistry,
+    JSON.stringify({ p: 'hcs-2', op: 'register', t_id: schemaFile, metadata: { name: 'chunk' } }),
+  );
+  const schemaRef = `hcs://13/${schemaRegistry}#1`;
+
   const recipientAccount = recipientSide.account;
   const recipientDoorbell = recipientSide.doorbell;
   const recipientLog = recipientSide.log;
@@ -259,12 +285,13 @@ async function stand(): Promise<World> {
     manifestTopic: senderManifests,
     treasury: ledger.treasury,
     stampToken: ledger.stampToken,
-    schemaRef: 'hcs://13/0.0.10428113#1',
+    schemaRef,
     publicKey: SENDER_KEY,
   };
 
   return {
     ledger,
+    schemaRef,
     sender: {
       account: senderAccount,
       doorbell: senderDoorbell,
@@ -538,12 +565,16 @@ async function main(): Promise<void> {
     is('it carries a postmark per chunk', entry.chunks.length, result.envelope.chunkCount);
     is('and the settlement it names', entry.settlement?.txRef, result.settlement.txRef);
     is('nothing landed off the chain', entry.offChain.length, 0);
-    // The schema registry is built and NOT signed (Step 4), so the schemaRef
-    // resolves to nothing and §11.4 appraises the resolution unverified. That
-    // is the true statement, and the reason names the test.
-    ok('the only reason is the unresolved schemaRef (T-P9-3)', entry.appraisal.appraised.reasons.join(',') === 'T-P9-3');
-    is('so the standing is unverified, not verified (§11.5)', entry.appraisal.appraised.standing, 'unverified');
-    is('and the resolution itself is unverified for the same reason', entry.appraisal.resolution.standing, 'unverified');
+    // THIS USED TO STAND AT `unverified` WITH `T-P9-3`, and the reason was the
+    // world rather than the letter: the model carried no HCS-13 registry for the
+    // chunk's own locator to resolve in, though Step 4 registered the fourteen
+    // schemas on consensus. The world now registers one, and the letter it
+    // carries reaches the top of §11.5's ladder — which is what a letter built
+    // by `send`, bound to its lane, paid for in stamps and resolved under a
+    // claimed profile is supposed to reach.
+    ok(`nothing is said against it: ${entry.appraisal.appraised.reasons.join(',') || 'no reasons'}`, entry.appraisal.appraised.reasons.length === 0);
+    is('so the standing is verified (§11.5)', entry.appraisal.appraised.standing, 'verified');
+    is('and so is the resolution it was bound to', entry.appraisal.resolution.standing, 'verified');
     is('no receipt was requested', entry.appraisal.receipt.status, 'none');
   }
 
@@ -771,7 +802,7 @@ async function theReply(): Promise<void> {
     manifestTopic: w.recipient.manifestTopic,
     treasury: w.ledger.treasury,
     stampToken: w.ledger.stampToken,
-    schemaRef: 'hcs://13/0.0.10428113#1',
+    schemaRef: w.schemaRef,
     publicKey: RECIPIENT_KEY,
   };
 
@@ -849,14 +880,14 @@ async function theReply(): Promise<void> {
     (entry?.appraisal.appraised.reasons ?? []).includes('T-P17-2'),
     false,
   );
-  // The first letter of this fixture stands at unverified/T-P9-3, because the
-  // modelled ledger carries no HCS-13 registry for the schemaRef to resolve in.
-  // The claim worth making is not that the reply is verified — it is that the
-  // reply stands in EXACTLY the same place, with no reason of its own.
+  // The claim worth making is not that the reply is verified on its own account
+  // — it is that it stands in EXACTLY the same place as the letter it answers,
+  // and gains no reason for coming back down the lane it came up. That is what
+  // D-171 is for, and it reads the same whichever standing the world reaches.
   is(
     'so the reply stands exactly where the first letter stood, and gains no reason for coming back',
     (entry?.appraisal.appraised.reasons ?? []).join(',') + ' / ' + String(entry?.appraisal.appraised.standing),
-    'T-P9-3 / unverified',
+    ' / verified',
   );
 }
 
@@ -1434,7 +1465,7 @@ async function theReceipt(): Promise<void> {
       ).bundle.correspondence[0];
       is('a schedule that expired unsigned is unclaimed (T-P15-5)', e2?.appraisal.receipt.status, 'unclaimed');
       is('the envelope stays SETTLED', e2?.state, 'SETTLED');
-      is('and its standing is unchanged', e2?.appraisal.appraised.reasons.join(','), 'T-P9-3');
+      is('and its standing is unchanged', e2?.appraisal.appraised.reasons.join(','), '');
       ok('and unclaimed is not reported as refused, returned or undelivered (T-P15-5)', true);
     }
   }

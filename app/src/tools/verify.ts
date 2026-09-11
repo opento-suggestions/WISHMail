@@ -41,7 +41,7 @@ import { envelopeIdOfRequest, receiptManifest, returnReceiptOf, type ReturnRecei
 import { decodeScheduledSubmission } from '../core/schedulebody.js';
 import { accountOf, connectionTopicMemoOf, inboundTopicMemoOf, operatorId as operatorIdOf } from '../ops/hcs10.js';
 import { RELEASE } from '../release.js';
-import { chunksOnLane, envelopeIdsOf, postageRefusals } from './inbox.js';
+import { chunksOnLane, envelopeIdsOf, postageRefusals, schemaRefResolves } from './inbox.js';
 import { line } from './narration.js';
 import {
   outputDigestOf,
@@ -452,28 +452,6 @@ export function readerSource(reader: Reader): ProfileSource {
       }));
     },
   };
-}
-
-/**
- * Whether a chunk's `schemaRef` resolves through HCS-13 at the pinned revision
- * (§5.11). It resolves when the HCS-2 topic it names holds, at that sequence
- * number, a `register` operation naming a file topic — which is what Step 4
- * registers and has not yet signed. Until then every envelope carries the
- * reason `T-P9-3` and appraises unverified, which is the true statement.
- */
-async function schemaRefResolves(reader: Reader, schemaRef: string): Promise<boolean> {
-  const m = /^hcs:\/\/13\/([0-9]+\.[0-9]+\.[0-9]+)#([0-9]+)$/.exec(schemaRef);
-  if (m === null) return false;
-  const [, topicId, sequence] = m;
-  try {
-    const messages = await reader.messages(topicId as string);
-    const entry = messages.find((x) => x.sequenceNumber === Number(sequence));
-    if (entry === undefined) return false;
-    const body = operationOf(entry);
-    return body !== null && body['op'] === 'register' && typeof body['t_id'] === 'string';
-  } catch {
-    return false;
-  }
 }
 
 /** One `transaction` operation on a lane, paired with the envelope it names. */
