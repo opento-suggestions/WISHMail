@@ -3,16 +3,17 @@
  *
  * Classes: POSTMASTER, CORRESPONDENT, VERIFIER.
  * Register: NAMED (§4.3, §8.3)
- * @fixture-kind altered
- * @disposition partial — the `send` clause needs a writer
+ * @fixture-kind altered, model
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   A chunk with no settlement reference, whose settlement memo ≠ the envelope’s AAD hash, or whose settlement’s consensus timestamp is not earlier than chunk 0’s, is rejected at `send`; appraises as unstamped at replay.
  *
- * EXPANDED 2026-09-10 over `gate-three-resolved`, in three altered copies — one
- * per condition the sketch names.
+ * EXPANDED 2026-09-11. The replay half over `gate-three-resolved`, in three
+ * altered copies. The `send` half over the modelled ledger, which is permitted
+ * for a clause whose sketch is behaviour (RECORD, Sonic 2026-09-11) and is
+ * marked `model` in the report, counting toward no claim.
  *
  * WHY THE ORDERING CLAUSE IS THE INTERESTING ONE. The first two are identity:
  * postage that names no envelope, or names another, is not this letter’s
@@ -23,16 +24,23 @@
  * carriage is paid for in advance. Consensus order is total, so "before" is a
  * fact and not a judgement.
  *
- * The three appraise `unstamped` and not `unbound`: §11.5 keeps binding and
- * postage on different rungs, and an unstamped letter is a perfectly well-bound
- * letter that nobody paid for.
+ * HOW A SENDER IS "REJECTED" FOR SOMETHING IT BUILDS ITSELF. §6.4 has `send`
+ * affix the postage and then post the chunks, so none of these three is an
+ * arrangement `send` is HANDED — they are arrangements it must be shown not to
+ * PRODUCE. That is what the modelled ledger is for: it enforces balances and
+ * consensus order, so a letter posted through it either satisfies §4.3 on the
+ * real ordering of real messages or it does not. The body sends one and reads
+ * the ledger back.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { settlementMemo } from '../../app/src/core/envelope.js';
-import { postageRefusals } from '../../app/src/tools/inbox.js';
-import { verify } from '../../app/src/tools/verify.js';
+import { resolveHcs14 } from '../../app/src/resolve/hcs14.js';
+import { before as earlierThan } from '../../app/src/tools/consensus.js';
+import { send, type SenderContext } from '../../app/src/tools/send.js';
+import { readerSource, verify } from '../../app/src/tools/verify.js';
 import { chunksOn, copy, fixture, readerOver, stampTokenPin, type Fixture } from '../support/fixtures.js';
+import { openLane, pair, stand } from '../support/world.js';
 
 const FIXTURE = 'gate-three-resolved';
 const ENVELOPE = '2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01';
@@ -49,6 +57,7 @@ async function standingOf(f: Fixture): Promise<{ standing: string; reasons: read
 }
 
 test('T-P7-1 — Postage is consumed', async () => {
+  // === THE REPLAY HALF, over captured bytes ===============================
   const pristine = fixture(FIXTURE);
 
   const base = await standingOf(pristine);
@@ -58,7 +67,6 @@ test('T-P7-1 — Postage is consumed', async () => {
   const zero = chunksOn(pristine).find((c) => c.chunk['id'] === ENVELOPE && c.chunk['i'] === 0);
   assert.ok(zero !== undefined, 'chunk 0 is on the lane');
   const chunkZeroAt = zero.message.consensusTimestamp;
-  const header = zero.chunk['hdr'] as Record<string, unknown>;
 
   const alterations: readonly { readonly what: string; readonly make: () => Fixture }[] = [
     {
@@ -84,7 +92,6 @@ test('T-P7-1 — Postage is consumed', async () => {
       make: () => {
         const g = copy(pristine);
         for (const ref of Object.keys(g.settlements)) {
-          // One second AFTER the letter was posted.
           const seconds = Number(chunkZeroAt.split('.')[0]) + 1;
           (g.settlements[ref] as { consensusTimestamp: string }).consensusTimestamp = `${String(seconds)}.000000000`;
         }
@@ -104,18 +111,83 @@ test('T-P7-1 — Postage is consumed', async () => {
     );
   }
 
-  // The same three, through the predicate both readers share, so the reason a
-  // recipient is given and the reason a Verifier records come from one rule.
-  const refusals = postageRefusals(null, header as never, ENVELOPE, chunkZeroAt, {});
-  assert.ok(refusals.length > 0, 'a missing settlement is refused at the reader too (§6.5, INBOX_UNSTAMPED)');
+  // === THE `send` HALF, over the modelled ledger ==========================
+  //
+  // `send` is run for real against a ledger that enforces balances, submit keys
+  // and consensus order, and what it produced is read back off that ledger. The
+  // three conditions above are three things it must not produce.
+  const world = stand();
+  const { sender, recipient } = pair(world);
 
-  assert.fail(
-    'T-P7-1 PARTIAL — all three conditions appraise `unstamped` with `T-P7-1` at replay, which is the second ' +
-      'half of the sketch. The first half, "is rejected at `send`", is not reachable from captured bytes: a ' +
-      'sender CONSTRUCTS its own settlement inside §6.4 — it affixes, then posts — so none of these three ' +
-      'arrangements is something `send` is handed and refuses; they are arrangements `send` must be shown not ' +
-      'to PRODUCE, and showing that needs a writer and a ledger that can be made to misbehave. That is the ' +
-      'modelled ledger, and it is permitted for a clause whose sketch is behaviour (RECORD, 2026-09-10). ' +
-      'Not yet written; recorded rather than quietly dropped (conformance/DERIVATION.md).',
+  const resolution = await resolveHcs14(
+    readerSource(world.ledger.as(sender.account)),
+    world.ledger.ledgerTag,
+    recipient.account,
+    sender.manifestTopic,
   );
+  assert.ok(!('failure' in resolution), 'the modelled recipient resolves under §9.2');
+
+  // A lane already open, so this letter is not a first contact: §6.4's first
+  // contact rings a doorbell and waits for an answer, and nothing in a modelled
+  // world answers a door. What this body is about is the postage, not the ring.
+  openLane(world, { acceptor: recipient, requester: sender });
+
+  const ctx: SenderContext = {
+    consensus: world.ledger.as(sender.account),
+    ledgerTag: world.ledger.ledgerTag,
+    account: sender.account,
+    doorbell: sender.doorbell,
+    log: sender.log,
+    manifestTopic: sender.manifestTopic,
+    treasury: world.ledger.treasury,
+    stampToken: world.ledger.stampToken,
+    schemaRef: world.schemaRef,
+    publicKey: sender.key,
+  };
+
+  const sent = await send(ctx, {
+    coordinates: resolution.coordinates as never,
+    manifest: resolution.manifest as unknown as Record<string, unknown>,
+    payload: Buffer.from('Postage is paid before carriage, not after.', 'utf8'),
+  });
+  assert.ok('postmark' in sent, '`send` posted the letter (§6.4)');
+
+  const reader = world.ledger.reader();
+  const lane = sent.postmark.topicId;
+  const posted = (await reader.messages(lane)).filter((m) => m.contents.includes('"op":"message"'));
+  assert.ok(posted.length > 0, 'the chunks are on the lane');
+
+  const id = sent.envelope.aadHash;
+  const settlement = await reader.transfer(sent.envelope.settlementRef);
+  assert.ok(settlement !== null, '§4.3: `send` did NOT produce a chunk with no settlement at its reference');
+
+  assert.equal(
+    settlement.memo,
+    settlementMemo(id),
+    '§4.3: nor a settlement whose memo is not the envelope’s AAD hash — the memo names THIS letter',
+  );
+
+  const firstChunk = posted[0];
+  assert.ok(firstChunk !== undefined, 'chunk 0 is on the lane');
+  assert.equal(
+    earlierThan(settlement.consensusTimestamp, firstChunk.consensusTimestamp),
+    true,
+    `§4.3: nor a settlement that does not precede chunk 0 — affixed at ${settlement.consensusTimestamp}, posted at ${firstChunk.consensusTimestamp}`,
+  );
+
+  // And the stamps were CONSUMED to the treasury, not merely shown (§4.3).
+  assert.equal(settlement.to, world.ledger.treasury, 'the stamps went to the treasury');
+  assert.equal(settlement.tokenId, world.ledger.stampToken, 'in the stamp token');
+  assert.ok(settlement.amount >= sent.envelope.weight, 'and covered the weight');
+
+  // The order is a fact about the ledger and not about the return value: read
+  // back from consensus, the affixing transfer precedes every chunk of the
+  // envelope it paid for.
+  for (const message of posted) {
+    assert.equal(
+      earlierThan(settlement.consensusTimestamp, message.consensusTimestamp),
+      true,
+      `the postage precedes chunk at sequence ${message.sequenceNumber}`,
+    );
+  }
 });
