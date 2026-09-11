@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../ops/env.js';
 import { canonicalBytes, sha256hex } from '../core/canonical.js';
+import { RELEASE } from '../release.js';
 import { laneBirth, verify } from './verify.js';
 import type { Reader, ScheduleRecord, Settlement, TopicInfo, TopicMessage } from './consensus.js';
 
@@ -146,16 +147,26 @@ async function main(): Promise<void> {
 
   // === P-3, and §G-25 stated rather than hidden =============================
   //
-  // The digest is a function of the release's patch version as well as of the
-  // evidence (§G-25, OPEN). So this asserts what P-3 actually claims: put back
-  // the spec string this fixture was reconciled under and the digest is the one
-  // the network produced, EXACTLY — every other byte unchanged.
+  // The digest WAS a function of the release's patch version as well as of the
+  // evidence (§G-25, closed 2026-09-10 by D-173). This fixture was reconciled
+  // under 0.5.11 and is a record, so the assertion stays what it was: put back
+  // the spec string of that day and the digest is the one the network produced,
+  // EXACTLY — every other byte unchanged.
   const { observations: _observations, digest: _digest, ...evidence } = out.bundle;
   const asCaptured = sha256hex(canonicalBytes({ ...evidence, spec: SPEC_WHEN_CAPTURED }));
   is('the bundle digest is the one the network produced (P-3)', asCaptured, f.bundleDigest);
 
   const again = await verify(reader, { lane: f.lane }, {});
   is('and two Verifiers reading the same file agree (§11.7)', again.bundle.digest, out.bundle.digest);
+
+  // D-173 CLOSED §G-25: the bundle now carries the MINOR version, so a Verifier
+  // at any patch of 0.5 reaches the same digest. THE SUBSTITUTION ABOVE STAYS
+  // because this fixture is a RECORD — it was reconciled under 0.5.11 and
+  // its `bundleDigest` is the number the network produced that day, which is
+  // not rewritten to agree with a later reading of the rule.
+  is('a bundle made now carries the MINOR version (D-173)', out.bundle.spec, RELEASE.minorVersion);
+  is('which is "0.5"', out.bundle.spec, '0.5');
+  is("and the Verifier's own patch is an observation, outside the digest (§11.6)", out.bundle.observations['verifierSpec'], RELEASE.spec);
 
   // === The absence that is the whole assertion ==============================
   //

@@ -1,4 +1,4 @@
-# WISHMail — Specification v0.5.11
+# WISHMail — Specification v0.5.12
 
 **Status:** Frozen 2026-09-07 for the repository; the text every conformance claim against version 0.5 is measured by. A normative change to this text after this date carries a `CHANGED` marker naming its decision, and the CHANGELOG records the diff.
 **Date:** 2026-09-07
@@ -666,6 +666,7 @@ locator    {ledgerTag, topicId, sequenceNumber}   one message
 
 A **location** names where a manifest is found, not which message it is: the manifest at a location is the message on that topic whose body recomputes to the proof's hash, and the read is content-addressed. A proof's `meaning.uri` is a location, because a proof's hash covers its meaning and its manifest is published after the hash is fixed — no proof can name the message it is about to become (§6.4). A **locator** names one thing on consensus and is what a reference to a proof carries — `rp.u` in the AAD (§7.2), `resolutionProof.uri` in coordinates (§5.3), the executed submission for a receipt (§10.4) — and what a proof's `inputs.locator` carries. A reference is a shortcut through the lookup and never a substitute for it: what a reference reaches is the manifest only if it recomputes to the proof's hash and lies on the topic the proof's own location names (§11.1). The HRL grammar of HCS-1 (`hcs://<standard>/<topicId>`) names files, not messages, and is used only where a standard uses it.
 
+<!-- CHANGED: D-175 -->
 ### 5.3 MailCoordinates
 
 Authored by `resolve`; consumed by the Assembler.
@@ -684,7 +685,7 @@ MailCoordinates
   resolutionProof  {hash, uri}
   trustClass       enum         math | economic-game | hardware-TEE | social-committee
   endorsements     [enum]       missing | vague | blurred | stale | timed-out | withheld
-  resolvedAt       timestamp    query time, as bound into the proof's inputs
+  resolvedAt       timestamp    query time, reported beside the coordinates
 ```
 
 <!-- CHANGED: D-166 -->
@@ -852,11 +853,14 @@ EvidenceBundle                                Narrative
   orphans        [Settlement]
   observations   {appraisedAt, mirror, drift[],   not digested; never bears
                   disagreement[], agentIdOrder[], on state or standing (§11.6)
-                  integrity?}
+                  integrity?, verifierSpec?}
   digest         sha256   over the bundle with `digest` and `observations` absent
 ```
 
 `state` is one of §8.3's states. `appraised.standing` is one of `verified`, `unverified`, `unstamped`, `unbound`; `resolution.standing` is `verified` or `unverified`; `receipt.status` is one of `acked`, `unclaimed`, `invalid`, `none`; every `reasons` entry names the test whose condition produced it (§11.5). Everything above `observations` is evidence: what consensus recorded, and what any Verifier computes from it identically. `observations` is what a Verifier saw at its own clock — drift, disagreement between surfaces, the time of appraisal, the integrity of the mirror it read — and is excluded from the digest because two Verifiers at two times cannot agree on it (§11.6).
+
+<!-- CHANGED: D-173 -->
+`spec` is the **minor version** the evidence was produced under — `0.5` for every patch revision of 0.5 — and not the patch revision of the Verifier that produced it. §1.7 fixes the reason: the wire carries `major.minor` and nothing finer, and the schemas registered for a minor version are that version's schemas, so a minor version is what identifies the shape of the evidence. The patch revision a Verifier ran at is a fact about the Verifier and not about the correspondence, and it is reported under `observations.verifierSpec`, which the digest excludes (§11.6). Two independent implementations are never at one patch revision, so a `spec` carrying one would put §11.7's MUST beyond reach of the two implementations it exists to bind.
 
 ### 5.11 Schemas and the schema registry
 
@@ -1658,8 +1662,8 @@ The header's `ke` MUST equal the `keyEpoch` of the coordinates the envelope's re
 
 The manifest's meaning carries what the sender declared: the profile, its trust class, and its endorsements. A Verifier reports these as declared and adds its own standing beside them. It does not raise a trust class, and it does not remove an endorsement: a `social-committee` proof that replays perfectly is a verified `social-committee` proof, and a `withheld` input that the Verifier happens to be able to see was still withheld from the proof (P-12).
 
-<!-- CHANGED: D-172 -->
-**The return receipt.** A Verifier reads each `transaction` operation on the lane that names a schedule, and each schedule's record as consensus recorded it: whether it executed, when, under whose signature, and to which topic its inner submission wrote. For an executed schedule, the Verifier reads the receipt manifest at the executed submission's postmark on the recipient's manifest topic and recomputes the receipt (§10.4): its inputs name this `id`, this chunk 0 postmark, and this epoch; its hash matches; a signature on the schedule's record is by the key of the account the resolution's coordinates name — the record carries the signing key's prefix, and the Verifier reads that account's key from consensus and matches it, and a record carrying further signatures is not thereby disqualified, because the ledger records every transaction payer that touches a schedule and not only the keys the inner transaction required; the scheduled transaction's required signer is the submit key of that account's manifest topic, so the schedule could not have executed under any other key; the execution follows the nth chunk. A receipt that recomputes and was witnessed after delivery, on an envelope standing verified or unverified, is the receipt: `receipt.status` is `acked` and the envelope is ACKED (§8.3). A receipt witnessed before delivery, on an envelope standing unstamped or unbound, or whose parts do not recompute, is `invalid`: recorded, the envelope's state unchanged (§8.6). A receipt for an envelope whose header did not request one counts, and the reason names it (§8.6). A request whose schedule expired unsigned is `unclaimed`. An envelope with no request and no receipt is `none`.
+<!-- CHANGED: D-172, D-176 -->
+**The return receipt.** A Verifier reads each `transaction` operation on the lane that names a schedule, and each schedule's record as consensus recorded it: whether it executed, when, under whose signature, and to which topic its inner submission wrote. For an executed schedule, the Verifier reads the receipt manifest at the executed submission's postmark on the recipient's manifest topic and recomputes the receipt (§10.4): its inputs name this `id`, this chunk 0 postmark, and this epoch; its hash matches; a signature on the schedule's record is by the key of the account the resolution's coordinates name — the record carries the signing key's prefix, and the Verifier reads that account's key from consensus and matches it, and a record carrying further signatures is not thereby disqualified, because the ledger records every transaction payer that touches a schedule and not only the keys the inner transaction required; the scheduled transaction's required signer is the submit key of that account's manifest topic, so the schedule could not have executed under any other key; the execution follows the nth chunk. A receipt that recomputes and was witnessed after delivery, on an envelope standing verified or unverified, is the receipt: `receipt.status` is `acked` and the envelope is ACKED (§8.3). A receipt witnessed before delivery, on an envelope standing unstamped or unbound, or whose parts do not recompute, is `invalid`: recorded, the envelope's state unchanged (§8.6). A receipt for an envelope whose header did not request one counts, and the reason names it (§8.6, T-P1-12). A request whose schedule expired unsigned is `unclaimed`. An envelope with no request and no receipt is `none`.
 
 A Verifier MUST report a receipt request whose schedule expired unsigned as `unclaimed`, and MUST NOT report it as refused, as returned, or as undelivered.
 `Conformance:` T-P15-5 — a fixture request that expired unsigned yields `receipt.status` = `unclaimed`, the envelope remains SETTLED with its standing unchanged, and the reference narrative's sentence for it is the unclaimed template and no other.
@@ -1725,7 +1729,8 @@ A Verifier MUST appraise a resolution proof against the declaration its inputs l
 
 **The mirror's integrity.** A Verifier MAY check the mirror node it read through: that the sequence numbers of a topic are contiguous over the window, and that each message's running hash follows from the one before it under the ledger's construction. What it finds is reported under `observations.integrity`. This version does not require the check and does not fix the construction; a Verifier that performs it is checking its mirror, not the correspondence, and a mirror that fails it is read again through another (§11.1).
 
-**The time of appraisal and the mirror read** are recorded under `observations` so that a reader knows when and through what the Verifier looked; they are not evidence.
+<!-- CHANGED: D-173 -->
+**The time of appraisal, the mirror read, and the patch revision the Verifier ran at** are recorded under `observations` — the last of them as `verifierSpec` (§5.10) — so that a reader knows when, through what, and at which revision of this text the Verifier looked; they are not evidence. A Verifier's patch revision belongs here for the same reason its clock does: two Verifiers that agree about a correspondence do not thereby agree about themselves.
 
 ### 11.7 The evidence bundle and the narrative
 
@@ -1733,8 +1738,9 @@ The bundle is what a Verifier hands over: everything it read and everything it c
 
 The evidence is canonical JSON (RFC 8785). Its order is fixed: correspondence entries by the consensus timestamp of their canonical chunk 0, ties by lane topic ID and then by sequence number; within an entry, `chunks` by index, `offChain` and `requests` by consensus timestamp; `orphans` by the settlement's consensus timestamp; `reasons` in the order of the table in §11.5. The digest is SHA-256 over the evidence with `digest` and `observations` absent, and is the bundle's identifier.
 
-Two Verifiers reconciling the same scope and window MUST produce evidence with the same digest.
-`Conformance:` T-P3-1 — replay by a fresh Verifier with no configuration, run at a different time and through a different mirror node than the reference Postmaster's, equals the Postmaster's evidence for the fixture correspondence, byte for byte.
+<!-- CHANGED: D-173 -->
+Two Verifiers reconciling the same scope and window MUST produce evidence with the same digest. The evidence's `spec` is the minor version (§5.10), so two Verifiers at different patch revisions of one minor version are two Verifiers this MUST binds; what each ran at is an observation (§11.6) and is outside the digest.
+`Conformance:` T-P3-1 — replay by a fresh Verifier with no configuration, at a different patch revision of the same minor version, run at a different time and through a different mirror node than the reference Postmaster's, equals the Postmaster's evidence for the fixture correspondence, byte for byte.
 
 The narrative is the reading of the evidence: prose that says who posted which envelope to whom and when, what each proof rests on, what each could not see, and what standing each has. It is produced from the bundle and from nothing else; it carries the bundle's digest so that a reader can check the reading against the evidence.
 
@@ -2184,7 +2190,7 @@ The appendices are informative. They index the record beside this document — i
 
 Every decision that shaped this document is an architecture decision record, keyed `D-n`, kept in `spec/adr/` in the repository, one file each, with the reasoning, the alternatives, and the date. This index gives each its title and the sections it shaped; the ledger beside this document holds the full text of D-42 onward. Decisions D-1 through D-41 precede the ledger this document is kept beside; they are in `spec/adr/` and are not repeated here. A decision that shaped no sentence of this document is not indexed here; it is in `spec/adr/` and in the ledger.
 
-<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152, D-157, D-159, D-160, D-161, D-171, D-172 -->
+<!-- CHANGED: D-135, D-136, D-145, D-146, D-150, D-152, D-157, D-159, D-160, D-161, D-171, D-172, D-173, D-175, D-176 -->
 ```
 D-42   Conformance classes: VERIFIER the floor; none includes another    §1.4
 D-43   Resolution reserved for address -> coordinates; reconciliation    §2.3
@@ -2291,6 +2297,9 @@ D-166  MailCoordinates carries the recipient's manifest topic          §5.3
 D-167  The resolution output is a digest; §9.1 allocates the budget    §5.2, §9.1, §10.2, §11.4
 D-171  A lane binds from either party's doorbell; the memo says which  §6.4, §7.1, §11.2, §11.4, §11.5, §12.2, §13.2
 D-172  T-P1-8 reads the required signer, not a count of signatures     §10.4, §11.4
+D-173  The evidence bundle's spec is the minor version                  §5.10, §11.6, §11.7
+D-175  resolvedAt is reported beside the coordinates                     §5.3
+D-176  The unrequested receipt has its own court, T-P1-12                §11.4
 ```
 
 ### 18.3 Concordance of identifiers (informative)

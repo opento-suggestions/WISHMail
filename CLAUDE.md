@@ -17,29 +17,33 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
 earlier days — history, not instructions. **Decisions run to D-172** in ledger §B, one ADR each in `spec/adr/`.
 
-**Where the build stands, 2026-09-10.** The specification is **0.5.11**, tagged `v0.5.11`; **Gate Two is run in
+**Where the build stands, 2026-09-10.** The specification is **0.5.12**, tagged `v0.5.12`; **Gate Two is run in
 all three acts** — a plain letter, a certified one carrying §10.4's return receipt with `ack` and the envelope
 ACKED, and the reply back down the same lane with nothing rung. **Twenty-one `check:*` are green**, with
 `typecheck` and `p13:check`.
 
-**Ledger §G is ruled through, 2026-09-10.** Items 12–17, 19, 21 and 22 are closed; 18, 20, 23, 24 and 25 are
-**RULED** with their rulings written beneath each finding. **Only §G-8 stands open** — the P-16 seam on a Hedera
-network, ruled a spec question and not a build item on 2026-09-07 and deliberately unpatched since.
+**Ledger §G is ruled through, 2026-09-10.** Items 12–19 and 21–25 are **closed** — 18, 23 and 25 by the 0.5.12
+patch (D-175, D-176, D-173) and 24 by D-174 — and **§G-20 stays RULED and unacted**, a 0.6 candidate that waits on a
+minor version rather than on a decision. **Only §G-8 stands open** — the P-16 seam on a Hedera network, ruled a spec
+question and not a build item on 2026-09-07 and deliberately unpatched since.
 
-**What the rulings oblige is the 0.5.12 patch**, and its version number is the one thing not yet settled: §G-25 puts
-the evidence bundle's `spec` at the MINOR version `0.5` and moves the Verifier's own patch into `observations`, and
-whether that is a patch or a minor is decided by **probing the frozen `evidence-bundle` schema, not by argument**.
-Until it lands, a digest in a run of record reproduces only from the tag of the release that computed it.
+**The 0.5.12 patch has landed, and the probe decided its version.** The frozen `evidence-bundle` schema types `spec`
+as a bare `{"type": "string"}` — `spec/schemas/evidence-bundle.schema.json:9-11`, verified against `spec/pins.json`
+by the blob digest before it was trusted — so `"0.5"` is admissible, **no schema moves**, and it is a patch. The
+bundle now carries the minor version and the Verifier’s own patch rides in `observations.verifierSpec`, outside the
+digest. **A digest printed in a run of record before today reproduces only from that run’s own tag** — `8d30dfdc…`
+and `00229e6f…` from `v0.5.10`, `1c4359e5…` from `v0.5.11` — and each run of record now says so beside its own
+number, as does LIMITATIONS L-1. The records are not rewritten.
 
 **The harness line, and what it means.**
 
 ```
 $ npm run conformance
-  register 86 · files 86 present · passed 0 · failed 86 · report conformance/reports/all.json
+  register 87 · files 87 present · passed 0 · failed 87 · report conformance/reports/all.json
 ```
 
-Eighty-six registered, none expanded, zero passing, and a report now emitted because no pin in `spec/pins.json`
-is null. **That is correct output and not a defect**: `RELEASE.classes` is empty, so this release claims nothing
+Eighty-seven registered — T-P1-12 joined them at 0.5.12 (D-176) — none expanded, zero passing, and a report emitted
+because no pin in `spec/pins.json` is null. **That is correct output and not a defect**: `RELEASE.classes` is empty, so this release claims nothing
 (§1.5), and the gate T-P9-2 holds is whether a release may make a claim at all — never whether tests pass.
 
 **The gate discipline, and it is not negotiable.** Nothing signs on `hedera:testnet` until its gate report is
@@ -68,7 +72,7 @@ ruling, not building: ledger §G items 18, 20, 23, 24 and 25, and the questions 
 
 ## 1. The documents, and their order
 
-1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.11 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167), 0.5.9 (D-167’s §10.2 text) and 0.5.10 (D-169: decimal amounts compare by value), and on 2026-09-10 to 0.5.11 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it); wire strings carry `0.5`, because a patch changes none (§1.7). **The fourteen schemas are registered on consensus and frozen for the life of 0.5** (Step 4): after that, the smallest field is 0.6. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
+1. `spec/WISHMAIL_SPEC_v0_5.md` — **the only normative document.** Version 0.5.12 — frozen at 0.5.0 on 2026-09-07, patched to 0.5.1 the same day (D-135 – D-138), to 0.5.2 (D-145 – D-148), 0.5.3 (D-150, D-151) and 0.5.4 (D-152) on 2026-09-08, and on 2026-09-09 to 0.5.5 (D-157, D-159, D-160, D-161), 0.5.6 (D-159 amended, D-163), 0.5.7 (D-166), 0.5.8 (D-167), 0.5.9 (D-167’s §10.2 text) and 0.5.10 (D-169: decimal amounts compare by value), and on 2026-09-10 to 0.5.11 (D-171: a lane binds from either party’s doorbell; D-172: T-P1-8 as the ledger can show it) and 0.5.12 (D-173: the evidence bundle’s `spec` is the minor version; D-175: §5.3’s `resolvedAt` gloss; D-176: T-P1-12, the register’s eighty-seventh row); wire strings carry `0.5`, because a patch changes none (§1.7). **The fourteen schemas are registered on consensus and frozen for the life of 0.5** (Step 4): after that, the smallest field is 0.6. Every implementation decision is measured against it. Where any other file disagrees with it, the spec wins.
 2. `spec/CONFORMANCE_TESTS_v0_5.md` — the working ledger. Section A is the test register (86 tests: 81 core + 5 extension) you build the suite from. Section B is the decision record D-42 – D-170 and the source of the ADRs. Section H is verified facts about the pinned standards with file:line. Sections D–G are open-item status and the build-phase list. Nothing in it is normative.
 3. `provenance/recon/` — the recon reports and pins JSONs (`pins-recon`, `nanda-recon`, `hol-x402-recon`, `openconvai-recon`, `impl-study`, all 2026-09-06) — dated fetches of the standards. Read one only when H's row isn't enough.
 4. `provenance/` — `WISHMAIL-SPEC-v0.3.md`, the handoff, the day-one research, and the scope map. **Provenance only.** They bind nothing. The ADR backfill D-1 – D-41 is done; read them only to check what an ADR carried.

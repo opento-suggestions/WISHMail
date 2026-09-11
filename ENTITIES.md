@@ -4,7 +4,7 @@
      Written by `npm run entities:md` from `app/deployment/hedera-testnet.json` and `spec/pins.json`.
      `npm run check:entities` asserts that this file is what those sources produce; a hand-edit fails it. -->
 
-**Ledger** `hedera:testnet` · **specification** 0.5.11 · **minor version** 0.5 · testnet only at this version (§15.5).
+**Ledger** `hedera:testnet` · **specification** 0.5.12 · **minor version** 0.5 · testnet only at this version (§15.5).
 
 This file is generated and is never hand-edited. Two records already say what is on the ledger — the ops record,
 written one entity at a time from mirror-node reads, and `spec/pins.json`, which is §1.6 in machine-readable form —

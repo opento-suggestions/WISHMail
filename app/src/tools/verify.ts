@@ -454,7 +454,7 @@ interface ReceiptAppraisal {
 }
 
 /** Receipt reasons, in the order they are reported. §11.5's table has no receipt row. */
-const RECEIPT_REASON_ORDER = ['T-P1-7', 'T-P1-8', 'T-P16-2', 'T-P12-2'] as const;
+const RECEIPT_REASON_ORDER = ['T-P1-7', 'T-P1-8', 'T-P1-12', 'T-P16-2', 'T-P12-2'] as const;
 
 function orderedReceiptReasons(reasons: readonly string[]): readonly string[] {
   const seen = new Set(reasons);
@@ -638,14 +638,14 @@ async function appraiseOneRequest(
   // counts, and the reason names it." It COUNTS — so this is not `invalid` —
   // and it is reported with a reason beside it.
   //
-  // WHICH REASON, and this is a finding rather than a choice. §11.4 requires one
-  // and section A of the ledger names no test for §8.6's unrequested receipt:
-  // T-P1-7 is receipts witnessed too early or on a bad standing, T-P1-8 is the
-  // mechanism, and neither is this. §11.5 gives the one sanctioned answer for a
-  // condition its own table does not name — "reports … with the reason
-  // `T-P12-2`" — so that is what is used, and it flags the gap in the Verifier's
-  // own output rather than borrowing a test id that means something else.
-  // MINE, 2026-09-10, ledger §G.
+  // WHICH REASON: T-P1-12, which §11.4's own sentence now names (D-176).
+  // Until 2026-09-10 this reported `T-P12-2` — §11.5's sanctioned answer for a
+  // condition its table does not name — because section A named no test for
+  // §8.6's unrequested receipt: T-P1-7 is receipts witnessed too early or on a
+  // bad standing, T-P1-8 is the mechanism, and neither is this. That was a gap
+  // flagged in the Verifier's own output rather than papered over, raised as
+  // ledger §G-23, and closed by registering the test the requirement always
+  // owed (§1.3: no requirement without a court).
   const unrequested = args.header.rr !== true;
 
   // T-P1-8's last clause: "the executed submission's postmark is on the
@@ -683,7 +683,7 @@ async function appraiseOneRequest(
 
   return {
     status: 'acked',
-    reasons: unrequested ? ['T-P12-2'] : [],
+    reasons: unrequested ? ['T-P1-12'] : [],
     ...(returnReceipt === undefined ? {} : { returnReceipt }),
     acked: true,
   };
@@ -984,7 +984,16 @@ export async function verify(
   };
 
   const evidence = {
-    spec: RELEASE.spec,
+    // D-173: the MINOR version, never the patch. §1.7 — "the wire carries
+    // `major.minor` and nothing finer", and the schemas registered for a minor
+    // version are its schemas — so the minor version is what identifies the
+    // shape of this evidence. The patch a Verifier ran at is a fact about the
+    // Verifier and goes to `observations` below, which the digest excludes
+    // (§11.6). Filling this from `RELEASE.spec` made the digest a function of
+    // the reader's own revision, and two independent implementations are never
+    // at one patch — so §11.7's MUST and T-P3-1 were satisfiable only by
+    // accident (ledger §G-25).
+    spec: RELEASE.minorVersion,
     ledgerTags: [reader.ledgerTag],
     window,
     topics: [...topicsRead].sort(),
@@ -997,6 +1006,13 @@ export async function verify(
   const observations: Record<string, unknown> = {
     appraisedAt: new Date().toISOString(),
     mirror: options.mirror ?? 'reader',
+    // D-173: WHICH REVISION OF THIS TEXT WAS READING, reported and not digested.
+    // It is here rather than beside `spec` because the bundle's top level is
+    // `additionalProperties: false` in the frozen schema and `observations` is
+    // not — so this is the only place the frozen schema admits it, and the only
+    // place §11.6 would allow it. Proved against the pinned blob before it was
+    // written, and `check:letter` validates every bundle it makes.
+    verifierSpec: RELEASE.spec,
     drift: [],
     disagreement: [],
     ...(scope.stampToken === undefined

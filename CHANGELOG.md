@@ -2,6 +2,88 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [0.5.12] — 2026-09-10 — four rulings, and a probe that decided a version
+
+**[S]** ruled every item; **[CC]** probed, patched, courted and recorded. **No schema moves, no wire string moves**,
+and the register gains its first row since 0.5.6.
+
+### Changed — D-173: the evidence bundle's `spec` is the MINOR version (ledger §G-25, closed)
+
+§11.7 requires two Verifiers reconciling the same scope to produce evidence with the same digest, and T-P3-1 compares
+two *implementations* byte for byte. `verify` filled the bundle's `spec` from `RELEASE.spec` — the full
+`major.minor.patch` — so the digest was a function of the reading Verifier's own revision, and **two independent
+implementations are never at one patch**. The property was satisfiable only by accident.
+
+The bundle now carries `0.5`. The Verifier's own patch is reported at `observations.verifierSpec`, which §11.6 and
+§5.10 already exclude from the digest.
+
+**The version was decided by a probe of the frozen schema, not by argument**, which is what the ruling required.
+`spec/schemas/evidence-bundle.schema.json:9-11` types `spec` as a bare `{"type": "string"}` — no `pattern`, no
+`format`, no `enum`, no `const` — so `"0.5"` is admissible and **no schema moves**, making it a patch. The file was
+verified before it was read: sha256 over its raw git blob bytes is `248fdaae…`, equal to the digest `spec/pins.json`
+records for the schema registered at `hcs://13/0.0.10448537#1`.
+
+**Two further things were proved before `verifierSpec` was written**, on Sonic's instruction — drop the field if
+either failed. (1) `observations` lies outside the digest: three sentences of the specification say so, and
+`verify.ts` builds and digests `evidence` at lines 986-995 *before* `observations` exists at line 997. (2) The frozen
+schema admits the key: `properties.observations` carries no `additionalProperties`, no `unevaluatedProperties`, no
+`propertyNames` and no combinator. Then the schema's own compiled validator was run over it:
+
+```
+VALIDATES  a bundle with spec "0.5" and no verifierSpec
+VALIDATES  the same bundle with observations.verifierSpec "0.5.12"
+REFUSED    the same key placed BESIDE observations, at the top level
+             / must NOT have additional properties
+```
+
+The third line is why the field is where it is: the bundle's top level is `additionalProperties: false`, so reporting
+the Verifier's patch beside `spec` would have been 0.6.
+
+**Every digest already written into a run of record moves once, permanently, and never again for a patch.**
+`8d30dfdc…` and `00229e6f…` reproduce from tag `v0.5.10`, `1c4359e5…` from `v0.5.11`. **The records are not
+rewritten**: each run of record gains a dated note beside its own number, LIMITATIONS L-1 says the same, and the
+fixtures keep the values the network produced. `check:captured`, `check:receipt` and `check:reply` keep the
+substitution that proves those numbers from the captured bytes, and `check:captured` gains the proof of the new
+property — it becomes a Verifier at another patch of 0.5 and requires the digest not to move.
+
+### Changed — D-175: §5.3's `resolvedAt` gloss (ledger §G-18, closed)
+
+§5.3 said `resolvedAt` was "query time, **as bound into the proof's inputs**", and §5.2 fixes `inputs` as
+`{digest, locator, snapshot?}` — closed, and none of the three is a query clock. The gloss described something no
+profile does and nothing should: §10.2 excludes `resolvedAt` from the resolution digest precisely because a digest
+containing the query's clock could never be matched by a replay at another clock. It now reads "query time,
+**reported beside the coordinates**". Text only; no schema, no test, no code, and §10.2 untouched.
+
+### Added — D-176: T-P1-12, the unrequested receipt's own court (ledger §G-23, closed)
+
+§11.4 requires that "a receipt for an envelope whose header did not request one counts, and the reason names it",
+and §A named no test for it — so `verify` reported `T-P12-2`, §11.5's sanctioned answer for a condition its table
+does not name. That flagged the gap honestly rather than borrowing an identifier that means something else, but §1.3
+is unconditional: there is no requirement without a test.
+
+**T-P1-12** is registered under P-1, beside the receipt tests already there; §11.4's sentence cites it; `verify.ts`
+reports it and `RECEIPT_REASON_ORDER` carries it — that ordering is a *filter*, so a reason absent from it would be
+dropped silently. **No row is added to §11.5's table**: an unrequested receipt yields no standing, and §11.5's table
+is the table of checks that do.
+
+The register goes **86 → 87** (82 core + 5 extension), `conformance/tests/` gains one stub, and it fails like the
+other eighty-six:
+
+```
+register 87 · files 87 present · passed 0 · failed 87 · report conformance/reports/all.json
+```
+
+### Ledger
+
+§G items **18, 23 and 25 closed** by D-175, D-176 and D-173, each finding kept unedited beneath its ruling. §G-20
+stays RULED and unacted — a 0.6 candidate waiting on a minor version, not on a decision. **§G-8 is the only open
+item**, ruled a spec question and not a build item on 2026-09-07.
+
+### Verified
+
+Twenty-one `check:*` green, with `typecheck` and `p13:check`. `check:register` reports 87 one-for-one between the
+specification and §A, both ways.
+
 ## [Gate Two, the reply] — 2026-09-10 — the letter that came back
 
 **No version bump.** The specification moved to 0.5.11 in the entry below and is unchanged by this run. **[S]**

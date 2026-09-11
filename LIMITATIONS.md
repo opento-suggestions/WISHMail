@@ -32,6 +32,18 @@ Compromise of an epoch's private key exposes every envelope sealed to that epoch
 
 **One HCS-10 outbound record on this deployment predates a conformance fix and is wrong against the pin.** `index.md:553` gives an outbound `connection_request` record an `operator_id` naming the agent *being* requested, plus a required `outbound_topic_id` and `connection_request_id`; this implementation posted the inbound body — the agent naming itself, two required fields absent — until 2026-09-10. **A2's log `0.0.10462708` #1 is the one such record**, and it is named here rather than repaired: a message on consensus cannot be rewritten, and manufacturing a replacement would be worse than an accurate account of a defect. Conformance runs from the fix forward. B's log `0.0.10452150` and the Postmaster-agent's `0.0.10426554` hold no such record, because neither has rung a doorbell.
 
+**Every bundle digest printed in a run of record before 2026-09-10 reproduces only from that run's own release tag.**
+Until D-173 the evidence bundle's `spec` carried the release's full `major.minor.patch`, so the digest was a function
+of the reading Verifier's patch revision as well as of the correspondence. §11.7 requires two Verifiers to produce the
+same digest and T-P3-1 compares two implementations byte for byte — and two independent implementations are never at
+one patch, so that property was satisfiable only by accident. D-173 puts the **minor version** in the bundle and the
+Verifier's own patch in `observations`, which the digest excludes. **The consequence is stated rather than hidden**:
+`8d30dfdc…` and `00229e6f…` reproduce from tag `v0.5.10`, and `1c4359e5…` from `v0.5.11`; a Verifier at HEAD computes a
+different number over the same bytes, once, and then never again for a patch. The recorded values are not rewritten —
+they are what the network produced on the day, they stay in the fixtures, and each run of record now says this beside
+its own number. **This is our timing, not the specification's**: the defect was found by the version bump that
+followed the runs, and correcting it after a record exists is what makes the record need a note.
+
 ## L-2 — Metadata is public
 
 Doorbells, lanes, settlements, postmarks, receipts, and slips are readable by anyone, forever (F-1). This release publishes nothing beyond what the specification requires on consensus, and hides nothing that it requires. Who wrote to whom, when, how often, with what postage, and whether a hand signed is public. Content is not.

@@ -2,15 +2,16 @@
  * The register, read from §A — one parser, used by the runner and by the
  * extract-and-diff.
  *
- * `spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: 86 tests, 81 core and 5
- * extension. `conformance/README.md`: "Every one of them becomes one test file,
+ * `spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: 87 tests, 82 core and 5
+ * extension — 86 until 2026-09-10, when D-176 registered T-P1-12 for §11.4's
+ * unrequested receipt, which until then borrowed a reason meaning something else. `conformance/README.md`: "Every one of them becomes one test file,
  * keyed by its identifier." Nothing here is normative — the specification and
  * §A are — but everything that reads §A reads it through this file, so that two
  * readings cannot disagree about what the register says.
  *
  * §A is read AS ROWS and never by grepping the ledger, because §A's own footer
- * names `T-P5-4`, the test D-112 dropped: a grep of the whole file finds 84
- * identifiers where the register holds 86.
+ * names `T-P5-4`, the test D-112 dropped: a grep of the whole file finds fewer
+ * identifiers than the register holds.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +22,7 @@ export const LEDGER = path.join(REPO_ROOT, 'spec', 'CONFORMANCE_TESTS_v0_5.md');
 export const SPEC = path.join(REPO_ROOT, 'spec', 'WISHMAIL_SPEC_v0_5.md');
 
 /** §A's own tally, and `conformance/README.md`'s. */
-export const EXPECTED_TOTAL = 86;
+export const EXPECTED_TOTAL = 87;
 export const EXPECTED_EXTENSION = 5;
 
 /**

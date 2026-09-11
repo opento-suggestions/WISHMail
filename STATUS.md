@@ -389,15 +389,22 @@ Run of record in `app/OPERATIONS.md`.**
    §G-21 and **D-172** closed §G-22 and the specification moved to **0.5.11** — nothing rung, no second lane, and
    A2's doorbell still holding zero messages.
 
-**RULED, and the list is closed (Sonic, 2026-09-10).** Every item that stood here is answered. What each ruling
-obliges is named beside it; where the obligation is a spec change it lands in the **0.5.12 patch**, whose version
-number is itself the one thing still to be settled — **§G-25's ruling holds either way, and only the probe of the
-frozen `evidence-bundle` schema decides whether it is 0.5.12 or 0.6.**
+**RULED, and the list is closed (Sonic, 2026-09-10).** Every item that stood here is answered, and **the spec changes
+they oblige have LANDED as 0.5.12**, tagged `v0.5.12`: D-173 (§G-25), D-175 (§G-18) and D-176 (§G-23). **The probe
+decided the version rather than the argument**, which is what the ruling required: the frozen `evidence-bundle` schema
+types `spec` as a bare `{"type": "string"}` — `spec/schemas/evidence-bundle.schema.json:9-11`, verified against
+`spec/pins.json` by its blob digest `248fdaae…` before it was read — so `"0.5"` is admissible, **no schema moves**,
+and it is a patch.
 
 - ~~**§G-25** — the bundle digest is a function of the release's PATCH version~~ → **the bundle's `spec` carries the
-  MINOR version, `0.5`**; the patch a Verifier ran at moves to `observations`, which §11.6 already keeps out of the
-  digest. Every recorded digest moves once and then never again for a patch. **0.5.12 vs 0.6 decided by the
-  frozen-schema probe.**
+  MINOR version, `0.5`**; the patch a Verifier ran at rides in `observations.verifierSpec`, which §11.6 already keeps
+  out of the digest. **LANDED as D-173 in 0.5.12.** Two things were proved before that field was written, on Sonic's
+  instruction — that `observations` lies outside the digest (the specification says so three times, and `verify.ts`
+  digests the evidence *before* the observations object exists) and that the frozen schema admits the key (no
+  `additionalProperties` on `observations`, and the schema's own validator run over a bundle carrying it). The bundle's
+  **top level** refuses an extra key, so `observations` is the only place it could go. **Every recorded digest moves
+  once and never again for a patch**: `8d30dfdc…` and `00229e6f…` reproduce from `v0.5.10`, `1c4359e5…` from `v0.5.11`,
+  and each run of record now says so beside its own number, as does LIMITATIONS L-1. The records are not rewritten.
 - ~~**§G-24** — the pinned HCS-10 contradicts itself about who writes the Outbound Connection Created record~~ →
   **written on BOTH parties' logs**, satisfying both readings at one message each. **The outbound records are the
   primary enumeration path from the fix forward; the home's address book is the fallback for lanes whose records
@@ -407,11 +414,15 @@ frozen `evidence-bundle` schema decides whether it is 0.5.12 or 0.6.**
   `connection_created` on the doorbell, so every candidate is confirmed there before it counts. The contradiction is
   **recorded FETCHED**, not resolved.
 - ~~**§G-23** — §11.4 requires a reason no test names~~ → **the test row is added in the 0.5.12 patch.** A MUST does
-  not stay without a court (§1.3).
+  not stay without a court (§1.3). **LANDED as D-176**: **T-P1-12** under P-1, §11.4's sentence citing it, and
+  `verify` reporting it in place of the borrowed `T-P12-2`. The register is **87** (82 core + 5 extension) and the
+  harness reads `register 87 · files 87 present · passed 0 · failed 87`. No row joins §11.5's table, because an
+  unrequested receipt yields no standing.
 - ~~**§G-20** — the provisioned path cannot be rate-priced under a frozen schema~~ → **a 0.6 candidate, and no version
   event follows it.** Shown as ruled rather than open: it waits on a minor version, not on a decision.
 - ~~**§G-18** — §5.3's gloss on `resolvedAt`~~ → **folded into the 0.5.12 patch by reading (a)**, because one sentence
-  closes it: "query time, reported beside the coordinates".
+  closes it: "query time, reported beside the coordinates". **LANDED as D-175**, text only — no schema, no test, no
+  code, and §10.2 untouched, because its exclusion of `resolvedAt` from the digest never rested on this phrase.
 - ~~**the 150 ℏ in A2's own agent account**~~ → **intentional operator funding of a test deployment.** The invariant
   was mis-stated as the agent's and **it is the Postmaster's: the Postmaster never funds an agent's account beyond the
   single registration fee.** What an operator puts into its own agent is that operator's affair. `CLAUDE.md` §11

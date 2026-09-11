@@ -2556,6 +2556,20 @@ correspondence  1 envelope(s)
 narrative.bundleDigest  8d30dfdc…   matches the bundle: true
 ```
 
+**NOTE ADDED 2026-09-10, after the run and beside its own number (D-173).** The digest above reproduces from a
+checkout at tag **`v0.5.10`**, and from no later one. It was computed when the evidence bundle carried the
+release's full patch version in `spec`; **D-173 makes that field the MINOR version — `0.5` — and moves the
+Verifier's own patch to `observations.verifierSpec`, outside the digest.** So a reader who clones HEAD and runs
+`npm run verify` over these captured bytes today gets a DIFFERENT digest, and that is
+the fix rather than a discrepancy: two Verifiers at two patches of 0.5 now agree, which is what §11.7 and T-P3-1
+ask for and what this number could never have given. **The number is not rewritten.** It is what the network
+produced that day, `conformance/fixtures/` still carries it, and `8d30dfdc…` is proved
+against those captured bytes on every run of the battery — by substituting the spec string of the day and
+requiring EXACT equality, which proves every other byte of the evidence unchanged. **A run against the LIVE lane
+differs for a second and ordinary reason too**: lane `0.0.10464056` has carried letters since, and a bundle is
+over the scope and window it was asked for — which is why a fixture, and not a live re-run, is what reproduces a
+recorded digest.
+
 **Run twice: the same digest both times** (T-P3-1), and the narrative carries it (T-P3-4). This is the second of
 WISHMail's two claims, and it is the first time it has been anything but a design intention: **a correspondence
 reconstructed from public consensus data by someone with no key, no account, no stamp and no credential.**
@@ -3118,6 +3132,20 @@ correspondence  2 envelope(s)
 narrative.bundleDigest  00229e6f…   matches the bundle: true
 ```
 
+**NOTE ADDED 2026-09-10, after the run and beside its own number (D-173).** The digest above reproduces from a
+checkout at tag **`v0.5.10`**, and from no later one. It was computed when the evidence bundle carried the
+release's full patch version in `spec`; **D-173 makes that field the MINOR version — `0.5` — and moves the
+Verifier's own patch to `observations.verifierSpec`, outside the digest.** So a reader who clones HEAD and runs
+`npm run verify` over these captured bytes today gets a DIFFERENT digest, and that is
+the fix rather than a discrepancy: two Verifiers at two patches of 0.5 now agree, which is what §11.7 and T-P3-1
+ask for and what this number could never have given. **The number is not rewritten.** It is what the network
+produced that day, `conformance/fixtures/` still carries it, and `00229e6f…` is proved
+against those captured bytes on every run of the battery — by substituting the spec string of the day and
+requiring EXACT equality, which proves every other byte of the evidence unchanged. **A run against the LIVE lane
+differs for a second and ordinary reason too**: lane `0.0.10464056` has carried letters since, and a bundle is
+over the scope and window it was asked for — which is why a fixture, and not a live re-run, is what reproduces a
+recorded digest.
+
 **Run twice: the same digest both times** (T-P3-1), and the narrative carries it (T-P3-4). **`Its state is ACKED. Its
 return receipt is acked.`** — the first time any envelope in this deployment has been anything but SETTLED, said by
 someone with no key, no account, no stamp, no counter and no home.
@@ -3575,6 +3603,20 @@ Run twice, from a directory holding no key, no account, no stamp, no counter and
   bundle digest   1c4359e5bf6fbbe00fc82e4e5b358500d307572891a1be89dfd47d493f13d648   (both runs)
   narrative.bundleDigest matches the bundle   true
 ```
+
+**NOTE ADDED 2026-09-10, after the run and beside its own number (D-173).** The digest above reproduces from a
+checkout at tag **`v0.5.11`**, and from no later one. It was computed when the evidence bundle carried the
+release's full patch version in `spec`; **D-173 makes that field the MINOR version — `0.5` — and moves the
+Verifier's own patch to `observations.verifierSpec`, outside the digest.** So a reader who clones HEAD and runs
+`npm run verify` over these captured bytes today gets a DIFFERENT digest, and that is
+the fix rather than a discrepancy: two Verifiers at two patches of 0.5 now agree, which is what §11.7 and T-P3-1
+ask for and what this number could never have given. **The number is not rewritten.** It is what the network
+produced that day, `conformance/fixtures/` still carries it, and `1c4359e5…` is proved
+against those captured bytes on every run of the battery — by substituting the spec string of the day and
+requiring EXACT equality, which proves every other byte of the evidence unchanged. **A run against the LIVE lane
+differs for a second and ordinary reason too**: lane `0.0.10464056` has carried letters since, and a bundle is
+over the scope and window it was asked for — which is why a fixture, and not a live re-run, is what reproduces a
+recorded digest.
 
 Three envelopes on one lane, and the narrative reads the correspondence as a correspondence:
 

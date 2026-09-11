@@ -28,6 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../ops/env.js';
 import { canonicalBytes, sha256hex } from '../core/canonical.js';
+import { RELEASE } from '../release.js';
 import { verify } from './verify.js';
 import type { Reader, ScheduleRecord, Settlement, TopicInfo, TopicMessage } from './consensus.js';
 
@@ -122,25 +123,54 @@ async function main(): Promise<void> {
   is('and the reason is the profile this release does not claim (§9.6, T-P12-4)', [...base.reasons], ['T-P12-4']);
 
   const out = await verify(readerOver(pristine), { lane: pristine.lane }, {});
-  // THE DIGEST IS A FUNCTION OF THE RELEASE'S PATCH VERSION, and this is where
-  // that shows. §11.7's evidence carries `spec`, and `verify` fills it from
-  // `RELEASE.spec` — the full major.minor.patch. So a Verifier at 0.5.11
-  // computes a different digest from the one this correspondence produced at
-  // 0.5.10, over byte-identical evidence, and §11.7's MUST that "two Verifiers
-  // reconciling the same scope and window MUST produce evidence with the same
-  // digest" holds only between Verifiers at one patch. Raised as ledger §G-25;
-  // NOT coded around, and `RELEASE.spec` is left exactly as it is.
+  // THE DIGEST WAS A FUNCTION OF THE RELEASE'S PATCH VERSION, and this is
+  // where that showed. §11.7's evidence carries `spec`; `verify` filled it from
+  // `RELEASE.spec` — the full major.minor.patch — so a Verifier at 0.5.11
+  // computed a different digest from the one this correspondence produced at
+  // 0.5.10 over byte-identical evidence, and §11.7's MUST held only between
+  // Verifiers at one patch. Raised as ledger §G-25 and NOT coded around;
+  // **closed by D-173**, which puts the MINOR version in the bundle and the
+  // Verifier's own patch in `observations`.
   //
-  // What P-3 claims is asserted here rather than assumed: put back the spec
-  // string this fixture was captured under and the digest is EXACTLY the one
-  // the network produced. Every other byte of the evidence is unchanged, which
-  // is a stronger statement than the equality this line used to make.
+  // THE SUBSTITUTION STAYS, because this fixture is a RECORD. It was captured
+  // under 0.5.10 and its `bundleDigest` is what the network produced that day;
+  // that number is not rewritten to agree with a later reading of the rule.
+  // Putting the spec string back and requiring EXACT equality proves every
+  // other byte of the evidence is unchanged, which is stronger than the plain
+  // equality this line carried before 2026-09-10.
   const SPEC_WHEN_CAPTURED = '0.5.10';
   const { observations: _observations, digest: _digest, ...evidence } = out.bundle;
   const asCaptured = sha256hex(canonicalBytes({ ...evidence, spec: SPEC_WHEN_CAPTURED }));
   is('the bundle digest is the one the network produced (P-3)', asCaptured, pristine.bundleDigest);
   const again = await verify(readerOver(pristine), { lane: pristine.lane }, {});
   is('and two Verifiers over the same bytes agree, byte for byte (T-P3-1)', again.bundle.digest, out.bundle.digest);
+
+  // === D-173: THE DIGEST IS NO LONGER A FUNCTION OF THE READER'S PATCH ======
+  //
+  // Asserted the only way it can be honestly asserted — by BEING a Verifier at
+  // another patch of 0.5 and re-running. If the digest moved, T-P3-1 would be
+  // unsatisfiable between two implementations, which is the defect D-173 closed.
+  is('a bundle made now carries the MINOR version (D-173)', out.bundle.spec, '0.5');
+  is('which is RELEASE.minorVersion and not RELEASE.spec', out.bundle.spec, RELEASE.minorVersion);
+  is("the Verifier's own patch is reported as an observation (§11.6)", out.bundle.observations['verifierSpec'], RELEASE.spec);
+
+  const patch = RELEASE.spec;
+  // The cast is deliberate and is the whole test: `Release.spec` is readonly so
+  // that no code path can do this, and the court does it anyway, to stand where
+  // a second implementation would stand. Restored in a `finally`, so a failure
+  // here cannot leave the constant wrong for every later assertion.
+  const mutable = RELEASE as { spec: string };
+  let atAnotherPatch;
+  try {
+    mutable.spec = '0.5.99';
+    atAnotherPatch = await verify(readerOver(pristine), { lane: pristine.lane }, {});
+  } finally {
+    mutable.spec = patch;
+  }
+  is('a Verifier at ANOTHER patch of 0.5 computes the same digest (T-P3-1)', atAnotherPatch.bundle.digest, out.bundle.digest);
+  is('over the same evidence, spec included', atAnotherPatch.bundle.spec, out.bundle.spec);
+  is('and the only thing that moved is the observation', atAnotherPatch.bundle.observations['verifierSpec'], '0.5.99');
+  is('RELEASE.spec is restored', RELEASE.spec, patch);
 
   const floor = RANK[base.standing] ?? 3;
 

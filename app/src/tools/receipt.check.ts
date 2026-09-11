@@ -23,6 +23,7 @@ import path from 'node:path';
 import { repoRoot } from '../ops/env.js';
 import { canonicalBytes, canonicalDigest, sha256hex } from '../core/canonical.js';
 import { decodeScheduledSubmission } from '../core/schedulebody.js';
+import { RELEASE } from '../release.js';
 import { verify } from './verify.js';
 import { keyMatchesPrefix } from './consensus.js';
 import type { Reader, ScheduleRecord, Settlement, TopicInfo, TopicMessage } from './consensus.js';
@@ -183,6 +184,15 @@ async function main(): Promise<void> {
   is('the bundle digest is the one the network produced (P-3)', asCaptured, pristine.bundleDigest);
   const again = await verify(readerOver(pristine), { lane: pristine.lane }, {});
   is('and two Verifiers over the same bytes agree (T-P3-1)', again.bundle.digest, out.bundle.digest);
+
+  // D-173 CLOSED §G-25: the bundle now carries the MINOR version, so a Verifier
+  // at any patch of 0.5 reaches the same digest. THE SUBSTITUTION ABOVE STAYS
+  // because this fixture is a RECORD — it was reconciled under 0.5.10 and
+  // its `bundleDigest` is the number the network produced that day, which is
+  // not rewritten to agree with a later reading of the rule.
+  is('a bundle made now carries the MINOR version (D-173)', out.bundle.spec, RELEASE.minorVersion);
+  is('which is "0.5"', out.bundle.spec, '0.5');
+  is("and the Verifier's own patch is an observation, outside the digest (§11.6)", out.bundle.observations['verifierSpec'], RELEASE.spec);
 
   // === The alterations a receipt owes a refusal for =========================
   const alterations: readonly { readonly what: string; readonly make: () => Fixture; readonly want: string }[] = [
