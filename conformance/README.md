@@ -2,22 +2,22 @@
 
 The suite. One test per `T-<P-ID>-<n>`, keyed to the invariant in its `P-ID` (§12), serving the requirement whose `Conformance:` note names it.
 
-**All 86 files exist; none is expanded.** Every one fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim. A test that is not written must not report that it passed.
+**All 87 files exist; none is expanded.** Every one fails on purpose, naming its identifier, the invariant it serves in §12's words, the classes §A gives it, and §A's sketch verbatim. A test that is not written must not report that it passed.
 
 **A reference-side check is not a test, and is not counted as one.** `app/` carries a growing set of `npm run check:*` scripts — the seal against RFC 9180's Appendix A.1, the chunker against §11.3's worked example, a whole letter against a modelled ledger — and they hold the reference implementation to the specification as it is written. They are not the suite: they run the reference against itself, where a conformance test runs a *release* against evidence it did not produce. None of them moves a count here.
 
 ## The register
 
-`spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: **86 tests — 81 core and 5 extension.** Every one of them becomes one test file, keyed by its identifier. A test is not expanded in scope beyond its sketch in §A without a decision (`D-nnn`).
+`spec/CONFORMANCE_TESTS_v0_5.md` §A is the register: **87 tests — 82 core and 5 extension.** Every one of them becomes one test file, keyed by its identifier. A test is not expanded in scope beyond its sketch in §A without a decision (`D-nnn`).
 
 The five extension tests — **T-P2-3** (§16.2 `attest`), **T-P5-5** (§16.5 `document` profile), **T-P6-6** (§16.6 `find`), **T-P11-7** (§16.4 spending cap), **T-P12-7** (§16.3 key custody) — bind only a release that names that extension in its claim (§16.1, D-111). They are built last, or not at all.
 
 Coverage by invariant, as §A fixes it:
 
 ```
-P-1 x11   P-2 x4    P-3 x6    P-4 x3    P-5 x4    P-6 x7
+P-1 x12   P-2 x4    P-3 x6    P-4 x3    P-5 x4    P-6 x7
 P-7 x5    P-8 x4    P-9 x11   P-10 x2   P-11 x7   P-12 x7
-P-13 x4   P-14 x1   P-15 x5   P-16 x2   P-17 x3          = 86
+P-13 x4   P-14 x1   P-15 x5   P-16 x2   P-17 x3          = 87
 ```
 
 ## Layout
@@ -60,18 +60,18 @@ conformance/
 
 **Determinism is the point of most of it.** Two Verifiers on the same scope and window produce evidence with the same digest, byte for byte, from any mirror node, at any time (P-3; T-P3-1, T-P4-3). `observations` is excluded from that digest because two Verifiers at two clocks cannot agree on it (§11.6, D-82).
 
-**No report while a pin is unfilled, and as of 2026-09-09 none is.** The suite reads `spec/pins.json` and refuses to produce a report while any pin there is null (T-P9-2). Twenty-eight were: the `registeredSchemas` entries, two per schema for fourteen, and they closed when the schemas were registered on consensus in Step 4. The `hedera:testnet` stamp token filled on 2026-09-08, and `hedera:mainnet` carries no entry at all — an undeployed ledger tag has no pin, so its absence is not an unfilled one (D-154). **So a report is now emitted, and it reports eighty-six failures**, which is the correct output and not a defect: the gate T-P9-2 holds was never "are the tests passing", it was "is this release entitled to make a claim about what it measured against". There is no flag that produces a report anyway; a way past T-P9-2 would be a way past the invariant.
+**No report while a pin is unfilled, and as of 2026-09-09 none is.** The suite reads `spec/pins.json` and refuses to produce a report while any pin there is null (T-P9-2). Twenty-eight were: the `registeredSchemas` entries, two per schema for fourteen, and they closed when the schemas were registered on consensus in Step 4. The `hedera:testnet` stamp token filled on 2026-09-08, and `hedera:mainnet` carries no entry at all — an undeployed ledger tag has no pin, so its absence is not an unfilled one (D-154). **So a report is now emitted, and it reports eighty-seven failures**, which is the correct output and not a defect: the gate T-P9-2 holds was never "are the tests passing", it was "is this release entitled to make a claim about what it measured against". There is no flag that produces a report anyway; a way past T-P9-2 would be a way past the invariant.
 
 Because of that, nothing in an ordinary run reaches `report.mjs`, so the report is exercised on its own: `npm run check:report` calls it with a synthetic, fully-pinned input in a scratch directory and holds it to §5.1's hashing rule — the digest recomputes from the file, `generated` is outside it so two runs at two clocks agree, and a failed or unrun test stops `passedInFull`, which is what T-P15-3 reads to refuse a claim.
 
 **What a run prints today:**
 
 ```
-  register        86 tests (81 core + 5 extension), §A
-  files           86 present, 0 missing, 0 unregistered
-  selected        86
+  register        87 tests (82 core + 5 extension), §A
+  files           87 present, 0 missing, 0 unregistered
+  selected        87
   passed          0
-  failed          86
+  failed          87
 
   report          conformance/reports/all.json
 ```
