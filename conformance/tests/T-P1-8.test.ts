@@ -5,29 +5,29 @@
  * Register: NAMED (§10.4)
  * @fixture-kind captured, altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   A fixture receipt's schedule record carries the recipient's signature among its signatures; the scheduled transaction's required signer is the submit key of the recipient's manifest topic, so it executes only when that key signs; execution follows the nth chunk; the executed submission's postmark is on the recipient's manifest topic; a manifest by any other path is not a receipt. Amended at 0.5.11 by D-172: "exactly the recipient's signature" was unsatisfiable, because HIP-423 records every transaction payer that touches a schedule.
+ *   A fixture receipt’s schedule record carries the recipient’s signature among its signatures; the scheduled transaction’s required signer is the submit key of the recipient’s manifest topic, so it executes only when that key signs; execution follows the nth chunk; the executed submission’s postmark is on the recipient’s manifest topic; a manifest by any other path is not a receipt. Amended at 0.5.11 by D-172: "exactly the recipient’s signature" was unsatisfiable, because HIP-423 records every transaction payer that touches a schedule.
  *
  * EXPANDED 2026-09-10 over `gate-three-certified` and `gate-three-resolved` for
  * the positive, and four altered copies for the negatives.
  *
  * WHAT D-172 CHANGED AND WHY IT MATTERS HERE. The row once said the record
- * carries "exactly the recipient's signature", and HIP-423 makes that
- * unsatisfiable: a schedule's record carries every key that touched it, payers
+ * carries "exactly the recipient’s signature", and HIP-423 makes that
+ * unsatisfiable: a schedule’s record carries every key that touched it, payers
  * included, so no arrangement of a real network produces a record with one
  * signature on it. Nothing could ever have passed the old sentence. What the
- * ledger CAN show is stronger: the recipient's key is AMONG the signatures, and
- * the scheduled transaction's REQUIRED signer is the submit key of the
- * recipient's manifest topic — so the execution could not have happened on
- * anyone else's signature, whoever else also signed. Payer signatures are
+ * ledger CAN show is stronger: the recipient’s key is AMONG the signatures, and
+ * the scheduled transaction’s REQUIRED signer is the submit key of the
+ * recipient’s manifest topic — so the execution could not have happened on
+ * anyone else’s signature, whoever else also signed. Payer signatures are
  * bookkeeping.
  *
  * THE FOUR NEGATIVES ARE FOUR DIFFERENT WAYS TO HAVE A MANIFEST WITHOUT HAVING
- * A RECEIPT, which is the sketch's last clause: "a manifest by any other path is
+ * A RECEIPT, which is the sketch’s last clause: "a manifest by any other path is
  * not a receipt". Nothing about the document changes in any of them. What
- * changes is the path it arrived by — and §10.4's whole mechanism is that the
+ * changes is the path it arrived by — and §10.4’s whole mechanism is that the
  * path is the proof.
  */
 import assert from 'node:assert/strict';
@@ -54,21 +54,21 @@ test('T-P1-8 — Binding', async () => {
   const record = schedules[scheduleId];
   assert.ok(record !== undefined, 'and the capture holds its record');
 
-  // --- The inner submission, decoded from the schedule's real bytes. ------
+  // --- The inner submission, decoded from the schedule’s real bytes. ------
   const inner = decodeScheduledSubmission(Buffer.from(record.transactionBody, 'base64'));
   const manifestTopic = inner.topicId;
   const published = JSON.parse(inner.message.toString('utf8')) as { meaning?: { statement?: string }; hash?: string };
   const recipient = (published.meaning?.statement ?? '').split(' ')[0] ?? '';
-  assert.match(recipient, /^[0-9]+\.[0-9]+\.[0-9]+$/, '§10.4 puts the recipient`s account inside the receipt`s meaning');
+  assert.match(recipient, /^[0-9]+\.[0-9]+\.[0-9]+$/, '§10.4 puts the recipient’s account inside the receipt’s meaning');
 
   const recipientKey = pristine.accounts[recipient]?.key ?? null;
-  assert.ok(recipientKey !== null, 'and the capture carries that account`s key, as consensus holds it');
+  assert.ok(recipientKey !== null, 'and the capture carries that account’s key, as consensus holds it');
 
-  // --- "carries the recipient's signature AMONG its signatures" (D-172). --
+  // --- "carries the recipient’s signature AMONG its signatures" (D-172). --
   assert.ok(record.signatures.length > 0, 'HIP-423 records the signatures that touched the schedule');
   assert.ok(
     record.signatures.some((s) => keyMatchesPrefix(recipientKey, s.publicKeyPrefix)),
-    'the recipient`s key is among them (§11.4, D-172)',
+    'the recipient’s key is among them (§11.4, D-172)',
   );
   // And the row no longer demands the thing HIP-423 makes impossible.
   if (record.signatures.length > 1) {
@@ -78,16 +78,16 @@ test('T-P1-8 — Binding', async () => {
     );
   }
 
-  // --- "the required signer is the submit key of the recipient's manifest
+  // --- "the required signer is the submit key of the recipient’s manifest
   //      topic, so it executes only when that key signs". ------------------
   const topic = pristine.topicInfo[manifestTopic];
-  assert.ok(topic !== undefined && topic !== null, 'the capture holds the manifest topic`s own record');
+  assert.ok(topic !== undefined && topic !== null, 'the capture holds the manifest topic’s own record');
   assert.deepEqual(
     [...topic.submitKeys],
     [recipientKey],
-    '§10.4: a topic only the recipient`s key can write to — so the submission REQUIRES that key',
+    '§10.4: a topic only the recipient’s key can write to — so the submission REQUIRES that key',
   );
-  assert.equal(topic.memo, 'wishmail:manifest:1', 'and it is the recipient`s manifest topic (§9.1)');
+  assert.equal(topic.memo, 'wishmail:manifest:1', 'and it is the recipient’s manifest topic (§9.1)');
 
   // --- "execution follows the nth chunk". ---------------------------------
   const chunks = chunksOn(pristine).filter((c) => c.chunk['id'] === ENVELOPE);
@@ -99,7 +99,7 @@ test('T-P1-8 — Binding', async () => {
     `the execution at ${record.executedTimestamp} follows the nth chunk at ${last.message.consensusTimestamp} (§8.3)`,
   );
 
-  // --- "the executed submission's postmark is on the recipient's manifest
+  // --- "the executed submission’s postmark is on the recipient’s manifest
   //      topic". -----------------------------------------------------------
   const landed = (pristine.topics[manifestTopic] ?? []).filter((m) => m.contents.includes(String(published.hash)));
   assert.equal(landed.length, 1, 'the manifest is on that topic, once, content-addressed by its own hash (§5.2)');
@@ -110,12 +110,12 @@ test('T-P1-8 — Binding', async () => {
   assert.deepEqual([...good.reasons], [], 'with nothing to report against it');
   assert.equal(good.state, 'ACKED', 'and §8.3 moved the envelope');
 
-  // §5.8's object needs the recipient's operator_id, which only a replayed
+  // §5.8’s object needs the recipient’s operator_id, which only a replayed
   // resolution can name — so it appears with a claimed profile and not without.
   const resolved = fixture('gate-three-resolved');
   const { bundle: claimed } = await verify(readerOver(resolved), { lane: resolved.lane, claims: ['hcs14'] }, {});
   const withReceipt = claimed.correspondence.find((e) => e.envelope.aadHash === ENVELOPE);
-  assert.ok(withReceipt?.returnReceipt !== undefined, '§5.8`s ReturnReceipt is named where a replay could name it');
+  assert.ok(withReceipt?.returnReceipt !== undefined, '§5.8’s ReturnReceipt is named where a replay could name it');
   assert.equal(withReceipt.returnReceipt.proof.uri?.topicId, manifestTopic, 'and it points at the manifest topic');
 
   // --- Four ways to have the manifest and not the receipt. ----------------

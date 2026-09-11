@@ -5,7 +5,7 @@
  * Register: NAMED (§11.4)
  * @fixture-kind altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   A request whose schedule expired unsigned yields `receipt.status` = `unclaimed`; the envelope stays SETTLED, standing unchanged; the reference narrative uses the unclaimed template and no other.
@@ -13,10 +13,10 @@
  * EXPANDED 2026-09-10 over `gate-three-certified`, in two altered copies.
  *
  * THIS ROW WAS EXPECTED TO BE UNREACHABLE, AND THE EXPECTATION CONFUSED THE ACT
- * WITH WHAT A VERIFIER SEES OF IT. A schedule's window is up to
- * `SCHEDULE_MAX_LIFETIME` — 62 days — and waiting one out is not a night's work.
+ * WITH WHAT A VERIFIER SEES OF IT. A schedule’s window is up to
+ * `SCHEDULE_MAX_LIFETIME` — 62 days — and waiting one out is not a night’s work.
  * But §10.4 says what the network does at the end of it: "a schedule that
- * expires unsigned is deleted by the network; the lane's `transaction` operation
+ * expires unsigned is deleted by the network; the lane’s `transaction` operation
  * remains". So what a Verifier meets is a lane that still names a schedule and a
  * consensus that no longer holds it — and that is two alterations of captured
  * bytes, not a two-month wait. Both are made below, because the network can
@@ -84,7 +84,7 @@ test('T-P15-5 — Claims are scoped', async () => {
   for (const alteration of alterations) {
     const g = alteration.make();
 
-    // The lane's `transaction` operation REMAINS — §10.4 says so, and it is
+    // The lane’s `transaction` operation REMAINS — §10.4 says so, and it is
     // what makes this `unclaimed` rather than `none`. Checked before the
     // appraisal, because an alteration that removed it would be testing
     // something else entirely.

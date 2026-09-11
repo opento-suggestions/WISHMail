@@ -5,14 +5,14 @@
  * Register: NAMED (§11.2)
  * @fixture-kind captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   A fixture whose settlement, `connection_created`, and resolution manifest precede the window's `from`, with chunks inside it, appraises verified and its bundle carries all three.
+ *   A fixture whose settlement, `connection_created`, and resolution manifest precede the window’s `from`, with chunks inside it, appraises verified and its bundle carries all three.
  *
  * EXPANDED 2026-09-10 over `checkpoint-two-resolved`, whose lane carries three
  * envelopes across six hours — so a window can be drawn that admits the last
- * one and leaves its own settlement, its lane's birth and its manifest outside.
+ * one and leaves its own settlement, its lane’s birth and its manifest outside.
  *
  * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. §11.2 is careful that the window
  * "bounds what is RECONCILED, not what is read": the three things named here are
@@ -21,10 +21,10 @@
  * anything rides it (§7.1) — so a window tight enough to hold only the chunks
  * would exclude every one of them if the window bounded reading. If it did, no
  * envelope could ever appraise verified inside a narrow window, and reconciling
- * a day's mail would be impossible. That it *can* is what this test says.
+ * a day’s mail would be impossible. That it *can* is what this test says.
  *
  * THIS ROW WAS NOT EXPANDABLE THIS MORNING. Nothing could reach `verified`,
- * because no capture carried the registry and profile topics §9.2's rule reads
+ * because no capture carried the registry and profile topics §9.2’s rule reads
  * (`conformance/DERIVATION.md` F-2). The re-capture of 2026-09-10 night closed
  * that, and this is one of the rows it opened.
  */
@@ -58,7 +58,7 @@ test('T-P3-5 — Public-data replay', async () => {
   assert.ok(manifest !== undefined, 'the capture holds the resolution manifest at its locator');
 
   const birth = await laneBirth(reader, f.lane);
-  assert.ok(birth !== null, "the lane's birth is readable from the lane's own memo (§11.4, D-171)");
+  assert.ok(birth !== null, "the lane’s birth is readable from the lane’s own memo (§11.4, D-171)");
 
   for (const [what, at] of [
     ['the settlement', settlement.consensusTimestamp],
@@ -70,7 +70,7 @@ test('T-P3-5 — Public-data replay', async () => {
 
   // --- A window whose `from` is chunk 0 itself. ---------------------------
   //
-  // §11.2 bounds by the canonical chunk 0's consensus timestamp, inclusive, so
+  // §11.2 bounds by the canonical chunk 0’s consensus timestamp, inclusive, so
   // `from` = chunkZeroAt admits this envelope and excludes everything earlier.
   // All three facts above sit strictly before it.
   const window = { from: chunkZeroAt, to: '9999999999.999999999' };
@@ -107,7 +107,7 @@ test('T-P3-5 — Public-data replay', async () => {
   );
   assert.ok(
     bundle.topics.includes(rp.u.topicId),
-    `the bundle carries the manifest's topic (${rp.u.topicId})`,
+    `the bundle carries the manifest’s topic (${rp.u.topicId})`,
   );
 
   // And the window it reports is the window it was given, not the one it found.

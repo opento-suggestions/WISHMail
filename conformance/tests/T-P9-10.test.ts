@@ -5,20 +5,20 @@
  * Register: NAMED (§7.1)
  * @fixture-kind captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   A fixture lane whose memo carries HCS-10's non-indexed flag (`hcs-10:1:…:2:…`) and holds an `n`-chunk envelope is fully reassembled by `inbox` and by the VERIFIER suite.
+ *   A fixture lane whose memo carries HCS-10’s non-indexed flag (`hcs-10:1:…:2:…`) and holds an `n`-chunk envelope is fully reassembled by `inbox` and by the VERIFIER suite.
  *
  * EXPANDED 2026-09-10 over `checkpoint-two-receipt` and `checkpoint-two-resolved`,
  * whose lane `0.0.10464056` carries the memo `hcs-10:1:60:2:0.0.10452149:1` and
  * a ten-chunk envelope — 4,424 ciphertext bytes of the Emancipation
  * Proclamation, the only multi-chunk envelope this deployment has produced.
  *
- * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. The non-indexed flag is HCS-10's
+ * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. The non-indexed flag is HCS-10’s
  * own statement that the topic is not enumerated by a registry, and §7.1 makes
- * it the lane's ordinary form. §11.3's reassembly is a walk on the chain — chunk
- * 0 by its header rebuilding to `id`, each later chunk by the prior's `nx` — and
+ * it the lane’s ordinary form. §11.3’s reassembly is a walk on the chain — chunk
+ * 0 by its header rebuilding to `id`, each later chunk by the prior’s `nx` — and
  * "fully reassembled" means the walk completed: `n` links, in order, with no
  * gaps and no integrity failure.
  *
@@ -43,13 +43,13 @@ test('T-P9-10 — Strict standards', async () => {
   const f = fixture(MULTI);
   const reader = readerOver(f);
 
-  // --- HCS-10's non-indexed flag, off the lane's own memo. -----------------
+  // --- HCS-10’s non-indexed flag, off the lane’s own memo. -----------------
   const laneInfo = f.topicInfo[f.lane];
-  assert.ok(laneInfo !== undefined && laneInfo !== null, 'the capture holds the lane`s own record');
+  assert.ok(laneInfo !== undefined && laneInfo !== null, 'the capture holds the lane’s own record');
   assert.match(
     laneInfo.memo,
     /^hcs-10:1:[0-9]+:2:[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$/,
-    `the lane memo ${JSON.stringify(laneInfo.memo)} is HCS-10's non-indexed connection form`,
+    `the lane memo ${JSON.stringify(laneInfo.memo)} is HCS-10’s non-indexed connection form`,
   );
   const parsedMemo = connectionTopicMemoOf(laneInfo.memo);
   assert.ok(parsedMemo !== null, 'and it parses, naming the doorbell the lane was born on');
@@ -63,7 +63,7 @@ test('T-P9-10 — Strict standards', async () => {
   const n = zero.chunk.n;
   assert.ok(n > 1, `the envelope is ${n} chunks, so "fully reassembled" has something to say`);
 
-  // --- §11.3's walk, directly. --------------------------------------------
+  // --- §11.3’s walk, directly. --------------------------------------------
   const walk = reassemble(observed, ENVELOPE, (h: ChunkHeader) => bindsTo(h, f.lane, ENVELOPE));
   assert.equal(walk.state, 'complete', '§8.5: the chain is complete');
   assert.equal(walk.integrityFailed, false, 'and the slices concatenate to the digest the header declares');

@@ -5,7 +5,7 @@
  * Register: NAMED (§8.3)
  * @fixture-kind altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   Receipts witnessed before the nth chunk, or for envelopes standing unstamped or unbound, leave state unchanged and are reported as invalid receipts.
@@ -20,8 +20,8 @@
  * kinds of wrong and both are here.
  *
  * A RECEIPT BEFORE THE NTH CHUNK is a signature for a letter that had not
- * finished arriving. §10.4 binds a receipt to chunk 0's postmark and to the
- * envelope's identifier, so an execution that precedes the last chunk is a
+ * finished arriving. §10.4 binds a receipt to chunk 0’s postmark and to the
+ * envelope’s identifier, so an execution that precedes the last chunk is a
  * recipient signing for something it could not yet have read — and the
  * arithmetic still checks out, which is exactly why the ordering has to be
  * tested rather than inferred.
@@ -112,7 +112,7 @@ test('T-P1-7 — Binding', async () => {
 
   // --- 3. A receipt for an envelope standing UNBOUND. ---------------------
   //
-  // Unbound by §7.2's fourth weld rather than by a broken header, so that chunk
+  // Unbound by §7.2’s fourth weld rather than by a broken header, so that chunk
   // 0 still rebuilds and the receipt is actually reached and appraised. An
   // envelope with no canonical chunk 0 would never get as far as its receipt,
   // which would test something else.

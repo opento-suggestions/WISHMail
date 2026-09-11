@@ -4,10 +4,10 @@
  * Classes: VERIFIER.
  * Register: NAMED (§9.6)
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   A Verifier claiming no profile appraises every fixture's resolution as unverified, never fails, and passes the VERIFIER suite.
+ *   A Verifier claiming no profile appraises every fixture’s resolution as unverified, never fails, and passes the VERIFIER suite.
  *
  * EXPANDED 2026-09-10 over the four captured correspondences
  * (`conformance/DERIVATION.md`, kind: captured).
@@ -17,11 +17,11 @@
  * resolution as unverified". That is a statement about what a CONFORMING
  * Verifier does, not about a shortfall — so the expectation here is that the
  * resolution comes back `unverified` carrying `T-P12-4`, that nothing throws,
- * and that the envelope's binding and postage are appraised anyway. An
+ * and that the envelope’s binding and postage are appraised anyway. An
  * implementation that refused to appraise, or that quietly appraised the
  * resolution verified without replaying it, would fail this.
  *
- * The third clause — "and passes the VERIFIER suite" — is the report's own
+ * The third clause — "and passes the VERIFIER suite" — is the report’s own
  * statement about this run and not something a body can assert about itself.
  * `conformance/DERIVATION.md` records that reading.
  */
@@ -57,10 +57,10 @@ test('T-P12-4 — Honest degradation', async () => {
       // failure, and reaching this line at all is the proof for this fixture.
       assert.ok(
         ['verified', 'unverified', 'unstamped', 'unbound'].includes(e.appraisal.appraised.standing),
-        `${where}: the envelope has a standing on §11.5's ladder`,
+        `${where}: the envelope has a standing on §11.5’s ladder`,
       );
 
-      // Binding, settlement and postmarks ARE verified — §9.6's own list of
+      // Binding, settlement and postmarks ARE verified — §9.6’s own list of
       // what such a Verifier still does. A claimless Verifier that had also
       // stopped checking those would satisfy the first clause and defeat the
       // sentence it comes from.

@@ -5,22 +5,22 @@
  * Register: NAMED (§9.1)
  * @fixture-kind captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   Every fixture manifest is one HCS message at or under `CHUNK_WIRE_MAX` bytes on the sender's manifest topic, with a consensus timestamp earlier than chunk 0's.
+ *   Every fixture manifest is one HCS message at or under `CHUNK_WIRE_MAX` bytes on the sender’s manifest topic, with a consensus timestamp earlier than chunk 0’s.
  *
  * EXPANDED 2026-09-10 over every resolution manifest the six captures name.
  *
  * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. §9.1 makes the manifest a single
- * message and §7.4's limit applies to it as to any other. The ordering clause is
+ * message and §7.4’s limit applies to it as to any other. The ordering clause is
  * the one that matters most and is the one §11.4 reads back: a proof published
  * after the envelope it is supposed to bind would let a sender choose the proof
  * once it knew what it wanted to prove. "Earlier than chunk 0" is what makes the
  * resolution prior to the letter rather than contemporaneous with it.
  *
  * The manifests are reached the way §11.2 reaches them — from `hdr.rp.u`, the
- * locator inside chunk 0's header — and not from a list. A manifest nobody's
+ * locator inside chunk 0’s header — and not from a list. A manifest nobody’s
  * header names is not a fixture manifest.
  */
 import assert from 'node:assert/strict';
@@ -49,7 +49,7 @@ test('T-P9-8 — Strict standards', () => {
 
       // THE SENDER'S MANIFEST TOPIC, checked as a topic and not merely as an id.
       const info = f.topicInfo[locator.topicId as string];
-      assert.ok(info !== undefined && info !== null, `${where}: the capture holds the manifest topic's own record`);
+      assert.ok(info !== undefined && info !== null, `${where}: the capture holds the manifest topic’s own record`);
       assert.equal(info.memo, 'wishmail:manifest:1', `${where}: it is a manifest topic (§9.1)`);
 
       // ONE HCS MESSAGE. Not a chain, not a chunked document.

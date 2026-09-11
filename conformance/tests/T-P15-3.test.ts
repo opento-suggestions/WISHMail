@@ -5,14 +5,14 @@
  * Register: NAMED (§1.5; D-134)
  * @fixture-kind artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   A **claim** names no class whose suite did not pass in full: for every class the claim names, the report reached through `suite.reportDigest` is one the suite produced, its digest matches, and it records that class's suite as passed in full; a claim naming a class whose report records a failure, or naming a report the suite did not produce, is rejected.
+ *   A **claim** names no class whose suite did not pass in full: for every class the claim names, the report reached through `suite.reportDigest` is one the suite produced, its digest matches, and it records that class’s suite as passed in full; a claim naming a class whose report records a failure, or naming a report the suite did not produce, is rejected.
  *
  * EXPANDED 2026-09-10 against the report the suite last produced.
  *
- * WHY THE RULE IS IMPLEMENTED HERE. §1.5's MUST is a rule about claims, and
+ * WHY THE RULE IS IMPLEMENTED HERE. §1.5’s MUST is a rule about claims, and
  * nothing in `app/` claims anything — `RELEASE.classes` is empty, which is the
  * rule obeyed by silence rather than by machinery. So the body IS the reader
  * §1.5 describes: it takes a claim and a reports directory and answers whether
@@ -61,7 +61,7 @@ interface Claim {
 }
 
 /**
- * §1.5's rule, written from the sentence. Returns the reason a claim is
+ * §1.5’s rule, written from the sentence. Returns the reason a claim is
  * rejected, or `null` where it stands.
  */
 function reject(claim: Claim, reports: readonly Report[]): string | null {
@@ -72,12 +72,12 @@ function reject(claim: Claim, reports: readonly Report[]): string | null {
   // "its digest matches" — the file could have been edited after it was written.
   if (digestOfReport(named) !== named.digest) return 'the report does not recompute to the digest it carries';
 
-  // "it records that class's suite as passed in full"
+  // "it records that class’s suite as passed in full"
   for (const wanted of claim.classes) {
     const rows = named.results.filter((r) => r.classes.includes(wanted) || r.classes.includes('all'));
     if (rows.length === 0) return `the report records no test for ${wanted}`;
     // An extension test binds only a release that names the extension (§16.1),
-    // and this rule is about the class's own suite.
+    // and this rule is about the class’s own suite.
     const failing = rows.filter((r) => !r.extension && r.outcome !== 'passed');
     if (failing.length > 0) {
       return `${wanted}'s suite did not pass in full: ${failing.length} of ${rows.length} did not pass`;

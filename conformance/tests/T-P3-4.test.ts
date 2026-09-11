@@ -5,10 +5,10 @@
  * Register: NAMED (§11.7)
  * @fixture-kind captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   Every reference narrative's `bundleDigest` equals the digest of the bundle it was produced from; a narrative presented with a bundle of another digest is rejected.
+ *   Every reference narrative’s `bundleDigest` equals the digest of the bundle it was produced from; a narrative presented with a bundle of another digest is rejected.
  *
  * EXPANDED 2026-09-10 over the six captured correspondences.
  *
@@ -23,8 +23,8 @@
  * "rejects" a narrative, because nothing there is ever handed one: `narrate`
  * produces them. §11.7 describes the check a reader makes, so the body performs
  * that check rather than looking for a function that performs it. A body that
- * went hunting for `rejectNarrative()` would be testing the implementation's
- * shape instead of the specification's rule.
+ * went hunting for `rejectNarrative()` would be testing the implementation’s
+ * shape instead of the specification’s rule.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -33,7 +33,7 @@ import { narrate, verify, type EvidenceBundle } from '../../app/src/tools/verify
 import { allFixtures, readerOver } from '../support/fixtures.js';
 
 /**
- * §11.7's digest: SHA-256 over the canonical JSON of the bundle with `digest`
+ * §11.7’s digest: SHA-256 over the canonical JSON of the bundle with `digest`
  * and `observations` absent. Written here from the sentence, not imported, so
  * that this body and `verify.ts` agree by arithmetic rather than by sharing.
  */
@@ -50,9 +50,9 @@ test('T-P3-4 — Public-data replay', async () => {
     assert.ok(narrative !== undefined, `${name}: a narrative was asked for and produced`);
     bundles.push(bundle);
 
-    // The bundle's own `digest` field is that digest, so the narrative's claim
+    // The bundle’s own `digest` field is that digest, so the narrative’s claim
     // is checkable against the bundle by itself.
-    assert.equal(bundle.digest, digestOf(bundle), `${name}: §11.7's digest is over the evidence, observations absent`);
+    assert.equal(bundle.digest, digestOf(bundle), `${name}: §11.7’s digest is over the evidence, observations absent`);
 
     assert.equal(
       narrative.bundleDigest,

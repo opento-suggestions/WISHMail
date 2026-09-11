@@ -5,7 +5,7 @@
  * Register: NAMED (§1.6)
  * @fixture-kind artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   The suite refuses to produce a report when `spec/pins.json` (tracking §1.6 and the §4.1 stamp token / treasury) contains an unfilled pin.
@@ -16,7 +16,7 @@
  * crashed between the two, and this is the one file whose wrongness silently
  * permits a claim.
  *
- * WHY THE GATE IS WORTH MORE THAN THE CONVENIENCE. §1.6's second MUST is that a
+ * WHY THE GATE IS WORTH MORE THAN THE CONVENIENCE. §1.6’s second MUST is that a
  * claim MUST NOT be made against a version whose pins are unfilled, and a pin is
  * the substance of P-9: conformance is to a named revision of a named text, and
  * a null pin means nobody has said which text. The refusal is therefore
@@ -25,7 +25,7 @@
  *
  * THE PREDICATE IS WRITTEN TWICE ON PURPOSE. `app/src/ops/pins.ts` counts the
  * nulls for the tools; the runner counts them again inline before it will import
- * the report writer; and this body counts them a third time from §1.6's sentence.
+ * the report writer; and this body counts them a third time from §1.6’s sentence.
  * Three readings that must agree is how a gate this important is held, and the
  * body checks they do.
  */
@@ -37,7 +37,7 @@ import { test } from 'node:test';
 import { unfilledPins } from '../../app/src/ops/pins.js';
 import { REPO_ROOT } from '../support/fixtures.js';
 
-/** §1.6's sentence, counted: "a value of null is an UNFILLED pin". */
+/** §1.6’s sentence, counted: "a value of null is an UNFILLED pin". */
 function nulls(node: unknown): number {
   if (node === null) return 1;
   if (Array.isArray(node)) return node.reduce<number>((n, v) => n + nulls(v), 0);
@@ -90,7 +90,7 @@ test('T-P9-2 — Strict standards', () => {
       doctor(doctored);
       fs.writeFileSync(path.join(scratch, 'spec', 'pins.json'), JSON.stringify(doctored, null, 2));
 
-      assert.equal(nulls(doctored), 1, `${label} nulled: §1.6's sentence counts one unfilled pin`);
+      assert.equal(nulls(doctored), 1, `${label} nulled: §1.6’s sentence counts one unfilled pin`);
       assert.equal(unfilledPins(scratch), 1, `${label} nulled: the tools count one, and a report is refused`);
     }
   } finally {

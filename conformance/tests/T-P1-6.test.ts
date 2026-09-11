@@ -5,26 +5,26 @@
  * Register: NAMED (§7.2)
  * @fixture-kind altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   An envelope whose chunks' `operator_id` account ≠ its settlement's `from` account is `INBOX_UNBOUND` at `inbox` and unbound at replay.
+ *   An envelope whose chunks' `operator_id` account ≠ its settlement’s `from` account is `INBOX_UNBOUND` at `inbox` and unbound at replay.
  *
  * EXPANDED 2026-09-10 over `checkpoint-one-letter` and, for the multi-chunk
  * case, `checkpoint-two-receipt`.
  *
  * WHY THIS IS A WELD AND NOT A FORMALITY. §7.2 is explicit that "no header field
  * names a sender": the sender is the account that affixed the postage, and the
- * only other thing on the lane that names an account is HCS-10's `operator_id`
+ * only other thing on the lane that names an account is HCS-10’s `operator_id`
  * on each message. So the identity of a sender is the agreement between those
  * two facts, and nothing else. Break the agreement and there is no sender — not
  * a wrong one, none — which is why the answer is `unbound` rather than a
  * mismatch report.
  *
  * IT IS CHECKED PER CHUNK AND NOT ONLY ON CHUNK 0, and the ten-chunk envelope is
- * where that matters. A letter whose first chunk is the sender's and whose sixth
- * is somebody else's is the case this clause exists for: the walk would complete,
- * the slices would concatenate, and the envelope would open — with a stranger's
+ * where that matters. A letter whose first chunk is the sender’s and whose sixth
+ * is somebody else’s is the case this clause exists for: the walk would complete,
+ * the slices would concatenate, and the envelope would open — with a stranger’s
  * bytes inside it — if the weld were checked once at the top.
  */
 import assert from 'node:assert/strict';
@@ -61,7 +61,7 @@ test('T-P1-6 — Binding', async () => {
     const id = 'cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2';
     const pristine = fixture('checkpoint-one-letter');
 
-    // As captured, the two facts agree: the operator_id's account IS the
+    // As captured, the two facts agree: the operator_id’s account IS the
     // account the postage came from.
     const zero = chunksOn(pristine).find((c) => c.chunk['id'] === id && c.chunk['i'] === 0);
     assert.ok(zero !== undefined, 'chunk 0 is on the lane');

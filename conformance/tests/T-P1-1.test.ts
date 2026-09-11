@@ -5,7 +5,7 @@
  * Register: NAMED (§6.5)
  * @fixture-kind altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   An envelope whose header, lane, or resolution proof is altered fails closed at `inbox`, returned `INBOX_UNBOUND`.
@@ -18,17 +18,17 @@
  * arrived on", and its SHA-256 *is* the envelope identifier. So the three things
  * the sketch names are three of those six inputs, and altering any of them makes
  * the rebuild yield a different identifier from the one every chunk carries.
- * There is nothing to check against a list: the check is arithmetic, and P-1's
+ * There is nothing to check against a list: the check is arithmetic, and P-1’s
  * first weld is that it is.
  *
- * "FAILS CLOSED" IS THE PART THAT MATTERS. §6.5's reasons are returned values
+ * "FAILS CLOSED" IS THE PART THAT MATTERS. §6.5’s reasons are returned values
  * and never thrown failures (P-12), so a refusal here is a `Delivery` with
  * `opened: false` — the envelope is described, the reason is named, and no
  * plaintext is produced. A tool that threw would be refusing correctly and
  * reporting wrongly; one that opened would be the defect P-1 exists for.
  *
  * NO KEY IS HELD, AND THAT STRENGTHENS THE TEST RATHER THAN WEAKENING IT. The
- * binding check runs before `inbox` reaches for a key at all (§6.5's order), so
+ * binding check runs before `inbox` reaches for a key at all (§6.5’s order), so
  * a keyless caller sees exactly the refusal a key-holding recipient would. The
  * pristine copy is run first and comes back `INBOX_EPOCH_UNKNOWN` — a statement
  * about the key and not about the binding — which is what makes the three
@@ -41,7 +41,7 @@ import { alterChunk, copy, fixture, readerOver, type Fixture } from '../support/
 
 const FIXTURE = 'checkpoint-one-letter';
 const ENVELOPE = 'cd9dc8f41d3fa8580185652b68c960045d3961b7f83af441dc6e190d093ab0e2';
-/** A2's account — the recipient's own, from the settlement's `from` side's counterpart. */
+/** A2’s account — the recipient’s own, from the settlement’s `from` side’s counterpart. */
 const CALLER = '0.0.10452127';
 
 async function deliveryOf(f: Fixture): Promise<{ opened: boolean; reason?: string; detail?: string }> {
@@ -65,7 +65,7 @@ test('T-P1-1 — Binding', async () => {
 
   const altered: readonly { readonly what: string; readonly make: () => Fixture }[] = [
     {
-      // THE HEADER. `nc` is one of §7.2's six and is a header field, so a
+      // THE HEADER. `nc` is one of §7.2’s six and is a header field, so a
       // different nonce rebuilds to a different identifier. A well-formed
       // nonce is used rather than rubbish, so the refusal is "does not
       // rebuild" and not "will not even build".
@@ -79,7 +79,7 @@ test('T-P1-1 — Binding', async () => {
     {
       // THE LANE. §7.2 builds `lane` from the topic the chunks are ON and not
       // from a header field, which is what makes it a weld: the same bytes read
-      // on a different topic are a different envelope's identifier.
+      // on a different topic are a different envelope’s identifier.
       what: 'the lane — the same chunks read on another topic',
       make: () => {
         const g = copy(pristine);
@@ -91,7 +91,7 @@ test('T-P1-1 — Binding', async () => {
       },
     },
     {
-      // THE RESOLUTION PROOF. Only the proof's HASH enters the AAD (§7.2), so
+      // THE RESOLUTION PROOF. Only the proof’s HASH enters the AAD (§7.2), so
       // a header naming a proof the AAD did not bind is the alteration this
       // clause is about: the envelope claims a resolution it was not sealed to.
       what: 'the resolution proof — a different hash in `hdr.rp.h`',

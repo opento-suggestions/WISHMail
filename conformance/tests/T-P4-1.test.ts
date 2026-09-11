@@ -5,7 +5,7 @@
  * Register: NAMED (§1.4)
  * @fixture-kind captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   The VERIFIER suite passes in an environment with no credentials of any kind: no broker, API key, credit, Hedera account, stamp, or recipient key configured.
@@ -14,13 +14,13 @@
  * process environment emptied.
  *
  * WHY IT IS WRITTEN THIS WAY. The sketch names two things: an environment, and
- * a suite passing in it. The second is the report's own statement about this
+ * a suite passing in it. The second is the report’s own statement about this
  * run and is not something a body can assert about itself without circularity —
  * `conformance/DERIVATION.md` records that reading. The first is exactly
  * testable, and is the substance: §11.1 says "a mirror node is a read interface,
  * not a source … reading through one requires no key, credit, or credential",
  * and §1.4 makes that a property of the VERIFIER class rather than of a
- * deployment's luck.
+ * deployment’s luck.
  *
  * SO THE ENVIRONMENT IS EMPTIED AND NOT MERELY LEFT ALONE. A test run on a
  * machine that happened to have no credentials would prove nothing about a
@@ -104,7 +104,7 @@ test('T-P4-1 — No broker, key, or credit', async () => {
       assert.ok(bundle.correspondence.length > 0, `${name}: and it still read the correspondence`);
     }
 
-    // A claimed profile replays the whole of §9.2's rule from consensus, which
+    // A claimed profile replays the whole of §9.2’s rule from consensus, which
     // is the deepest thing a Verifier does — and it does it with nothing
     // configured too. This is the half of P-4 that a claimless run cannot show.
     const resolved = allFixtures().filter((x) => x.name.endsWith('-resolved'));
@@ -115,7 +115,7 @@ test('T-P4-1 — No broker, key, or credit', async () => {
         assert.equal(
           e.appraisal.resolution.standing,
           'verified',
-          `${name}: §9.2's rule re-runs to a verified resolution with no credential of any kind`,
+          `${name}: §9.2’s rule re-runs to a verified resolution with no credential of any kind`,
         );
       }
     }

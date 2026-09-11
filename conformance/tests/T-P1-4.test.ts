@@ -4,7 +4,7 @@
  * Classes: all.
  * Register: NAMED (§7.2)
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   `spec/vectors/aad.json`: header fields → AAD bytes → `id`; every class recomputes exactly.
@@ -14,7 +14,7 @@
  *
  * WHY THE EXPECTATION FOLLOWS FROM THE TEXT AND NOT FROM THE CODE. §7.2 fixes
  * three things and this test reads all three off the vector rather than off
- * `aad.ts`: the AAD's key names are exactly `{p, v, l, lane, rp, nc}`; its bytes
+ * `aad.ts`: the AAD’s key names are exactly `{p, v, l, lane, rp, nc}`; its bytes
  * are their RFC 8785 canonical JSON, which sorts them `l, lane, nc, p, rp, v`;
  * and its SHA-256 is the envelope identifier. The vector carries `aadBytesUtf8`,
  * `aadBytesHex`, `aadBytesLength` and `id` for each case, so the body checks the
@@ -22,8 +22,8 @@
  * itself, because a vector whose hex and UTF-8 disagree would make any
  * implementation that matched one of them look right.
  *
- * §5.6's other direction is in the same vector and is the same weld read
- * backwards: a reader with chunk 0's `hdr` and the topic the chunk arrived on
+ * §5.6’s other direction is in the same vector and is the same weld read
+ * backwards: a reader with chunk 0’s `hdr` and the topic the chunk arrived on
  * rebuilds the same bytes. That is what `INBOX_UNBOUND`'s header case is
  * (§6.5), so it is checked here where the vector can check it exactly.
  */
@@ -63,12 +63,12 @@ test('T-P1-4 — Binding', () => {
 
     // --- The vector against itself, before anything is compared to it. -------
     const published = Buffer.from(c.aadBytesUtf8, 'utf8');
-    assert.equal(published.toString('hex'), c.aadBytesHex, `${where}: the vector's own hex and UTF-8 disagree`);
-    assert.equal(published.length, c.aadBytesLength, `${where}: the vector's own byte length disagrees`);
+    assert.equal(published.toString('hex'), c.aadBytesHex, `${where}: the vector’s own hex and UTF-8 disagree`);
+    assert.equal(published.length, c.aadBytesLength, `${where}: the vector’s own byte length disagrees`);
     assert.equal(
       createHash('sha256').update(published).digest('hex'),
       c.id,
-      `${where}: the vector's own id is not SHA-256 over its own bytes (§7.2)`,
+      `${where}: the vector’s own id is not SHA-256 over its own bytes (§7.2)`,
     );
 
     // --- §7.2: exactly six key names, and no others (D-127). ----------------
@@ -76,13 +76,13 @@ test('T-P1-4 — Binding', () => {
     assert.deepEqual(
       Object.keys(parsed).sort(),
       ['l', 'lane', 'nc', 'p', 'rp', 'v'],
-      `${where}: §7.2's AAD carries exactly {p, v, l, lane, rp, nc}`,
+      `${where}: §7.2’s AAD carries exactly {p, v, l, lane, rp, nc}`,
     );
     // RFC 8785 sorts by UTF-16 code unit, so the ORDER on the wire is fixed too.
     assert.deepEqual(
       Object.keys(parsed),
       ['l', 'lane', 'nc', 'p', 'rp', 'v'],
-      `${where}: the canonical order of §7.2's six is l, lane, nc, p, rp, v (RFC 8785)`,
+      `${where}: the canonical order of §7.2’s six is l, lane, nc, p, rp, v (RFC 8785)`,
     );
 
     // --- Header fields → AAD bytes → id. ------------------------------------
@@ -95,7 +95,7 @@ test('T-P1-4 — Binding', () => {
     assert.equal(built.bytes.toString('utf8'), c.aadBytesUtf8, `${where}: the AAD bytes are the published bytes`);
     assert.equal(built.id, c.id, `${where}: the identifier is SHA-256 over them (§7.2)`);
 
-    // --- §5.6's rebuild, from `hdr` and the topic the chunk arrived on. ------
+    // --- §5.6’s rebuild, from `hdr` and the topic the chunk arrived on. ------
     const rebuilt = rebuildAad(c.hdr, c.lane, vectors.wireVersion);
     assert.equal(rebuilt.bytes.toString('utf8'), c.aadBytesUtf8, `${where}: the rebuild yields the same bytes (§5.6)`);
     assert.equal(rebuilt.id, c.id, `${where}: and so binds the header to the id every chunk carries`);

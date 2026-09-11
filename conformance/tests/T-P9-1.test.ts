@@ -5,18 +5,18 @@
  * Register: NAMED (§1.6)
  * @fixture-kind artifact, captured
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   The release's declared pins equal §1.6's; the suite's HCS-10 fixtures are generated from the pinned revision.
+ *   The release’s declared pins equal §1.6’s; the suite’s HCS-10 fixtures are generated from the pinned revision.
  *
- * EXPANDED 2026-09-10 against §1.6's own table and the six captures.
+ * EXPANDED 2026-09-10 against §1.6’s own table and the six captures.
  *
  * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. §1.6 is the normative table and
  * `spec/pins.json` says of itself that it is the machine-readable form of it.
- * Two copies of one fact is a defect waiting to happen, so the specification's
+ * Two copies of one fact is a defect waiting to happen, so the specification’s
  * own text is parsed here and the JSON is checked against it BOTH WAYS — a pin
- * in one and not the other is exactly the divergence §1.6's MUST forbids: "a
+ * in one and not the other is exactly the divergence §1.6’s MUST forbids: "a
  * release MUST declare the revision of each pinned standard it was tested
  * against, and those revisions MUST equal the pins of the specification version
  * it claims."
@@ -24,8 +24,8 @@
  * THE SECOND CLAUSE, AND WHAT IT CAN HONESTLY MEAN HERE. The fixtures are not
  * generated: they are captured from a deployment built against the pinned
  * revision (`sdk/capture.cli.ts`). So what is checkable is that every HCS-10
- * shape in them is the pinned revision's shape — the protocol tag, the operation
- * names, the topic-memo forms of §1.6's HCS-10 at blob
+ * shape in them is the pinned revision’s shape — the protocol tag, the operation
+ * names, the topic-memo forms of §1.6’s HCS-10 at blob
  * `0cb5d2eb6b98e12e4b44fa8c4fea6e10937b615a`, as ledger §H records them with
  * file:line. A fixture carrying an operation the pin does not define, or a memo
  * in a form the pin does not give, would not have come from that revision.
@@ -37,7 +37,7 @@ import { test } from 'node:test';
 import { connectionTopicMemoOf, inboundTopicMemoOf } from '../../app/src/ops/hcs10.js';
 import { REPO_ROOT, allFixtures, operationsOn, pins } from '../support/fixtures.js';
 
-/** Every `<path> · <git blob>` pair §1.6's table names. */
+/** Every `<path> · <git blob>` pair §1.6’s table names. */
 function pinsInSpec(): Map<string, string> {
   const spec = fs.readFileSync(path.join(REPO_ROOT, 'spec', 'WISHMAIL_SPEC_v0_5.md'), 'utf8');
   const from = spec.indexOf('### 1.6 Pinned standards revisions');
@@ -62,9 +62,9 @@ const PINNED_OPERATIONS = ['connection_request', 'connection_created', 'message'
 test('T-P9-1 — Strict standards', () => {
   const declared = pins();
 
-  // --- The release's declared pins equal §1.6's, both ways. ---------------
+  // --- The release’s declared pins equal §1.6’s, both ways. ---------------
   const inSpec = pinsInSpec();
-  assert.ok(inSpec.size >= 10, `§1.6's table names ${inSpec.size} pinned files`);
+  assert.ok(inSpec.size >= 10, `§1.6’s table names ${inSpec.size} pinned files`);
 
   const inJson = new Map<string, string>();
   for (const group of ['standards', 'hips'] as const) {
@@ -87,13 +87,13 @@ test('T-P9-1 — Strict standards', () => {
   const spec = fs.readFileSync(path.join(REPO_ROOT, 'spec', 'WISHMAIL_SPEC_v0_5.md'), 'utf8');
   const standards = declared['standards'] as Record<string, { commit?: string }>;
   const hcs10 = standards['hcs-10'];
-  assert.ok(hcs10?.commit !== undefined, 'spec/pins.json records HCS-10`s commit');
+  assert.ok(hcs10?.commit !== undefined, 'spec/pins.json records HCS-10’s commit');
   assert.ok(
     spec.includes(hcs10.commit),
     `§1.6 names the commit ${hcs10.commit} spec/pins.json records for the HCS standards`,
   );
 
-  // --- The fixtures carry the pinned revision's shapes. -------------------
+  // --- The fixtures carry the pinned revision’s shapes. -------------------
   let operations = 0;
   for (const { name, f } of allFixtures()) {
     for (const topicId of Object.keys(f.topics)) {
@@ -108,18 +108,18 @@ test('T-P9-1 — Strict standards', () => {
       }
     }
 
-    // The topic-memo forms. §7.1's lane is HCS-10's connection form and the
+    // The topic-memo forms. §7.1’s lane is HCS-10’s connection form and the
     // doorbell is its inbound form, and both parse under the pinned grammar.
     const laneInfo = f.topicInfo[f.lane];
-    assert.ok(laneInfo !== undefined && laneInfo !== null, `${name}: the lane's record was captured`);
+    assert.ok(laneInfo !== undefined && laneInfo !== null, `${name}: the lane’s record was captured`);
     const laneMemo = connectionTopicMemoOf(laneInfo.memo);
-    assert.ok(laneMemo !== null, `${name}: the lane memo ${JSON.stringify(laneInfo.memo)} is HCS-10's connection form`);
+    assert.ok(laneMemo !== null, `${name}: the lane memo ${JSON.stringify(laneInfo.memo)} is HCS-10’s connection form`);
 
     const doorbell = f.topicInfo[laneMemo.doorbell];
     if (doorbell !== undefined && doorbell !== null) {
       assert.ok(
         inboundTopicMemoOf(doorbell.memo) !== null,
-        `${name}: the doorbell memo ${JSON.stringify(doorbell.memo)} is HCS-10's inbound form`,
+        `${name}: the doorbell memo ${JSON.stringify(doorbell.memo)} is HCS-10’s inbound form`,
       );
     }
   }

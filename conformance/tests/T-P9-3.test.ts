@@ -5,15 +5,15 @@
  * Register: NAMED (§5.11, §7.4)
  * @fixture-kind captured, artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   Every fixture chunk's `schemaRef` is `hcs://13/<topicId>#<seq>` and resolves through HCS-13 (pinned revision) to a schema whose digest equals the release's shipped Chunk schema; every fixture chunk validates; the Chunk schema fixes `nx` top-level (required on all but the last chunk, forbidden on the last and inside `hdr`) and `h` inside `hdr` only.
+ *   Every fixture chunk’s `schemaRef` is `hcs://13/<topicId>#<seq>` and resolves through HCS-13 (pinned revision) to a schema whose digest equals the release’s shipped Chunk schema; every fixture chunk validates; the Chunk schema fixes `nx` top-level (required on all but the last chunk, forbidden on the last and inside `hdr`) and `h` inside `hdr` only.
  *
- * EXPANDED 2026-09-10. The whole chain is inside the captures: a chunk's `s` is
+ * EXPANDED 2026-09-10. The whole chain is inside the captures: a chunk’s `s` is
  * an HCS-13 locator naming the HCS-2 registry topic `0.0.10448509` at a sequence
- * number, that entry's `t_id` names the HCS-1 file topic `0.0.10448507`, and the
- * file topic's memo is the digest of what its chunks decompress to. So the
+ * number, that entry’s `t_id` names the HCS-1 file topic `0.0.10448507`, and the
+ * file topic’s memo is the digest of what its chunks decompress to. So the
  * resolution runs with no network, which is what P-4 asks of it.
  *
  * WHY THE EXPECTATION FOLLOWS FROM THE TEXT. §5.11 makes `schemaRef` a
@@ -23,7 +23,7 @@
  * release ships would mean the release validates against one document and the
  * wire declares another — which is the freeze defect §1.7 exists to prevent.
  *
- * THE LAST CLAUSE IS HELD HERE BECAUSE JSON SCHEMA CANNOT HOLD IT. The schema's
+ * THE LAST CLAUSE IS HELD HERE BECAUSE JSON SCHEMA CANNOT HOLD IT. The schema’s
  * own `$comment` says so: `nx` is required on every chunk of index i < n-1 and
  * forbidden on the chunk of index n-1, and JSON Schema cannot compare `i`
  * against `n`. So the ten-chunk envelope is where that clause is actually tried.
@@ -51,7 +51,7 @@ test('T-P9-3 — Strict standards', () => {
   let resolutions = 0;
 
   for (const { name, f } of allFixtures()) {
-    // Group this lane's chunks by envelope, so `n` and the last index are known.
+    // Group this lane’s chunks by envelope, so `n` and the last index are known.
     const byEnvelope = new Map<string, Record<string, unknown>[]>();
     for (const { chunk } of chunksOn(f)) {
       const id = chunk['id'] as string;
@@ -69,7 +69,7 @@ test('T-P9-3 — Strict standards', () => {
         const at = `${where}#${i}`;
         chunksSeen += 1;
 
-        // --- `schemaRef` is HCS-13's version-pinned locator. ---------------
+        // --- `schemaRef` is HCS-13’s version-pinned locator. ---------------
         const ref = chunk['s'];
         assert.equal(typeof ref, 'string', `${at}: the chunk names a schemaRef`);
         const m = SCHEMA_REF.exec(ref as string);
@@ -83,13 +83,13 @@ test('T-P9-3 — Strict standards', () => {
         );
         assert.ok(entry !== undefined, `${at}: the HCS-2 registry holds an entry at #${String(sequence)}`);
         const body = JSON.parse(entry.contents) as Record<string, unknown>;
-        assert.equal(body['op'], 'register', `${at}: HCS-2's register operation (pinned revision)`);
+        assert.equal(body['op'], 'register', `${at}: HCS-2’s register operation (pinned revision)`);
         const fileTopic = body['t_id'];
         assert.equal(typeof fileTopic, 'string', `${at}: naming the HCS-1 file topic the schema lives on`);
 
         // --- To a schema whose digest equals the shipped one. --------------
         const memo = f.topicInfo[fileTopic as string]?.memo;
-        assert.equal(typeof memo, 'string', `${at}: the capture holds the file topic's own record`);
+        assert.equal(typeof memo, 'string', `${at}: the capture holds the file topic’s own record`);
         const parts = (f.topics[fileTopic as string] ?? []).map((msg) => JSON.parse(msg.contents) as { o: number; c: string });
         const read = readHcs1(memo as string, parts);
         const resolvedDigest = createHash('sha256').update(read.plain).digest('hex');

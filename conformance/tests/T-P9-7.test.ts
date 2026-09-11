@@ -4,7 +4,7 @@
  * Classes: CORRESPONDENT, POSTMASTER.
  * Register: NAMED (§7.4)
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   Every fixture message — the whole HCS-10 `message` operation as UTF-8 JSON — is at most `CHUNK_WIRE_MAX` = 1000 bytes, carries no `chunkInfo`, and its `data` parses as a Chunk.
@@ -19,7 +19,7 @@
  * capture holds the operation exactly as it was submitted, so the measurement
  * here is of the bytes that were on the wire and not of a reconstruction.
  *
- * `chunkInfo` is HCS-10's own transport-layer chunking. §7.4 forbids it because
+ * `chunkInfo` is HCS-10’s own transport-layer chunking. §7.4 forbids it because
  * WISHMail does its own chunking at the envelope layer, and a message carrying
  * both would be chunked twice with two different chains.
  */
@@ -50,12 +50,12 @@ test('T-P9-7 — Strict standards', () => {
       assert.equal(
         Object.prototype.hasOwnProperty.call(op, 'chunkInfo'),
         false,
-        `${where}: §7.4 forbids HCS-10's own chunkInfo — the envelope layer does the chunking`,
+        `${where}: §7.4 forbids HCS-10’s own chunkInfo — the envelope layer does the chunking`,
       );
 
-      // `data` parses as a Chunk: §5.11's shape, read as the wire carries it.
+      // `data` parses as a Chunk: §5.11’s shape, read as the wire carries it.
       const data = op['data'];
-      assert.equal(typeof data, 'string', `${where}: a message operation's data is a JSON string (§7.4)`);
+      assert.equal(typeof data, 'string', `${where}: a message operation’s data is a JSON string (§7.4)`);
       const chunk = JSON.parse(data as string) as Record<string, unknown>;
       assert.equal(typeof chunk['id'], 'string', `${where}: the chunk names its envelope`);
       assert.equal(typeof chunk['i'], 'number', `${where}: the chunk names its index`);
@@ -71,7 +71,7 @@ test('T-P9-7 — Strict standards', () => {
     assert.equal(
       chunksOn(f).length,
       messageOps.length,
-      `${name}: every message operation's data parsed as a Chunk`,
+      `${name}: every message operation’s data parsed as a Chunk`,
     );
   }
 

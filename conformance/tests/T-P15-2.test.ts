@@ -5,7 +5,7 @@
  * Register: NAMED (§1.5, §15.4)
  * @fixture-kind artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   `LIMITATIONS.md` is present, carries a section for each of L-1 – L-14 in order, and every claim that a limitation does not apply names a test the suite ran and passed.
@@ -17,12 +17,12 @@
  * numbers the limitations, and a reader checking whether a deployment addresses
  * L-7 should find L-7 where L-7 belongs rather than hunting. The third clause is
  * the one with teeth — a limitation that a release says does not apply to it is
- * a claim, and §1.5's whole posture is that a claim names the test that shows
+ * a claim, and §1.5’s whole posture is that a claim names the test that shows
  * it. A document that could say "does not apply" with nothing behind it would
  * be the one place in this specification where an assertion costs nothing.
  *
  * THE THIRD CLAUSE IS CURRENTLY VACUOUS, AND THE BODY SAYS SO RATHER THAN
- * HIDING IT. This release's LIMITATIONS makes no "does not apply" claim about
+ * HIDING IT. This release’s LIMITATIONS makes no "does not apply" claim about
  * any of the fourteen: every section states how the limitation applies. So the
  * clause holds because there is nothing for it to catch — which is a true pass
  * and a weak one, and the assertion below names the count so that a future
@@ -35,7 +35,7 @@ import { test } from 'node:test';
 import { REPO_ROOT } from '../support/fixtures.js';
 import { registerRows } from '../register.mjs';
 
-/** §15.3's fourteen, which §15.4's document carries one section for each of. */
+/** §15.3’s fourteen, which §15.4’s document carries one section for each of. */
 const LIMITATIONS = Array.from({ length: 14 }, (_, i) => `L-${i + 1}`);
 
 test('T-P15-2 — Claims are scoped', () => {
@@ -96,7 +96,7 @@ test('T-P15-2 — Claims are scoped', () => {
       // "and passed": a test the suite ran and passed is what the report says,
       // and the report is written after this body runs. What is asserted here is
       // that the named test is one the suite RUNS — the passing half is
-      // T-P15-3's rule over the report, and the two are deliberately not one.
+      // T-P15-3’s rule over the report, and the two are deliberately not one.
     }
   }
 

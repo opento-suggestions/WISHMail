@@ -6,14 +6,14 @@
  * @fixture-kind artifact
  * @disposition partial — the T-P1-5 clause needs a second implementation
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   `spec/pins.json` records the minor version's registered schema digests and wire strings; a release claiming any patch of that minor version ships `spec/schemas/` with equal digests and passes T-P1-4 / T-P1-5 against the minor version's vectors.
+ *   `spec/pins.json` records the minor version’s registered schema digests and wire strings; a release claiming any patch of that minor version ships `spec/schemas/` with equal digests and passes T-P1-4 / T-P1-5 against the minor version’s vectors.
  *
  * EXPANDED 2026-09-10 — **PARTIAL, and it fails on purpose at the end.** Every
  * clause but one is discharged below. The last, "passes T-P1-5", needs an
- * implementation of §7.2–§7.3 that does not share the reference's code path, and
+ * implementation of §7.2–§7.3 that does not share the reference’s code path, and
  * this deployment has one implementation. `conformance/DERIVATION.md` records the
  * rule this follows: a body covers its whole sketch or it says which clause it
  * could not reach and fails, because a partial body that passed would tell the
@@ -23,9 +23,9 @@
  * `major.minor` and nothing finer, and that the schemas registered for a minor
  * version are its schemas. Everything that follows from that is here: a patch
  * may not move a wire string, may not move a registered digest, and must still
- * satisfy the minor version's vectors. D-173 is the worked example — it moved the
- * evidence bundle's `spec` from the patch to the minor version precisely because
- * a digest that varied with the reader's patch made §11.7's MUST satisfiable
+ * satisfy the minor version’s vectors. D-173 is the worked example — it moved the
+ * evidence bundle’s `spec` from the patch to the minor version precisely because
+ * a digest that varied with the reader’s patch made §11.7’s MUST satisfiable
  * only by accident.
  */
 import assert from 'node:assert/strict';
@@ -59,11 +59,11 @@ test('T-P9-9 — Strict standards', () => {
 
   // --- The wire strings, which a patch may never move. --------------------
   const wire = declared['wireStrings'] as Record<string, string>;
-  assert.equal(wire['aadProtocol'], AAD_PROTOCOL, '§7.2`s protocol string is the one pinned for this minor version');
-  assert.equal(wire['aadVersion'], AAD_VERSION, '§7.2`s version string carries major.minor and nothing finer (§1.7)');
+  assert.equal(wire['aadProtocol'], AAD_PROTOCOL, '§7.2’s protocol string is the one pinned for this minor version');
+  assert.equal(wire['aadVersion'], AAD_VERSION, '§7.2’s version string carries major.minor and nothing finer (§1.7)');
   assert.equal(wire['aadVersion'], minor, 'and it IS the minor version');
-  assert.equal(wire['hpkeInfo'], `wishmail/${String(minor)}/seal`, '§7.3`s HPKE info string');
-  assert.equal(wire['schemaRefMinorVersion'], minor, '§5.11`s schemaRef is pinned to the minor version');
+  assert.equal(wire['hpkeInfo'], `wishmail/${String(minor)}/seal`, '§7.3’s HPKE info string');
+  assert.equal(wire['schemaRefMinorVersion'], minor, '§5.11’s schemaRef is pinned to the minor version');
 
   // Nothing on the wire carries the patch. This is the sentence §1.7 turns on
   // and the one D-173 restored to the evidence bundle.
@@ -87,11 +87,11 @@ test('T-P9-9 — Strict standards', () => {
     );
   }
 
-  // --- "passes T-P1-4 against the minor version's vectors". ----------------
+  // --- "passes T-P1-4 against the minor version’s vectors". ----------------
   const vectors = JSON.parse(
     fs.readFileSync(path.join(REPO_ROOT, 'spec', 'vectors', 'aad.json'), 'utf8'),
   ) as { wireVersion: string; cases: readonly AadCase[] };
-  assert.equal(vectors.wireVersion, minor, 'the vectors are the minor version`s');
+  assert.equal(vectors.wireVersion, minor, 'the vectors are the minor version’s');
 
   for (const c of vectors.cases) {
     const built = buildAad({
@@ -100,7 +100,7 @@ test('T-P9-9 — Strict standards', () => {
       resolutionProofHash: c.header.rp,
       nonce: c.header.nc,
     });
-    assert.equal(built.bytes.toString('utf8'), c.aadBytesUtf8, `${c.name}: this patch recomputes the vector's bytes`);
+    assert.equal(built.bytes.toString('utf8'), c.aadBytesUtf8, `${c.name}: this patch recomputes the vector’s bytes`);
     assert.equal(built.id, c.id, `${c.name}: and its identifier`);
     assert.equal(rebuildAad(c.hdr, c.lane, vectors.wireVersion).id, c.id, `${c.name}: and the rebuild (§5.6)`);
   }
@@ -109,13 +109,13 @@ test('T-P9-9 — Strict standards', () => {
     spec: string;
     cases: readonly unknown[];
   };
-  assert.ok(seal.cases.length > 0, '§7.3`s vectors exist for the minor version');
+  assert.ok(seal.cases.length > 0, '§7.3’s vectors exist for the minor version');
 
   // --- THE CLAUSE THIS BODY CANNOT REACH. ---------------------------------
   //
   // T-P1-5 is "the reference seals and an INDEPENDENT implementation opens, and
   // the reverse". Independent means an implementation that does not share the
-  // reference's code path — STATUS §5 records the intent, a second minimal
+  // reference’s code path — STATUS §5 records the intent, a second minimal
   // implementation of §7.2–§7.3 in another language inside `conformance/`, and
   // `spec/vectors/README.md` records that it does not exist. Running the
   // reference against its own vectors would prove that the reference agrees with

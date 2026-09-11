@@ -5,7 +5,7 @@
  * Register: NAMED (§6.5)
  * @fixture-kind altered
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   An envelope whose settlement memo ≠ its `id` fails closed at `inbox`, returned `INBOX_UNSTAMPED`.
@@ -16,7 +16,7 @@
  * `wishmail:<envelope id>`, and that string is the only thing that ties a
  * transfer of stamps to the letter it paid for. The transfer itself says
  * nothing: it moves a token from an account to the treasury, and a thousand
- * letters could point at it. The memo is what makes the postage THIS letter's,
+ * letters could point at it. The memo is what makes the postage THIS letter’s,
  * and a memo naming another envelope is postage for another envelope — which is
  * not a defect in the transfer and not a forgery, just postage that is not here.
  *
@@ -29,7 +29,7 @@
  *
  * The second alteration is the same fact from the other side: the settlement
  * reference in the header pointing at nothing. §11.2 reaches a settlement only
- * through a chunk's `hdr.st`, so a reference to a transfer consensus does not
+ * through a chunk’s `hdr.st`, so a reference to a transfer consensus does not
  * hold is a letter with no postage at all.
  */
 import assert from 'node:assert/strict';

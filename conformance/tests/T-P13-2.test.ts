@@ -5,28 +5,28 @@
  * Register: NAMED (§3.3)
  * @fixture-kind artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
- *   No tool input, schema field, or service endpoint carries private-key material; reference SDK key generation executes in the agent's process.
+ *   No tool input, schema field, or service endpoint carries private-key material; reference SDK key generation executes in the agent’s process.
  *
- * EXPANDED 2026-09-10 over §18.5's fourteen schemas, §6.1's six tool surfaces,
- * the two §4.6 affordance schemas, and the SDK's key generation.
+ * EXPANDED 2026-09-10 over §18.5’s fourteen schemas, §6.1’s six tool surfaces,
+ * the two §4.6 affordance schemas, and the SDK’s key generation.
  *
  * WHY THE SCHEMAS ARE WHERE THIS IS LOOKED FOR. A schema field is where a key
  * would first appear, and it is the only place it could appear *legitimately* —
  * everything else is an implementation detail that a later implementation is
  * free to change, while a declared field is a promise to every implementation
- * that there is a place to put one. §3.3's sentence is that there is no such
- * place: "keys are born in the agent's process", and a tool input that could
+ * that there is a place to put one. §3.3’s sentence is that there is no such
+ * place: "keys are born in the agent’s process", and a tool input that could
  * carry one would make that a convention rather than a constraint.
  *
  * THE SECOND CLAUSE IS THE SAME SENTENCE FROM THE OTHER END. If generation
- * happened anywhere but the agent's process, a key would have to travel to
+ * happened anywhere but the agent’s process, a key would have to travel to
  * reach it, and the first clause would be false. So the body checks that the
- * SDK generates in-process — one module, called on first run into the agent's
- * own keystore — and that nothing in the counter's or the Postmaster's surface
- * generates a key on an agent's behalf.
+ * SDK generates in-process — one module, called on first run into the agent’s
+ * own keystore — and that nothing in the counter’s or the Postmaster’s surface
+ * generates a key on an agent’s behalf.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -117,16 +117,16 @@ test('T-P13-2 — Keys stay home', () => {
     'the counter names no private-key field: what crosses that wire is a public key and a signature',
   );
 
-  // --- Key generation executes in the agent's process. ---------------------
+  // --- Key generation executes in the agent’s process. ---------------------
   //
-  // One module generates, into the agent's own keystore, and it is the same one
-  // module P-13's gate permits to name a key field at all (T-P13-1).
+  // One module generates, into the agent’s own keystore, and it is the same one
+  // module P-13’s gate permits to name a key field at all (T-P13-1).
   const generators = gitGrep('generateED25519|generateECDSA|PrivateKey\\.generate|generateKeyPairSync', 'app/sdk');
   assert.ok(generators.length > 0, 'the reference SDK generates keys');
   const generatingModules = new Set(generators.map((line) => line.slice(0, line.indexOf(':'))));
 
   // An offline court that stands up a modelled world generates throwaway keys
-  // inside its own run and is not the SDK's key path — probes are disposable
+  // inside its own run and is not the SDK’s key path — probes are disposable
   // and their keys are born in the run and discarded with it (CLAUDE.md §11).
   // It is excluded by name rather than by silence, so a `.check.ts` is the only
   // thing that can be excluded and a new module cannot hide behind the same word.
@@ -134,13 +134,13 @@ test('T-P13-2 — Keys stay home', () => {
   assert.deepEqual(
     shipped,
     ['app/sdk/keystore.ts'],
-    "generation happens in the agent's own keystore module and nowhere else (§3.3, D-165)",
+    "generation happens in the agent’s own keystore module and nowhere else (§3.3, D-165)",
   );
   for (const court of [...generatingModules].filter((m) => m.endsWith('.check.ts'))) {
     assert.match(court, /^app\/sdk\/[a-z0-9.-]+\.check\.ts$/, `${court} is an offline court, not a shipped path`);
   }
 
-  // And the Postmaster generates no key on an agent's behalf: if it did, the
+  // And the Postmaster generates no key on an agent’s behalf: if it did, the
   // key would have to travel to the agent, and the first clause would be false.
   const postmasterGenerators = gitGrep('generateED25519|generateECDSA|PrivateKey\\.generate', 'app/src/counter')
     .map((line) => line.slice(0, line.indexOf(':')))

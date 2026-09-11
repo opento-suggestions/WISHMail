@@ -5,13 +5,13 @@
  * Register: NAMED (§6.1)
  * @fixture-kind artifact
  *
- * §A's sketch, verbatim — the scope of this test, which is not widened without
+ * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   Tool schemas served by every transport in the release are identical after canonicalization.
  *
  * EXPANDED 2026-09-10 over the two MCP transports this release ships: the
- * Postmaster's server (`app/src/mcp/server.ts`) and the Correspondent's
+ * Postmaster’s server (`app/src/mcp/server.ts`) and the Correspondent’s
  * (`app/sdk/server.ts`).
  *
  * WHY THIS MATTERS AND WHAT IT IS GUARDING. §6.1 defines the surface once. A
@@ -22,11 +22,11 @@
  * comparison exact rather than approximate: two schemas that differ only in key
  * order are the same schema, and two that differ in anything else are not.
  *
- * WHAT THIS BODY COMPARES, STATED PLAINLY. The Postmaster's transport is asked
- * for its actual served payload, `toolList()`. The Correspondent's list is built
+ * WHAT THIS BODY COMPARES, STATED PLAINLY. The Postmaster’s transport is asked
+ * for its actual served payload, `toolList()`. The Correspondent’s list is built
  * inside `build()`, which needs a live session box, so what is compared on that
  * side is its source — `six()` from `app/sdk/tools.ts` — put through the same
- * `bundled()` the Correspondent's handler applies to it at `sdk/server.ts:151-159`.
+ * `bundled()` the Correspondent’s handler applies to it at `sdk/server.ts:151-159`.
  * That is one step short of asking the running server, and the step is named
  * here rather than glossed.
  *
@@ -70,7 +70,7 @@ test('T-P15-4 — Claims are scoped', () => {
   assert.deepEqual(
     [...postmaster.keys()].sort(),
     [...TOOL_NAMES].sort(),
-    'the Postmaster transport serves exactly §6.1`s six',
+    'the Postmaster transport serves exactly §6.1’s six',
   );
   assert.deepEqual(
     [...correspondent.keys()].sort(),
@@ -91,7 +91,7 @@ test('T-P15-4 — Claims are scoped', () => {
   assert.equal(
     canonical(six().map((t) => ({ name: t.name, inputSchema: t.inputSchema, outputSchema: t.outputSchema }))),
     canonical(tools().map((t) => ({ name: t.name, inputSchema: t.inputSchema, outputSchema: t.outputSchema }))),
-    "the Correspondent reads §6.1's own table rather than restating it",
+    "the Correspondent reads §6.1’s own table rather than restating it",
   );
 
   // --- The §4.6 affordances are NOT among the six, and say so. ------------
@@ -104,7 +104,7 @@ test('T-P15-4 — Claims are scoped', () => {
     assert.equal(
       (TOOL_NAMES as readonly string[]).includes(affordance.name),
       false,
-      `${affordance.name} is a §4.6 affordance and not one of §6.1's six`,
+      `${affordance.name} is a §4.6 affordance and not one of §6.1’s six`,
     );
     assert.equal(
       postmaster.has(affordance.name),
