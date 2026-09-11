@@ -23,7 +23,7 @@ implementation agrees with itself, which nobody doubted.
 | **altered** | A deliberately altered copy of captured bytes, with the alteration named in the body. | No |
 | **reconstructed** | A §5 or §6.5 object rebuilt from captured bytes where the capture cannot itself produce it — because producing it needs a key the capture deliberately does not carry. Used once (T-P1-9). | No, but flagged |
 | **artifact** | A repository file the sketch itself names: `spec/vectors/*.json`, `spec/schemas/`, `spec/pins.json`, `LIMITATIONS.md`, `app/src/release.ts`, the tool-schema tables, the report. | No — the sketch names the file |
-| **model** | The modelled ledger, `app/src/tools/memory.ts`. | **It was open when this was written; §E records the ruling** |
+| **model** | The modelled ledger, `app/src/tools/memory.ts`, stood up by `conformance/support/world.ts`. | Ruled 2026-09-11; §E carries it, §F what it reached |
 | **none** | Nothing reaches the sketch. The row is not expanded and the reason is named. | — |
 
 **`model` was the open question when section A was written**, so no row below it is expanded against the
@@ -427,3 +427,69 @@ does not replay its own resolution — `InboxContext` carries a key map and no c
 answers for an unknown epoch is `INBOX_EPOCH_UNKNOWN` (§6.5), and for a *known* epoch that the coordinates
 do not name, it opens. Either §6.5 owes the recipient a resolution of its own address, or T-P1-10's first
 clause belongs to the Verifier alone. A §G question, raised rather than coded around.
+
+---
+
+## F. WHERE IT LANDED, 2026-09-11 — the harness, after the fixes and the model tranche
+
+```
+$ npm run conformance
+  register 87 · files 87 present · passed 44 · failed 43
+  reportDigest 51453eea7d11dee8a5cfa71b84de826682d8283c543be48ec65c95625daeb6ec
+```
+
+`passed 0` on 2026-09-10 morning; `passed 30` that night; **44** now.
+
+| | Rows |
+|---|---|
+| Registered | 87 |
+| **Expanded** | **53** — 44 passing, 9 failing on a named clause |
+| Not expanded | 34 — each with its reason, every one still throwing `NOT EXPANDED` |
+
+**By fixture kind** (a row may carry more than one): altered 27 · captured 22 · artifact 12 · **model 9** ·
+reconstructed 1.
+
+**By class**, non-extension rows: VERIFIER 31/45 · CORRESPONDENT 24/41 · RECIPIENT 23/34 · POSTMASTER 20/37.
+No class passes in full, so `RELEASE.classes` and `RELEASE.profiles` stay empty (§1.5, T-P15-3).
+
+### The fourteen rows that flipped, and why
+
+Eleven were **BUILD findings fixed in code**, each proved by the body that found it: T-P6-7, T-P12-2 and T-P9-11
+(§11.5's reason tables, and a tool failure where the table has a rung); T-P3-3 and the conflicting-chunk case of
+T-P3-2 (§8.5's fourth exception class); T-P1-3 (§6.5's fifth reason); and T-P7-2's ordering half ("earlier" decided
+by a hex sort). One was a **SPEC ruling**: T-P6-1, which could not be expanded at all while §A's sketch and §11.5's
+table disagreed, and which D-177 settled. The rest were **the model tranche**: T-P7-1, T-P7-2, T-P7-3, T-P10-1,
+T-P16-2, T-P2-1, T-P12-3 and T-P14-1, each running its behaviour clause against `conformance/support/world.ts`.
+
+### The nine that still fail, and what each waits on
+
+| Test | Waits on |
+|---|---|
+| T-P1-10 | §G-28 — §A's `inbox` clause asks a recipient to replay its own resolution, which §6.5 gives to nobody |
+| T-P1-11 | An opened envelope with a foreign chunk landing first: opening needs the recipient's key, and the clause is about what happens *after* it opens |
+| T-P10-2 | A BUILD gap **not in tonight's list and not ruled**: `laneRefusal` does not walk the lane's birth, so discovery offers a lane that binding refuses |
+| T-P11-1 | The model has one token — `MemoryLedger.transfer` takes no token argument, so a settlement in another one cannot be expressed honestly |
+| T-P12-5 | A captured first contact that timed out and was answered late; every gate was answered inside its window |
+| T-P3-2 | §G-29 — the unrooted entry and the duplicate, both 0.6 under §1.7 |
+| T-P6-2 | `dns` and `nanda`, deferred from the letter path by MVP scoping |
+| T-P7-4 | A ledger that refuses a fee-less request and a provisioning that fails — network refusals the model does not express |
+| T-P9-9 | T-P1-5, which needs a second implementation of §7.2–§7.3 |
+
+### What the model is permitted to do, as it was ruled and as it is used
+
+RECORD (Sonic, 2026-09-11): permitted for a clause whose sketch is **behaviour** — a refusal, an ordering, a window,
+a price computation — in any class; refused for any clause whose claim is **replay of consensus**. A row with both
+halves runs the model for the behaviour clause and is an honest partial for the replay clause. Every model-backed
+body is marked `model` in the report and counts toward no claim.
+
+Nine rows use it and eight pass. The ninth, T-P12-5, is the ruling working: its CORRESPONDENT half is behaviour and
+holds in full, and its VERIFIER half is replay, so the model is refused it and the row stays partial.
+
+**Two rows the model was offered and could not honestly take**, which is the other half of the same discipline:
+T-P11-1 (one token) and T-P7-4 (a network that refuses). Both say so in the body rather than approximating.
+
+### Not moved, and checked at every step
+
+`check:captured` and `check:receipt` pass byte-identically through all of it — `8d30dfdc…`, `00229e6f…`,
+`1c4359e5…`, `34b314c4…` and `473cba1b…` are what they were. No captured letter reaches any branch that was fixed,
+which is why that was the right acceptance test to be given.
