@@ -5218,7 +5218,7 @@ the servers are stopped and restarted with `--live`, and their banners say so wi
 It runs under HEAD at the time, with the spec at `v0.5.13`, twenty-two `check:*` green, `typecheck` and `p13:check`
 green, and the conformance report at 44 passing with digest `51453eea…` unmoved through every change of the day.
 
-  **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE ZERO — [ AUTHORIZED — Sonic, 2026-09-11: "Proceed Gate Zero." ]**
 
 ## GATE ZERO — the roles as ruled, the pre-flight, and what GREEN is. Written 2026-09-11, before any signature
 
@@ -5614,7 +5614,54 @@ where a reader is looking.
 - **`generate_mailbox` and `register_agent` are not called in pre-flight.**
 
 
-  **GATE ZERO — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE ZERO — [ AUTHORIZED — Sonic, 2026-09-11: "Proceed Gate Zero." ]**
+
+### 10. THE BEFORE-STATE, read from the mirror at the fill-in — 2026-09-11
+
+**Read after Sonic's word and before the counter came up, so it is the state the run starts from.** Every line is a
+mirror read; nothing here signed anything. It is written down because **a receipt cannot show it** (§6 above), and
+because the arithmetic in §2 is only checkable against a before.
+
+```
+  C1OPERATOR  0.0.10450879   414.99071098 ℏ   $POSTAGE 1   maxAutoAssoc -1   deleted false
+  C2OPERATOR  0.0.10450880   408.21468299 ℏ   $POSTAGE 0   maxAutoAssoc -1   deleted false
+  treasury    0.0.10426205    20.00000000 ℏ   $POSTAGE 9,961
+  Postmaster payer 0.0.8641261  3255.78660053 ℏ
+  Postmaster agent 0.0.10426206   20.00000000 ℏ
+```
+
+**Four things that state settles.**
+
+1. **The two operators match the gate report's §1 reading exactly** — 414.9907 / 408.2147 ℏ, one stray stamp at
+   C1OPERATOR and none at C2OPERATOR. Nothing has moved on either wallet since the report was written, so §2's
+   corrected arithmetic stands as written: the hop fires for the SENDER because C2OPERATOR holds zero.
+2. **Both auto-associate (`-1`), so no `TokenAssociateTransaction` is expected from either.** §4 predicted this
+   and said that a different value on the day would mean one extra submission, paid by that operator, about 0.05 ℏ.
+   It is not a different value. If one is submitted anyway, that is a finding.
+3. **The Postmaster's payer is solvent with a wide margin.** §3 budgets roughly **56 ℏ** of `0.0.8641261` for two
+   mailboxes against 60 ℏ taken; it holds **3255.79 ℏ**. The carried legs cannot fail for want of funds, which
+   removes the one failure mode that would strand an agent mid-template. **The treasury's own 20 ℏ is not in this
+   path** — it holds `$POSTAGE`, and the carry is paid by the payer account.
+4. **Neither agent has an account yet**, which is the precondition `buy_stamp` refuses on. Queried by public key
+   against the mirror, both return zero accounts:
+
+```
+  DemoAgentX  302a300506032b657003210022cd19c26d679df4cfed83f7ccee782531916ff39c40653733867f86165b2ca5  -> 0 accounts
+  DemoAgentY  302a300506032b657003210020ae2f8e2ef8d6d8ae1240086df9f3cbe310b8004eebf7426a4078ccd533278a  -> 0 accounts
+```
+
+Those are the same two keys the DRY pre-flight reported to the counter as `holder` (`22cd19c2…`, `20ae2f8e…`,
+§3 above), which is how this section knows it is describing the same two homes. **The keys were derived from each
+keystore in process and only the public half was ever printed** (P-13; `npm run p13:check` green).
+
+**The quote's own input is unmoved.** The `PriceList` topic `0.0.10426551` holds **four** messages and sequence 4
+is still the latest, at consensus `1789055861.123389104` — the same sequence and the same instant §3 and §7 both
+cite, carrying `provisioning {method "hbar", unitPrice "30", registrationFee "0.05"}`. **A fifth message would have
+changed the price mid-gate and there is none.**
+
+**What this section does NOT establish.** It is a set of reads, and the §5 window is untouched by it: every row of
+§4 is still a signature leaving a process before its outcome is known. It also does not prove the counter is up —
+§7's quote did that once and the counter was stopped again; it comes up at the run.
 
 ## Entities
 
