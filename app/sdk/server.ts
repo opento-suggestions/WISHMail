@@ -421,7 +421,21 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           const hop = await ringStamp(s, willRing);
           if (hop !== null) console.error(`  one stamp to the payer for the doorbell fee (§4.4): ${hop}`);
 
-          const out = await send(ctx, {
+          // THE LETTER'S OWN STORY, to both readers that were missing it
+          // (D-162). Each line goes to this process's log as the fact lands —
+          // the live surface, since goose renders no progress notifications —
+          // and the whole of it comes back as the result's text block, which is
+          // the retrospective one. Same sentence, same template, two readers
+          // that could not learn different things from it if they tried.
+          const story: string[] = [];
+          const narrating = {
+            ...ctx,
+            onLine: (l: string) => {
+              story.push(l);
+              console.error(`  ${l}`);
+            },
+          };
+          const out = await send(narrating, {
             coordinates: r.coordinates,
             manifest: r.manifest as unknown as Record<string, unknown>,
             payload: Buffer.from(payload, 'base64'),
@@ -439,7 +453,37 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           // returned the bare result and would have been rejected by any client
           // that validates `structuredContent` — which the reference SDK does.
           // The other five verbs already wrapped; `send` was the odd one out.
-          return ok(out, { result: out as unknown as Record<string, unknown> });
+          // WHAT §6.4 SAYS `send` RETURNS, and it is not what this returned.
+          //
+          // "`send` then returns chunk 0's `Postmark` (D-30)", or an
+          // `AttemptedDeliverySlip` — and the published `outputSchema` is a
+          // `oneOf` over exactly those two registered schemas, each
+          // `additionalProperties: false`. This handler returned the whole
+          // internal `SendResult` — `{kind, postmark, envelope, postmarks,
+          // settlement, manifestLocator, lane, receipt?}` — which is not a
+          // Postmark and which the schema forbids twice over.
+          //
+          // Found by validating a REAL result from the modelled ledger against
+          // the schema this server publishes (`check:letter`). Nothing had ever
+          // validated it, which is how a surface came to promise one shape and
+          // send another.
+          //
+          // So `result` is now exactly the §5 object §6.4 names. The rest is not
+          // discarded — it is the evidence a caller wants and none of it is
+          // secret — but it travels as OBSERVATION, in `_meta`, where a schema
+          // does not claim it is the tool's output. The card carries it in
+          // prose for whoever is reading rather than parsing.
+          const spec64 = out.kind === 'postmark' ? out.postmark : out.slip;
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `${story.join('\n')}\n\n${JSON.stringify(out, null, 2)}`,
+              },
+            ],
+            structuredContent: { result: spec64 as unknown as Record<string, unknown> },
+            _meta: { 'wishmail/spec': RELEASE.spec, 'wishmail/send': out as unknown as Record<string, unknown> },
+          };
         }
 
         case 'inbox': {

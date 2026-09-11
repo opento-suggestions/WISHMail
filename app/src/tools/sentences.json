@@ -17,7 +17,6 @@
     "Placeholders are {name} and every one of them must be supplied: `line()` throws on a missing key,",
     "so a template and its caller cannot drift into a sentence with a hole in it."
   ],
-
   "provision.already": "{account} already has coordinates on consensus; its doorbell is {doorbell}. Nothing to create.",
   "provision.existing": "{role} is already {id}, and its shape on consensus is the one it was created under.",
   "provision.created": "{role} created as {id} — {detail}.",
@@ -27,18 +26,15 @@
   "provision.registered": "registered on {registry} at sequence {sequenceNumber}, naming file topic {fileTopic}.",
   "provision.memo": "{account}'s memo now reads {memo}, which is where a resolver starts.",
   "provision.resolved": "{account} resolves under hcs14 at trust class {trustClass} with {endorsements} endorsement(s).",
-
   "purchase.quoted": "the counter quoted {count} stamp(s) at {price} {currency}{provisioning}, reference {reference}.",
   "purchase.signed": "the purchase body was signed in this process; the counter never held a key of this agent's.",
   "purchase.settled": "the purchase settled as {txRef} at {consensusTimestamp}; the holder is {holder}.",
   "purchase.account": "the transfer created account {account}, owned by this agent's key.",
   "purchase.resuming": "{account} was bought under reference {reference} and that purchase is still open; resuming it rather than starting another.",
   "purchase.carried": "the counter {statement}.",
-
   "register.existing": "{account} is already registered on the anchor {anchor}; nothing was submitted.",
   "register.submitted": "registered on the anchor {anchor} at sequence {sequenceNumber}, paid by {payer}.",
   "register.resolved": "{address} resolves under hol with {endorsements} endorsement(s).",
-
   "send.lane.found": "lane {lane} found; it was created at {createdAt} and is the earliest open one between these two.",
   "send.ringing": "ringing the doorbell {doorbell}; one stamp goes to the treasury for the request.",
   "send.request": "the connection request is at sequence {sequenceNumber} on {doorbell}, at {consensusTimestamp}.",
@@ -48,8 +44,11 @@
   "send.affixed": "postage affixed at {txRef} under the memo {memo}, which names this envelope and no other.",
   "send.chunk": "chunk {index} of {total} postmarked on {lane} at sequence {sequenceNumber}.",
   "send.settled": "every chunk has a consensus timestamp; the first is {consensusTimestamp}.",
+  "send.resolution": "{address} resolves under {profile} at trust class {trustClass}; its manifest topic is {manifestTopic} and its key epoch {keyEpoch}.",
+  "send.receipt.requested": "a return receipt is requested: schedule {scheduleId} is on the lane at sequence {sequenceNumber}, and it is the recipient’s to sign.",
+  "send.receipt.pending": "the schedule stands unsigned. Nothing is claimed about whether anyone has read the letter.",
+  "send.envelope": "envelope {aadHash}, sealed against key epoch {keyEpoch}, {ciphertextBytes} bytes of ciphertext.",
   "send.slip": "the window of {window}s closed with no answer on {doorbell}. Expiry is not silence, and nothing is claimed about the recipient.",
-
   "narrative.scope": "This reading covers {topics} topic(s) on {ledgerTags}, from consensus timestamp {from} to {to}, under specification {spec}.",
   "narrative.empty": "No envelope was found in that scope.",
   "narrative.envelope": "Envelope {aadHash}.",

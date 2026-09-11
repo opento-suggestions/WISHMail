@@ -54,6 +54,15 @@ import { requestReceipt, send, type Coordinates, type SenderContext } from './se
 import { verify } from './verify.js';
 import { repoRoot } from '../ops/env.js';
 import { schemas } from '../schema/loader.js';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import addFormatsImport from 'ajv-formats';
+import { bundled } from '../mcp/bundle.js';
+import { tool } from '../mcp/tools.js';
+
+/** ESM/CJS interop, as `schema/loader.ts` does it. */
+const addFormats =
+  (addFormatsImport as unknown as { default?: (a: unknown) => void }).default ??
+  (addFormatsImport as unknown as (a: unknown) => void);
 
 const registry = schemas(repoRoot());
 
@@ -687,6 +696,20 @@ async function main(): Promise<void> {
     const slipped = await send(s.ctx, { coordinates: s.coordinates, manifest: s.manifest, payload: PAYLOAD, windowSeconds: 1 });
     is('an unanswered door yields a slip, not a failure (F-6)', slipped.kind, 'slip');
     if (slipped.kind === 'slip') {
+      // The other half of `send`'s published `oneOf`, courted where the object
+      // exists. A slip is what a caller gets when a door does not answer, and a
+      // surface that cannot publish it is a surface that fails on the one
+      // outcome §6.4 calls a result rather than a failure.
+      {
+        const ajv = new Ajv2020({ strict: false, allErrors: true });
+        addFormats(ajv);
+        const validate = ajv.compile(bundled(tool('send').outputSchema, repoRoot()));
+        const valid = validate({ result: JSON.parse(JSON.stringify(slipped.slip)) as unknown }) === true;
+        ok(
+          `a real slip validates against send's own published outputSchema${valid ? '' : ` — ${ajv.errorsText(validate.errors)}`}`,
+          valid,
+        );
+      }
       is('the slip is endorsed timed-out', slipped.slip.endorsement, 'timed-out');
       is('it names the doorbell it rang', slipped.slip.doorbell, s.recipient.doorbell);
       ok('it names the request’s postmark', slipped.slip.connectionRequestSeq >= 1);
@@ -1256,14 +1279,19 @@ async function theReceipt(): Promise<void> {
   const beforeStamps = w.ledger.balance(w.sender.account);
   const recipientBefore = w.ledger.balance(w.recipient.account);
 
-  const flight = send(w.ctx, {
-    coordinates: w.coordinates,
-    manifest: w.manifest,
-    payload: PAYLOAD,
-    returnReceipt: true,
-    windowSeconds: 10,
-    receiptWindowSeconds: 30 * 86_400,
-  });
+  /** The letter's own story, collected the way the MCP surface collects it. */
+  const story: string[] = [];
+  const flight = send(
+    { ...w.ctx, onLine: (l) => story.push(l) },
+    {
+      coordinates: w.coordinates,
+      manifest: w.manifest,
+      payload: PAYLOAD,
+      returnReceipt: true,
+      windowSeconds: 10,
+      receiptWindowSeconds: 30 * 86_400,
+    },
+  );
   await new Promise((r) => setTimeout(r, 50));
   const lane = answerTheDoor(w);
   const result = await flight;
@@ -1283,6 +1311,51 @@ async function theReceipt(): Promise<void> {
     w.ledger.balance(w.sender.account),
     beforeStamps - 1 - result.settlement.amount,
   );
+  // --- THE CARD, and the schema it is published under. ----------------------
+  //
+  // Proved HERE and never under goose, because a `send` result on the MCP
+  // surface only exists if `send` ran, and on a live server that is a ring, a
+  // settlement, chunks and a ScheduleCreate. The model produces a real
+  // `SendResult` from real bytes with no key and no network, which is exactly
+  // what the published `outputSchema` has to accept.
+  {
+    const ajv = new Ajv2020({ strict: false, allErrors: true });
+    addFormats(ajv);
+    const validate = ajv.compile(bundled(tool('send').outputSchema, repoRoot()));
+    // §6.4: "`send` then returns chunk 0's `Postmark`" — so THAT is what goes in
+    // the one field `wrap` publishes, and the richer internal result travels as
+    // an observation in `_meta`. The MCP handler shapes it exactly this way, and
+    // shaping it any other way is what this assertion exists to catch: it caught
+    // the handler returning the whole `SendResult`, which the registered
+    // Postmark schema forbids twice over.
+    // This letter was posted, so it is the Postmark half; the slip half of the
+    // same `oneOf` is courted where a slip is produced, further up.
+    const valid = validate({ result: JSON.parse(JSON.stringify(result.postmark)) as unknown }) === true;
+    ok(
+      `a real SendResult validates against send's own published outputSchema${valid ? '' : ` — ${ajv.errorsText(validate.errors)}`}`,
+      valid,
+    );
+  }
+  {
+    // D-162's first two readers, which `send` did not have until 2026-09-11.
+    const order = ['send.resolution', 'send.lane', 'send.manifest', 'send.envelope', 'send.assembled', 'send.affixed', 'send.chunk', 'send.settled', 'send.receipt'];
+    ok('the card tells the whole letter: a line for every act', story.length >= order.length);
+    if (process.env['WISHMAIL_SHOW_CARD'] === '1') {
+      console.log(['', '--- the card, as a caller reads it ---', ...story.map((l) => `  ${l}`), ''].join('\n'));
+    }
+    ok('it opens with the resolution', story[0]?.includes(w.coordinates.address) === true);
+    ok('it names the lane it was posted to', story.some((l) => l.includes(result.lane)));
+    ok('it names the settlement that stamped it', story.some((l) => l.includes(result.settlement.txRef)));
+    ok('it names the envelope', story.some((l) => l.includes(result.envelope.aadHash)));
+    ok('it names the schedule the receipt was requested under', story.some((l) => l.includes(result.receipt?.scheduleId ?? 'x')));
+    // §2.3 reserves *delivery* for the lane; §11.8 forbids reading silence as
+    // refusal. The template is checked for these words in check:correspondent;
+    // this checks the SENTENCES A REAL LETTER ACTUALLY EMITTED.
+    for (const forbidden of ['deliver', 'received', 'read it', 'accepted']) {
+      ok(`and no line of it implies "${forbidden}"`, !story.join('\n').toLowerCase().includes(forbidden));
+    }
+  }
+
   const requested = result.receipt;
   ok('send returned the receipt request it made (§6.4 step 7)', requested !== undefined);
   if (requested === undefined) return;

@@ -47,6 +47,7 @@
  * T-P9-11, T-P10-1, T-P10-2, T-P11-3, T-P12-5, T-P14-1, T-P17-2.
  */
 import { canonicalDigest } from '../core/canonical.js';
+import { line } from './narration.js';
 import { proofInputs, proofLocation } from '../core/proof.js';
 import { repoRoot } from '../ops/env.js';
 import { schemas } from '../schema/loader.js';
@@ -164,6 +165,24 @@ export interface SenderContext {
    * every dry run wants.
    */
   readonly sent?: SentEnvelopes;
+  /**
+   * WHERE THE LETTER'S OWN STORY GOES (D-162, and 2026-09-11).
+   *
+   * `sentences.json` has carried ten `send.*` lines since the template was
+   * written and **nothing emitted one**, so of D-162's three readers — the log
+   * as facts land, the text block beside the structured result, and `narrate()`
+   * over a bundle — `send` had only the third. A caller watching a first
+   * contact saw nothing for ninety seconds and then a JSON object.
+   *
+   * Every line is rendered from the one template, so the sentence a caller
+   * reads live and the sentence it reads afterwards are the same sentence.
+   * **None of them may imply receipt or delivery**: §2.3 reserves *delivery*
+   * for the lane and §11.8 forbids reading silence as refusal, which is why the
+   * word "delivered" appears nowhere in the template by design.
+   *
+   * Absent: nothing is narrated, which is what the offline courts want.
+   */
+  readonly onLine?: (line: string) => void;
 }
 
 /** What `send` writes down about an envelope it is posting, as it posts it. */
@@ -570,7 +589,15 @@ async function firstContact(
     // The ringer, where one is given, is the Postmaster paying the doorbell's fee
     // from its own stamp (§6.4 step 1); otherwise the sender pays it (§4.4).
     const ringer: Writer = ctx.ringer ?? ctx.consensus;
+    ctx.onLine?.(line('send.ringing', { doorbell: coordinates.doorbell }));
     request = await ringer.submitMessage(coordinates.doorbell, body, TRANSACTION_MEMO.connection_request);
+    ctx.onLine?.(
+      line('send.request', {
+        sequenceNumber: request.sequenceNumber,
+        doorbell: coordinates.doorbell,
+        consensusTimestamp: request.consensusTimestamp,
+      }),
+    );
 
     // §5.9: the slip binds the request on the doorbell to the sender's own record
     // of it. The log entry is the sender's, always — it is the sender's topic.
@@ -828,6 +855,18 @@ function slipManifest(slip: AttemptedDeliverySlip, ledgerTag: string, manifestTo
 export async function send(ctx: SenderContext, req: SendRequest): Promise<SendResult> {
   const { coordinates } = req;
   const windowSeconds = req.windowSeconds ?? DEFAULT_WINDOW_SECONDS;
+  /** The letter's own story, as it happens (D-162). Silent where nobody asked. */
+  const say = (l: string): void => ctx.onLine?.(l);
+
+  say(
+    line('send.resolution', {
+      address: coordinates.address,
+      profile: coordinates.profile,
+      trustClass: (coordinates as { trustClass?: string }).trustClass ?? 'unstated',
+      manifestTopic: coordinates.manifestTopic,
+      keyEpoch: coordinates.keyEpoch,
+    }),
+  );
 
   // --- Preconditions (§6.4). -------------------------------------------------
   if (coordinates.resolutionProof.hash === undefined || coordinates.resolutionProof.hash === '') {
@@ -928,18 +967,23 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       }
       // §10.5: "send MUST publish the slip's manifest on the sender's manifest
       // topic before returning a slip" (T-P12-5).
+      say(line('send.slip', { window: windowSeconds, doorbell: coordinates.doorbell }));
       const manifestLocator = await publishManifest(ctx, slipManifest(slip, ctx.ledgerTag, ctx.manifestTopic));
       return { kind: 'slip', slip, manifestLocator };
     }
     lane = contact.lane;
+    say(line('send.lane.created', { lane: lane.topicId }));
     const refusal = await laneRefusal(ctx.consensus, lane, ctx.publicKey, recipientKey);
     if (refusal !== null) refuse('SEND_LANE_INVALID', refusal);
+  } else {
+    say(line('send.lane.found', { lane: lane.topicId, createdAt: lane.createdAt }));
   }
 
   // --- 2. Manifest. ----------------------------------------------------------
   // Published before assembly, because the AAD binds the proof's hash and §11.4
   // requires the manifest's postmark to precede chunk 0's (T-P9-8).
   const manifestLocator = await publishManifest(ctx, req.manifest);
+  say(line('send.manifest', { topic: manifestLocator.topicId, sequenceNumber: manifestLocator.sequenceNumber }));
 
   // --- 3. Assembly. ----------------------------------------------------------
   const sealed = sealEnvelope({
@@ -954,6 +998,13 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
     schemaRef: ctx.schemaRef,
     operatorId: operatorIdOf(ctx.doorbell, ctx.account),
   });
+  say(
+    line('send.envelope', {
+      aadHash: sealed.id,
+      keyEpoch: coordinates.keyEpoch,
+      ciphertextBytes: sealed.ciphertextBytes,
+    }),
+  );
 
   if ((await ctx.consensus.stampBalance()) < sealed.postage) {
     refuse(
@@ -971,6 +1022,7 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
   let settlement: Settlement;
   try {
     assembled = affix(sealed, settlementRef);
+    say(line('send.assembled', { chunks: assembled.chunks.length, weight: sealed.weight, postage: sealed.postage }));
     // WRITTEN BEFORE THE TRANSFER IS SUBMITTED, and that ordering is the whole
     // value of the row (P-7). A run that dies inside the transfer's own window
     // has either spent postage or not, and only the identifier can tell anyone
@@ -988,6 +1040,7 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       keyEpoch: coordinates.keyEpoch,
     });
     settlement = await ctx.consensus.transferStamps(settlementRef, ctx.treasury, sealed.postage, sealed.memo);
+    say(line("send.affixed", { txRef: settlement.txRef, memo: sealed.memo }));
   } catch (e) {
     // Nothing submitted, nothing consumed (§6.4's postcondition on this failure).
     refuse('SEND_AFFIX_FAILED', e instanceof Error ? e.message : String(e));
@@ -1013,6 +1066,7 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       );
     }
     postmarks.push(postmarkOf(message, ctx.ledgerTag, sealed.id, chunk.i));
+    say(line("send.chunk", { index: chunk.i, total: assembled.chunks.length, lane: lane.topicId, sequenceNumber: message.sequenceNumber }));
     if (chunk.i === 0) {
       const affixed = ctx.sent?.get(sealed.id);
       if (affixed !== undefined) {
@@ -1037,6 +1091,8 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
     );
   }
 
+  say(line("send.settled", { consensusTimestamp: zero.consensusTimestamp }));
+
   const row = ctx.sent?.get(sealed.id);
   const chunkZero = { topicId: zero.topicId, sequenceNumber: zero.sequenceNumber };
   if (row !== undefined) ctx.sent?.put({ ...row, stage: 'settled', chunkZero });
@@ -1056,6 +1112,15 @@ export async function send(ctx: SenderContext, req: SendRequest): Promise<SendRe
       keyEpoch: coordinates.keyEpoch,
       ...(req.receiptWindowSeconds === undefined ? {} : { windowSeconds: req.receiptWindowSeconds }),
     });
+    say(
+      line('send.receipt.requested', {
+        scheduleId: receipt.scheduleId,
+        sequenceNumber: receipt.requestSequenceNumber,
+      }),
+    );
+    // §11.8: silence is not refusal, and this is the sentence that has to say so
+    // rather than leaving a reader to supply an ending.
+    say(line('send.receipt.pending'));
     const settled = ctx.sent?.get(sealed.id);
     if (settled !== undefined) ctx.sent?.put({ ...settled, stage: 'requested', scheduleId: receipt.scheduleId });
   }

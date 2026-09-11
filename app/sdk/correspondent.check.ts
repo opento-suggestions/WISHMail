@@ -221,6 +221,26 @@ async function refused(f: () => Promise<unknown>): Promise<boolean> {
     const offenders = keys.filter((k) => line(k, fieldsFor(k)).toLowerCase().includes(forbidden));
     is(`no sentence implies ${forbidden} — §2.3 reserves delivery for the lane, §11.8 forbids reading silence`, offenders, []);
   }
+  // EVERY KEY HAS A CALLER, and this is here because ten of them did not.
+  //
+  // `sentences.json` carried ten `send.*` lines from the day the template was
+  // written and nothing ever emitted one, so of D-162's three readers `send`
+  // had only the third: the text block a caller got was the result JSON printed
+  // twice. The check above could not see it — it counted keys and banned words,
+  // and a dead sentence passes both. A template nobody reads from is not one
+  // template with three readers; it is a file.
+  {
+    const source = ['src/tools', 'sdk']
+      .flatMap((d) => {
+        const dir = path.join(repoRoot(), 'app', d);
+        return fs.readdirSync(dir).filter((f) => f.endsWith('.ts')).map((f) => path.join(dir, f));
+      })
+      .map((f) => fs.readFileSync(f, 'utf8'))
+      .join('\n');
+    const dead = keys.filter((k) => !source.includes(`'${k}'`) && !source.includes(`"${k}"`));
+    is('every sentence in the template has a caller — a dead one is a reader that does not exist', dead, []);
+  }
+
   ok(
     'a sentence with an unsupplied placeholder throws rather than rendering a hole',
     (() => {
