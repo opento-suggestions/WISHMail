@@ -125,11 +125,15 @@ test('T-P11-1 — Postage is postage', async () => {
   }
 
   assert.fail(
-    'T-P11-1 PARTIAL — a settlement in any other token, and one to any other collector, appraise `unstamped` ' +
-      'with the reasons §11.5 names; and a Verifier given no stamp token records the check it could not make ' +
-      'instead of passing it. That is the replay half. "Rejected at `send`" needs a writer: `send` transfers ' +
-      'the stamps itself inside §6.4, so a settlement in another token is something it must be shown not to ' +
-      'PRODUCE — the modelled ledger, permitted for a behaviour clause (RECORD, 2026-09-10) and not yet ' +
-      'written. Recorded rather than quietly dropped (conformance/DERIVATION.md).',
+    'T-P11-1 PARTIAL — the replay half holds in full: a settlement in any other token, and one to any other '
+      + 'collector, appraise `unstamped` with the reasons §11.5 names; and a Verifier given no stamp token '
+      + 'records the check it could not make instead of passing it. The `send` half is not reachable, and the '
+      + 'reason is worth stating exactly rather than deferring: the MODELLED ledger has one token. '
+      + '`MemoryLedger.transfer` takes no token argument at all, because the model was built to enforce the four '
+      + 'facts the tools depend on and a second fungible token is not among them. So a settlement in ANOTHER '
+      + 'token is not something the model can express, and faking one would be building the fixture out of the '
+      + 'answer. This is the case the ruling of 2026-09-11 anticipates: a behaviour the model cannot express '
+      + 'honestly stays a named partial. Closing it needs either a second token in the model or a captured '
+      + 'settlement in one, and neither is a night’s work (conformance/DERIVATION.md).',
   );
 });
