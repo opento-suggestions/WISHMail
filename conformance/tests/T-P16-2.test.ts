@@ -3,8 +3,7 @@
  *
  * Classes: RECIPIENT, POSTMASTER.
  * Register: NAMED (§10.4)
- * @fixture-kind captured, altered
- * @disposition partial — "balances unchanged" needs a before and an after
+ * @fixture-kind captured, altered, model
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
@@ -34,6 +33,12 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { openLane, pair, stand } from '../support/world.js';
+import { readerSource } from '../../app/src/tools/verify.js';
+import { ack } from '../../app/src/tools/ack.js';
+import { inbox } from '../../app/src/tools/inbox.js';
+import { send, type SenderContext } from '../../app/src/tools/send.js';
+import { resolveHcs14 } from '../../app/src/resolve/hcs14.js';
 import { decodeScheduledSubmission } from '../../app/src/core/schedulebody.js';
 import { verify } from '../../app/src/tools/verify.js';
 import { copy, fixture, readerOver } from '../support/fixtures.js';
@@ -105,14 +110,97 @@ test('T-P16-2 — Buying is not banking', async () => {
     );
   }
 
-  assert.fail(
-    'T-P16-2 PARTIAL — the rule is checked in both directions from consensus: the captured schedule names a ' +
-      'payer who is not the recipient and the receipt is acked with nothing said against it; the recipient ' +
-      'named as payer is reported `T-P16-2` and the receipt is invalid; a third party is fine. What is not ' +
-      'reachable is the sketch’s own sentence — the recipient’s HBAR and stamp balances UNCHANGED BY `ack`. ' +
-      'That is a measurement across an act, and a capture is one moment: `conformance/fixtures/` holds no ' +
-      'balances and could not hold two. It needs a ledger the suite can read before and after a `ScheduleSign` ' +
-      '— the modelled ledger, which is permitted for a behaviour clause (RECORD, 2026-09-10) and not yet ' +
-      'written. Recorded rather than quietly dropped (conformance/DERIVATION.md).',
-  );
+  // === THE BALANCE CLAUSE, over the modelled ledger ======================
+  //
+  // "The recipient account's HBAR and stamp balances are unchanged by `ack`."
+  // That is a measurement ACROSS an act, and a capture is one moment: the
+  // fixtures hold no balances and could not hold two. So the letter is sent,
+  // opened and signed for against a ledger that keeps balances, and the
+  // recipient's is read on both sides of the signature.
+  //
+  // The model has one currency and it is stamps, which is the half that can be
+  // measured; HBAR is not modelled at all, and §10.4's mechanism for it is the
+  // same one — `payerAccountId` on the schedule, checked above from consensus in
+  // both directions. That limit is named rather than papered over.
+  {
+    const world = stand();
+    const { sender, recipient } = pair(world);
+    openLane(world, { acceptor: recipient, requester: sender });
+
+    const resolution = await resolveHcs14(
+      readerSource(world.ledger.as(sender.account)),
+      world.ledger.ledgerTag,
+      recipient.account,
+      sender.manifestTopic,
+    );
+    assert.ok(!('failure' in resolution), 'the modelled recipient resolves under §9.2');
+
+    const ctx: SenderContext = {
+      consensus: world.ledger.as(sender.account),
+      ledgerTag: world.ledger.ledgerTag,
+      account: sender.account,
+      doorbell: sender.doorbell,
+      log: sender.log,
+      manifestTopic: sender.manifestTopic,
+      treasury: world.ledger.treasury,
+      stampToken: world.ledger.stampToken,
+      schemaRef: world.schemaRef,
+      publicKey: sender.key,
+    };
+
+    const sent = await send(ctx, {
+      coordinates: resolution.coordinates as never,
+      manifest: resolution.manifest as unknown as Record<string, unknown>,
+      payload: Buffer.from('Sign for this, and it costs you nothing.', 'utf8'),
+      returnReceipt: true,
+    });
+    assert.ok('postmark' in sent, 'send posted a certified letter (§6.4)');
+    assert.ok(sent.receipt !== undefined, 'and requested a receipt on the lane (§6.4 step 7, §10.4)');
+
+    // The recipient opens it with its own key, in its own process (P-13).
+    const deliveries = await inbox(
+      {
+        reader: world.ledger.reader(),
+        account: recipient.account,
+        keys: new Map([[recipient.keyEpoch, recipient.openWith]]),
+      },
+      { lanes: [sent.postmark.topicId] },
+    );
+    const delivery = deliveries.find((d) => d.envelope.aadHash === sent.envelope.aadHash);
+    assert.ok(delivery !== undefined && delivery.opened, 'the recipient opened it');
+    assert.ok(delivery.returnReceipt !== undefined, 'and its inbox surfaced the pending schedule (§6.5)');
+
+    // --- THE MEASUREMENT. -------------------------------------------------
+    const stampsBefore = world.ledger.balance(recipient.account);
+
+    const signed = await ack(
+      {
+        consensus: world.ledger.as(recipient.account),
+        ledgerTag: world.ledger.ledgerTag,
+        account: recipient.account,
+        doorbell: recipient.doorbell,
+        manifestTopic: recipient.manifestTopic,
+      },
+      delivery,
+    );
+    assert.ok(signed.receipt !== undefined, 'ack signed, and the schedule executed (§6.6, §10.4)');
+
+    const stampsAfter = world.ledger.balance(recipient.account);
+    assert.equal(
+      stampsAfter,
+      stampsBefore,
+      `§10.4, T-P16-2: the recipient's stamp balance is unchanged by ack — ${stampsBefore} before, ${stampsAfter} after`,
+    );
+    assert.equal(stampsBefore, 0, 'and it was nothing to begin with, so there was nothing to spend');
+
+    // The receipt really did land, so "unchanged" is not "nothing happened".
+    const landed = await world.ledger.reader().messages(recipient.manifestTopic);
+    assert.ok(landed.length > 0, 'the receipt is on the recipient’s own manifest topic (§10.4)');
+
+    // And the schedule's inner transaction was charged to somebody else, which
+    // is the mechanism that made the measurement come out this way.
+    const record = await world.ledger.reader().schedule(delivery.returnReceipt.scheduleId);
+    assert.ok(record !== null, 'consensus holds the schedule');
+    assert.notEqual(record.payer, recipient.account, '§10.4: its payer is never the recipient');
+  }
 });

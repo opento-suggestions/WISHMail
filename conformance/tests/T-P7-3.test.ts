@@ -3,15 +3,17 @@
  *
  * Classes: POSTMASTER, VERIFIER.
  * Register: NAMED (§4.2)
- * @fixture-kind altered
- * @disposition partial — the `send` clause needs a writer
+ * @fixture-kind altered, model
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
  *
  *   An envelope affixed with fewer stamps than its weight is rejected at `send`; a short-settled fixture appraises as unstamped.
  *
- * EXPANDED 2026-09-10 over `gate-three-resolved`, short-settled.
+ * EXPANDED 2026-09-11. The replay half over `gate-three-resolved`, short-settled
+ * at every shortfall there is. The `send` half over the modelled ledger, which
+ * enforces balances — so a sender that cannot afford its own letter is refused
+ * by the same arithmetic the network would use, before anything is affixed.
  *
  * WHAT THE POSTAGE IS. §7.5 gives an envelope a weight in ounces —
  * `OUNCE_BYTES` = 4096, rounded up — and §7.7 adds one stamp where the header
@@ -28,6 +30,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { headerPostage } from '../../app/src/core/envelope.js';
+import { isToolFailure } from '../../app/src/core/failure.js';
+import { resolveHcs14 } from '../../app/src/resolve/hcs14.js';
+import { send, type SenderContext } from '../../app/src/tools/send.js';
+import { readerSource } from '../../app/src/tools/verify.js';
+import { openLane, pair, stand } from '../support/world.js';
 import { verify } from '../../app/src/tools/verify.js';
 import { chunksOn, copy, fixture, readerOver, stampTokenPin, type Fixture } from '../support/fixtures.js';
 
@@ -88,12 +95,68 @@ test('T-P7-3 — Postage is consumed', async () => {
     assert.equal(got.reasons.includes('T-P7-3'), false, 'over-paying is not short-paying (§4.2)');
   }
 
-  assert.fail(
-    'T-P7-3 PARTIAL — every shortfall from one stamp down to none appraises `unstamped` with `T-P7-3`, and ' +
-      'over-payment does not, which is the second half of the sketch. The first half, "is rejected at `send`", ' +
-      'needs a writer: `send` computes the postage and affixes it itself inside §6.4, so a short settlement is ' +
-      'something it must be shown not to PRODUCE — against a ledger whose stamp balance can be made too small, ' +
-      'which is the modelled ledger. Permitted for a behaviour clause (RECORD, 2026-09-10) and not yet written; ' +
-      'recorded rather than quietly dropped (conformance/DERIVATION.md).',
-  );
+  // === THE `send` HALF, over the modelled ledger =========================
+  //
+  // "An envelope affixed with fewer stamps than its weight is rejected at
+  // `send`." A sender does not choose what to affix — §6.4 computes the postage
+  // from the weight and affixes that — so the way this is rejected is that a
+  // sender who cannot AFFORD the postage is stopped before anything is spent.
+  // The modelled ledger enforces balances, so the refusal is the same
+  // arithmetic the network would do and not a flag this test set.
+  {
+    const world = stand([
+      { name: 'sender', key: `5e4d${'a1'.repeat(30)}`, stamps: 1, displayName: 'Correspondent A' },
+      { name: 'recipient', key: `b0b1${'c2'.repeat(30)}`, stamps: 0, displayName: 'Correspondent B' },
+    ]);
+    const { sender, recipient } = pair(world);
+    openLane(world, { acceptor: recipient, requester: sender });
+
+    const resolution = await resolveHcs14(
+      readerSource(world.ledger.as(sender.account)),
+      world.ledger.ledgerTag,
+      recipient.account,
+      sender.manifestTopic,
+    );
+    assert.ok(!('failure' in resolution), 'the modelled recipient resolves');
+
+    const ctx: SenderContext = {
+      consensus: world.ledger.as(sender.account),
+      ledgerTag: world.ledger.ledgerTag,
+      account: sender.account,
+      doorbell: sender.doorbell,
+      log: sender.log,
+      manifestTopic: sender.manifestTopic,
+      treasury: world.ledger.treasury,
+      stampToken: world.ledger.stampToken,
+      schemaRef: world.schemaRef,
+      publicKey: sender.key,
+    };
+
+    // Two ounces and a return receipt: three stamps due, against a balance of one.
+    const twoOunces = Buffer.alloc(5000, 0x41);
+    let refused: unknown;
+    try {
+      await send(ctx, {
+        coordinates: resolution.coordinates as never,
+        manifest: resolution.manifest as unknown as Record<string, unknown>,
+        payload: twoOunces,
+        returnReceipt: true,
+      });
+    } catch (e) {
+      refused = e;
+    }
+
+    assert.ok(refused !== undefined, '§6.4: a sender that cannot afford the postage is refused');
+    assert.ok(isToolFailure(refused), 'as a tool failure with a named reason (§6.1)');
+    assert.equal(
+      (refused as { reason: string }).reason,
+      'SEND_INSUFFICIENT_STAMPS',
+      `the refusal names the postage — got ${String((refused as { reason: string }).reason)}`,
+    );
+
+    // NOTHING WAS SPENT. The refusal is a precondition and not a rollback: §4.3
+    // consumes stamps to the treasury irreversibly, so a letter that cannot be
+    // paid for must be stopped before the transfer and not after it.
+    assert.equal(world.ledger.balance(sender.account), 1, 'and the stamp it did hold is still there');
+  }
 });

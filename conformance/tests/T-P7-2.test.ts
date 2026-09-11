@@ -3,8 +3,7 @@
  *
  * Classes: POSTMASTER, VERIFIER.
  * Register: NAMED (§4.3)
- * @fixture-kind altered
- * @disposition partial — the `send` clause needs a writer
+ * @fixture-kind altered, model
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
@@ -32,6 +31,11 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { openLane, pair, stand } from '../support/world.js';
+import { readerSource } from '../../app/src/tools/verify.js';
+import { send, type SenderContext } from '../../app/src/tools/send.js';
+import { resolveHcs14 } from '../../app/src/resolve/hcs14.js';
+import { settlementMemo } from '../../app/src/core/envelope.js';
 import { verify } from '../../app/src/tools/verify.js';
 import { chunksOn, copy, fixture, readerOver, repack, stampTokenPin } from '../support/fixtures.js';
 
@@ -145,15 +149,78 @@ test('T-P7-2 — Postage is consumed', async () => {
     'and it is unstamped for the memo too, which §4.3 makes unavoidable on any pair that shares a settlement',
   );
 
-  assert.fail(
-    'T-P7-2 PARTIAL — the replay half now holds: a pair sharing a settlement appraises one stamped and one ' +
-      'unstamped, decided by consensus order and not by an accident of hex sorting, with the third letter ' +
-      'untouched. Two things remain, and neither is a body edit. The clause CANNOT ISOLATE ITSELF — §4.3 binds ' +
-      'a settlement to one envelope by its memo, so the later letter is always unstamped for the memo as well, ' +
-      'and `T-P7-2` never appears alone; that is a ledger §G question (re-sketch, or retire as redundant with ' +
-      'T-P1-2). And "a second envelope against an already-claimed settlement is REJECTED AT `send`" needs a ' +
-      'writer: the sender pins its own transfer reference inside §6.4 (`pinTransferRef`), so claiming one twice ' +
-      'is something `send` must be shown not to do across two calls against one ledger — the modelled ledger, ' +
-      'permitted for a behaviour clause (RECORD, 2026-09-10).',
-  );
+  // === THE `send` HALF, over the modelled ledger =========================
+  //
+  // "A second envelope against an already-claimed settlement is rejected at
+  // `send`." A sender does not choose a settlement to claim: §6.4 has it PIN its
+  // own transfer reference before it affixes (`pinTransferRef`), so what has to
+  // be shown is that two letters through one sender against one ledger never
+  // come out naming one transfer. That is a property of two calls, which is why
+  // it needs a writer and a ledger with a memory.
+  {
+    const world = stand();
+    const { sender, recipient } = pair(world);
+    openLane(world, { acceptor: recipient, requester: sender });
+
+    const resolution = await resolveHcs14(
+      readerSource(world.ledger.as(sender.account)),
+      world.ledger.ledgerTag,
+      recipient.account,
+      sender.manifestTopic,
+    );
+    assert.ok(!('failure' in resolution), 'the modelled recipient resolves under §9.2');
+
+    const ctx: SenderContext = {
+      consensus: world.ledger.as(sender.account),
+      ledgerTag: world.ledger.ledgerTag,
+      account: sender.account,
+      doorbell: sender.doorbell,
+      log: sender.log,
+      manifestTopic: sender.manifestTopic,
+      treasury: world.ledger.treasury,
+      stampToken: world.ledger.stampToken,
+      schemaRef: world.schemaRef,
+      publicKey: sender.key,
+    };
+
+    const letters = [];
+    for (const text of ['The first letter.', 'The second letter, on the same lane.', 'And a third.']) {
+      const one = await send(ctx, {
+        coordinates: resolution.coordinates as never,
+        manifest: resolution.manifest as unknown as Record<string, unknown>,
+        payload: Buffer.from(text, 'utf8'),
+      });
+      assert.ok('postmark' in one, `send posted: ${text}`);
+      letters.push(one);
+    }
+
+    // THREE LETTERS, THREE SETTLEMENTS. Not one claimed twice.
+    const refs = letters.map((l) => l.envelope.settlementRef);
+    assert.equal(new Set(refs).size, refs.length, '§4.3: each letter pinned its own transfer, so none claims another’s');
+
+    const ids = letters.map((l) => l.envelope.aadHash);
+    assert.equal(new Set(ids).size, ids.length, 'and each is its own envelope — a fresh nonce per letter (§7.2)');
+
+    // And each settlement's memo names its own letter and no other, which is the
+    // §4.3 rule that makes the double-claim rule hard to reach in the first place.
+    const reader = world.ledger.reader();
+    for (const letter of letters) {
+      const settlement = await reader.transfer(letter.envelope.settlementRef);
+      assert.ok(settlement !== null, 'the transfer is on the ledger');
+      assert.equal(
+        settlement.memo,
+        settlementMemo(letter.envelope.aadHash),
+        '§4.3: its memo names the letter it paid for, one identifier',
+      );
+    }
+
+    // The stamps were really spent, three times over: §4.3 consumes postage, and
+    // a sender that claimed one settlement twice would have paid once.
+    const spent = letters.reduce((n, l) => n + l.envelope.weight, 0);
+    assert.equal(
+      world.ledger.balance(sender.account),
+      40 - spent,
+      `three letters cost ${spent} stamps and the balance says so — nothing was carried on somebody else’s postage`,
+    );
+  }
 });

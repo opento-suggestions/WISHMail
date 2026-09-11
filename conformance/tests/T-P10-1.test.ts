@@ -3,8 +3,7 @@
  *
  * Classes: POSTMASTER, VERIFIER.
  * Register: NAMED (§6.4)
- * @fixture-kind altered
- * @disposition partial — the `send` clause needs a writer
+ * @fixture-kind altered, model
  *
  * §A’s sketch, verbatim — the scope of this test, which is not widened without
  * a decision (`conformance/README.md`):
@@ -27,6 +26,10 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { openLane, pair, stand } from '../support/world.js';
+import { readerSource } from '../../app/src/tools/verify.js';
+import { send, type SenderContext } from '../../app/src/tools/send.js';
+import { resolveHcs14 } from '../../app/src/resolve/hcs14.js';
 import { rebuildAad } from '../../app/src/core/aad.js';
 import { verify } from '../../app/src/tools/verify.js';
 import { chunksOn, copy, fixture, readerOver, type Fixture } from '../support/fixtures.js';
@@ -105,12 +108,87 @@ test('T-P10-1 — A lane is a lane', async () => {
     );
   }
 
-  assert.fail(
-    'T-P10-1 PARTIAL — both conditions appraise `unbound` at replay, which is the second half of the sketch. ' +
-      'The first half, "is rejected at `send`", is not reachable from captured bytes: §6.4 builds the AAD from ' +
-      'the lane it is about to submit to and from the proof it just obtained, so neither an envelope with no ' +
-      'proof nor one naming another lane is something `send` can be HANDED — they are envelopes `send` must be ' +
-      'shown not to produce, against a writer. That is the modelled ledger, permitted for a behaviour clause ' +
-      '(RECORD, 2026-09-10) and not yet written. Recorded rather than quietly dropped (conformance/DERIVATION.md).',
-  );
+  // === THE `send` HALF, over the modelled ledger =========================
+  //
+  // §6.4 builds the AAD from the lane it is about to submit to and from the
+  // proof it just obtained, so neither condition is something `send` can be
+  // HANDED — they are envelopes it must be shown not to PRODUCE. The way to
+  // show that is to let it produce one against a ledger that records where
+  // things actually landed, and then read the weld back off consensus.
+  {
+    const world = stand();
+    const { sender, recipient } = pair(world);
+    const lane = openLane(world, { acceptor: recipient, requester: sender });
+
+    const resolution = await resolveHcs14(
+      readerSource(world.ledger.as(sender.account)),
+      world.ledger.ledgerTag,
+      recipient.account,
+      sender.manifestTopic,
+    );
+    assert.ok(!('failure' in resolution), 'the modelled recipient resolves under §9.2');
+
+    const ctx: SenderContext = {
+      consensus: world.ledger.as(sender.account),
+      ledgerTag: world.ledger.ledgerTag,
+      account: sender.account,
+      doorbell: sender.doorbell,
+      log: sender.log,
+      manifestTopic: sender.manifestTopic,
+      treasury: world.ledger.treasury,
+      stampToken: world.ledger.stampToken,
+      schemaRef: world.schemaRef,
+      publicKey: sender.key,
+    };
+
+    const sent = await send(ctx, {
+      coordinates: resolution.coordinates as never,
+      manifest: resolution.manifest as unknown as Record<string, unknown>,
+      payload: Buffer.from('A lane is a lane because you find the letter on it.', 'utf8'),
+    });
+    assert.ok('postmark' in sent, 'send posted the letter (§6.4)');
+
+    // THE ENVELOPE NAMES THE LANE IT IS ON, and "the lane it is on" is read from
+    // consensus rather than from the return value.
+    assert.equal(sent.postmark.topicId, lane, 'it went onto the lane that was open between them (§7.1)');
+
+    const messages = await world.ledger.reader().messages(lane);
+    assert.ok(
+      messages.some((m) => m.contents.includes('"op":"message"')),
+      'and its chunks are there',
+    );
+
+    const header = {
+      l: sent.envelope.ledgerTag,
+      rp: { h: sent.envelope.resolutionProof.hash },
+      nc: sent.envelope.nonce,
+    };
+    assert.equal(
+      rebuildAad(header, lane).id,
+      sent.envelope.aadHash,
+      '§7.2: the AAD rebuilt from the header and the topic the chunks arrived on IS the identifier, so send did not produce an envelope naming another lane',
+    );
+    assert.notEqual(
+      rebuildAad(header, '0.0.999999').id,
+      sent.envelope.aadHash,
+      'and it names that lane and no other',
+    );
+
+    // NOR ONE WITH NO RESOLUTION PROOF. §6.4 obtains the proof before it seals,
+    // and the proof's hash is an AAD field, so an envelope without one has no
+    // identifier at all. What send produced carries a proof that is published
+    // and findable, before the letter went out (§9.1).
+    assert.match(sent.envelope.resolutionProof.hash, /^[0-9a-f]{64}$/, 'the envelope carries a resolution proof');
+    const locator = sent.envelope.resolutionProof.uri;
+    assert.ok(locator !== null, 'and a locator saying where it was published (§5.2)');
+    const manifests = await world.ledger.reader().messages(locator.topicId);
+    assert.ok(
+      manifests.some(
+        (m) =>
+          m.sequenceNumber === locator.sequenceNumber &&
+          m.contents.includes(sent.envelope.resolutionProof.hash),
+      ),
+      'and the proof is on that topic at that sequence number',
+    );
+  }
 });
