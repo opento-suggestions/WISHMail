@@ -2,6 +2,53 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [The record corrected] — 2026-09-11 — three things the record said that the code does not do
+
+**Docs only. No normative text moves, no schema moves, no version rides this**, and nothing on consensus is touched.
+**[S]** ruled all three; **[CC]** checked each against the code and the mirror before writing it. Each is a place
+where a release document described this deployment more generously, or more stalely, than the deployment deserves —
+which is a defect in a record and not in the specification, and is corrected in the record.
+
+### Corrected
+
+- **LIMITATIONS L-13 — `orphans: []` is not a measurement** (ledger §G-31). §11.2 has carried the treasury route
+  since D-160 on 2026-09-09, with a MUST and `Conformance:` T-P3-6; `app/src/tools/verify.ts` reaches every
+  settlement through some chunk 0's `hdr.st` and `Reader` has no method that reaches an account's transfers at all.
+  So the empty list means *the treasury window was never read*, not *no orphan was found there* — and the two are
+  indistinguishable in the evidence unless the record says which. Stated under **L-13**, the section §15.3 already
+  gives F-3, rather than as a new L-item: `LIMITATIONS.md` carries one section per L-1 – L-14 in order, and an L-15
+  would break that. Our scoping and our omission, never Hedera and never the specification.
+- **LIMITATIONS L-11 — the keyless leg is no longer claimed.** L-11 asserted "The keyless leg (P-16) is satisfied on
+  `hedera:testnet` through this facilitator" while §14.2 states that a Hedera buyer "signs a Hedera transfer of USDC
+  and so has an account already". Both could not hold, and ledger §G-8 has said so since 2026-09-07. L-11 now states
+  what the x402.org facilitator is — real, listed, dated (D-132) — and that it is **not** the leg P-16 names, that
+  §14.2's MUST at `:1778` is therefore unmet by this release, and that the POSTMASTER claim is deferred on T-P16-1,
+  which STATUS §4 has said all along. **§G-8 is narrowed and NOT closed**: the half that was ours is corrected, and
+  the specification's half — how a Postmaster deployed only on Hedera offers any method needing no pre-funded Hedera
+  account — stays open, with §19.3 still its identified home and still unwritten. §G-8's own citation of
+  `LIMITATIONS.md:63` had gone stale with the file and is replaced by a citation that cannot rot.
+- **`docs/GATE-RECORD.md` named one deferred finding and implied two.** The schema-freeze paragraph now names both:
+  **§G-20** (the provisioned path cannot be rate-priced while the registered `PriceList` schema is frozen) and
+  **§G-29** (§5.10's `CorrespondenceEntry` has no slot for a duplicate chunk, nor for an envelope with no chunk 0),
+  each a 0.6 candidate under §1.7 waiting on a minor version rather than on a decision.
+- **`docs/GATE-RECORD.md` described a build two patches old.** It is the one file that reads end to end, and it said
+  specification 0.5.12 and `test bodies written 0 / tests passing 0`. Now 0.5.13, and **87 registered · 53 written ·
+  44 passing · no class claimed** — with the argument for the last number strengthened rather than softened: a class
+  passes only in full, every class includes VERIFIER, and **T-P3-1 alone would keep every class from passing here**,
+  because it compares two implementations and this deployment has one (§G-30). Silence claims nothing (§1.5).
+- **One citation narrowed.** The page attributed "run twice, same digest, and each narrative carried its bundle's
+  digest" wholly to **T-P3-4**, whose sketch covers the narrative clause only. The determinism half is
+  `check:captured`'s assertion and names no row of the register; the two clauses now say so separately.
+
+### Checked and deliberately not changed
+
+Three corrections proposed against `docs/GATE-RECORD.md` were checked against `app/OPERATIONS.md` and the mirror and
+**are already right**, so the file is left alone: the letter count (two plain, one of them a reply, and two
+certified — four); the digest table, whose `Standing` and `Receipts` are already separate columns with a paragraph
+above them explaining that they are two axes (§11.5); and the doorbell fee, said as "N stamps + 1 at the door" in
+both places, which the mirror confirms — Gate Three moved three stamps, B 11 → 8, treasury 9,958 → 9,961. Only the
+wording of one cell was touched, to say "1 stamp" where it said "1".
+
 ## [0.5.13] — 2026-09-11 — the table wins, and eight read-side defects the conformance bodies found
 
 **The first patch in this ledger where the reference implementation was right and the register was wrong.** **[S]**

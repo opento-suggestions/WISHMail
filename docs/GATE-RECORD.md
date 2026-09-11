@@ -3,7 +3,7 @@
 **Certified mail for agents on Hedera. Every act below was submitted to consensus, read back from a mirror node, and
 recorded before the next one ran.** Each identifier links to HashScan, where the record is the network's and not ours.
 
-Ledger `hedera:testnet` · specification **0.5.12**, tagged `v0.5.12` · ETHOnline 2026.
+Ledger `hedera:testnet` · specification **0.5.13**, tagged `v0.5.13` · ETHOnline 2026.
 
 > **This file is a reading, not a record.** The records are `app/OPERATIONS.md` — one gate report and one run of
 > record per signed act, in the order they happened — and `ENTITIES.md`, which is generated. Where this file and
@@ -48,11 +48,23 @@ never divided — and it has no admin key, no freeze key, no pause key and no wi
 
 Fourteen JSON Schemas are registered on consensus under HCS-13 and **frozen for the life of version 0.5**. After that
 freeze the smallest new field is a new minor version — so a finding that would need one is recorded and deferred
-rather than coded around. **Ledger §G-20 is the worked example**, and Gate One below is it measuring itself: the
-provisioned path cannot be *rate*-priced while the `PriceList` schema is frozen, so 0.5 ships a flat ℏ number, and a
-flat number cannot track a fee schedule that is denominated in dollars and charged in ℏ. It is ruled a 0.6 candidate.
-The doorbell prices in the three gates below — 26.32, 26.61, 26.90 ℏ on three consecutive days — are that finding
-stated as measurements.
+rather than coded around. **Two findings stand recorded and unpatched for exactly that reason, and both are 0.6
+candidates waiting on a minor version rather than on a decision.**
+
+**Ledger §G-20** is the worked example, and Gate One below is it measuring itself: the provisioned path cannot be
+*rate*-priced while the `PriceList` schema is frozen, so 0.5 ships a flat ℏ number, and a flat number cannot track a
+fee schedule that is denominated in dollars and charged in ℏ. The doorbell prices in the three gates below — 26.32,
+26.61, 26.90 ℏ on three consecutive days — are that finding stated as measurements.
+
+**Ledger §G-29** is the other, and it is the one a reader of the evidence should know about. §8.5 has reassembly
+record every off-chain, unrooted, conflicting **and duplicate** chunk without using it, but §5.10’s
+`CorrespondenceEntry` carries `chunks` and `offChain` and no third list. So a duplicate is recorded by the walk and
+dropped by the bundle — a correspondence somebody replayed forty times and one nobody touched produce identical
+evidence, byte for byte — and an envelope with chunks but **no chunk 0 at all** gets no entry, because an entry
+reaches its chunks only through an `Envelope` and the registered Envelope schema requires all fifteen of its fields,
+none of which an envelope with no header has. Neither is reachable without a field the frozen schemas lack. **This is
+the freeze working as designed rather than a defect concealed**: the alternative was to invent values for fields that
+have none, which would put a fiction in the one document a stranger is supposed to be able to check.
 
 Every id, with a HashScan link: [`ENTITIES.md`](../ENTITIES.md).
 
@@ -124,7 +136,7 @@ answered by B. It carries all three letters.
 
 | Act | Envelope | Chunks | Postage | State |
 |---|---|---|---|---|
-| A plain letter, A2 → B — first contact: the doorbell rung, the lane opened | `cd9dc8f4…` | 1 | 1 + 1 at the door | SETTLED |
+| A plain letter, A2 → B — first contact: the doorbell rung, the lane opened | `cd9dc8f4…` | 1 | 1 stamp + 1 at the door | SETTLED |
 | A certified letter, A2 → B — 4,408 bytes, the Emancipation Proclamation | `514e5045…` | 10 | 3, nothing rung | **ACKED** |
 | A reply, B → A2 — on the same lane, nothing rung | `bc1bd61e…` | 1 | 1, nothing rung | SETTLED |
 
@@ -223,7 +235,8 @@ prevent.**
 
 Every letter above was read back by a Verifier configured with **nothing** — no key, no account, no stamp, no home,
 no credit and no broker. A mirror node is a read interface, not a broker (P-4). Run twice, it produced the same
-evidence digest both times, and each narrative carried the digest of the bundle it was read from (**T-P3-4**).
+evidence digest both times — which is `check:captured`'s assertion and names no row of the register — and each
+narrative carried the digest of the bundle it was read from (**T-P3-4**).
 
 **What that is not is T-P3-1, and the difference is worth stating plainly.** T-P3-1 asks for replay *by a fresh
 Verifier at a different patch revision of the same minor version, at a different time and through a different mirror
@@ -279,14 +292,28 @@ an omission.
 
 ```
   conformance tests registered   87
-  test bodies written             0
-  tests passing                   0
+  test bodies written            53
+  tests passing                  44
   classes claimed              none
 ```
 
-The suite emits that report honestly rather than suppressing it. Eighty-seven tests are named by the specification's
-own `Conformance:` notes and keyed to the invariants they serve; none has a body yet; the harness says so. A stub
-that passed would be a test that is not yet written telling the suite that it is.
+The suite emits that report honestly rather than suppressing it, and **the middle two numbers moved on 2026-09-11
+while the last one did not** — which is the whole point of it. Eighty-seven tests are named by the specification's
+own `Conformance:` notes and keyed to the invariants they serve. Fifty-three now have bodies, written from the
+register's own sketches and never from the implementation — *the code is the defendant, not the judge* — and on their
+first run they found **eleven defects in the reference implementation**, every one since fixed and each proved by the
+body that found it. Of the forty-three that fail, thirty-four have no body and say so by name, and nine are bodies
+failing on a clause they cite. **A failing body is a finding brought, not a chore**, and none is made to pass by
+narrowing it.
+
+**And still no class is claimed, which is correct output rather than a shortfall.** A class passes only when its
+suite passes in full, and every class includes VERIFIER — so **T-P3-1 alone would keep every class from passing
+here.** It asks for replay by a fresh Verifier *at a different patch revision of the same minor version, at a
+different time, through a different mirror node*, equal byte for byte. Running one implementation twice shows the
+replay is deterministic, which T-P3-1 presupposes and is not satisfied by. **This deployment has one
+implementation and that test compares two.** That is not a defect to be closed here; it is what publishing a
+specification is for, and the remaining three conditions wait on somebody else's Verifier. Silence claims nothing
+(§1.5), so this release is silent.
 
 Alongside it, **twenty-two offline checks are green** — the reference implementation's own courts, which run with no
 network at all. They appraise the real captured bytes of the correspondences above and refuse altered copies: a
