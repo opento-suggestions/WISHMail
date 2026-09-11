@@ -37,9 +37,23 @@ async function main(): Promise<void> {
   const lane = flag('lane');
   const name = flag('name');
   if (lane === undefined || name === undefined) {
-    console.error('usage: npm run capture -- --lane 0.0.N --name <fixture name>');
+    console.error('usage: npm run capture -- --lane 0.0.N --name <fixture name> [--topic 0.0.N …]');
     process.exit(2);
   }
+  // TOPICS A VERIFIER DOES NOT READ, BUT A COURT WANTS TO SEE.
+  //
+  // §11.2's ingestion table is what a Verifier reaches, and an HCS-10 outbound
+  // log is not on it — the records there are the standard's own bookkeeping and
+  // bear on no standing (D-174). But they are the only place the two readings of
+  // the pin's Outbound Connection Created operation can be compared against real
+  // network bytes, so a capture may be told to store them. Named explicitly and
+  // never discovered: what a Verifier follows is what a Verifier follows, and
+  // widening THAT to reach a log would make the fixture claim the Verifier read
+  // something it did not.
+  const extraTopics = process.argv.reduce<string[]>(
+    (acc, a, i) => (a === '--topic' && process.argv[i + 1] !== undefined ? [...acc, process.argv[i + 1] as string] : acc),
+    [],
+  );
   const mirrorUrl = flag('mirror') ?? DEFAULT_MIRROR;
   const reader = liveReader(mirrorUrl, LEDGER);
 
@@ -105,6 +119,8 @@ async function main(): Promise<void> {
   const laneInfo = await reader.topic(lane);
   const bornAt = laneInfo === null ? null : connectionTopicMemoOf(laneInfo.memo);
   if (bornAt !== null) await grab(bornAt.doorbell);
+
+  for (const t of extraTopics) await grab(t);
 
   for (const t of schemaTopics) {
     await grab(t);

@@ -4493,6 +4493,34 @@ registered schema topics.
   digest      34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017
 ```
 
+### The offline court over these bytes — `check:gate3`, 81 assertions
+
+`npm run check:gate3` reads the fixture and **no network** (P-4), and it is the twenty-second check in the battery.
+
+It proves three things only real bytes can prove. **The lane's birth walks from the lane itself** — the memo to C's
+door, that door's memo to C, the answer on it to B — on a door that had never been rung before, with the parties
+supplied to nothing. **Both outbound `connection_created` records are on the network in the two readings the pin
+contradicts itself between**: `check:letter` makes the MODEL wear those shapes, and this asks whether the network
+does. **The bundle carries the minor version**, so flipping `RELEASE.spec` to another patch of 0.5 inside the test
+leaves the digest exactly where it is — and this is the first fixture in this project that needs **no spec-string
+substitution at all**, because it was captured under a release that already writes `0.5`.
+
+**Four alterations are refused** — a changed header, a settlement memo naming another envelope, a settlement affixed
+by an account the chunks do not name, and no settlement at all — each driving the standing no higher than it stood and
+each moving the digest with the bytes.
+
+**And two are MEASURED AS UNSEEN.** A lane whose memo names a door holding no answer for it, and a lane whose submit
+key carries a third key, change **nothing**: not the standing, not the reasons, **not even the digest**. That is not a
+gap in the test — it is §11.4's lane-provenance check being dark under a release that claims no profile, which
+LIMITATIONS L-1 states in words and this states as a number. `check:letter` refuses both of them under a claimed
+profile on the modelled ledger, which is where the rule is proved. **The day this release claims `hcs14`, those two
+assertions flip and this check will say so by failing** — which is the right way round for a court to be wrong.
+
+The fixture was re-captured with `--topic 0.0.10452150 --topic 0.0.10468689` so both outbound logs are in it. **The
+bundle digest did not move**, which is the proof that a stored topic a Verifier does not read changes no evidence:
+§11.2's ingestion table does not reach an HCS-10 outbound topic, and those records bear on no standing. They are in
+the file because a court wanted to see them beside the bundle, and the file says which is which.
+
 ### DIVERGENCES — three, none of them on consensus, and every one of them ours
 
 **1. The provisioning driver does not exit after a run that talks to the counter.** Recorded in act one's section

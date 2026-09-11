@@ -53,10 +53,24 @@ what a reader would see. And the first provisioning run's console output was los
 this repository already carries; nothing that matters was lost, because the record is the mirror node and every id,
 fee and timestamp was read back from consensus.
 
-### Fixture
+### Fixture, and the court over it
 
 `conformance/fixtures/gate-three-certified.json` — the lane, its birth doorbell `0.0.10468687` reached by following
-the lane's own memo, both manifest topics, the schedule `0.0.10468901` and the two registered schema topics.
+the lane's own memo, both manifest topics, the schedule `0.0.10468901`, the two registered schema topics, and **both
+parties' outbound logs**, captured under a new `--topic` flag. §11.2's ingestion table does not reach an HCS-10
+outbound topic, so a Verifier does not read them and **the bundle digest did not move when they were added** — which
+is the proof that storing them claims nothing about what was read.
+
+**`check:gate3` is new: 81 assertions, and the twenty-second check in the battery.** The lane birth from the lane
+alone; both outbound records off the network rather than off a model; the envelope ACKED with its receipt on C's own
+manifest topic; and the D-173 property asserted by *being* a Verifier at another patch of 0.5. **It is the first
+fixture in this project needing no spec-string substitution**, because it was captured under a release that already
+writes `0.5`.
+
+Four alterations are refused. **Two are measured as UNSEEN** — a lane memo naming a door with no answer, and a submit
+key carrying a third key, change not the standing, not the reasons and not even the digest, because §11.4's
+lane-provenance check is dark under a release claiming no profile. That is LIMITATIONS L-1 as a number rather than a
+sentence, and the day this release claims `hcs14` those two assertions flip and the check says so by failing.
 
 ## [0.5.12] — 2026-09-10 — four rulings, and a probe that decided a version
 

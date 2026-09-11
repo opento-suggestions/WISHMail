@@ -19,7 +19,7 @@ earlier days — history, not instructions. **Decisions run to D-172** in ledger
 
 **Where the build stands, 2026-09-10.** The specification is **0.5.12**, tagged `v0.5.12`; **Gate Two is run in
 all three acts** — a plain letter, a certified one carrying §10.4's return receipt with `ack` and the envelope
-ACKED, and the reply back down the same lane with nothing rung. **Twenty-one `check:*` are green**, with
+ACKED, and the reply back down the same lane with nothing rung. **Twenty-two `check:*` are green** — `check:gate3` joined them with Gate Three — with
 `typecheck` and `p13:check`.
 
 **Ledger §G is ruled through, 2026-09-10.** Items 12–19 and 21–25 are **closed** — 18, 23 and 25 by the 0.5.12

@@ -417,6 +417,11 @@ nothing**: not one tinybar and not one stamp moved across the ack (T-P16-2).
 specification 0.5"*, so `34b314c4…` reproduces at every later patch of 0.5 — which is what §11.7 asks for and what no
 digest in this project before today could give (D-173).
 
+**`check:gate3` is new — 81 assertions over these bytes**, the twenty-second check: the lane birth from the lane
+alone, both outbound records off the network, the receipt on C's own manifest topic, and the D-173 property asserted
+by *being* a Verifier at another patch of 0.5. Four alterations refused, and **two measured as unseen** — the dark
+lane-provenance checks of L-1, as a number rather than a sentence.
+
 **Three divergences, none on consensus, all ours and all written down**: the provisioning driver does not exit after a
 run that talks to the counter (raised, not repaired); `inbox.cli.ts` does not render a pending receipt request, though
 the tool returns it and `ack` found it immediately; and the first provisioning run's console output was lost to a

@@ -1,7 +1,7 @@
 {
   "_readme": "A correspondence captured from hedera:testnet, byte for byte as a mirror node returned it. Nothing here is a key and nothing here is private: every byte is on a public topic. It exists so the suite can run with no network (P-4) — a test that reached a mirror node would be a test of the mirror node. The appraisal below is what THIS release reached; a release claiming a profile reaches a different one, and the difference is the point of §11.4.",
   "ledgerTag": "hedera:testnet",
-  "capturedAt": "2026-09-11T03:45:49.168Z",
+  "capturedAt": "2026-09-11T03:52:53.856Z",
   "lane": "0.0.10468898",
   "topics": {
     "0.0.10452154": [
@@ -70,6 +70,37 @@
         "runningHash": "HR4oLbMZGgq+Na2/TgHRqD/maaxFcZ5rVLI+ypkvWqU6wIazilZr/vxUdnZwxSkX",
         "runningHashVersion": 3,
         "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_created\",\"connection_topic_id\":\"0.0.10468898\",\"connected_account_id\":\"0.0.10452127\",\"operator_id\":\"0.0.10468687@0.0.10468684\",\"connection_id\":1}",
+        "payer": "0.0.10450880"
+      }
+    ],
+    "0.0.10452150": [
+      {
+        "topicId": "0.0.10452150",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789089989.953139375",
+        "runningHash": "maF649CBQWJOIUnaTUKCpGATOxJx9x6/xkuFyxXCvUr96pLIPmQ37a2l6/0rzqoU",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_request\",\"operator_id\":\"0.0.10468687@0.0.10468684\",\"outbound_topic_id\":\"0.0.10452150\",\"connection_request_id\":1}",
+        "payer": "0.0.10450880"
+      },
+      {
+        "topicId": "0.0.10452150",
+        "sequenceNumber": 2,
+        "consensusTimestamp": "1789090059.358173104",
+        "runningHash": "me6gADOyHUIfUH+jm/qb4yZ/GpHNFVygKdWhapYewg3XcdXYXc32lopdigBlCMhf",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_created\",\"connection_topic_id\":\"0.0.10468898\",\"outbound_topic_id\":\"0.0.10452150\",\"requestor_outbound_topic_id\":\"0.0.10452150\",\"confirmed_request_id\":2,\"connection_request_id\":1,\"operator_id\":\"0.0.10468687@0.0.10468684\"}",
+        "payer": "0.0.10450880"
+      }
+    ],
+    "0.0.10468689": [
+      {
+        "topicId": "0.0.10468689",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789090061.353197104",
+        "runningHash": "Q9WkabWMltKrQEtYdcAMdiI0yTIwNgiS+bjBB32aTajIJvNZ1d77d8twFnpia7gh",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_created\",\"connection_topic_id\":\"0.0.10468898\",\"outbound_topic_id\":\"0.0.10468689\",\"requestor_outbound_topic_id\":\"0.0.10452150\",\"confirmed_request_id\":2,\"connection_request_id\":1,\"operator_id\":\"0.0.10468687@0.0.10468684\"}",
         "payer": "0.0.10450880"
       }
     ],
@@ -164,6 +195,28 @@
       "feeExemptKeys": [
         "204e085bce4b2e9f17e291e6ca39f08068c749a60606451df33d5674967f912d"
       ],
+      "deleted": false
+    },
+    "0.0.10452150": {
+      "topicId": "0.0.10452150",
+      "memo": "hcs-10:0:60:1",
+      "submitKeys": [
+        "0bf6f35094412d8c05d3fb5f33ef37737efa09ef684a7d5c52b2b1c3f3a978c5"
+      ],
+      "adminKey": "0bf6f35094412d8c05d3fb5f33ef37737efa09ef684a7d5c52b2b1c3f3a978c5",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10468689": {
+      "topicId": "0.0.10468689",
+      "memo": "hcs-10:0:60:1",
+      "submitKeys": [
+        "204e085bce4b2e9f17e291e6ca39f08068c749a60606451df33d5674967f912d"
+      ],
+      "adminKey": "204e085bce4b2e9f17e291e6ca39f08068c749a60606451df33d5674967f912d",
+      "customFees": [],
+      "feeExemptKeys": [],
       "deleted": false
     },
     "0.0.10448509": {
