@@ -101,27 +101,63 @@ test('T-P7-2 — Postage is consumed', async () => {
   assert.equal(first.appraisal.appraised.standing, 'verified', 'and stands');
 
   assert.equal(second.appraisal.appraised.standing, 'unstamped', 'the later one appraises unstamped (§11.5)');
-  assert.ok(second.appraisal.appraised.reasons.includes('T-P7-2'), 'with T-P7-2 among its reasons');
   assert.equal(
     second.appraisal.appraised.reasons.includes('T-P1-1'),
     false,
     'and it still BINDS — `st` is not an AAD field, so only the payment is in question',
   );
-
   assert.equal(third.appraisal.appraised.standing, 'verified', 'the third letter is untouched');
 
-  // The order is what decides, and not the order the Verifier happened to read
-  // them in: §11.7 sorts correspondence by chunk 0’s consensus timestamp.
+  // The order the BUNDLE reports is consensus order: §11.7 sorts correspondence
+  // by chunk 0's consensus timestamp.
   const positions = after.correspondence.map((e) => e.chunks[0]?.consensusTimestamp ?? '');
   assert.deepEqual([...positions].sort(), positions, '§11.7: entries are in consensus order of their chunk 0');
 
+  // --- WHY THE LATER LETTER IS UNSTAMPED, AND WHY IT IS NOT `T-P7-2`. -----
+  //
+  // Two things this alteration turned up, both of them about the rule rather
+  // than about the fixture.
+  //
+  // FIRST: §4.3 binds a settlement to ONE envelope through its memo,
+  // `wishmail:<id>`. So a pair sharing a settlement can never have both memos
+  // right — the shared transfer names one of them — and the other is unstamped
+  // by the memo check (`T-P7-1`) before the claimed-twice check is reached. The
+  // sketch's "a fixture pair sharing a settlement" therefore cannot be built in
+  // a way that isolates `T-P7-2`: the condition it describes is always
+  // accompanied by a memo mismatch, and on these bytes `T-P7-2` does not appear
+  // at all.
+  //
+  // SECOND, and this is the defect: §11.4's rule is "no envelope with an
+  // EARLIER canonical chunk 0 names the same settlement", and `verify` decides
+  // it in the order it happens to walk the envelopes. That order is
+  // `envelopeIdsOf`, which ends `return [...ids].sort()` — the identifiers
+  // sorted as HEX STRINGS. An identifier is a SHA-256 and its ordering has
+  // nothing to do with when the letter was posted. So the first envelope to
+  // reach the check claims the settlement whether or not it is the earlier one,
+  // and where the lexically-first identifier belongs to the consensus-LATER
+  // letter — which is the case on this lane — the check finds
+  // `before(later, earlier)` false, declines to record `T-P7-2`, and also
+  // declines to re-claim, so neither letter is ever flagged. The rule holds
+  // only when an arbitrary sort happens to agree with consensus.
+  assert.ok(
+    second.appraisal.appraised.reasons.includes('T-P7-1'),
+    'the later letter is unstamped for the memo, which is the reason §4.3 makes unavoidable',
+  );
+  assert.ok(
+    second.appraisal.appraised.reasons.includes('T-P7-2'),
+    '§11.4: "no envelope with an EARLIER canonical chunk 0 names the same settlement". Two envelopes name one ' +
+      `settlement here and neither carries \`T-P7-2\`: ${JSON.stringify([...second.appraisal.appraised.reasons])}. ` +
+      '`verify` decides the claim in the order `envelopeIdsOf` yields, and that function ends `[...ids].sort()` ' +
+      '— the identifiers sorted as hex strings, which is a SHA-256 ordering and says nothing about when a ' +
+      'letter was posted. On this lane the lexically-first identifier is the consensus-LATER letter, so it ' +
+      'claims the settlement first, `before(later, earlier)` is false for the earlier one, and the check ' +
+      'records nothing against either. The rule is correct only when an arbitrary sort agrees with consensus.',
+  );
+
   assert.fail(
-    'T-P7-2 PARTIAL — a pair sharing a settlement appraises one stamped and one unstamped, decided by consensus ' +
-      'order, with the third letter untouched: the second half of the sketch, in full. The first half, "a second ' +
-      'envelope against an already-claimed settlement is rejected at `send`", needs a writer — the sender pins ' +
-      'its own transfer reference inside §6.4 (`pinTransferRef`), so claiming a settlement twice is something ' +
-      '`send` must be shown not to do across two calls against one ledger. That is the modelled ledger, ' +
-      'permitted for a behaviour clause (RECORD, 2026-09-10) and not yet written. Recorded rather than quietly ' +
-      'dropped (conformance/DERIVATION.md).',
+    'T-P7-2 PARTIAL — unreached even at replay, for the two reasons above. The `send` half is separately out of ' +
+      'reach: the sender pins its own transfer reference inside §6.4 (`pinTransferRef`), so claiming a ' +
+      'settlement twice is something `send` must be shown not to do across two calls against one ledger, which ' +
+      'is the modelled ledger — permitted for a behaviour clause (RECORD, 2026-09-10) and not yet written.',
   );
 });
