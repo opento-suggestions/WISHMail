@@ -14,7 +14,7 @@ Ledger `hedera:testnet` · specification **0.5.12**, tagged `v0.5.12` · ETHOnli
 |---|---|
 | Gates run | **3** — provisioning, the letter loop, and the whole of `send()` in one call |
 | Correspondents | **3** — bought through the counter, each resolving under two registry profiles |
-| Letters delivered | **4** — two plain, one certified with a return receipt, one reply |
+| Letters delivered | **4** — two plain, one of them a reply; and **two certified**, each with a return receipt published by the recipient's own signature |
 | Classes claimed | **0** — silence claims nothing (§1.5), and the reason is at the end |
 
 ---
@@ -47,8 +47,12 @@ never divided — and it has no admin key, no freeze key, no pause key and no wi
 | Registry anchor (HOL) | [`0.0.6913983`](https://hashscan.io/testnet/topic/0.0.6913983) | Read, never brokered — nothing a directory says enters a resolution |
 
 Fourteen JSON Schemas are registered on consensus under HCS-13 and **frozen for the life of version 0.5**. After that
-freeze the smallest new field is a new minor version, which is why two findings below were raised and left unpatched
-rather than coded around.
+freeze the smallest new field is a new minor version — so a finding that would need one is recorded and deferred
+rather than coded around. **Ledger §G-20 is the worked example**, and Gate One below is it measuring itself: the
+provisioned path cannot be *rate*-priced while the `PriceList` schema is frozen, so 0.5 ships a flat ℏ number, and a
+flat number cannot track a fee schedule that is denominated in dollars and charged in ℏ. It is ruled a 0.6 candidate.
+The doorbell prices in the three gates below — 26.32, 26.61, 26.90 ℏ on three consecutive days — are that finding
+stated as measurements.
 
 Every id, with a HashScan link: [`ENTITIES.md`](../ENTITIES.md).
 
@@ -120,9 +124,9 @@ answered by B. It carries all three letters.
 
 | Act | Envelope | Chunks | Postage | State |
 |---|---|---|---|---|
-| A plain letter, A2 → B — first contact: the doorbell rung, the lane opened | `cd9dc8f4…` | 1 | 1 + 1 fee | SETTLED |
-| A certified letter, A2 → B — 4,408 bytes, the Emancipation Proclamation | `514e5045…` | 10 | 3 | **ACKED** |
-| A reply, B → A2 — on the same lane, nothing rung | `bc1bd61e…` | 1 | 1 | SETTLED |
+| A plain letter, A2 → B — first contact: the doorbell rung, the lane opened | `cd9dc8f4…` | 1 | 1 + 1 at the door | SETTLED |
+| A certified letter, A2 → B — 4,408 bytes, the Emancipation Proclamation | `514e5045…` | 10 | 3, nothing rung | **ACKED** |
+| A reply, B → A2 — on the same lane, nothing rung | `bc1bd61e…` | 1 | 1, nothing rung | SETTLED |
 
 ### The return receipt is the recipient's signature, and costs the recipient nothing
 
@@ -219,7 +223,15 @@ prevent.**
 
 Every letter above was read back by a Verifier configured with **nothing** — no key, no account, no stamp, no home,
 no credit and no broker. A mirror node is a read interface, not a broker (P-4). Run twice, it produced the same
-evidence digest both times (T-P3-1).
+evidence digest both times, and each narrative carried the digest of the bundle it was read from (**T-P3-4**).
+
+**What that is not is T-P3-1, and the difference is worth stating plainly.** T-P3-1 asks for replay *by a fresh
+Verifier at a different patch revision of the same minor version, at a different time and through a different mirror
+node*, equalling the reference evidence byte for byte. Running one implementation twice shows the replay is
+**deterministic** — which T-P3-1 presupposes and is not satisfied by. **This deployment does not discharge T-P3-1,
+because it has one implementation and that test compares two.** The offline court meets one of its four conditions
+and says so: it re-reads Gate Three's bytes while standing at another patch of 0.5 and requires the digest not to
+move. The remaining three wait on somebody else's Verifier, which is the point of publishing the specification.
 
 ```
    verified  >  [unverified]  >  unstamped  >  unbound
@@ -235,12 +247,20 @@ Binding, postage and the receipt were all checked and all held. A Verifier that 
 not claim is behaving as §9.6 specifies; one that reported `verified` anyway would be claiming something it had not
 done.
 
-| Correspondence | Digest | Standing | Reproduces from |
-|---|---|---|---|
-| Gate Two, checkpoint one | `8d30dfdc…` | unverified | `v0.5.10` |
-| Gate Two, checkpoint two | `00229e6f…` | acked | `v0.5.10` |
-| Gate Two, the reply | `1c4359e5…` | unverified | `v0.5.11` |
-| Gate Three | `34b314c4…` | acked | **every 0.5.x** |
+**Standing and the receipt are two axes, and this table keeps them apart.** An envelope's standing is what its
+evidence binds to; a receipt's status is a fact about the receipt. §11.5 is explicit that the receipt does not lower
+the standing — an invalid one is a fact about the receipt — and nothing raises it. Every envelope in every bundle
+below stands `unverified`, for the one reason above and no other.
+
+| Correspondence reconciled | Envelopes | Standing | Receipts | Digest | Reproduces from |
+|---|---|---|---|---|---|
+| Gate Two, checkpoint one | 1 | unverified | none requested | `8d30dfdc…` | `v0.5.10` |
+| Gate Two, checkpoint two | 2 | unverified | 1 **acked** | `00229e6f…` | `v0.5.10` |
+| Gate Two, after the reply | 3 | unverified | 1 **acked** | `1c4359e5…` | `v0.5.11` |
+| Gate Three | 1 | unverified | 1 **acked** | `34b314c4…` | **every 0.5.x** |
+
+Each bundle is over the whole lane at the moment it was read, which is why the envelope count grows down the first
+three rows: the reply's bundle reconciles all three letters on lane `0.0.10464056`, not just the reply.
 
 The last row is the interesting one. Until 0.5.12 the digest was computed over a string carrying the release's full
 patch number, which meant two independent implementations — never at the same patch — could satisfy §11.7 only by

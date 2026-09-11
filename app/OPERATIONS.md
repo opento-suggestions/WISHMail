@@ -2574,6 +2574,15 @@ recorded digest.
 WISHMail's two claims, and it is the first time it has been anything but a design intention: **a correspondence
 reconstructed from public consensus data by someone with no key, no account, no stamp and no credential.**
 
+**NOTE ADDED 2026-09-10, beside the citation it corrects.** The `(T-P3-1)` on the line above **over-claims, and
+the `(T-P3-4)` beside it is right.** §A gives T-P3-1 as replay *by a fresh Verifier at a different patch revision of
+the same minor version, at a different time and through a different mirror node than the reference Postmaster's*,
+equal byte for byte. Running THIS implementation twice, at one patch, through one mirror, shows the replay is
+**deterministic** — which T-P3-1 presupposes and is not satisfied by. **This deployment does not discharge T-P3-1,
+because it has one implementation and that test compares two.** T-P3-4 — every narrative's `bundleDigest` equals
+the digest of the bundle it was produced from — is discharged here exactly as written. The run above is not
+rewritten; what it measured is what it measured, and this says what that measurement is worth.
+
 ### The appraisal against the prediction
 
 **The gate report predicted `unverified`, with the reason being the profile-not-claimed row, and that is what came
@@ -3149,6 +3158,15 @@ recorded digest.
 **Run twice: the same digest both times** (T-P3-1), and the narrative carries it (T-P3-4). **`Its state is ACKED. Its
 return receipt is acked.`** — the first time any envelope in this deployment has been anything but SETTLED, said by
 someone with no key, no account, no stamp, no counter and no home.
+
+**NOTE ADDED 2026-09-10, beside the citation it corrects.** The `(T-P3-1)` on the line above **over-claims, and
+the `(T-P3-4)` beside it is right.** §A gives T-P3-1 as replay *by a fresh Verifier at a different patch revision of
+the same minor version, at a different time and through a different mirror node than the reference Postmaster's*,
+equal byte for byte. Running THIS implementation twice, at one patch, through one mirror, shows the replay is
+**deterministic** — which T-P3-1 presupposes and is not satisfied by. **This deployment does not discharge T-P3-1,
+because it has one implementation and that test compares two.** T-P3-4 — every narrative's `bundleDigest` equals
+the digest of the bundle it was produced from — is discharged here exactly as written. The run above is not
+rewritten; what it measured is what it measured, and this says what that measurement is worth.
 
 ### The appraisal against the prediction
 
