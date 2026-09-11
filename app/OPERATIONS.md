@@ -4767,6 +4767,95 @@ Nothing here is normative. This is what §9.5 and the pinned HCS-10 text say the
 
 **What it must not do.** It must not call the broker. `hol.org/registry/api/v1` is a directory (§9.7), and nothing it returns is an input (P-6). The anchor is read from a mirror node with nothing configured, which is what makes this profile `math` rather than `social-committee`.
 
+## SUPERSEDED DIAGNOSIS — why the provisioning driver did not exit. Written 2026-09-11, from the code and not from a run
+
+**Gate Three's run of record is not amended, and this section does not amend it.** Step 7, act one, §"DIVERGENCE —
+the driver did not exit after the purchase, and its console output was lost" stands exactly as it was written on
+2026-09-10, including the sentence this section supersedes. A gate report and its run of record are what somebody
+believed at the time they signed; correcting them afterwards would make them a description of the past written by
+someone who already knew the answer. **What is corrected is the diagnosis, here, dated, with what replaces it and
+what is still unknown.**
+
+### What the run of record says
+
+> *"`Session.close()` releases the two Hedera `Client`s; nothing closes the counter's MCP transport."*
+
+### Why that cannot be it
+
+**Both closes exist, and both predate Gate Three.**
+
+- `app/sdk/counter.ts:490-492` — `buyStamps` ends in `finally { await client.close(); }`, where `client` is the
+  Streamable HTTP MCP transport to the counter. It has been there since the first Correspondent commit.
+- `app/sdk/provision.cli.ts:60-61, 269-271` — the driver keeps an `open: Set<Session>` and closes every member in a
+  `.finally`. Added **2026-09-09**, the day *before* the gate.
+
+So on 2026-09-10 the transport was already being closed, and the sentence names a cause that was not available.
+
+### What actually pins a Node process on this path
+
+**The Hedera SDK arms a twenty-four-hour, non-`unref`'d timer in every `Client` constructor, and only `close()`
+clears it** — `node_modules/@hashgraph/sdk/lib/client/Client.cjs`:
+
+```
+  :158   this._networkUpdatePeriod = 24 * 60 * 60 * 1000;
+  :165   this._scheduleNetworkUpdate();
+  :864   _scheduleNetworkUpdate() { this._timer = setTimeout(async () => { ... }, this._networkUpdatePeriod); }
+  :834   close() { ...; clearTimeout(this._timer); }
+```
+
+A timer that is not `unref`'d holds the event loop for its whole period. **A carried boot constructs two clients** —
+`app/sdk/session.ts:223-226` — because there are two payers and a client *is* its payer.
+
+That fits the observation exactly, and it fits the isolation too: the rerun skipped `buy_stamp`, constructed no extra
+clients, and exited in seconds.
+
+### The leak that can be named with certainty
+
+`app/sdk/counter.ts:443`:
+
+```ts
+const carried = await boot(s.home, { payer: legs, expectAccount: true });
+```
+
+`carried` is released **only** by being returned at `:466` and added to the caller's `open` set at
+`app/sdk/provision.cli.ts:204`. `buyStamps`'s own `finally` (`:490-492`) closes the MCP client and **not** `carried`.
+**Every throw between `:443` and `:466` therefore leaks two Hedera clients and two twenty-four-hour timers:**
+
+- the account-mismatch throw, `counter.ts:444-449`;
+- anything raised inside `generateMailbox`, `counter.ts:452` — which includes every carry-leg refusal from
+  `app/sdk/carry.ts:102-115`;
+- the receipt-loop ceiling, `counter.ts:473-482`;
+- the `STAMP_PAYMENT_FAILED` at `counter.ts:469-472`.
+
+The fix is one `finally` reaching `carried`. It is **not** made in this section, which is a reading and not a change.
+
+### What is NOT attributed, and is not guessed
+
+**Gate Three's first provisioning run appears to have taken the happy path** — `register_agent` runs after
+`buyStamps` (`provision.cli.ts:231`) and its submission landed at `1789088792.075645154`. On that path `carried` is
+returned, every session is in `open`, and the driver's `.finally` closes all of them.
+
+**So the specific hang of that specific run is not explained by the leak above, and this section does not claim it
+is.** Two candidates can be named and neither can be confirmed by reading:
+
+1. Global `fetch` keep-alive sockets. `app/src/ops/mirror.ts:36` uses bare global `fetch`, as does the MCP transport,
+   and nothing in `app/` ever calls `setGlobalDispatcher` or closes an agent. Undici's default keep-alive is seconds,
+   not fifteen minutes, so on its own this explains a delay and not a hang.
+2. `main()` never returning, in which case no `.finally` ran at all. The candidates after `register_agent` are the
+   two `resolve` calls at `provision.cli.ts:236-238`, both bounded mirror reads.
+
+**Deciding it needs one run under `--trace-exit`, or a `process.getActiveResourcesInfo()` dump at the end of
+`main()`.** That run has not been made. Until it is, what this repository knows is: the recorded cause is wrong, the
+SDK timer is the mechanism that can hold this process, one certain leak exists on the error paths, and the happy-path
+hang is unattributed.
+
+### And the console output
+
+The second half of that divergence needs no correction. The run was invoked through `| tail -70`, a pipe to `tail`
+delivers nothing until the writer closes, and stopping the hung process discarded the buffer. The rule was already in
+this repository and was broken. Nothing that matters was lost, because **the record is the mirror node and not a
+console**.
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
