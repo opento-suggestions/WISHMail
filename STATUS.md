@@ -389,6 +389,25 @@ Run of record in `app/OPERATIONS.md`.**
    §G-21 and **D-172** closed §G-22 and the specification moved to **0.5.11** — nothing rung, no second lane, and
    A2's doorbell still holding zero messages.
 
+### GATE THREE — written, authorised, not yet run (2026-09-10)
+
+**The gate report is `app/OPERATIONS.md` Step 7**, committed before any signature. A third Correspondent, **C** —
+home `c`, `displayName` `DemoAgentC`, under **C2OPERATOR `0.0.10450880`**, the wallet B already pays from — is
+provisioned through the counter at sequence 4's prices, and then **B sends C a certified letter in ONE `send()`
+call**: first contact and `returnReceipt` together, which is §6.4 as written and band 3 of the diagram end to end.
+C's `inbox` opens it, C acks, a stranger verifies from an empty home.
+
+**What fires live for the first time**: the P-9 outbound `connection_request` fix, and both of D-174's outbound
+`connection_created` records. §5 of the gate report predicts all three, field by field, on both logs.
+
+**The quote, read from consensus**: `PriceList` sequence 4 — 30 ℏ for the provisioned path, 0.05 ℏ registration fee,
+12 stamps for one USD at the network's own rate, **43.29198051 ℏ** at the rate read 2026-09-10. C2OPERATOR holds
+**458.65756285 ℏ**. B holds **11** stamps and spends **3** — one at C's door, two as postage on a 1-ounce letter with
+a return receipt.
+
+**The send dry run cannot exist until C does**, because `letter:plan` resolves the recipient from consensus before it
+composes anything; §11 of the gate report says so and carries the prediction the run must match.
+
 **RULED, and the list is closed (Sonic, 2026-09-10).** Every item that stood here is answered, and **the spec changes
 they oblige have LANDED as 0.5.12**, tagged `v0.5.12`: D-173 (§G-25), D-175 (§G-18) and D-176 (§G-23). **The probe
 decided the version rather than the argument**, which is what the ruling required: the frozen `evidence-bundle` schema

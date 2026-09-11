@@ -54,7 +54,9 @@ is left exactly as it stood**: one amended after the fact is not a gate report. 
 and are wholly disposable. **If a stop fires, report what is true at the stop and what is resumable, and wait** —
 never repair past it, never infer.
 
-**The two Correspondents, and what to call them.** **A2** — account `0.0.10462700`, home `a2`, `displayName`
+**The Correspondents, and what to call them.** (There are three from Gate Three: A2, B, and **C** — home `c`,
+`displayName` `DemoAgentC`, operator **C2OPERATOR `0.0.10450880`**, which is B's operator too, so each of the two
+demo operators owns two agents. C's ids go here once it is on consensus.) **A2** — account `0.0.10462700`, home `a2`, `displayName`
 `DemoAgentA2` — is the demo's first Correspondent, and it supersedes both **A** (bought 2026-09-09, stopped after
 its transfer, kept exactly as it is) and the plans' name **"A′"**: where a plan or an earlier record says `A′`, it
 means A2. **B** — account `0.0.10452127`, home `b` — is the other. They correspond on lane `0.0.10464056`, which
@@ -66,9 +68,17 @@ nothing runs without knowing where they are. `app/OPERATIONS.md` writes them as 
 recorded invocation and the real paths appear nowhere in the repository — which is the convention, not an oversight.
 The Postmaster's own state is separate, at `.wishmail-state/` inside the repository.
 
-**Nothing is waiting on a signature.** Every act Sonic has authorized is run, recorded and pushed. What is open is
-ruling, not building: ledger §G items 18, 20, 23, 24 and 25, and the questions under **Open for Sonic** in
-`STATUS.md`.
+**GATE THREE IS WRITTEN AND WAITING.** Its gate report is `app/OPERATIONS.md` **Step 7**, committed before any
+signature, and Sonic authorised it in advance. A third Correspondent, **C** — home `c`, `displayName` `DemoAgentC`,
+under **C2OPERATOR `0.0.10450880`**, the same wallet B pays from — is provisioned through the counter, and then **B
+sends C a certified letter in ONE `send()` call**: first contact and `returnReceipt` together, which is §6.4 as
+written and the first time this deployment does the whole of it in one call. C's home exists and its keys are born;
+nothing else has happened. **The send dry run cannot be produced until C is on consensus** — `letter:plan` resolves
+the recipient before it composes — so §11 of that report carries the prediction it must match, and a mismatch is a
+stop.
+
+Everything else Sonic has authorized is run, recorded and pushed. What is otherwise open is ruling, not building:
+ledger §G-20 (a 0.6 candidate) and §G-8.
 
 ## 1. The documents, and their order
 

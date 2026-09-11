@@ -3701,6 +3701,392 @@ for checkpoints one and two reproduce from tag `v0.5.10` and this one from `v0.5
 
 ---
 
+## Step 7 — GATE THREE: a third Correspondent, and the whole of §6.4 in one `send()` call. Gate report, written 2026-09-10 before any signature
+
+**Nothing below has been signed.** `npm run correspondent:provision:plan` is the provisioning dry run and has been
+run; its output is printed verbatim in §10. `npm run letter:plan` is the send dry run and **cannot be run yet** — §11
+says why, and says what it must print before anything goes live.
+
+Gate Two proved the letter loop between two agents that already existed. **Gate Three is the first time this
+deployment does the whole of §6.4 in ONE `send()` call**: first contact and `returnReceipt` together, which is §6.4 as
+written and band 3 of the diagram end to end. It is also the first time three agents exist, the first live run of the
+P-9 outbound fix, and the first live run of D-174's two records.
+
+### 1. The actors, and what each is
+
+```
+  the Postmaster   0.0.8641261        treasury 0.0.10426205 · $POSTAGE 0.0.10426208 · prices 0.0.10426551
+                   counter at http://127.0.0.1:4600/mcp, started for the purchase and stopped after it
+  C2OPERATOR       0.0.10450880       458.65756285 ℏ · 0 $POSTAGE · max_automatic_token_associations -1
+                   the wallet that pays for BOTH B's submissions and C's — one operator, two agents (D-165)
+  B (the sender)   0.0.10452127       doorbell 0.0.10452149 · log 0.0.10452150 · manifest 0.0.10452154
+                   11 $POSTAGE · 0.04622564 ℏ, which it never spends: its operator pays (§3.5)
+  C (the recipient)  NOT BOUGHT YET. home <c home>, displayName DemoAgentC, alias demoagentc
+  the stranger     a directory holding no key, no account, no stamp, no counter and no home
+```
+
+**C is a new agent because its home is new** (D-165): `<c home>/config.json` names C2OPERATOR as payer and carries
+`agent.displayName` `DemoAgentC`, distinct from `Correspondent A`, `DemoAgentA2` and `Correspondent B` — §9.5
+recomputes an agent's identifier from its profile's own name and version, so the name is chosen once and never
+changed. The agent's own key is **not** in that file and never will be: it is born in C's own process on first run,
+into `<c home>/keystore.json` (P-13). The dry run in §10 reports `keys born`, which is that happening.
+
+**A2 takes no part in Gate Three** and its process stays down, for the same reason it stayed down for the reply: a
+watcher that is up is the only thing that can answer a ring, and an answered ring is a lane that cannot be closed.
+
+### 2. The quote, read from consensus before anything is bought
+
+`PriceList` **sequence 4** is current — `0.0.10426551` #4 at `1789055861.123389104`, the schedule §14.3 makes the
+sequence of messages, so the latest before the purchase governs.
+
+```
+  provisioning.unitPrice        "30"      ℏ, flat
+  provisioning.registrationFee  "0.05"    ℏ
+  bundle                        12 $POSTAGE for "1.00" USD, method hbar
+  rate source   https://testnet.mirrornode.hedera.com/api/v1/network/exchangerate   (D-170)
+```
+
+At the rate record read 2026-09-10 — `cent_equivalent 225700`, `hbar_equivalent 30000`, **0.0752333333 USD per ℏ**:
+
+```
+  12 $POSTAGE (one bundle at "1.00" USD)      13.29198051 ℏ
+  the provisioned path ("30" flat)            30.00000000 ℏ
+                                              ------------
+  C2OPERATOR pays the Postmaster              43.29198051 ℏ
+  the Postmaster then funds C                  0.05000000 ℏ   registrationFee, a LEG of the sale and not a gift
+```
+
+**C2OPERATOR holds 458.65756285 ℏ**, read from the mirror against that quote — about ten times the price. The rate
+moves between now and the run and the number the counter charges is the number at the purchase's own timestamp; this
+quote fixes the *shape* and the order of magnitude, and `rate.at` in the receipt is what a Verifier re-obtains
+(D-170). A2 paid 43.23883804 ℏ at sequence 4 yesterday, which is the same quote half a percent ago.
+
+### 3. Every consensus write, in order, with its payer
+
+**Act one — C's provisioning** (D-159's order as amended, D-168's carry):
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 1 | the purchase — ONE transaction, THREE legs: ℏ to the Postmaster, 12 `$POSTAGE` to C's public-key alias **which creates C's account** (HIP-542), 0.05 ℏ from the Postmaster to that account | C's agent key | **C2OPERATOR** `0.0.10450880` |
+| 2 | doorbell (HCS-10 inbound) — `hcs-10:0:60:0:<C>` · no submit key · admin C's · **HIP-991 fee of 1 `$POSTAGE` to the treasury, C's own key exempt** (D-137) · auto-renew C2OPERATOR | C's agent + operator | **the Postmaster**, carried |
+| 3 | log (HCS-10 outbound) — `hcs-10:0:60:1` | C's agent + operator | the Postmaster, carried |
+| 4 | manifest — `wishmail:manifest:1` | C's agent + operator | the Postmaster, carried |
+| 5 | declaration registry (HCS-2) — `hcs-2:0:60` | C's agent + operator | the Postmaster, carried |
+| 6 | HCS-11 profile file (HCS-1) — `<sha256>:brotli:base64`, **no admin key** (D-150) | C's agent + operator | the Postmaster, carried |
+| 7 | the profile, as HCS-1 chunks — one HCS message per chunk, no `chunkInfo` | C's agent | the Postmaster, carried |
+| 8 | HCS-2 register entry naming the profile file — memo `hcs-2:op:register:0` | C's agent | the Postmaster, carried |
+| 9 | §9.2's account memo — `hcs-11:hcs://2/<registry>` | C's agent | the Postmaster, carried |
+| 10 | `register_agent` on the HOL anchor `0.0.6913983` | C's agent | **C ITSELF** — the mirror must record C as payer or §9.5 assigns `blurred` (T-P13-4) |
+
+**No `$POSTAGE` association transaction is expected.** C2OPERATOR's `max_automatic_token_associations` is **-1**, read
+from the mirror, so the stamp associates itself as it arrives; `ensurePayerHoldsStamps` prints
+`provision.autoassociates` and submits nothing. C's own account needs none either — HIP-542 creates it with unlimited
+auto-associations, which the 2026-09-09 probe observed. **This is checked and not assumed, and it matters**: the
+operator must be able to *hold* a stamp before B can ring anything, because §4.4's doorbell fee is debited from the
+payer of the submission (HIP-991) and the payer here is the operator.
+
+**Act two — B's letter to C, one `send()` call** (§6.4 in its written order):
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 11 | **the stamp hop** — 1 `$POSTAGE` from B to C2OPERATOR, so the payer can pay the doorbell's fee (§4.4) | B's agent | C2OPERATOR |
+| 12 | **the ring** — `connection_request` on C's doorbell, memo `hcs-10:op:3:1`. **The HIP-991 fee consumes that stamp to the treasury** | B's agent | C2OPERATOR |
+| 13 | **B's outbound record of the ring** — `connection_request` on B's log `0.0.10452150`, memo `hcs-10:op:3:2`, in the OUTBOUND shape (`index.md:549-556`). **First time live** — the P-9 fix | B's agent | C2OPERATOR |
+| 14 | C's watcher answers: **the lane** — threshold of exactly B's and C's account keys, admin C's, **no custom fee**, memo `hcs-10:1:60:2:<C's doorbell>:<n>` | C's agent | C2OPERATOR |
+| 15 | C's **`connection_created` on its own doorbell** — memo `hcs-10:op:4:1`. §7.1's authority, and it goes before the log record | C's agent | C2OPERATOR |
+| 16 | **C's outbound record of the lane** — `connection_created` on C's log, memo `hcs-10:op:4:2`, acceptor reading. **First time live** — D-174 | C's agent | C2OPERATOR |
+| 17 | **B's outbound record of the lane** — `connection_created` on B's log, memo `hcs-10:op:4:2`, requester reading. **First time live** — D-174 | B's agent | C2OPERATOR |
+| 18 | the resolution manifest on **B's** manifest topic `0.0.10452154` | B's agent | C2OPERATOR |
+| 19 | **the settlement** — 2 `$POSTAGE` to the treasury under memo `wishmail:<aadHash>` | B's agent | C2OPERATOR |
+| 20 | chunk 0 on the lane — HCS-10 `message`, memo `hcs-10:op:6:3`, no `chunkInfo` | B's agent | C2OPERATOR |
+| 21 | **the ScheduleCreate** — inner: submit the receipt manifest to **C's** manifest topic; inner payer set explicitly to C2OPERATOR; `waitForExpiry` false; expiry **30 days**, under `SCHEDULE_MAX_LIFETIME` 5,356,800s | B's agent | C2OPERATOR |
+| 22 | the `transaction` operation on the lane naming the schedule — **empty memo**, because HCS-10 gives it no enum slot (§6.1, T-P9-5) | B's agent | C2OPERATOR |
+
+**Act three — C opens it, C acks, a stranger verifies:**
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 23 | `inbox` at C — **writes nothing** (§6.5); surfaces the pending schedule | — | — |
+| 24 | **C's `ack`** — a ScheduleSign. The instant it lands the network executes the inner submission, and the receipt manifest lands on C's manifest topic | C's agent | C2OPERATOR |
+| 25 | the stranger's `verify`, twice — **reads only** (P-4) | — | — |
+| 26 | B's `inbox` — reads nothing new; there is no reply this time | — | — |
+
+**The postage arithmetic, and B ends at 8 stamps.** Body 32 bytes → one chunk → 1 ounce of 16. Postage is weight plus
+the return-receipt fee of one stamp (§4.2, §7.5) = **2 stamps**; the ring costs **1** more at C's door. B holds 11
+before and **8** after. C2OPERATOR receives one stamp and the doorbell's fee consumes it, so it ends at **0** again.
+**C is charged nothing at any step** and its balances must be unchanged by the ack (T-P16-2).
+
+### 4. The submit→learn window, per write, and how a rerun resumes from inside it
+
+Every row is a signature leaving this process before its outcome is known. There is no offline consensus node, so this
+is the window no check reaches (CLAUDE.md §12). The four rows the day taught are named first.
+
+| Window | What can be true and unknown here | How a rerun resumes |
+|---|---|---|
+| **the ring landed, the answer is not yet visible** | the `connection_request` is on C's door and a stamp is gone; C may or may not have answered | **Wait, and spend nothing.** `send` rings at most ONCE per first contact and every attempt after it is a re-READ (30 s × 3). On a rerun, `pendingRequestOf` reads C's doorbell from consensus for a standing request of B's that no lane answers and **reuses it** — a second ring would be a second stamp, a second request for the watcher, and §7.1 then choosing between two lanes that cannot be closed |
+| **a standing request is older than the window** | B rang, nobody answered inside 90 s | **A slip, and that is a result and not a failure** (F-6, §10.5). `send` returns an `AttemptedDeliverySlip`; the request and B's log entry stay on consensus with their timestamps; one stamp is consumed as the doorbell's fee and no envelope was assembled and no postage affixed. Ringing again is permitted (§10.5) and is **not** done without the word |
+| **`send` died after the settlement, before the schedule** | 2 stamps are consumed and the envelope may be SETTLED with no receipt request | **Resume at step 7 from `<b home>/store/`.** The row is written *before* the transfer is submitted (P-7, D-165), so a later run can name the envelope and ask consensus about it. `--resume <envelopeId>` re-reads the lane, finds chunks present, and creates only the schedule. A rerun *without* resume composes a NEW envelope with a new nonce, and the first settlement becomes an **orphan** — reported under `orphans` (F-3), spent, nothing double-charged and nothing false on consensus |
+| **an identical `ScheduleCreate` is submitted twice** | a schedule may exist and this process not know its id | **The ledger itself prevents two**, and it is FETCHED rather than assumed: an identical inner transaction returns **`IDENTICAL_SCHEDULE_ALREADY_CREATED`** and *the receipt of that transaction carries the id of the schedule that already exists* (`docs.hedera.com/hedera/core-concepts/scheduled-transaction`, FETCHED 2026-09-10, recorded in checkpoint two's gate report). `ops/hedera.ts` carries an entity id back on that failed status and `send` treats it as success. **Above it, step 7 reads the lane first**: a `transaction` operation whose `data` names this envelope is the request, and its schedule is reused. Two independent guards, the outer one free |
+| the stamp hop (11) | B is down one stamp and the operator holds it | Nothing is lost: the stamp is on an account B's own operator controls and it pays the next doorbell fee. `ringStamp` moves one **only if the payer holds none and a door will actually be rung** — the fix checkpoint two's stray stamp bought |
+| the purchase (1) | the transfer may have landed and the counter's record of it be gone | **The purchase is idempotent against consensus**: `buy_stamp` with `provision` refuses if the holder's account already exists, and C's account is derived from C's own key. A transaction id is single-use, so nothing is charged twice. **A receipt is NEVER reconstructed by the party that charged** — Gate One's rule, learned by deleting one |
+| any mailbox row (2–9) | a topic may exist and C's record not name it | Every row is confirmed from a **mirror read** before the next is built, and `record.json` is written from that read. A rerun re-derives from consensus: `generate_mailbox` resolves C's own address first and does nothing if coordinates exist |
+| `register_agent` (10) | the registration may be on the anchor and unknown here | It resolves under `hol` first and does nothing if a registration by this account exists. **A duplicate is not waste but damage**: §9.5 assigns `vague` where more than one names an address |
+| the manifest (18) | on B's topic, sequence unknown | A rerun publishes a second; a manifest is content-addressed and both recompute to the same hash, so the second is a duplicate and not a contradiction. The envelope binds to the hash, never the sequence number |
+| chunk 0 (20) | the letter is on the lane and this process does not know it settled | The envelope is SETTLED whatever this process believes; `npm run verify -- --lane <lane>` reads it back |
+| the ack (24) | the ScheduleSign may have executed unseen | The execution is on consensus and idempotent: signing an executed schedule is refused by the network. `verify` is what says whether the receipt landed |
+
+### 5. What the first live outbound records are expected to look like, on both logs
+
+This is new to this gate and is the reason it is written down before the run: **three HCS-10 outbound records fire
+live for the first time**, two of them under D-174 and one under the P-9 fix. Each is predicted here and confirmed
+from the mirror afterwards.
+
+**On B's log `0.0.10452150`, which has held nothing since it was created** — B has never rung a doorbell:
+
+```
+#1   memo hcs-10:op:3:2                          the ring, in the OUTBOUND shape (index.md:549-556)
+     { "p": "hcs-10", "op": "connection_request",
+       "operator_id": "<C's doorbell>@<C's account>",   <- the agent BEING requested (index.md:553)
+       "outbound_topic_id": "0.0.10452150",
+       "connection_request_id": <the ring's sequence number on C's doorbell> }
+
+#2   memo hcs-10:op:4:2                          the lane, REQUESTER reading (D-174)
+     { "p": "hcs-10", "op": "connection_created",
+       "connection_topic_id": "<the lane>",
+       "outbound_topic_id": "0.0.10452150",
+       "requestor_outbound_topic_id": "0.0.10452150",   <- its own; redundant under this reading
+       "confirmed_request_id": <sequence of C's connection_created on C's doorbell>,
+       "connection_request_id": <the ring's sequence number, same as #1's>,
+       "operator_id": "<C's doorbell>@<C's account>" }  <- the CONFIRMER (index.md:587)
+```
+
+**On C's log, which will hold exactly one thing:**
+
+```
+#1   memo hcs-10:op:4:2                          the lane, ACCEPTOR reading (D-174)
+     { "p": "hcs-10", "op": "connection_created",
+       "connection_topic_id": "<the lane>",
+       "outbound_topic_id": "<C's log>",
+       "requestor_outbound_topic_id": "0.0.10452150",   <- B's; load-bearing under this reading
+       "confirmed_request_id": <sequence of C's OWN connection_created on its doorbell>,
+       "connection_request_id": <the ring's sequence number on C's doorbell>,
+       "operator_id": "<C's doorbell>@<C's account>" }  <- itself (index.md:529)
+```
+
+**The two records must agree on `connection_request_id` and on `connection_topic_id`, and must differ on
+`requestor_outbound_topic_id` only in the sense that both name B's log** — which is the one place the two readings
+happen to coincide, because B is the requester. They must **differ** in `outbound_topic_id`, each naming the log it
+sits on. If either log holds two `connection_created` records for one lane, that is a stop: both writers read their
+own log from consensus before writing.
+
+**A2's log `0.0.10462708` #1 is not touched and is not repaired.** It is the one record on this deployment in the
+wrong shape — the inbound body, naming A2 itself, two required fields absent — written before the P-9 fix. LIMITATIONS
+L-1 names it. Conformance runs from the fix forward.
+
+### 6. What it creates, and what it does not
+
+Creates: C's account and six topics; C's HCS-11 profile and its HCS-2 entry; C's registration on the HOL anchor; one
+lane; one `connection_request` and one `connection_created`; three outbound log records; B's resolution manifest; one
+settlement; one chunk; one schedule; one `transaction` operation; one executed receipt manifest on C's manifest topic.
+
+Does **not** create: any second lane; any message on A2's doorbell `0.0.10462704`, which must still hold **zero**;
+any message on the Postmaster-agent's log `0.0.10426554`; any entity in `app/deployment/hedera-testnet.json`, which is
+the Postmaster's ops record and takes no Correspondent id (CLAUDE.md §11).
+
+### 7. The predicted standing, and it is a prediction
+
+Derived from §11.5's table before running it:
+
+```
+  state       ACKED                       (§8.3 — one chunk delivered, and a receipt that recomputes)
+  standing    unverified
+  reasons     T-P12-4                     (§11.4 — the profile is not claimed, so the resolution is not replayed)
+  receipt     acked
+  trustClass  math, endorsements []       (declared, reported beside the standing, never folded in — P-12)
+```
+
+**`unverified` is correct and not a shortfall.** `RELEASE.classes` is empty and `RELEASE.profiles` is `{}`, so §9.6
+makes a Verifier that claims no profile conforming — it verifies binding, postage and the receipt, and reports the
+resolution unverified because it did not replay it. **Say it before the run, not after.**
+
+**`T-P10-2` and `T-P17-2` MUST NOT appear**, and not because the lane is right — because a Verifier claiming no
+profile never reaches either check (LIMITATIONS L-1). **`T-P9-3` must not appear**: B's `schemaRef` is
+`hcs://13/0.0.10448509#1`, the registered one. **`T-P1-12` must not appear**: the header requests this receipt.
+
+**The bundle will carry `spec: "0.5"`** — the first run of record to do so, under D-173, with the Verifier's own patch
+`0.5.12` reported at `observations.verifierSpec`, outside the digest.
+
+### 8. Every way it stops
+
+- The provisioning dry run prints anything but the eleven-row plan in §10 → **stop**.
+- The counter is not running, or refuses the quote → **stop**; nothing is signed before the counter answers.
+- `buy_stamp` refuses because an account already exists under C's key → **stop and report**: C's home is supposed to
+  be new, and an existing account means it is not.
+- The purchase transfers and the counter's record of it is lost → **STOP. Do not reconstruct the receipt.** Gate One's
+  rule, and the reason A is `stopped` and stays that way.
+- Any mailbox row fails → **stop**; what landed is in `record.json` from a mirror read, and a resume is a decision.
+- `register_agent` resolves `blurred` → **stop**: the registration's payer was not C, and §9.5 is right to say so.
+- **The send dry run prints anything but `lane NONE — this is first contact` and `ring ONE stamp` from
+  `0.0.10450880`** → **stop**. A found lane here would mean a lane between B and C already exists, which would mean
+  something rang that should not have.
+- `send` returns an `AttemptedDeliverySlip` → C's watcher did not answer inside 90 s. **That is a result, not a
+  failure.** Report it, leave the request standing, and **do not ring again without the word**.
+- `SEND_LANE_INVALID` → the lane C created is closed, carries a fee, or its key list is not exactly B's and C's keys
+  → **stop**; no second lane is rung.
+- `SEND_INSUFFICIENT_STAMPS` → B holds 11 and needs 3; this cannot fire without something else being wrong.
+- `SEND_SUBMIT_FAILED` / `SEND_SETTLE_TIMEOUT` → the settlement stands and the envelope is partial or orphaned; read
+  the mirror, report what is true and what is resumable, **wait**.
+- Either outbound `connection_created` missing after the run → **report it, do not re-submit.** It is a log entry and
+  the lane is authoritative; a second write is a decision and the record is best-effort by design (D-174).
+- C's `inbox` does not open the letter byte for byte → **stop**. Do not re-send.
+- `ack` returns `ACK_NOT_OPENED` → the schedule's body names a different identifier, postmark or epoch (T-P1-9) →
+  **stop**; that is the check working.
+- C's balances move by one tinybar or one stamp across the ack → **stop**: T-P16-2 is violated and that is a defect.
+- The stranger's two `verify` runs disagree on the digest → **stop**: §11.7's MUST is violated.
+- Any mirror readback disagreeing with what a process believes → the mirror is the record; **stop and report**.
+
+### 9. What the offline courts prove, and what they leave out
+
+`check:letter` is **187 assertions**, up from 155 today: both parties' outbound logs hold their `connection_created`
+after a first contact, in their own readings, and a second letter records nothing twice. `check:hcs10` is **63**:
+every field `index.md:578-588` marks required, on both records, plus the memo and the three places the two readings
+part. The whole battery is **twenty-one `check:*` green**, with `typecheck` and `p13:check`.
+
+**What they leave out, and no offline court can reach it.** Whether C's doorbell fee actually assesses against B's
+operator; whether the lane's threshold key accepts B's signature; whether the mirror ingests in the order these
+processes expect; whether an HCS-10 outbound record lands under the memo we set. And one specific to this gate:
+**the acceptor's outbound record has no offline court for its behaviour at all**, only for its shape — `answer()`
+takes a `Session` and a network, so §5's prediction is the only thing standing in for a test until it runs.
+
+### 10. The provisioning dry run, verbatim, signing nothing
+
+```
+$ npm run correspondent:provision:plan -- "<c home>"
+
+> wishmail@0.5.12 correspondent:provision:plan
+> npm run correspondent:provision:plan --workspace app -- <c home>
+
+> @wishmail/app@0.5.12 correspondent:provision:plan
+> tsx sdk/provision.cli.ts --dry-run <c home>
+
+  correspondent:provision — DRY RUN: nothing will be signed
+  argv as received  ["--dry-run","<c home>"]
+  to go live        pass --live, and check the line above says it arrived
+
+  provisioning a Correspondent — D-159's order, DRY RUN
+
+  home        <c home>
+  network     testnet (hedera:testnet)
+  keys        born
+  agent key   204e085bce4b2e9f…
+  x25519      K-UYc0KpyB800gGQ… epoch 1
+  payer       0.0.10450880   (the operator pays; the agent signs — §3.5)
+  counter     http://127.0.0.1:4600/mcp
+  stamp token 0.0.10426208  treasury 0.0.10426205
+  hol anchor  0.0.6913983
+  account     NOT BOUGHT — the purchase creates it (§4.6, HIP-542)
+
+  the plan — a PROVISIONING purchase (§4.6, D-168)
+
+  the purchase — 3 legs, 1 transaction   signs: buyer             pays: POSTMASTER
+                                         ℏ price → Postmaster · $POSTAGE treasury → the agent's public-key alias, which CREATES the account · registration fee ℏ → that account
+  1 doorbell (HCS-10 inbound)            signs: agent + operator  pays: POSTMASTER (carried)
+                                         hcs-10:0:60:0:(the account this purchase creates) · submit NONE · admin 204e085b… · fee 1 0.0.10426208 → 0.0.10426205 · exempt 1 · auto-renew 0.0.10450880
+  2 log (HCS-10 outbound)                signs: agent + operator  pays: POSTMASTER (carried)
+                                         hcs-10:0:60:1 · submit 204e085b… · admin 204e085b… · no fee · auto-renew 0.0.10450880
+  3 manifest                             signs: agent + operator  pays: POSTMASTER (carried)
+                                         wishmail:manifest:1 · submit 204e085b… · admin 204e085b… · no fee · auto-renew 0.0.10450880
+  4 declaration registry (HCS-2)         signs: agent + operator  pays: POSTMASTER (carried)
+                                         hcs-2:0:60 · submit 204e085b… · admin 204e085b… · no fee · auto-renew 0.0.10450880
+  5 HCS-11 profile file (HCS-1)          signs: agent + operator  pays: POSTMASTER (carried)
+                                         <sha256 of the profile>:brotli:base64 · submit 204e085b… · admin NONE · no fee · auto-renew 0.0.10450880
+  6 the profile, as HCS-1 chunks         signs: agent             pays: POSTMASTER (carried)
+                                         one HCS message per chunk, no chunkInfo, ≤1024 bytes on the wire (§7.4)
+  7 HCS-2 register entry                 signs: agent             pays: POSTMASTER (carried)
+                                         names the profile file · transaction memo hcs-2:op:register:0
+  8 §9.2's account memo                  signs: agent             pays: POSTMASTER (carried)
+                                         hcs-11:hcs://2/<the registry above> — the first link in the chain
+  9 the receipt                          signs: (nothing)         pays: (nothing)
+                                         the counter reads back every row it paid for and resolves the holder under §9.2 before it issues one
+  10 register_agent                      signs: agent             pays: THE AGENT ITSELF
+                                         the mirror must record THIS account as the payer, or §9.5 assigns `blurred` (T-P13-4)
+  11 resolve self                        signs: (nothing)         pays: (nothing)
+                                         under hcs14 and hol, and no `blurred` on either
+
+  Beside them, paid by this operator on its own client and never carried: the $POSTAGE association, where this operator does not already hold the token. §4.4's doorbell fee is debited from the PAYER of a submission (HIP-991), and when this agent rings a door that payer is its own operator.
+
+  DRY RUN: nothing was signed and nothing submitted.
+```
+
+**The driver printed its mode and the argv it received before it read a key**, which is CLAUDE.md §12's rule and the
+reason it exists: on 2026-09-10 an appended `--dry-run` was eaten by a root script's nested npm and a Correspondent
+was provisioned unauthorised. The `:plan` script string carries `--dry-run` where no forwarding can lose it, and the
+echo above is npm's own proof that it arrived.
+
+**`keys born` is the only thing that dry run changed**, and it changed it in `<c home>/keystore.json` and nowhere
+else. That is D-165: keys are born once, in the agent's own process, on first run. Nothing was submitted, nothing was
+paid, and C has no account.
+
+### 11. The send dry run — WHY IT CANNOT BE RUN YET, and what it must print
+
+**It is impossible before C exists, and that is a fact about the tool and not a gap in this report.** `letter:plan`
+resolves the recipient under `hcs14` from consensus before it composes anything: account memo → declaration registry →
+profile file → `properties.wishmail`. C has no account, no memo and no profile until act one runs, so `--to <C>`
+can only return `RESOLVE_NOT_FOUND`. There is no address to give it.
+
+So the ORDER's step 3 cannot carry this dry run, and **inventing its output would be worse than saying so.** What is
+committed instead is the prediction, which the run then confirms or stops on:
+
+```
+  sender      0.0.10452127  (home <b home>)
+  payer       0.0.10450880  — the operator pays; the agent signs (§3.5)
+  doorbell    0.0.10452149   log 0.0.10452150   manifest 0.0.10452154
+  schemaRef   hcs://13/0.0.10448509#1
+
+  recipient   <C's account>  doorbell <C's doorbell>  manifest <C's manifest>
+  resolution  math · 0 endorsement(s)
+  epoch       1
+
+  lane        NONE — this is first contact
+  ring        ONE stamp to the payer 0.0.10450880 for the doorbell fee (§4.4)
+  stamps      the agent holds 11
+
+  body        inline text
+  payload     32 bytes
+  chunks      1 · CHUNK_WIRE_MAX 1000 bytes per operation (§7.4)
+  weight      1 oz of 16 (§7.5)
+  postage     2 stamp(s) = 1 weight + 1 receipt · returnReceipt true
+  window      30 days = 2592000s, under SCHEDULE_MAX_LIFETIME 5356800s (§1.6)
+
+  DRY RUN: nothing was signed and nothing submitted.
+```
+
+**The invocation, written here so it is not composed at the terminal:**
+
+```
+npm run letter:plan -- "<b home>" --to <C's account> \
+  --text "Working hard or hardly working?" --receipt
+```
+
+`--receipt-window` is not passed: its default is already 30 days. **`--live` is baked into the `letter` script string**
+where no forwarding can lose it, and `letter:plan` carries `--dry-run` the same way.
+
+**If that dry run prints a lane, or `ring NONE`, or a payer other than `0.0.10450880`, or postage other than 2 —
+stop, report, and wait.** Each of those would mean something is true that this report says is not.
+
+### 12. The gate
+
+**Sonic authorised Gate Three in advance** (RECORD, 2026-09-10): *"GATE — Gate Three (C's provisioning [through the
+tools, with provenance], the ring, the certified letter, the ack): [ AUTHORIZED ]"*, under the standing rule that *"no
+STOP line stands above the gate fill-in; the fill-in is the word."* The ORDER puts C's provisioning first, confirmed
+from the mirror and idempotency-rerun, then B's send, then C's inbox and ack, then the stranger's verify, **each
+consensus write confirmed from the mirror before the next, the process's own output read second.**
+
+This report is committed before the first signature. The 0.5.12 patch it runs under is committed and tagged at
+`v0.5.12`; D-174's code is committed; twenty-one `check:*` are green with `typecheck` and `p13:check`.
+
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.
