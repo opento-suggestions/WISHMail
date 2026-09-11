@@ -126,6 +126,7 @@ below is public and nothing here is a key: a home’s config and keystore are ne
 | a | **stopped** | `0.0.10451893` | — | `0.0.8641261@1789006030.569861064` |
 | a2 | **provisioned** | `0.0.10462700` | `0.0.10450879` | `0.0.8641261@1789058834.851527600` |
 | b | **provisioned** | `0.0.10452127` | `0.0.10450880` | `0.0.8641261@1789007373.238805114` |
+| c | **provisioned** | `0.0.10468684` | `0.0.10450880` | `0.0.8641261@1789088736.041814712` |
 
 **An operator may own many agents** (D-165): the wallet is the operator’s, the home is the agent’s, and a fresh
 home is a new agent. The operator wallet above is read from **consensus** and never from a home’s config, which is
@@ -165,6 +166,16 @@ of record.
 | b | HCS-2 register entry naming the profile file | `0.0.10452155` | `0.0.8641261` |
 | b | §9.2’s account memo, the first link in the chain | `0.0.10452127` | `0.0.8641261` |
 | b | the agent’s own registration on the HOL anchor (§9.5, T-P13-4) | `0.0.6913983` | `0.0.10452127` |
+| c | the provisioning purchase this agent was bought by | `0.0.10468684` | `0.0.8641261` |
+| c | doorbell (HCS-10 inbound) | [`0.0.10468687`](https://hashscan.io/testnet/topic/0.0.10468687) | `0.0.8641261` |
+| c | log (HCS-10 outbound) | [`0.0.10468689`](https://hashscan.io/testnet/topic/0.0.10468689) | `0.0.8641261` |
+| c | manifest | [`0.0.10468692`](https://hashscan.io/testnet/topic/0.0.10468692) | `0.0.8641261` |
+| c | declaration registry (HCS-2) | [`0.0.10468693`](https://hashscan.io/testnet/topic/0.0.10468693) | `0.0.8641261` |
+| c | HCS-11 profile file (HCS-1) | [`0.0.10468695`](https://hashscan.io/testnet/topic/0.0.10468695) | `0.0.8641261` |
+| c | HCS-11 profile, as HCS-1 chunks | `0.0.10468695` | `0.0.8641261` |
+| c | HCS-2 register entry naming the profile file | `0.0.10468693` | `0.0.8641261` |
+| c | §9.2’s account memo, the first link in the chain | `0.0.10468684` | `0.0.8641261` |
+| c | the agent’s own registration on the HOL anchor (§9.5, T-P13-4) | `0.0.6913983` | `0.0.10468684` |
 
 **The payer column is the point of it.** Every row of a mailbox names the Postmaster as payer — it provisioned
 what it sold (D-168) — and the registration on the HOL anchor names **the agent’s own account**, which is the one

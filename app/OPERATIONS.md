@@ -4262,6 +4262,256 @@ without the network, and saying so is cheaper than leaving a reader to find it.
 per envelope, so the identifier changes on every composition and is pinned only when the live run seals.
 ---
 
+## Step 7 — GATE THREE, ACTS TWO AND THREE: THE RUN OF RECORD, 2026-09-10
+
+**The whole of §6.4 ran in one `send()` call.** First contact and the return receipt together — the ring, the wait,
+the lane, the manifest, the affix, the chunk, the settle, the schedule and the `transaction` operation — and then C
+opened it, C signed for it, and a stranger holding nothing read the correspondence back. **One pass, no stop.** The
+gate report above is left exactly as it stood.
+
+### The arrangement, as it ran
+
+```
+  the counter        STARTED for act one's purchase and STOPPED before the letter.
+                     A letter buys nothing: B held eleven stamps and needed three.
+  A2's process       NOT STARTED, and deliberately — the same reason as the reply.
+  C's process        npm run correspondent -- <c home>, the doorbell watcher, started
+                     before B rang and stopped as soon as the door was answered. ONE
+                     instance, because a second would answer the same request twice
+                     and §7.1's earliest-created lane would then have a twin.
+  B's driver         npm run letter -- <b home> --to 0.0.10468684
+                       --text "Working hard or hardly working?" --receipt
+  C's reader         npm run inbox -- <c home>;  npm run ack:live -- <c home>
+  the stranger       npm run verify -- --lane 0.0.10468898, twice, from a directory
+                     holding no key, no account, no stamp and no home.
+```
+
+### What was signed, in order
+
+| # | Act | Transaction / locator | Consensus | Signed by | Payer |
+|---|---|---|---|---|---|
+| 1 | one stamp to the payer (§4.4's hop) | `0.0.10450880@1789089975.643729693` | — | B's agent | `0.0.10450880` |
+| 2 | **the ring** on C's doorbell | `0.0.10468687` #1 | `1789089986.351132013` | B's agent | `0.0.10450880` |
+| 3 | **B's outbound `connection_request`** — the P-9 fix, first time live | `0.0.10452150` #1 | `1789089989.953139375` | B's agent | `0.0.10450880` |
+| 4 | **the lane** | `0.0.10468898` | — | C's agent | `0.0.10450880` |
+| 5 | C's `connection_created` on its own doorbell | `0.0.10468687` #2 | `1789090055.869169322` | C's agent | `0.0.10450880` |
+| 6 | **B's outbound `connection_created`** — D-174, requester reading | `0.0.10452150` #2 | `1789090059.358173104` | B's agent | `0.0.10450880` |
+| 7 | **C's outbound `connection_created`** — D-174, acceptor reading | `0.0.10468689` #1 | `1789090061.353197104` | C's agent | `0.0.10450880` |
+| 8 | the resolution manifest | `0.0.10452154` #3 | — | B's agent | `0.0.10450880` |
+| 9 | the settlement — **two** stamps | `0.0.10450880@1789090060.024182436` | `1789090067.539117004` | B's agent | `0.0.10450880` |
+| 10 | chunk 0 on the lane | `0.0.10468898` #1 | `1789090073.365704969` | B's agent | `0.0.10450880` |
+| 11 | the ScheduleCreate | `0.0.10468901` | — | B's agent | `0.0.10450880` |
+| 12 | the `transaction` operation on the lane | `0.0.10468898` #2 | `1789090079.500349708` | B's agent | `0.0.10450880` |
+| 13 | **C's ack** — the ScheduleSign | schedule `0.0.10468901` | executed `1789098271.804108896` | C's agent | `0.0.10450880` |
+| 14 | the receipt manifest, by execution | `0.0.10468692` #1 | `1789098271.804108896` | (the schedule) | `0.0.10450880` |
+
+```
+lane        0.0.10468898        memo hcs-10:1:60:2:0.0.10468687:1
+envelope    2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01
+body        "Working hard or hardly working?"
+payload     31 bytes · sha256 73d41255a5a85bae224d03e837592c5e99c09a3264c000b3b347e85fd8e6b9a9
+ciphertext  47 bytes · 1 chunk · weight 1 oz of 16 · postage 2 stamps (1 weight + 1 receipt fee)
+manifest    0.0.10452154 #3 — on B's own manifest topic
+settlement  from 0.0.10452127 to 0.0.10426205, memo wishmail:2229a6c9…
+schedule    0.0.10468901 · expires 1791682075.000000000 · waitForExpiry false · 30 days
+receipt     f38e23d881e6e22dcbb177ca3c4cfdf011f2ab0094214d6209cffb3fa9d94f91 on 0.0.10468692 #1
+epoch       1 · schemaRef hcs://13/0.0.10448509#1
+```
+
+### The three outbound records, against what §5 of the gate report predicted
+
+**This is the assertion Gate Three existed to make**, and all three landed in the shapes written down before the run.
+
+**B's log `0.0.10452150`, which had held nothing since it was created:**
+
+```
+#1  {"p":"hcs-10","op":"connection_request","operator_id":"0.0.10468687@0.0.10468684",
+     "outbound_topic_id":"0.0.10452150","connection_request_id":1}
+#2  {"p":"hcs-10","op":"connection_created","connection_topic_id":"0.0.10468898",
+     "outbound_topic_id":"0.0.10452150","requestor_outbound_topic_id":"0.0.10452150",
+     "confirmed_request_id":2,"connection_request_id":1,"operator_id":"0.0.10468687@0.0.10468684"}
+```
+
+**C's log `0.0.10468689`:**
+
+```
+#1  {"p":"hcs-10","op":"connection_created","connection_topic_id":"0.0.10468898",
+     "outbound_topic_id":"0.0.10468689","requestor_outbound_topic_id":"0.0.10452150",
+     "confirmed_request_id":2,"connection_request_id":1,"operator_id":"0.0.10468687@0.0.10468684"}
+```
+
+**Field by field, against the prediction:**
+
+- **The P-9 fix is on consensus in the pinned shape.** `#1`'s `operator_id` names **C** — "the agent which is being
+  requested … (not the agent making the request)" (`index.md:553`) — with `outbound_topic_id` and
+  `connection_request_id` both present. A2's log `0.0.10462708` #1, written before the fix, names A2 itself and lacks
+  both. Conformance from the fix forward, exactly as LIMITATIONS L-1 says.
+- **The two records agree where they must**: `connection_topic_id` `0.0.10468898` and `connection_request_id` `1`,
+  which is the ring's sequence number on C's door.
+- **They differ in `outbound_topic_id`**, each naming the log it sits on.
+- **`requestor_outbound_topic_id` is `0.0.10452150` in both**, which the gate report predicted and explained: under
+  the requester reading it is B naming itself (redundant), and under the acceptor reading it is C naming B
+  (load-bearing) — and here those coincide because B is the requester. **C could only learn it by reading B's HCS-11
+  profile**, which is what D-174 costs and what it paid.
+- **`confirmed_request_id` is `2` in both**, and for different reasons: for B it is the sequence number of the
+  `connection_created` on C's door that confirmed its request; for C it is the sequence number of the message it
+  posted there itself. The pin's `:585` fits the first and strains for the second, which is the contradiction, written
+  out rather than smoothed.
+- **One record per log for this lane**, no duplicates: both writers read their own log from consensus first.
+
+### Nothing was rung that should not have been, and it is a count
+
+```
+  A2's doorbell  0.0.10462704   0 messages before   0 messages after   UNCHANGED
+  B's doorbell   0.0.10452149   2 messages before   2 messages after   UNCHANGED
+  C's doorbell   0.0.10468687   0 messages before   2 messages after   the ring and its answer
+  B's log        0.0.10452150   0 messages before   2 messages after   both records above
+  C's log        0.0.10468689   0 messages before   1 message  after   the acceptor's record
+  the lane       0.0.10468898   did not exist       2 messages         chunk 0 and the transaction op
+  the A2-B lane  0.0.10464056  13 messages before  13 messages after   UNTOUCHED
+```
+
+**One ring, one lane, one answer.** B's own doorbell was not rung and A2 took no part in any of it.
+
+### The money, read before and after
+
+| Account | ℏ before | ℏ after | Δ | `$POSTAGE` before | after | Δ |
+|---|---|---|---|---|---|---|
+| B's agent `0.0.10452127` | 4,622,564 | 4,622,564 | **0** | 11 | 8 | **−3** |
+| C's agent `0.0.10468684` | 4,614,148 | 4,614,148 | **0** | 12 | 12 | **0** |
+| C2OPERATOR `0.0.10450880` | 41,527,474,162 | 40,821,468,299 | −706,005,863 | 0 (unassociated) | 0 | **0** |
+| the treasury `0.0.10426205` | — | — | — | 9,958 | 9,961 | **+3** |
+
+**T-P16-2 holds, and it is the sharpest line in the table**: C's account did not move by one tinybar or one stamp
+across the ack. The recipient is not charged for a receipt, and the ScheduleSign's own fee was paid by the operator.
+
+**B spent three stamps** — one at C's door and two as postage — and **the treasury gained exactly three**. B's agent
+account did not move by one tinybar across five submissions: the agent signs and the operator pays (§3.5).
+
+**The stamp hop worked on an unassociated account.** C2OPERATOR held no `$POSTAGE` and never had, because B had never
+rung a doorbell; its `max_automatic_token_associations` is `-1`, so the stamp associated itself on arrival and the
+HIP-991 fee consumed it in the same second. It ends at zero, holding nothing it did not need. **This was read from the
+mirror before the run and written into §3 of the gate report**, because the alternative — the transfer failing with
+`TOKEN_NOT_ASSOCIATED_TO_ACCOUNT` after a ring had already been paid for — is exactly the class of defect that has no
+offline court.
+
+### `inbox` at C — the letter opened by the agent that was rung
+
+```
+  inbox — 0.0.10468684, home <c home>
+  lanes  0.0.10468898   — from consensus, by §7.1's rule
+
+  envelope   2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01   lane 0.0.10468898
+  opened     true
+  payload    "Working hard or hardly working?"
+  bytes      31
+
+  1 delivery(ies). inbox wrote nothing (§6.5).
+```
+
+**C found the lane from its own doorbell**, which is the ordinary direction: C answered, so the
+`connection_created` is on C's door. **31 bytes, byte for byte**, and `inbox` wrote nothing.
+
+### `ack` at C — every check before the signature, then the signature
+
+```
+  envelope   2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01
+  lane       0.0.10468898   chunk 0 at sequence 1
+  epoch      1   — the epoch it OPENED under, which is what a receipt names
+  schedule   0.0.10468901   requested on the lane at sequence 2
+  hdr.rr     true   — the sender's postage paid the receipt fee (§7.7)
+  inner      ConsensusSubmitMessage to 0.0.10468692, 508 bytes, chunk_info none
+  payer      0.0.10450880   — not the recipient (T-P16-2)
+  expires    1791682075.000000000   waitForExpiry false
+  composes   f38e23d881e6e22dcbb177ca3c4cfdf011f2ab0094214d6209cffb3fa9d94f91
+  carries    EXACTLY those bytes (T-P1-9)
+
+  SIGNED     schedule 0.0.10468901
+  executed   1789098271.804108896
+  receipt    f38e23d881e6e22dcbb177ca3c4cfdf011f2ab0094214d6209cffb3fa9d94f91
+  published  0.0.10468692 #1
+```
+
+**`ack` recomposed the receipt from the envelope, the postmark and the epoch and compared it to the bytes the schedule
+already carried, before signing** — T-P1-9 — and the instant the signature landed the network executed the inner
+submission onto C's manifest topic, a topic only C's key can write to.
+
+### `verify` from a stranger holding nothing
+
+Run twice, from a directory holding no key, no account, no stamp, no counter and no home.
+
+```
+  bundle digest   34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017   (BOTH runs)
+  narrative.bundleDigest matches the bundle   true
+
+    envelope      2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01
+    state         ACKED
+    chunks        1 · settlement 0.0.10450880@1789090060.024182436
+    APPRAISED     unverified      reasons  T-P12-4
+    DECLARED      trust class math · 0 endorsement(s)
+    resolution    unverified (T-P12-4)
+    receipt       acked
+```
+
+**THE NARRATIVE'S FIRST SENTENCE IS D-173 ON A RUN OF RECORD FOR THE FIRST TIME:**
+
+> "This reading covers 2 topic(s) on hedera:testnet, from consensus timestamp 1789090073.365704969 to
+> 1789090073.365704969, **under specification 0.5**."
+
+Not `0.5.12`. The bundle carries the **minor** version, the Verifier's own patch rides in
+`observations.verifierSpec` outside the digest, and **this digest will still reproduce at 0.5.13 and at every later
+patch of 0.5** — which is what §11.7's MUST asks for and what no digest in this file before today could give.
+
+### The appraisal against the prediction
+
+| | predicted | observed |
+|---|---|---|
+| state | ACKED | **ACKED** |
+| standing | unverified | **unverified** |
+| reasons | `T-P12-4` and nothing else | **`T-P12-4`** |
+| receipt | acked | **acked** |
+| trust class | `math`, endorsements `[]` | **`math`, `[]`** |
+| `T-P10-2` / `T-P17-2` | MUST NOT appear | **absent** |
+| `T-P9-3` | must not appear | **absent** |
+| `T-P1-12` | must not appear | **absent** |
+| the bundle's `spec` | `"0.5"` | **`"0.5"`** |
+
+Exactly as §7 of the gate report predicted, and `unverified` is correct rather than a shortfall: this release claims
+no profile, so §11.4 does not replay the resolution and §9.6 makes that conforming.
+
+### The fixture
+
+**`conformance/fixtures/gate-three-certified.json`** — the lane, its birth doorbell `0.0.10468687` reached by
+following the lane's own memo, B's manifest topic, C's manifest topic, the schedule `0.0.10468901` and the two
+registered schema topics.
+
+```
+  topics      0.0.10452154, 0.0.10468898, 0.0.10468687, 0.0.10448509, 0.0.10448507, 0.0.10468692
+  schedules   0.0.10468901
+  envelope    2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01
+  appraised   unverified (T-P12-4)
+  digest      34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017
+```
+
+### DIVERGENCES — three, none of them on consensus, and every one of them ours
+
+**1. The provisioning driver does not exit after a run that talks to the counter.** Recorded in act one's section
+above. Raised, not repaired.
+
+**2. `inbox.cli.ts` does not render a pending receipt request, and the gate report said it would.** §3's row 23 of
+that report says `inbox` "surfaces the pending schedule"; the CLI prints the envelope, whether it opened, the payload
+and the byte count, and nothing else. **The information is not missing from the tool** — `check:letter` asserts the
+pending schedule surfacing at `inbox`, and `ack` found the schedule on the lane immediately afterwards and named it —
+**it is missing from this one renderer.** A display gap in a CLI, written down rather than quietly fixed mid-gate.
+The gate report is not amended.
+
+**3. The first provisioning run's console output was lost to a `tail` pipe.** Act one's section says so in full. Mine,
+against a rule this repository already carries.
+
+**Nothing on consensus diverged.** Every submission landed where the gate report said it would, in the order it said,
+at the price it quoted, and no stop fired.
+---
+
 ## Step 4 — the HCS-13 schema registration, signed 2026-09-09
 
 **Signed on Sonic's authorization, and the freeze it makes is permanent.** `spec/schemas/`'s fourteen files are now on `hedera:testnet` and pinned in `spec/pins.json`. §1.7: once a minor version's schemas are registered a patch changes no schema, so from this point the smallest field in any of the fourteen is **0.6**. That is what this signature bought and what it cost.

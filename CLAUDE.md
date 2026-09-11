@@ -56,7 +56,8 @@ never repair past it, never infer.
 
 **The Correspondents, and what to call them.** (There are three from Gate Three: A2, B, and **C** — home `c`,
 `displayName` `DemoAgentC`, operator **C2OPERATOR `0.0.10450880`**, which is B's operator too, so each of the two
-demo operators owns two agents. C's ids go here once it is on consensus.) **A2** — account `0.0.10462700`, home `a2`, `displayName`
+demo operators owns two agents. C is `0.0.10468684`, doorbell `0.0.10468687`, log `0.0.10468689`, manifest
+`0.0.10468692`. B and C correspond on lane `0.0.10468898`.) **A2** — account `0.0.10462700`, home `a2`, `displayName`
 `DemoAgentA2` — is the demo's first Correspondent, and it supersedes both **A** (bought 2026-09-09, stopped after
 its transfer, kept exactly as it is) and the plans' name **"A′"**: where a plan or an earlier record says `A′`, it
 means A2. **B** — account `0.0.10452127`, home `b` — is the other. They correspond on lane `0.0.10464056`, which
@@ -68,17 +69,18 @@ nothing runs without knowing where they are. `app/OPERATIONS.md` writes them as 
 recorded invocation and the real paths appear nowhere in the repository — which is the convention, not an oversight.
 The Postmaster's own state is separate, at `.wishmail-state/` inside the repository.
 
-**GATE THREE IS WRITTEN AND WAITING.** Its gate report is `app/OPERATIONS.md` **Step 7**, committed before any
-signature, and Sonic authorised it in advance. A third Correspondent, **C** — home `c`, `displayName` `DemoAgentC`,
-under **C2OPERATOR `0.0.10450880`**, the same wallet B pays from — is provisioned through the counter, and then **B
-sends C a certified letter in ONE `send()` call**: first contact and `returnReceipt` together, which is §6.4 as
-written and the first time this deployment does the whole of it in one call. C's home exists and its keys are born;
-nothing else has happened. **The send dry run cannot be produced until C is on consensus** — `letter:plan` resolves
-the recipient before it composes — so §11 of that report carries the prediction it must match, and a mismatch is a
-stop.
+**GATE THREE IS RUN, 2026-09-10, in one pass with no stop.** The whole of §6.4 in ONE `send()` call — first contact
+and `returnReceipt` together. **C** (`0.0.10468684`, home `c`, `DemoAgentC`, under C2OPERATOR `0.0.10450880`) was
+provisioned through the counter and resolves under both profiles with no `blurred`; B rang, C answered, lane
+`0.0.10468898` carries envelope `2229a6c9…`; C opened it, signed for it, and the receipt executed onto C's manifest
+topic. A stranger read it back twice at one digest, `34b314c4…`, **under specification `0.5`** — D-173 on a run of
+record for the first time. All three outbound records fired live and matched their predictions. Gate report and both
+runs of record are `app/OPERATIONS.md` **Step 7**.
 
-Everything else Sonic has authorized is run, recorded and pushed. What is otherwise open is ruling, not building:
-ledger §G-20 (a 0.6 candidate) and §G-8.
+**Nothing is waiting on a signature.** What is open is ruling, not building: ledger §G-20 (a 0.6 candidate) and
+§G-8. Three divergences from Gate Three stand recorded and unrepaired, all above the ledger: the provisioning driver
+does not exit after talking to the counter, `inbox.cli.ts` renders no pending receipt request, and one run's console
+output was lost to a `tail` pipe.
 
 ## 1. The documents, and their order
 

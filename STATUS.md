@@ -389,24 +389,38 @@ Run of record in `app/OPERATIONS.md`.**
    §G-21 and **D-172** closed §G-22 and the specification moved to **0.5.11** — nothing rung, no second lane, and
    A2's doorbell still holding zero messages.
 
-### GATE THREE — written, authorised, not yet run (2026-09-10)
+### GATE THREE — RUN, 2026-09-10. One pass, no stop.
 
-**The gate report is `app/OPERATIONS.md` Step 7**, committed before any signature. A third Correspondent, **C** —
-home `c`, `displayName` `DemoAgentC`, under **C2OPERATOR `0.0.10450880`**, the wallet B already pays from — is
-provisioned through the counter at sequence 4's prices, and then **B sends C a certified letter in ONE `send()`
-call**: first contact and `returnReceipt` together, which is §6.4 as written and band 3 of the diagram end to end.
-C's `inbox` opens it, C acks, a stranger verifies from an empty home.
+**The whole of §6.4 ran in ONE `send()` call** — first contact and `returnReceipt` together, which this deployment
+had never done. **C** is `0.0.10468684`, home `c`, `displayName` `DemoAgentC`, under **C2OPERATOR `0.0.10450880`**,
+the wallet B pays from, bought at sequence 4 for **43.38282123 ℏ** and resolving under `hcs14` **and** `hol` with no
+`blurred`. B rang, C's watcher answered, the lane is **`0.0.10468898`**, the envelope
+**`2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01`**. C opened it byte for byte, C signed for it,
+and the receipt executed onto C's own manifest topic `0.0.10468692` #1. A stranger holding nothing read it back
+twice at one digest, **`34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017`**, ACKED and unverified
+with `T-P12-4` — exactly as predicted before the run. **Gate report and both runs of record: `app/OPERATIONS.md`
+Step 7**, the report left exactly as it stood.
 
-**What fires live for the first time**: the P-9 outbound `connection_request` fix, and both of D-174's outbound
-`connection_created` records. §5 of the gate report predicts all three, field by field, on both logs.
+**All three outbound records fired live for the first time and match §5 of the gate report field by field.** B's log
+`0.0.10452150`, empty since it was created, now holds the P-9-shaped `connection_request` naming **C** as the agent
+being requested, and D-174's `connection_created` under the **requester** reading; C's log `0.0.10468689` holds the
+same lane under the **acceptor** reading, with `requestor_outbound_topic_id` naming B's log — which C could only
+learn by reading B's HCS-11 profile. They agree on the lane and the request id and differ exactly where the pin's two
+readings differ. One record per log, no duplicates.
 
-**The quote, read from consensus**: `PriceList` sequence 4 — 30 ℏ for the provisioned path, 0.05 ℏ registration fee,
-12 stamps for one USD at the network's own rate, **43.29198051 ℏ** at the rate read 2026-09-10. C2OPERATOR holds
-**458.65756285 ℏ**. B holds **11** stamps and spends **3** — one at C's door, two as postage on a 1-ounce letter with
-a return receipt.
+**The quote held**: the gate report wrote 43.29198051 ℏ and the charge was 43.38282123 — two tenths of a percent, the
+exchange rate moving between quote and purchase, which is what `rate.at` exists to let a Verifier re-obtain (D-170).
+B spent **3** stamps — one at C's door, two as postage — and the treasury gained exactly three. **C was charged
+nothing**: not one tinybar and not one stamp moved across the ack (T-P16-2).
 
-**The send dry run cannot exist until C does**, because `letter:plan` resolves the recipient from consensus before it
-composes anything; §11 of the gate report says so and carries the prediction the run must match.
+**`spec: "0.5"` is on a run of record for the first time.** The narrative's own first sentence reads *"under
+specification 0.5"*, so `34b314c4…` reproduces at every later patch of 0.5 — which is what §11.7 asks for and what no
+digest in this project before today could give (D-173).
+
+**Three divergences, none on consensus, all ours and all written down**: the provisioning driver does not exit after a
+run that talks to the counter (raised, not repaired); `inbox.cli.ts` does not render a pending receipt request, though
+the tool returns it and `ack` found it immediately; and the first provisioning run's console output was lost to a
+`tail` pipe, against a rule this repository already carries.
 
 **RULED, and the list is closed (Sonic, 2026-09-10).** Every item that stood here is answered, and **the spec changes
 they oblige have LANDED as 0.5.12**, tagged `v0.5.12`: D-173 (§G-25), D-175 (§G-18) and D-176 (§G-23). **The probe

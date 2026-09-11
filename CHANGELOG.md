@@ -2,6 +2,62 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Three] — 2026-09-10 — a third Correspondent, and the whole of §6.4 in one call
+
+**No version bump.** The specification is 0.5.12 from the entry below and is unchanged by this run. **[S]** authorised
+Gate Three in advance; **[CC]** wrote the gate report, ran it and wrote the record.
+
+### On consensus
+
+**C is `0.0.10468684`** — home `c`, `DemoAgentC`, under C2OPERATOR `0.0.10450880`, the wallet B pays from, so each
+demo operator now owns two agents. Bought at `PriceList` sequence 4 for **43.38282123 ℏ** in one transaction with
+three legs; resolves under `hcs14` **and** `hol` with no `blurred`, its registration paid by itself (T-P13-4).
+
+**The whole of §6.4 ran in ONE `send()` call** — first contact and `returnReceipt` together, which this deployment
+had never done. B rang C's door, C's watcher answered, and the lane `0.0.10468898` carries envelope
+`2229a6c909d4b6c53889d6fda5ee173ff322debec9010a6aaf9e5cb388079c01`: *"Working hard or hardly working?"*, 31 bytes,
+one ounce, two stamps of postage and one at the door. C opened it byte for byte, `ack` recomposed the receipt from the
+envelope, the postmark and the epoch and compared it to the bytes the schedule already carried (T-P1-9), then signed —
+and the schedule executed onto C's own manifest topic `0.0.10468692` #1.
+
+**All three outbound records fired live for the first time and matched the gate report field by field**: the P-9
+`connection_request` naming C as the agent *being* requested (`index.md:553`), and both halves of D-174 — B's under
+the requester reading, C's under the acceptor reading with `requestor_outbound_topic_id` naming B's log, which C could
+only learn by reading B's HCS-11 profile. They agree on the lane and the request id and differ exactly where the pin's
+two readings differ. One record per log, no duplicates.
+
+**`spec: "0.5"` is on a run of record for the first time** (D-173). The narrative's own opening sentence reads *"under
+specification 0.5"*, so the digest `34b314c4be0f8262bdeb613b166dfac28174a75a30d506c583f763c6f5b0c017` reproduces at
+every later patch of 0.5 — which is what §11.7 asks for and what no digest in this project before today could give.
+Two `verify` runs from a directory holding no key, no account, no stamp and no home agreed on it exactly (T-P3-1).
+
+**C was charged nothing**: not one tinybar and not one stamp moved across the ack (T-P16-2). B spent three stamps —
+one at C's door, two as postage — and the treasury gained exactly three. B's agent account did not move by one tinybar
+across five submissions: the agent signs and the operator pays (§3.5).
+
+**The stamp hop worked on an account holding no `$POSTAGE`.** C2OPERATOR had never held one, because B had never rung
+a doorbell; its `max_automatic_token_associations` is `-1`, so the stamp associated itself on arrival and the HIP-991
+fee consumed it in the same second. Read from the mirror **before** the run and written into the gate report, because
+the alternative — the transfer failing after a ring was already paid for — has no offline court.
+
+**Nothing was rung that should not have been, and it is a count**: A2's doorbell still holds zero, B's still holds the
+two checkpoint one left, and the A2–B lane is untouched at thirteen messages.
+
+### Divergences — three, none on consensus, all ours
+
+The provisioning driver does not exit after a run that talks to the counter; the idempotency rerun, which skips
+`buy_stamp` and never opens that connection, exits 0 in seconds, which is what isolates it. **Raised, not repaired** —
+repairing inside a gate is what the gate exists to prevent. `inbox.cli.ts` renders no pending receipt request, though
+the tool returns one and `ack` found it immediately: a display gap in one renderer, and the gate report over-promised
+what a reader would see. And the first provisioning run's console output was lost to a `tail` pipe, against a rule
+this repository already carries; nothing that matters was lost, because the record is the mirror node and every id,
+fee and timestamp was read back from consensus.
+
+### Fixture
+
+`conformance/fixtures/gate-three-certified.json` — the lane, its birth doorbell `0.0.10468687` reached by following
+the lane's own memo, both manifest topics, the schedule `0.0.10468901` and the two registered schema topics.
+
 ## [0.5.12] — 2026-09-10 — four rulings, and a probe that decided a version
 
 **[S]** ruled every item; **[CC]** probed, patched, courted and recorded. **No schema moves, no wire string moves**,
