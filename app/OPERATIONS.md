@@ -5508,10 +5508,10 @@ transaction id, no home and no key depends on where this repository sits on a di
   not under `ETHGlobal Hackathon`.
 - The Postmaster's own state, `.wishmail-state/`, is **inside** the repository and moves with it.
 
-#### The two Goose Desktop entries — UNTESTED UNTIL THE RENAME
+#### The two Goose Desktop entries — TESTED 2026-09-11, at the post-rename real path
 
-Written against the **post-rename** real path. **The first act of the next session is the from-anywhere proof at that
-path**; until it passes, these are drafts and not entries.
+Written against the **post-rename** real path, and **the from-anywhere proof was run at that path on 2026-09-11**,
+which was the condition they were drafts until. The transcript is beneath them. They are entries.
 
 ```
   Name         DemoAgentX
@@ -5528,6 +5528,49 @@ path**; until it passes, these are drafts and not entries.
   Command      node C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/node_modules/tsx/dist/cli.mjs C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/app/sdk/server.ts C:/Users/Sonic/.wishmail/demo/gz-y --dry-run
   Timeout      900
 ```
+
+#### The from-anywhere proof at the renamed path — 2026-09-11, DRY, signing nothing
+
+Run from `C:Windows`, an unrelated working directory, with the real path and no junction. **Both launch shapes were
+run**: the argument-array shape, and — because Goose Desktop takes the command as ONE STRING and splits it on
+whitespace — the single-string shape through `cmd`, unquoted, which is the shape the Command field above actually
+becomes. The two produced byte-identical output.
+
+```
+  $ cd /d C:Windows
+  $ node C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/node_modules/tsx/dist/cli.mjs C:/The_Fountain/ETHGlobal_Hackathon/WISHMail/WISHMail/app/sdk/server.ts C:/Users/Sonic/.wishmail/demo/gz-x --dry-run
+
+  stderr:
+    wishmail correspondent — DRY RUN: nothing will be signed
+    argv as received  ["C:/Users/Sonic/.wishmail/demo/gz-x","--dry-run"]
+    to go live        restart with --live, and check the line above says it arrived
+
+  wishmail correspondent — home C:UsersSonic.wishmaildemogz-x, keys loaded, account (not bought yet), payer 0.0.10450880
+    DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+
+  stdout (the JSON-RPC channel, and NOTHING else is on it):
+    {"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},
+      "serverInfo":{"name":"wishmail-correspondent","version":"0.5.13"}},"jsonrpc":"2.0","id":1}
+
+  <client closes stdio>
+    wishmail correspondent — stopping: the client closed stdio.
+    home / account / doorbell watch / in flight, each named
+
+  EXIT CODE 0
+```
+
+**Four things that proof carries, and one it does not.** The banner arrives and names the mode. `argv as received`
+shows the home **and** `--dry-run`, so the flag reached the process and was not eaten — which is §12's rule, proved
+by npm's own echo standing in for goose's. `initialize` is answered on stdout with one well-formed JSON-RPC frame
+and **no banner text on that channel**, which is why the banner is on stderr. The process exits **0** when stdin
+closes and says where it stopped. It does **not** prove goose's own client: this was a file on stdin, not Goose
+Desktop, and whether goose validates `structuredContent` the way the reference client does is still what the gate
+is for.
+
+`keys loaded`, not `keys born` — the keystore was written once, at the pre-flight's first boot (D-165), and this
+run read it. **The home is unchanged**: `config.json` and `keystore.json` only, no `record.json`, still
+unprovisioned. **No `run.lock` was taken and no process survived the run** — `node`, `tsx` and `esbuild` all
+count zero before and after.
 
 **For the gate**, the same two entries with the last argument changed and the description telling the truth about it:
 

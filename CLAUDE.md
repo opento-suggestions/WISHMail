@@ -140,8 +140,10 @@ C1OPERATOR `0.0.10450879`); keys **born**, both **unprovisioned**. **The roles a
 purpose** (RECORD): the sender's operator holds zero `$POSTAGE`, so §4.4's hop fires under goose for the first time.
 **No flag means DRY** — `app/sdk/server.ts:566`, verified by an actual no-flag run. **The DRY pre-flight passed
 under a reference MCP client and NOT under goose**, so goose's own client is untested; the **two Goose Desktop
-entries are written and UNTESTED** in `app/OPERATIONS.md` Gate Zero §9, against the post-rename path, and **the
-first act of the next session is the from-anywhere proof at that path**. **The stop condition is in the goose
+entries are written and TESTED** in `app/OPERATIONS.md` Gate Zero §9 — the from-anywhere proof ran at the
+post-rename path on 2026-09-11 from an unrelated working directory, in both launch shapes including the
+single-string one Goose Desktop splits: banner, `argv as received` carrying the home and `--dry-run`, a clean
+`initialize` on stdout and nothing else on that channel, exit 0 on stdin close, no lock and no surviving process. **The stop condition is in the goose
 conversation, not stderr**: the first call in each DRY session is `buy_stamp` and its card must say DRY / would-do,
 a connection error to `127.0.0.1:4600` means that session is LIVE and is the stop, `send` must refuse *no account
 yet*, and `generate_mailbox` and `register_agent` are not called in pre-flight. **The counter stays down until the

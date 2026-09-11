@@ -66,8 +66,11 @@ arithmetic is in Gate Zero §2.
   read off the source.
 - **The DRY pre-flight passed under a REFERENCE MCP client and NOT under goose.** Both banners DRY with their argv,
   zero calls rejected, `send` accepting coordinates straight from `resolve`. goose's own client is untested.
-- **The two Goose Desktop entries are written and UNTESTED** — Gate Zero §9, against the post-rename path. **The
-  first act of the next session is the from-anywhere proof at the new path**; until it passes they are drafts.
+- **The two Goose Desktop entries are written and TESTED** — Gate Zero §9, against the post-rename path. The
+  from-anywhere proof was run there on 2026-09-11 from `C:Windows`, in **both** launch shapes including the
+  single-string one Goose Desktop splits: banner, `argv as received` carrying the home and `--dry-run`, one clean
+  JSON-RPC `initialize` on stdout with nothing else on that channel, exit 0 on stdin close, no lock and no surviving
+  process. **What it still does not prove is goose's own client** — the stdin was a file.
 - **The stop condition is in the goose conversation, not stderr.** First call in each DRY session is `buy_stamp` and
   its card must say DRY / would-do; **a connection error to `127.0.0.1:4600` means that session is LIVE — stop**
   (safe to rely on: nothing signs between `counter.ts:244` and its `connect()` at `:273`). `send` must refuse
