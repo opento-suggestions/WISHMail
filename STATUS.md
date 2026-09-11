@@ -35,9 +35,34 @@ every class from ever passing here** — it compares a fresh Verifier at another
 this one, and this deployment has one implementation. That is what publishing a specification is for, and ledger
 §G-30 records it as not a defect.
 
-**Nothing is waiting on a signature.** Twenty-two `check:*` are green with `typecheck` and `p13:check`, and
-`check:captured` and `check:receipt` are byte-identical in their recorded digests through every fix — which was the
-acceptance test the whole day was run against.
+**ONE THING IS WAITING ON A SIGNATURE, and it is GATE ZERO.** Its report is `app/OPERATIONS.md`, written 2026-09-11
+before anything can sign, with its fill-in unfilled. It is the first time **goose** drives the Correspondent MCP
+server on consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack →
+verify — and it exists as its own gate so that Gate Four can ask its own question, which is whether a brand-new
+HBAR-only wallet survives the lifecycle. It is **a gate and not a probe**: it uses the real `$POSTAGE`, the real
+counter and the real anchor, and creates permanent entities, one of them an HCS-1 topic with no admin key. Its
+entities are recorded as **residue**.
+
+**The afternoon of 2026-09-11 was the goose seam, and it was never clean.** Three gates have run and **every one was
+driven by a CLI**, so the MCP surface had never been exercised — and that is exactly where the defects were.
+`send`'s published input schema and its handler disagreed, so a client that built its call from the schema got
+`SEND_UNRESOLVED` on its first letter; its result did not match its own `outputSchema`, which the reference MCP
+client validates; the watcher had no shutdown path and no uniqueness, so the first goose restart could put two
+watchers on one doorbell and a lane cannot be closed; `register_agent` declared a `dryRun` its handler never read, so
+a caller asking for a rehearsal signed; and all ten `send.*` narration sentences were dead, so the card a caller saw
+was the result JSON printed twice. All fixed, each proved by a run. `provenance/PROBES-2026-09-11.md` is the reading
+that found them.
+
+**The MCP server now has a real DRY mode, and it is a property of what it constructs.** In DRY it reads no payer key
+and gives no client an operator, so it cannot sign — proved against a home whose payer key is deliberately
+unparseable: under `--dry-run` it boots and serves, under `--live` it prints LIVE and dies reading the key. The
+watcher does not start in DRY. **`AUTHORIZED` now means something physical**: the server is restarted with `--live`
+and its banner says so with the argv that carried the flag.
+
+**Twenty-two `check:*` are green** with `typecheck` and `p13:check`, `check:letter` at 199 assertions and
+`check:correspondent` at 118, and `check:captured` and `check:receipt` are byte-identical in their recorded digests
+through every fix of the day — which was the acceptance test all of it was run against. The conformance report has
+not moved: 44 passing, digest `51453eea…`.
 
 **What is open**, in the order it wants attention:
 
@@ -53,7 +78,13 @@ acceptance test the whole day was run against.
   postage for letters that will every one appraise unbound. And §G-31, the F-3 orphan: §11.2 has had the treasury
   route since D-160 on 2026-09-09, `Reader` has no method that reaches an account's transfers, and `orphans` is
   always empty.
-- **§G-8**, the P-16 seam, ruled a spec question on 2026-09-07 and deliberately unpatched since.
+- **§G-8**, the P-16 seam, **narrowed on 2026-09-11 and not closed**. The half that was ours is corrected: L-11 no
+  longer claims the keyless leg is satisfied through the x402.org facilitator, and says instead that a buyer using it
+  is pre-funded on Hedera by §14.2's own reading and that the POSTMASTER claim is deferred on T-P16-1. The
+  specification's half — how a Postmaster deployed only on Hedera offers any method needing no pre-funded Hedera
+  account — stays open, with §19.3 its identified home and still unwritten.
+- **L-13 now says what `orphans: []` is**, which is not a measurement: the treasury window is never read, so the
+  empty list and a genuine absence are indistinguishable in the evidence unless the record says which (§G-31).
 
 **Two captures were added on 2026-09-10 night** — a mirror read, no key, no signature — carrying the declaration
 registry and profile file of A2, B and C, so §9.2's rule can be re-run from a fixture. With them a Verifier claiming

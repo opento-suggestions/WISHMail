@@ -45,8 +45,10 @@ and **§G-29** (§5.10's bundle entry has no slot for a duplicate chunk or for a
 isolate itself, because §4.3's memo already binds a settlement to one envelope) and **§G-28** (T-P1-10's `inbox`
 clause asks a recipient to replay its own resolution), both sketch questions for Sonic; **§G-31**, the F-3 orphan,
 which is **build work and not a spec question** — D-160 gave §11.2 the treasury route on 2026-09-09 and this
-implementation has not taken it; and **§G-8**, the P-16 seam, ruled a spec question on 2026-09-07 and deliberately
-unpatched since. **§G-30 is not a defect**: T-P3-1 compares two implementations and this deployment has one, which
+implementation has not taken it; and **§G-8**, the P-16 seam, **narrowed 2026-09-11 and not closed** — L-11 no longer
+claims the keyless leg is satisfied through the x402.org facilitator, and the specification's own question (how a
+Postmaster deployed only on Hedera offers any method needing no pre-funded Hedera account) stays open with §19.3 its
+still-unwritten home. **§G-30 is not a defect**: T-P3-1 compares two implementations and this deployment has one, which
 is the honest reason the claim is empty.
 
 **The 0.5.13 patch is the first where the implementation was right and the register was wrong** (D-177). §A's
@@ -116,7 +118,31 @@ topic. A stranger read it back twice at one digest, `34b314c4…`, **under speci
 record for the first time. All three outbound records fired live and matched their predictions. Gate report and both
 runs of record are `app/OPERATIONS.md` **Step 7**.
 
-**Nothing is waiting on a signature.** What is open is ruling and building, in that order: the five §G items above,
+**GATE ZERO IS WRITTEN AND WAITS ON SONIC'S WORD** (2026-09-11). Its report is `app/OPERATIONS.md`, committed before
+anything can sign, fill-in unfilled. It is the first time **goose** drives the Correspondent MCP server on
+consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack → verify — and
+it is deliberately separate from Gate Four so that Gate Four can ask its own question: whether a brand-new HBAR-only
+wallet survives the lifecycle. **It is a gate and not a probe** (real `$POSTAGE`, real counter, real anchor,
+permanent entities); its entities are recorded as **residue**.
+
+**The goose seam had never been exercised, and that is where the defects were.** All three gates were driven by
+CLIs. On 2026-09-11 the MCP surface was read end to end (`provenance/PROBES-2026-09-11.md`) and five things were
+found and fixed: `send`'s published input schema and its handler disagreed, so a client building from the schema got
+`SEND_UNRESOLVED` on its first letter; `send`'s result did not match its own `outputSchema`, which §6.4 settles —
+"send then returns chunk 0's `Postmark`" — so `structuredContent` now carries exactly that and the richer result
+travels in `_meta`; the watcher had no shutdown path and no uniqueness; `register_agent` declared a `dryRun` its
+handler never read, so asking for a rehearsal signed; and all ten `send.*` narration sentences were dead.
+
+**The MCP server has a real DRY mode and it is structural.** In DRY it reads no payer key and gives no client an
+operator — proved against a home whose payer key is deliberately unparseable: `--dry-run` boots and serves,
+`--live` prints LIVE and dies reading the key. The watcher does not start in DRY, because `answer()` signs.
+`npm run correspondent` is the dry default; `correspondent:live` bakes `--live` into the workspace script. **A gate
+fill-in is now physical**: `AUTHORIZED` means restarting with `--live` and the banner saying so.
+
+**One live process per home** — `<home>/run.lock`. Two watchers on one doorbell can both answer one request and both
+birth a lane, and a lane cannot be closed; consensus-idempotence is not process-uniqueness.
+
+What else is open is ruling and building, in that order: the five §G items above,
 and the build work the suite named and nobody has ruled on yet — chief among it **T-P10-2's gap**, where
 `laneRefusal` checks a lane's deletion, close, fees and key list and does not walk its birth, so discovery offers a
 lane that binding refuses and a sender can pay postage for letters that will every one appraise unbound.
