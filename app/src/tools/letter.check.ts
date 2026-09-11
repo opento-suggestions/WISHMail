@@ -33,6 +33,7 @@ import { isToolFailure } from '../core/failure.js';
 import {
   TRANSACTION_MEMO,
   connectionCreatedBody,
+  outboundConnectionCreatedByAcceptor,
   connectionTopicMemo,
   inboundTopicMemoOf,
   connectionTopicMemoOf,
@@ -294,7 +295,12 @@ async function stand(): Promise<World> {
  * the acceptor's own inbound topic (D-137).
  */
 function answerTheDoor(w: World): string {
-  return answerAt(w, { account: w.recipient.account, doorbell: w.recipient.doorbell }, w.sender.account);
+  return answerAt(
+    w,
+    { account: w.recipient.account, doorbell: w.recipient.doorbell, log: w.recipient.log },
+    w.sender.account,
+    { requestorLog: w.sender.log },
+  );
 }
 
 /**
@@ -309,12 +315,19 @@ function answerTheDoor(w: World): string {
  *
  * `submitKeys` may be overridden to build a lane that is not a threshold of
  * exactly the two parties' keys — T-P17-2's other half.
+ *
+ * IT ALSO WRITES THE ACCEPTOR'S OUTBOUND RECORD where a log is given (D-174),
+ * for the reason above spelled the other way round: `sdk/watcher.ts` writes one
+ * on the network now, so a model that did not would diverge from the wire on a
+ * field a strict reader under the pin's prose reading looks for. The real
+ * acceptor is a `Session` and needs a network, so this is the only offline
+ * place the acceptor's half of the pair can be stood up at all.
  */
 function answerAt(
   w: World,
-  acceptor: { account: string; doorbell: string },
+  acceptor: { account: string; doorbell: string; log?: string },
   requesterAccount: string,
-  options: { connectionId?: number; submitKeys?: readonly string[] } = {},
+  options: { connectionId?: number; submitKeys?: readonly string[]; requestorLog?: string } = {},
 ): string {
   const connectionId = options.connectionId ?? 1;
   const lane = w.ledger.createTopic({
@@ -322,13 +335,29 @@ function answerAt(
     submitKeys: [...(options.submitKeys ?? [SENDER_KEY, RECIPIENT_KEY])],
     adminKey: RECIPIENT_KEY,
   });
-  w.ledger.submit(
+  const announced = w.ledger.submit(
     acceptor.account,
     acceptor.doorbell,
     JSON.stringify(
       connectionCreatedBody(operatorIdOf(acceptor.doorbell, acceptor.account), lane, connectionId, requesterAccount),
     ),
   );
+  if (acceptor.log !== undefined && options.requestorLog !== undefined) {
+    w.ledger.submit(
+      acceptor.account,
+      acceptor.log,
+      JSON.stringify(
+        outboundConnectionCreatedByAcceptor({
+          connectionTopicId: lane,
+          outboundTopicId: acceptor.log,
+          requestorOutboundTopicId: options.requestorLog,
+          confirmedRequestId: announced.sequenceNumber,
+          connectionRequestId: connectionId,
+          acceptorOperatorId: operatorIdOf(acceptor.doorbell, acceptor.account),
+        }),
+      ),
+    );
+  }
   return lane;
 }
 
@@ -357,6 +386,106 @@ async function main(): Promise<void> {
   }
 
   is('the envelope was posted to the lane the recipient created', result.lane, lane);
+
+  // === D-174: the lane is recorded on BOTH parties' outbound logs ==========
+  //
+  // HCS-10's *Outbound Connection Created* record contradicts itself about
+  // which party writes it — prose and operation table say the acceptor
+  // (`index.md:560`, `:529`), three of five required field descriptions
+  // describe the requester (`:585`, `:586`, `:587`). Sonic ruled that this
+  // deployment writes it on both logs at one message each, so that a strict
+  // reader under either reading finds the record it expects (ledger §G-24).
+  //
+  // Both halves are asserted here from the modelled ledger's own messages,
+  // which is the only place the two can be seen TOGETHER before a network run.
+  const createdOn = async (log: string): Promise<readonly Record<string, unknown>[]> =>
+    (await w.ledger.reader().messages(log))
+      .map((m) => operationOf(m))
+      .filter((op): op is Record<string, unknown> => op !== null && op['op'] === 'connection_created');
+
+  const senderRecords = await createdOn(w.sender.log);
+  const acceptorRecords = await createdOn(w.recipient.log);
+  is("the REQUESTER's own log records the lane it was given (D-174)", senderRecords.length, 1);
+  is("the ACCEPTOR's own log records the lane it created (D-174)", acceptorRecords.length, 1);
+
+  const asRequester = senderRecords[0] ?? {};
+  const asAcceptor = acceptorRecords[0] ?? {};
+
+  // Every field `index.md:578-588` marks required, present on both.
+  for (const [who, rec] of [
+    ['requester', asRequester],
+    ['acceptor', asAcceptor],
+  ] as const) {
+    for (const field of [
+      'p',
+      'op',
+      'connection_topic_id',
+      'outbound_topic_id',
+      'requestor_outbound_topic_id',
+      'confirmed_request_id',
+      'connection_request_id',
+      'operator_id',
+    ]) {
+      ok(`the ${who}'s record carries the required field ${field} (index.md:578-588)`, rec[field] !== undefined);
+    }
+    is(`the ${who}'s record names this lane`, rec['connection_topic_id'], lane);
+    is(`the ${who}'s record names the log it is stored on (index.md:583)`, rec['outbound_topic_id'], who === 'requester' ? w.sender.log : w.recipient.log);
+  }
+
+  // The two readings differ in exactly the places the pin differs, and that is
+  // the point of writing both rather than choosing one.
+  is(
+    "the requester's record names the CONFIRMER in operator_id (index.md:587)",
+    asRequester['operator_id'],
+    operatorIdOf(w.recipient.doorbell, w.recipient.account),
+  );
+  is(
+    "the acceptor's record names ITSELF in operator_id (index.md:529 — 'created by the agent')",
+    asAcceptor['operator_id'],
+    operatorIdOf(w.recipient.doorbell, w.recipient.account),
+  );
+  is(
+    "the requester's requestor_outbound_topic_id is its own log — redundant under its reading (index.md:584)",
+    asRequester['requestor_outbound_topic_id'],
+    w.sender.log,
+  );
+  is(
+    "the acceptor's requestor_outbound_topic_id is the OTHER party's log — load-bearing under its reading",
+    asAcceptor['requestor_outbound_topic_id'],
+    w.sender.log,
+  );
+  ok(
+    'both records agree about which request opened the lane (index.md:586)',
+    asRequester['connection_request_id'] === asAcceptor['connection_request_id'],
+  );
+  is(
+    "the requester's confirmed_request_id is the answer's sequence number on the OTHER party's door (index.md:585)",
+    asRequester['confirmed_request_id'],
+    (await w.ledger.reader().messages(w.recipient.doorbell)).find((m) => operationOf(m)?.['connection_topic_id'] === lane)?.sequenceNumber,
+  );
+
+  // IDEMPOTENT FROM CONSENSUS (D-165's rule, applied to a log), in a world of
+  // its own — a second letter posts a second envelope, and this assertion is
+  // about a log and not about a lane's traffic, so it is kept clear of the
+  // counts the letter above is still being measured by.
+  {
+    const u = await stand();
+    const inFlight = send(u.ctx, { coordinates: u.coordinates, manifest: u.manifest, payload: PAYLOAD, windowSeconds: 10 });
+    await new Promise((r) => setTimeout(r, 50));
+    const openedLane = answerTheDoor(u);
+    await inFlight;
+    const logged = async (log: string): Promise<number> =>
+      (await u.ledger.reader().messages(log))
+        .map((m) => operationOf(m))
+        .filter((op) => op !== null && op['op'] === 'connection_created' && op['connection_topic_id'] === openedLane).length;
+    is('first contact records the lane on the requester log once', await logged(u.sender.log), 1);
+    is('and on the acceptor log once', await logged(u.recipient.log), 1);
+
+    await send(u.ctx, { coordinates: u.coordinates, manifest: u.manifest, payload: PAYLOAD, windowSeconds: 10 });
+    is('a second letter rings nothing and records nothing twice (D-174, D-165)', await logged(u.sender.log), 1);
+    is('and the acceptor is not asked to record it again either', await logged(u.recipient.log), 1);
+  }
+
   is('and chunk 0 has a postmark', result.postmark.chunkIndex, 0);
   is('the postmark names the envelope', result.postmark.envelopeId, result.envelope.aadHash);
   is('one postmark per chunk (§5.7)', result.postmarks.length, result.envelope.chunkCount);

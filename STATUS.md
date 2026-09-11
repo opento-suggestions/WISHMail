@@ -406,7 +406,10 @@ and it is a patch.
   once and never again for a patch**: `8d30dfdc…` and `00229e6f…` reproduce from `v0.5.10`, `1c4359e5…` from `v0.5.11`,
   and each run of record now says so beside its own number, as does LIMITATIONS L-1. The records are not rewritten.
 - ~~**§G-24** — the pinned HCS-10 contradicts itself about who writes the Outbound Connection Created record~~ →
-  **written on BOTH parties' logs**, satisfying both readings at one message each. **The outbound records are the
+  **written on BOTH parties' logs**, satisfying both readings at one message each. **LANDED as D-174**, under memo
+  `hcs-10:op:4:2`: the acceptor's in the watcher when it answers, the requester's in `send` when it learns the lane.
+  The doorbell's `connection_created` goes first and neither log write is fatal; both are idempotent from consensus.
+  The upstream issue is **drafted and not sent**, at `provenance/HCS-10-OUTBOUND-CONNECTION-CREATED-2026-09-10.md`. **The outbound records are the
   primary enumeration path from the fix forward; the home's address book is the fallback for lanes whose records
   predate the fix or were never completed; consensus is the only authority on whether a lane exists.** A2's lane with
   B is a permanent counterexample — its one record is in the inbound shape and cannot be edited — the requester-side

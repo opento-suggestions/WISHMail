@@ -39,6 +39,12 @@ export const TRANSACTION_MEMO = {
    * a different body (FETCHED 2026-09-10 at the pin, `index.md:549-556`).
    */
   outbound_connection_request: `hcs-10:op:3:${TOPIC_TYPE.outbound}`,
+  /**
+   * `index.md:576` — the outbound RECORD of a lane's creation, which the pin
+   * puts on one party's log under its prose and on the other's under its field
+   * table. D-174 writes it on BOTH, so this memo is carried twice per lane.
+   */
+  outbound_connection_created: `hcs-10:op:4:${TOPIC_TYPE.outbound}`,
 } as const;
 
 /**
@@ -125,6 +131,140 @@ export function outboundConnectionRequestBody(
     connection_request_id: connectionRequestId,
     ...(memo === undefined ? {} : { m: memo }),
   };
+}
+
+/**
+ * HCS-10's *Outbound Connection Created* record — **the acceptor's reading**.
+ *
+ * THE PIN CONTRADICTS ITSELF ABOUT WHO WRITES THIS RECORD (ledger §G-24,
+ * FETCHED 2026-09-10 at blob `0cb5d2eb…`, verified equal to `spec/pins.json`).
+ * Its prose — "Recorded on an agent's Outbound Topic when it successfully
+ * processes a `connection_request` and creates a new Connection Topic"
+ * (`index.md:560`) — and its operation table — "Record of a connection created
+ * **by the agent**" (`index.md:529`) — both say the **acceptor**. Three of its
+ * five required field descriptions describe the **requester** (`:585`, `:586`,
+ * `:587`). D-174: this deployment writes the record on BOTH parties' logs
+ * rather than choosing a reading, at one message each, so that a strict reader
+ * under either reading finds the record it expects.
+ *
+ * This is the acceptor's half. Every required field is filled as the acceptor
+ * would fill it:
+ *
+ * - `outbound_topic_id` (`:583`) — "the agent's outbound topic where this
+ *   record is stored". Unambiguous under either reading: it is where the
+ *   message goes.
+ * - `requestor_outbound_topic_id` (`:584`) — the requester's log. **This field
+ *   is load-bearing under the acceptor reading and redundant under the
+ *   requester's**, and it is the reason the acceptor must read the requester's
+ *   HCS-11 profile to write its own record at all.
+ * - `confirmed_request_id` (`:585`) — "the sequence number of the
+ *   `connection_created` message received on the agent's inbound topic". The
+ *   acceptor receives none: it POSTS one, on its own inbound topic. That
+ *   message's sequence number is the only reading of this field available to
+ *   the party the prose names, and it is what goes here.
+ * - `connection_request_id` (`:586`) — "the sequence number of the original
+ *   `connection_request` sent by this agent". The acceptor sent none; the
+ *   sequence number of the request it ANSWERED is the coherent acceptor-side
+ *   value, and it is the same number its `connection_created` carries as
+ *   `connection_id`.
+ * - `operator_id` (`:587`) — "the agent that confirmed the connection". Under
+ *   this reading the writer is the confirmer, so it names itself — which is
+ *   exactly what the table row at `:529` says the record is.
+ *
+ * Two of those five are strained, and the strain is the contradiction rather
+ * than a choice made here. It is recorded and not resolved (P-9: conformance is
+ * to the blob).
+ */
+export function outboundConnectionCreatedByAcceptor(args: {
+  readonly connectionTopicId: string;
+  readonly outboundTopicId: string;
+  readonly requestorOutboundTopicId: string;
+  readonly confirmedRequestId: number;
+  readonly connectionRequestId: number;
+  readonly acceptorOperatorId: string;
+  readonly memo?: string;
+}): Record<string, unknown> {
+  return {
+    p: 'hcs-10',
+    op: 'connection_created',
+    connection_topic_id: args.connectionTopicId,
+    outbound_topic_id: args.outboundTopicId,
+    requestor_outbound_topic_id: args.requestorOutboundTopicId,
+    confirmed_request_id: args.confirmedRequestId,
+    connection_request_id: args.connectionRequestId,
+    operator_id: args.acceptorOperatorId,
+    ...(args.memo === undefined ? {} : { m: args.memo }),
+  };
+}
+
+/**
+ * HCS-10's *Outbound Connection Created* record — **the requester's reading**.
+ *
+ * The other half of D-174. The same five required fields, filled as the
+ * REQUESTER would fill them, which is how three of the five field descriptions
+ * read:
+ *
+ * - `outbound_topic_id` (`:583`) — the requester's own log, where this is
+ *   stored.
+ * - `requestor_outbound_topic_id` (`:584`) — the requester's log again.
+ *   **Redundant under this reading**, which is itself evidence for the other
+ *   one; written because the field is required, not because it adds anything.
+ * - `confirmed_request_id` (`:585`) — the sequence number of the
+ *   `connection_created` that confirmed the request. It sits on the ACCEPTOR's
+ *   inbound topic, not on this agent's, which is the one place this field's
+ *   wording does not fit the party its two neighbours name.
+ * - `connection_request_id` (`:586`) — "the sequence number of the original
+ *   `connection_request` **sent by this agent**". Exact, and only the requester
+ *   has it.
+ * - `operator_id` (`:587`) — "the agent that confirmed the connection (the
+ *   recipient of the original request)". Under this reading it names the OTHER
+ *   party, which is what a requester's record would say and what an acceptor's
+ *   could not.
+ */
+export function outboundConnectionCreatedByRequester(args: {
+  readonly connectionTopicId: string;
+  readonly outboundTopicId: string;
+  readonly confirmedRequestId: number;
+  readonly connectionRequestId: number;
+  readonly acceptorOperatorId: string;
+  readonly memo?: string;
+}): Record<string, unknown> {
+  return {
+    p: 'hcs-10',
+    op: 'connection_created',
+    connection_topic_id: args.connectionTopicId,
+    outbound_topic_id: args.outboundTopicId,
+    // The requester's own log, named twice: `:584` requires the field and
+    // under this reading the requester IS the requestor.
+    requestor_outbound_topic_id: args.outboundTopicId,
+    confirmed_request_id: args.confirmedRequestId,
+    connection_request_id: args.connectionRequestId,
+    operator_id: args.acceptorOperatorId,
+    ...(args.memo === undefined ? {} : { m: args.memo }),
+  };
+}
+
+/**
+ * Whether a log already holds an outbound `connection_created` for this lane.
+ *
+ * Read from CONSENSUS, so a rerun writes nothing twice and a wiped home cannot
+ * cause a duplicate — the same rule every provisioning verb obeys (D-165). The
+ * record is a log entry and not the lane's authority (§7.1: that is the
+ * `connection_created` on the doorbell), so this is thrift rather than safety;
+ * but a duplicate record would make an agent's own log disagree with itself
+ * about how many lanes it has.
+ */
+export function outboundCreatedRecordFor(
+  operations: readonly (Record<string, unknown> | null)[],
+  lane: string,
+): boolean {
+  return operations.some(
+    (op) =>
+      op !== null &&
+      op['p'] === 'hcs-10' &&
+      op['op'] === 'connection_created' &&
+      op['connection_topic_id'] === lane,
+  );
 }
 
 /**

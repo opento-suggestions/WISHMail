@@ -66,6 +66,8 @@ import {
   accountOf,
   connectionRequestBody,
   outboundConnectionRequestBody,
+  outboundConnectionCreatedByRequester,
+  outboundCreatedRecordFor,
   operatorId as operatorIdOf,
 } from '../ops/hcs10.js';
 import {
@@ -262,6 +264,16 @@ export interface Lane {
   readonly createdAt: string;
   /** The doorbell the answer was on — what T-P10-2 compares against. */
   readonly doorbell: string;
+  /**
+   * The sequence number of that `connection_created`, on that doorbell.
+   *
+   * HCS-10's outbound record of a lane's creation requires it —
+   * `confirmed_request_id`, "the sequence number of the `connection_created`
+   * message … confirming the connection request" (`index.md:585`) — and a
+   * requester has no other way to know it, because the message is on the
+   * acceptor's door and not its own (D-174).
+   */
+  readonly answerSequenceNumber: number;
 }
 
 /**
@@ -281,7 +293,7 @@ export async function lanesFromDoorbell(
     if (op['connected_account_id'] !== senderAccount) continue;
     const topicId = op['connection_topic_id'];
     if (typeof topicId !== 'string') continue;
-    lanes.push({ topicId, createdAt: m.consensusTimestamp, doorbell });
+    lanes.push({ topicId, createdAt: m.consensusTimestamp, doorbell, answerSequenceNumber: m.sequenceNumber });
   }
   return lanes.sort((a, b) => compareTimestamps(a.createdAt, b.createdAt));
 }
@@ -448,6 +460,59 @@ async function pendingRequestOf(
 }
 
 /**
+ * D-174: the requester's own outbound record that the lane it asked for exists.
+ *
+ * HCS-10 contradicts itself about which party writes the *Outbound Connection
+ * Created* record — its prose and its operation table say the acceptor
+ * (`index.md:560`, `:529`), three of its five required field descriptions
+ * describe the requester (`:585`, `:586`, `:587`) — so this deployment writes
+ * it on BOTH logs and satisfies both readings at one message each. This is the
+ * requester's half; the acceptor's is in `sdk/watcher.ts`.
+ *
+ * WRITTEN WHEN THE REQUESTER LEARNS THE LANE, which is the only moment it can
+ * be written: `confirmed_request_id` is the sequence number of an answer on
+ * somebody else's door, and until the answer is read there is nothing to
+ * record.
+ *
+ * **Best-effort, and the ledger says so.** Learning is a submit→learn window
+ * like any other — a ring answered while this process was down, or a write that
+ * failed after the lane landed, leaves the acceptor's doorbell holding the
+ * truth and this log holding only the request. So: idempotent from consensus,
+ * never fatal, and never the authority. §7.1's authority is the
+ * `connection_created` on the doorbell, and `lanesOf` confirms every candidate
+ * there before it counts, whichever record it started from.
+ */
+async function recordLaneOnOwnLog(
+  ctx: SenderContext,
+  lane: Lane,
+  connectionRequestId: number,
+  acceptorOperatorId: string,
+): Promise<void> {
+  try {
+    const own = (await ctx.consensus.messages(ctx.log)).map((m) => operationOf(m));
+    if (outboundCreatedRecordFor(own, lane.topicId)) return;
+    await ctx.consensus.submitMessage(
+      ctx.log,
+      outboundConnectionCreatedByRequester({
+        connectionTopicId: lane.topicId,
+        outboundTopicId: ctx.log,
+        confirmedRequestId: lane.answerSequenceNumber,
+        connectionRequestId,
+        acceptorOperatorId,
+      }),
+      TRANSACTION_MEMO.outbound_connection_created,
+    );
+  } catch {
+    // A log entry must never cost a letter. The lane is open, the stamp for the
+    // ring is spent, and `send` has an envelope to compose; the record is
+    // HCS-10's convenience and this project's conformance, not the source of
+    // anything. Enumeration still works through the request record already on
+    // this log, and every candidate is confirmed at the counterparty's doorbell
+    // regardless.
+  }
+}
+
+/**
  * §6.4 step 1's first contact. Returns the lane if one is created inside the
  * window, or the facts a slip is built from if the window closes (F-6).
  */
@@ -538,6 +603,7 @@ async function firstContact(
       const lanes = await lanesFromDoorbell(ctx.consensus, coordinates.doorbell, ctx.account);
       const answered = lanes.find((l) => !before(l.createdAt, request.consensusTimestamp));
       if (answered !== undefined) {
+        await recordLaneOnOwnLog(ctx, answered, request.sequenceNumber, targetOperator);
         return {
           lane: answered,
           contact: { attempts: attempt, reusedRequest, totalSeconds: attempt * windowSeconds },

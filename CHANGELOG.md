@@ -5,7 +5,8 @@ Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor
 ## [0.5.12] — 2026-09-10 — four rulings, and a probe that decided a version
 
 **[S]** ruled every item; **[CC]** probed, patched, courted and recorded. **No schema moves, no wire string moves**,
-and the register gains its first row since 0.5.6.
+and the register gains its first row since 0.5.6. D-174 changes no specification sentence at all — it decides what
+this implementation writes on an HCS-10 outbound topic — and is carried in this block because it is one patch.
 
 ### Changed — D-173: the evidence bundle's `spec` is the MINOR version (ledger §G-25, closed)
 
@@ -45,6 +46,48 @@ rewritten**: each run of record gains a dated note beside its own number, LIMITA
 fixtures keep the values the network produced. `check:captured`, `check:receipt` and `check:reply` keep the
 substitution that proves those numbers from the captured bytes, and `check:captured` gains the proof of the new
 property — it becomes a Verifier at another patch of 0.5 and requires the digest not to move.
+
+### Added — D-174: the Outbound Connection Created record, on BOTH parties' logs (ledger §G-24, closed)
+
+The pinned HCS-10 contradicts itself about which agent writes this record. Its operation table (`index.md:529`) and
+its introductory sentence (`index.md:560`) say the **acceptor**; three of its five required field descriptions
+(`:585`, `:586`, `:587`) describe the **requester**, and `requestor_outbound_topic_id` (`:584`) is redundant under
+the requester reading and load-bearing under the acceptor's. FETCHED at blob `0cb5d2eb…`, verified equal to
+`spec/pins.json`. P-9 makes conformance to the blob, so no reading here is entitled to be called the right one.
+
+**This deployment writes both**, at one message each, under memo `hcs-10:op:4:2`: the acceptor's in
+`sdk/watcher.ts` when it answers, the requester's in `tools/send.ts` when it learns the lane, each carrying all five
+required fields under the reading that has that party writing it. A strict reader under either reading finds the
+record it expects, and the contradiction is **recorded rather than resolved**.
+
+**What the records buy, stated exactly** (Sonic, correcting an overreach of this project's own first wording, which
+said they would make the home's address book *unnecessary*): the outbound records are the **primary enumeration path
+from the fix forward**; the home's address book is the **fallback** for lanes whose records predate the fix or were
+never completed; **consensus is the only authority on whether a lane exists.** A2's lane with B is a permanent
+counterexample, as is every lane rung before the fix on any deployment; the requester-side record is written when the
+requester *learns* the lane, so the one-hop path is best-effort and not guaranteed; and neither log is authoritative —
+§7.1's rule is the `connection_created` on the doorbell, and every candidate is confirmed there before it counts.
+
+**Order, failure and idempotency are what make it safe.** The doorbell's `connection_created` goes first, because
+§7.1 binds a lane by that message and a failure afterwards leaves the lane born, announced and findable. Neither log
+write throws — a log entry must never cost a letter, and an exception in the watcher would make the error handler the
+last word on a lane that exists, which the next tick would not re-answer. Both read their own log from consensus
+before writing, so a rerun records nothing twice (D-165's rule, applied to a log). A requester that declares no
+outbound topic is skipped with a stated reason, because `requestor_outbound_topic_id` is required and cannot be
+invented.
+
+`check:hcs10` is **63 assertions** — every required field on both records, the memo, and the three places the two
+readings part. `check:letter` is **187**, up from 155: both logs hold their record after a first contact, in their
+own shapes, and a second letter records nothing twice. **`check:letter`'s modelled acceptor now writes the record
+too**, which is CLAUDE.md §12's rule applied before it could bite — a model that did not would diverge from the wire
+on a field a strict reader now looks for, exactly as the lane memo `hcs-10:1:60:3` did.
+
+**The acceptor's write has no offline court for its behaviour, only for its shape**: `answer()` takes a Session and a
+network. It fires live for the first time in Gate Three, and that gate report says what both logs are expected to
+hold before it runs.
+
+**The upstream issue is drafted and not sent**: `provenance/HCS-10-OUTBOUND-CONNECTION-CREATED-2026-09-10.md`, in
+ledger §G-24's own shape — file, line, the two readings, no opinion, no preferred fix.
 
 ### Changed — D-175: §5.3's `resolvedAt` gloss (ledger §G-18, closed)
 

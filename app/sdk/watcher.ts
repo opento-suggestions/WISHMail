@@ -36,7 +36,10 @@ import {
   connectionCreatedBody,
   connectionTopicMemo as connectionTopicMemoAt,
   operatorId as operatorIdOf,
+  outboundConnectionCreatedByAcceptor,
+  outboundCreatedRecordFor,
 } from '../src/ops/hcs10.js';
+import { mirrorSource, resolveHcs14 } from '../src/resolve/hcs14.js';
 import { operationOf, type TopicMessage } from '../src/tools/consensus.js';
 import type { Session } from './session.js';
 
@@ -102,6 +105,36 @@ export interface Answered {
   readonly lane: string;
   readonly connectionId: number;
   readonly requesterAccount: string;
+  /**
+   * Where this agent's own outbound log recorded the lane (D-174), or why it
+   * did not. The lane exists either way: §7.1's authority is the
+   * `connection_created` on the doorbell, and this is HCS-10's log of it.
+   */
+  readonly outboundRecord: { readonly topicId: string; readonly sequenceNumber: number } | null;
+  readonly outboundRecordSkipped?: string;
+}
+
+/**
+ * The requester's outbound topic, for `requestor_outbound_topic_id` (`:584`).
+ *
+ * The acceptor knows the requester's ACCOUNT — HCS-10's `operator_id` gives it
+ * — and nothing else about it, so this field costs a read of the requester's
+ * HCS-11 profile. §9.2's rule is the reader, run through the same
+ * `resolveHcs14` a `resolve` call would use, so the profile's digest is checked
+ * against its topic memo exactly as it is anywhere else. Four mirror reads, no
+ * key, nothing configured.
+ *
+ * `null` where the requester has no resolvable profile or its profile declares
+ * no outbound topic. **That is not an error and must not stop the lane**: the
+ * record is a log entry, the lane is already born and announced, and an agent
+ * may ring a door without having declared a log.
+ */
+async function requestorLogOf(s: Session, requesterAccount: string): Promise<string | null> {
+  const manifest = s.record.get('manifest')?.id;
+  if (manifest === null || manifest === undefined) return null;
+  const r = await resolveHcs14(mirrorSource(s.mirror), s.ledgerTag, requesterAccount, manifest);
+  if ('failure' in r) return null;
+  return r.coordinates.log ?? null;
 }
 
 /**
@@ -158,7 +191,12 @@ export async function answer(s: Session, doorbell: string, request: Unanswered):
   // The answer goes on the ACCEPTOR's own inbound topic (`index.md:498`), which
   // is why D-137 exempts the owner's key from the doorbell's fee: an agent is
   // not charged to answer its own door (T-P7-4).
-  await s.consensus.submitMessage(
+  //
+  // THIS IS THE AUTHORITATIVE ONE AND IT GOES FIRST. §7.1 binds a lane by the
+  // `connection_created` on the doorbell; the outbound record below is HCS-10's
+  // log of that fact and never its source. A failure after this line leaves the
+  // lane born, announced and findable, which is the whole reason for the order.
+  const announced = await s.consensus.submitMessage(
     doorbell,
     connectionCreatedBody(
       operatorIdOf(doorbell, s.account),
@@ -169,7 +207,62 @@ export async function answer(s: Session, doorbell: string, request: Unanswered):
     TRANSACTION_MEMO.connection_created,
   );
 
-  return { lane, connectionId: request.sequenceNumber, requesterAccount: request.requesterAccount };
+  const answered = { lane, connectionId: request.sequenceNumber, requesterAccount: request.requesterAccount };
+
+  // D-174: the outbound record, on the ACCEPTOR's own log, under the reading
+  // that has the acceptor writing it (`index.md:529`, `:560`). The requester
+  // writes its own under the other reading, in `send`; the pin cannot be made
+  // to say one thing, so this deployment satisfies both at one message each.
+  //
+  // EVERY FAILURE HERE IS REPORTED AND NONE THROWS. The lane is already on
+  // consensus and already announced. An exception thrown from here would make
+  // the watcher's error handler the last word on a lane that exists — and the
+  // next tick would not re-answer it, because the doorbell now holds the answer,
+  // so the only thing a throw could achieve is to hide a lane from the caller
+  // that asked for it.
+  const log = s.record.get('log')?.id;
+  if (log === null || log === undefined) {
+    return { ...answered, outboundRecord: null, outboundRecordSkipped: 'this agent has no outbound log in its own record' };
+  }
+  try {
+    const own = (await s.consensus.messages(log)).map((m) => operationOf(m));
+    if (outboundCreatedRecordFor(own, lane)) {
+      return { ...answered, outboundRecord: null, outboundRecordSkipped: `the log already records lane ${lane}` };
+    }
+    const requestorLog = await requestorLogOf(s, request.requesterAccount);
+    if (requestorLog === null) {
+      return {
+        ...answered,
+        outboundRecord: null,
+        outboundRecordSkipped:
+          `the requester ${request.requesterAccount} declares no outbound topic this agent can read, and ` +
+          'requestor_outbound_topic_id is required (index.md:584)',
+      };
+    }
+    const written = await s.consensus.submitMessage(
+      log,
+      outboundConnectionCreatedByAcceptor({
+        connectionTopicId: lane,
+        outboundTopicId: log,
+        requestorOutboundTopicId: requestorLog,
+        // `:585` — "the sequence number of the connection_created message … on
+        // the agent's inbound topic". The acceptor posted it; this is it.
+        confirmedRequestId: announced.sequenceNumber,
+        // `:586` — the original request's sequence number, which for the
+        // acceptor is the request it answered.
+        connectionRequestId: request.sequenceNumber,
+        acceptorOperatorId: operatorIdOf(doorbell, s.account),
+      }),
+      TRANSACTION_MEMO.outbound_connection_created,
+    );
+    return { ...answered, outboundRecord: { topicId: written.topicId, sequenceNumber: written.sequenceNumber } };
+  } catch (e) {
+    return {
+      ...answered,
+      outboundRecord: null,
+      outboundRecordSkipped: `the outbound record did not land: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
 }
 
 export interface WatcherOptions {
