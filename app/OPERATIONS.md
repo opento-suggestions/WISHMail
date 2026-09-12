@@ -6761,6 +6761,34 @@ against a transfer that never landed — and it is left exactly as it is.
 
   **GATE ZERO (second, fresh homes on the demo operators) — RUN 2026-09-12. GREEN.**
 
+> **NOTE ADDED 2026-09-11, beneath this run of record and not amending it.** This section says **70 bytes** of
+> payload twice (the step table and the inbox readback), and the gate report above predicted 70. **The letter on
+> consensus is 69 bytes.** It reads *"This letter is certified, and its receipt will be signed on consensu."* —
+> the final `s` is missing.
+>
+> **Nothing in this implementation did it, and nothing about GREEN moves.** The model truncated the base64 in
+> the tool call, before the server saw a byte of it. From goose’s own session database, the `payload` argument
+> as sent:
+>
+> ```
+> 20260912_3  (an earlier DRY attempt)   96 chars  …Y29uc2Vuc3VzLg==   -> 70 bytes, "…on consensus."
+> 20260912_5  (THE LIVE GATE, X2 send)   92 chars  …Y29uc2Vuc3Uu       -> 69 bytes, "…on consensu."
+> 20260912_6  (the 2026-09-11 rehearsal) 96 chars  …Y29uc2Vuc3VzLg==   -> 70 bytes, "…on consensus."
+> ```
+>
+> **The same model, the same instruction, the same literal — right twice and wrong once, and the once was the
+> recorded run.** It dropped the final `zLg==` and wrote `u`.
+>
+> Every weld holds over the bytes that were actually sent: the AAD hashed them, the envelope sealed them, the
+> settlement named that envelope, the recipient opened it **byte for byte**, and the receipt executed onto her
+> own manifest topic. The digest `fca22d10…` is the digest of that correspondence and reproduces from the
+> fixture. What is wrong is only that the sentence the letter contains is one character short of the one
+> `docs/OPERATOR-SCRIPT.md` asked for.
+>
+> **It was invisible until 2026-09-11**, because `inbox` returned the payload as a Node `Buffer` and goose
+> rendered it as decimal byte values. The UTF-8 rendering added that night is what made it legible, and it read
+> it back on the first call. Recorded in §"THE REHEARSAL GATE, BEFORE GATE FOUR".
+
 
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
 
@@ -6843,10 +6871,10 @@ them as UTF-8 **when and only when they are valid UTF-8**, labelled as a renderi
 
 ```
 1 delivery(ies) on 1 lane(s). inbox wrote nothing (§6.5, D-29).
-  08329989… — OPENED on 0.0.10489454, key epoch 1, 1 chunk(s), 70 byte(s)
+  08329989… — OPENED on 0.0.10489454, key epoch 1, 1 chunk(s), 69 byte(s)
       a receipt is pending on schedule 0.0.10489457; `ack` signs it (§6.6, §10.4)
       a RENDERING of those bytes as UTF-8 — the bytes themselves stay base64 in the result:
-      | This letter is certified, and its receipt will be signed on consensus.
+      | This letter is certified, and its receipt will be signed on consensu.
 ```
 
 `TextDecoder` with `fatal: true`, **not** `Buffer.toString('utf8')`, which substitutes U+FFFD silently and would
@@ -7075,7 +7103,92 @@ that is the point above.** **stop**
 
 ### The cards, as they came back
 
-*(filled after the rehearsal)*
+**RUN AND PASSED, 2026-09-11.** All three calls returned `status success`. Read out of goose's own session
+database — `~/AppData/Roaming/Block/goose/data/sessions/sessions.db`, sessions `20260912_6` (R1, R2) and
+`20260912_7` (R3) — and not from a retelling.
+
+**R1 — `rehearsalx__resolve`.** Real coordinates for DemoAgentA2, off the live mirror, in a session that reads
+no key:
+
+```
+  address 0.0.10462700 · doorbell 0.0.10462704 · log 0.0.10462708 · manifestTopic 0.0.10462713
+  keyEpoch 1 · resolutionProof.hash 57625b02… · resolutionProof.uri null
+  trustClass math · endorsements [] · resolvedAt 1789186971.486000000
+```
+
+`resolutionProof.uri` is `null` by §6.2 — null until `send` publishes the manifest — which is the one
+`UNPRODUCED` entry `check:outputs` records for `resolve`, here confirmed through goose's own serialiser.
+
+**R2 — `rehearsalx__send`, DRY.** `coordinates` arrived **as a STRING** for the fourth session running, the
+model having serialised the object it was handed. The boundary coercion read it, and `send` reached its plan:
+
+```
+DRY RUN — send would post one certified envelope to 0.0.10462700
+  wouldDo "post one certified envelope to 0.0.10462700"
+  recipient {address 0.0.10462700, doorbell 0.0.10462704, manifestTopic 0.0.10462713, keyEpoch 1}
+  _meta {"wishmail/dryRun": true, "wishmail/spec": "0.5.13"}
+```
+
+**No `structuredContent`**, exactly as §"Why A3 alone was not enough" says: `planned()` emits a text block and
+`_meta` and nothing else.
+
+**R3 — `inboxproofy2__inbox`, the proof this rehearsal existed for.** All four assertions hold:
+
+```
+1 delivery(ies) on 1 lane(s). inbox wrote nothing (§6.5, D-29).
+  08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f — OPENED on 0.0.10489454,
+      key epoch 1, 1 chunk(s), 69 byte(s)
+      a receipt is pending on schedule 0.0.10489457; `ack` signs it (§6.6, §10.4)
+      a RENDERING of those bytes as UTF-8 — the bytes themselves stay base64 in the result:
+      | This letter is certified, and its receipt will be signed on consensu.
+```
+
+```json
+"structuredContent": { "deliveries": [ {
+    "envelope": { … "aadHash": "08329989…", "keyEpoch": 1, "chunkCount": 1 },
+    "opened": true,
+    "payload": "VGhpcyBsZXR0ZXIgaXMgY2VydGlmaWVkLCBhbmQgaXRzIHJlY2VpcHQgd2lsbCBiZSBzaWduZWQgb24gY29uc2Vuc3Uu",
+    "returnReceipt": { "scheduleId": "0.0.10489457", "sequenceNumber": 2,
+                       "consensusTimestamp": "1789176131.249818104", "requestedByHeader": true } } ] }
+"_meta": { "wishmail/spec": "0.5.13",
+           "wishmail/inbox": { "lanes": ["0.0.10489454"], "deliveries": [ … lane, chunkPostmarks, openedUnderEpoch … ] } }
+```
+
+1. `payload` is a **base64 string**, not `{"type":"Buffer","data":[…]}`. **The defect is gone on the wire.**
+2. The text block renders it, **labelled as a rendering of the bytes**.
+3. `structuredContent.deliveries[0]` carries **exactly** `envelope`, `opened`, `payload`, `returnReceipt` —
+   none of the four narrowed keys. They are in `_meta['wishmail/inbox']`, where nothing claims they are output.
+4. `returnReceipt` is the **`PendingReceipt`** shape — `scheduleId`, `sequenceNumber`, `consensusTimestamp`,
+   `requestedByHeader` — and not a §5.8 ReturnReceipt.
+
+### AND IT IMMEDIATELY FOUND SOMETHING, WHICH IS THE ARGUMENT FOR IT
+
+**The letter on consensus is 69 bytes and says "…signed on consensu." The demo sentence is 70 bytes and says
+"…signed on consensus."** The rendering is what showed it; for as long as the payload was decimal soup, nobody
+could have read it.
+
+It is not this deployment's defect and nothing in the code did it. **The model truncated the base64 in the tool
+call**, before the server saw a byte of it. From goose's own record, the `payload` argument as sent:
+
+```
+20260912_3  (an earlier DRY attempt)   96 chars  …Y29uc2Vuc3VzLg==   -> 70 bytes, "…on consensus."
+20260912_5  (THE LIVE GATE, X2 send)   92 chars  …Y29uc2Vuc3Uu       -> 69 bytes, "…on consensu."
+20260912_6  (tonight's R2, DRY)        96 chars  …Y29uc2Vuc3VzLg==   -> 70 bytes, "…on consensus."
+```
+
+**The same model, the same instruction, the same literal — right twice and wrong once, and the once was the
+recorded run.** It dropped the final `zLg==` and wrote `u`.
+
+**Nothing about GREEN moves.** The envelope was sealed over those 69 bytes, the AAD hashed them, the settlement
+named that envelope, the recipient opened it **byte for byte**, and the receipt executed onto her own manifest
+topic. Every weld holds over the payload that was actually sent. What is wrong is only that the sentence the
+letter contains is not quite the sentence the operator script asked for.
+
+**The record is corrected beneath, not rewritten**: `app/OPERATIONS.md` §"GATE ZERO, THE SECOND — THE RUN OF
+RECORD" says "70 bytes" in two places and the gate report predicted 70. Those stand as written; the note beneath
+the run of record carries the truth.
+
+**And it is a live risk to tomorrow's take**, which is the point of finding it tonight rather than on camera.
 
 ---
 
