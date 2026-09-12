@@ -7489,6 +7489,286 @@ them.
 
 ---
 
+## GATE FOUR — the brand-new wallet through the whole lifecycle. Gate report, written 2026-09-11 before any signature
+
+**Written and committed before the first transaction, on the rule the probe, Step 2, Step 3 and both Gate Zeros
+followed.** The second Gate Zero's report and run of record above are **not amended** by any of this. Five
+markers, one prediction each, and **a divergence at any one is written down before the next is attempted**.
+
+**It runs under HEAD `970163a`**, specification **0.5.13** (wire strings `0.5`), register 87 · 53 expanded · 44
+passing, `typecheck`, `p13:check` and **all twenty-four `check:*` green**. **That HEAD is load-bearing beyond
+tonight**: RECORD (Sonic) — *tomorrow's recorded take runs on the HEAD Gate Four ran on*, so anything that must
+exist for the take had to land before this gate, and nothing may land between them.
+
+### 1. The question this gate asks, which four gates have not
+
+**`ensurePayerHoldsStamps` (`app/sdk/mailbox.ts`) has a branch that has never executed against the network.** It
+reads the operator from the mirror, returns early if it already holds `$POSTAGE`, and otherwise skips the
+association when `max_automatic_token_associations` is `-1` or has a free slot — printing `provision.autoassociates`
+and submitting nothing. **Both demo operators have read `-1` at every gate**, so the
+`TokenAssociateTransaction` beneath that branch is dead code as far as consensus is concerned.
+
+Gate Four's two operators read **`0`**. `0 === -1` is false and `0 > 0` is false, so **the branch fires.**
+
+**THE NEW OBSERVABLE, and it is the thing this gate exists to see:** a `TokenAssociateTransaction` for
+**`$POSTAGE 0.0.10426208`** on **each** new operator wallet, visible on the mirror, **timestamped after that
+agent's purchase transfer and before that agent's first topic — and therefore long before any ring.** It is
+inside `generateMailbox`, which the provisioned path reaches after the purchase creates the account and before
+the doorbell is created.
+
+**It fires on BOTH operators, including the recipient's** — who will never ring a doorbell and will therefore
+hold an associated `$POSTAGE` balance of zero forever. That is one association spent for nothing on the recipient
+side. **Recorded and not fixed** (RECORD, Sonic): it is on the golden path, it is what the gate exists to see,
+and changing it tonight would mean Gate Four no longer tests what it was called for.
+
+### 2. The before-state, read from the mirror 2026-09-11
+
+```
+  gz4-x operator (SENDER)      0.0.10492952     250.00000000 h   $POSTAGE      0   autoAssoc  0   deleted false
+  gz4-y operator (RECIPIENT)   0.0.10492953     250.00000000 h   $POSTAGE      0   autoAssoc  0   deleted false
+  treasury                     0.0.10426205      20.00000000 h   $POSTAGE   9936
+  Postmaster payer             0.0.8641261     1841.21183562 h   $POSTAGE      0
+
+  DemoAgentX4  agent key d652ad7f98eaeed92af0b56ad69d479e9ed744677f34edd79707b8b01e1d28e3   accounts under it: 0
+  DemoAgentY4  agent key a9ba313a66913d555c8b496c16b87078fc08f59456a7a9d9d52e0f0802c82b2d   accounts under it: 0
+
+  PriceList 0.0.10426551  sequence 4 at 1789055861.123389104
+      provisioning {"method":"hbar","registrationFee":"0.05","unitPrice":"30"}
+      hbar method  12 $POSTAGE for "1.00" USD, rate from the network's own exchangerate (D-170)
+  exchange rate at 1789188xxx: 30000 hbar : 223685 cents  ->  1.00 USD = 13.41171737 h
+```
+
+**Zero accounts under either agent key** is the precondition `buy_stamp` with `provision: true` refuses on, and it
+is checked here rather than assumed.
+
+### 3. The five markers
+
+Each is its own gate line. **The ORDER is recipient before sender**, because her watcher must be running before he
+rings, and the labels say so rather than relying on X and Y to carry it.
+
+---
+
+#### **GATE RECIPIENT** — `gz4-y`, DemoAgentY4, operator `0.0.10492953`
+
+One `buy_stamp` call with `provision: true`, which is the whole of §4.6's provisioned path (D-168).
+
+**Predicted, in order:**
+
+1. **A `TokenAssociateTransaction`** for `0.0.10426208` on `0.0.10492953`, **paid and signed by that operator on
+   its own local client** — never by the carrying Postmaster, whose carry policy would refuse it. **This is the
+   new observable.** Cost **≈0.63 ℏ** — *measured*, not estimated: this deployment's only two
+   `TokenAssociate`s charged `0.62811176` and `0.62936798` ℏ at Step 4. Declared maximum 2 ℏ.
+2. **One atomic three-leg `TransferTransaction`**, the Postmaster as payer: ℏ from `0.0.10492953` to the
+   Postmaster for the price; **12 `$POSTAGE`** from the treasury to DemoAgentY4's **public-key alias**, which is
+   the leg that **creates the account** (HIP-542); and **0.05 ℏ** from the Postmaster into that same alias for
+   the agent to pay for its own registration.
+3. **Five topics** — doorbell (HIP-991 fee of one `$POSTAGE` to the treasury, the owner's own key exempt), log,
+   manifest topic, HCS-2 declaration registry, HCS-1 profile file — plus the profile's chunks, a registry entry
+   and an account memo. All carried by the Postmaster.
+4. A **StampReceipt** naming `txRef`, a `price`, `holder` = the created account, and a `provisioning` block.
+
+**Price predicted ≈43.41 ℏ** — 30 ℏ flat plus a 12-stamp bundle at "1.00" USD. **The stamp leg floats with the
+network's own rate at the moment of the purchase (D-170)**, so the exact figure is whatever the rate is then;
+13.41171737 ℏ at the rate read above, against 13.45267471 measured on 09-12 and 13.29198051 on 09-10.
+
+**The recipient's operator ends holding `$POSTAGE` 0 and ASSOCIATED** — a token row with a zero balance, which is
+the association that bought nothing.
+
+  **GATE RECIPIENT — [ NOT YET ]**
+
+---
+
+#### **GATE SENDER** — `gz4-x`, DemoAgentX4, operator `0.0.10492952`
+
+The same call, the same shape, a second association and a second purchase. **Same prediction as GATE RECIPIENT**,
+with a different `holder`.
+
+  **GATE SENDER — [ NOT YET ]**
+
+---
+
+#### **GATE STAMPS — N/A**
+
+Provisioning already includes twelve stamps (P-2, D-168), so there is no separate stamp purchase. This line exists
+only so that a top-up, if one is ever wanted, has a gate of its own rather than riding someone else's.
+
+  **GATE STAMPS — [ N/A unless a top-up is wanted ]**
+
+---
+
+#### **GATE SEND** — one certified letter, X4 → Y4, first contact and a return receipt in ONE call (§6.4)
+
+**Predicted, in order:**
+
+1. **§4.4's hop fires.** The sender's operator holds **zero `$POSTAGE`**, so `ringStamp` moves **one stamp from
+   DemoAgentX4 to `0.0.10492952`** before the ring — the agent signs, the operator pays. This is the second time
+   it has ever fired, the first being the second Gate Zero.
+2. **The ring**: a `connection_request` on DemoAgentY4's doorbell, whose HIP-991 fee **consumes that stamp** into
+   the treasury.
+3. **The lane is born on the RECIPIENT's doorbell**, because she answers. Its submit key must be a **threshold of
+   exactly the two agents' keys and no other** (§7.1, T-P17-2) and it must carry **no custom fee** (T-P11-3).
+4. **The manifest** published to X4's manifest topic; **the settlement**, one transfer of **two stamps** — one
+   weight, one receipt fee — from DemoAgentX4 to the treasury, under the memo `wishmail:<envelopeId>` **naming
+   that envelope and no other** (§4.3).
+5. **Chunk 0** on the lane, one chunk, **39 bytes** of payload.
+6. A **ScheduleCreate** for the receipt, its inner body naming **the sender's own side as payer** — so signing
+   costs the recipient nothing (T-P16-2) — and a `transaction` operation announcing it on the lane.
+7. `send` returns **chunk 0's Postmark** and returns **before anyone signs** (P-14, D-30). A Postmark is not a
+   delivery.
+
+**The payload is `Certified agent mail, proven on Hedera.` — 39 bytes, 52 base64 characters, no padding.** It is
+shorter than the second Gate Zero's on purpose: the model **truncated** that one in the tool call, and the letter
+landed 69 bytes reading *"…on consensu."* What it dropped was a padded tail, and this literal has no padding.
+**B5 checks the rendering against the plaintext printed beside it in B4.**
+
+**An `AttemptedDeliverySlip` is a RESULT and not a failure** (P-12): one stamp is gone at her door, no postage was
+affixed, and the request stands. It would mean her watcher was not running. **Do not send again without saying
+so** — a second ring is a second stamp and a second lane, and a lane cannot be closed.
+
+  **GATE SEND — [ NOT YET ]**
+
+---
+
+#### **GATE ACK** — Y4 opens it and signs for it
+
+**Predicted:** `inbox` returns one delivery, `opened: true`, **39 bytes**, carrying the **pending schedule**; the
+card renders the sentence, labelled as a rendering. `ack` signs the schedule; **the network executes it the
+instant the last signature lands**; the receipt manifest is published to **DemoAgentY4's own manifest topic**.
+**Not one stamp of the recipient's moves at any step (T-P16-2).**
+
+  **GATE ACK — [ NOT YET ]**
+
+---
+
+### 4. The stamp arithmetic, predicted
+
+```
+                                  before        after      why
+  DemoAgentX4  (sender)               0    ->      9       +12 bought, -1 the hop, -2 the settlement
+  DemoAgentY4  (recipient)            0    ->     12       +12 bought, and CHARGED NOTHING (T-P16-2)
+  0.0.10492952 (sender's operator)    0    ->      0       +1 from the hop, -1 to the doorbell fee
+  0.0.10492953 (recipient's operator) 0    ->      0       associated, and never holds one
+  treasury     0.0.10426205        9936    ->   9915       -24 sold, +1 doorbell fee, +2 settlement
+```
+
+That is the same arithmetic the second Gate Zero measured exactly (9957 → 9936, a net −21), applied to a
+different pair.
+
+### 5. GREEN, and it is unchanged
+
+**Not `send` returning. Not any card. Not `ack` returning.** GREEN is two facts on a mirror node, read afterward:
+
+1. the schedule's **`executed_timestamp` is not null**, and
+2. the **receipt manifest is on DemoAgentY4's own manifest topic**, at a topic id and sequence number, hashing to
+   what the schedule carried, **chained back to chunk 0's postmark**.
+
+**And, only for this gate, a third:** a `TokenAssociateTransaction` for `0.0.10426208` on **each** of
+`0.0.10492952` and `0.0.10492953`, timestamped **before** that agent's first ring.
+
+### 6. The submit→learn window, and how a run resumes from inside it
+
+Every consensus write has a window between the signature leaving the process and the outcome being learned, and
+**no offline check can reach it** because there is no offline consensus node (Gate One: eight defects, every one
+in that window).
+
+- **A purchase that stops part way resumes by calling the same instruction again.** It is idempotent **against
+  consensus, not against local state**: `buy_stamp` with `provision` refuses if the holder's account already
+  exists, `generateMailbox` resolves the agent's own address first and does nothing if coordinates exist. It
+  creates only what is missing and never buys twice.
+- **If the counter's record of a purchase is gone: STOP, and do not reconstruct the receipt.** A receipt is never
+  rebuilt from the ledger by the party that charged (Correspondent A).
+- **The association is the one act with no prior live run.** If it fails, `generateMailbox` refuses the whole
+  mailbox with `the operator could not associate with $POSTAGE`, before any topic is created. That is a clean
+  stop and the purchase transfer has already landed: resume by calling the same instruction again.
+- **A lane cannot be closed.** Anything ambiguous about whether a ring happened is a stop, not a retry.
+
+### 7. Every way it stops
+
+- `--live` did not arrive → the card says `DRY RUN — … would …`. **In LIVE a "would do" card means the flag did
+  not arrive. Stop.**
+- the counter is down → `buy_stamp` fails to reach `127.0.0.1:4600`. **In LIVE that means the counter died**, not
+  that the window is DRY; the heuristic inverts.
+- **B0's card names the wrong home** — `holder` reading `{"account": …}` instead of a public key, or `buyer`
+  naming a demo operator instead of `0.0.10492952` / `0.0.10492953`. Stop; run nothing below it.
+- `resolve` returns `RESOLVE_NOT_FOUND` after GATE RECIPIENT → her provisioning did not finish. Stop.
+- `send` returns an `AttemptedDeliverySlip` → her watcher was not running. A result, not a failure. Stop and say
+  so.
+- **B5's rendering is short by even one character** → the model truncated the base64 at B4. The letter is already
+  on consensus and cannot be withdrawn. **Stop, do not `ack`.** The take moves to the spare pair.
+- `ack` returns `ACK_NOT_OPENED` → the schedule's body names a different identifier, postmark or epoch. That is
+  the check working. Stop.
+- **On any stop: report what is true at the stop and what is resumable, and wait.** Never repair past it, never
+  infer.
+
+### 8. What this gate does NOT prove, named in advance
+
+- **No `hol` resolution.** `register_agent` is off the goose allowlist by design, so no HOL anchor registration
+  is posted and T-P6-5 and T-P13-4 stay unexpanded.
+- **No `verified` appraisal.** This release claims no profile (`app/src/release.ts`, `profiles: {}`), so a
+  stranger reaches `unverified` with reason **T-P12-4**, which is **correct output and not a shortfall** (§1.5,
+  §9.6, D-177).
+- **No `x402-usdc` leg**, no rotation, no WebMCP send side — all scoped out of this window by us and named in
+  LIMITATIONS as ours.
+
+**If the association fires on both operators, the brand-new-wallet category is closed for the operator path**, and
+the run of record will say so plainly.
+
+### 9. The arrangement
+
+Two goose entries, `demoagentx4` and `demoagenty4`, allowlist **`[buy_stamp, resolve, send, inbox, ack]`** —
+`generate_mailbox` and `register_agent` excluded, which is §8's first bullet. **One home per window, the other
+extension toggled off.** `gz5-*` and `gz6-*` have **no goose entry** and are not touched by this gate.
+
+`docs/OPERATOR-SCRIPT.md` Part B drives it, one instruction per turn, **B0 first in each window**. **The counter
+stays down until the fill-in**, and AUTHORIZED means restarting both entries with `--live` and the terminal
+pre-flight saying so — because **goose discards the extension's stderr** and no banner will appear inside it.
+
+### 10. The two entries, and the pre-flight — done 2026-09-11, before the fill-in
+
+`config.yaml` now holds **exactly two** WISHMail entries and they are the gate’s own. The two rehearsal
+entries were **removed**, not repointed, on the rule that settled last night: a new name cannot load a stale
+target, because it either exists or it does not. Backup at `config.yaml.before-gate-four.bak`.
+
+```
+  demoagentx4   gz4-x   --dry-run   [buy_stamp, resolve, send, inbox, ack]   enabled
+  demoagenty4   gz4-y   --dry-run   [buy_stamp, resolve, send, inbox, ack]   disabled (toggle per window)
+```
+
+**Checked in the file itself**: `- --live` appears **0** times; `gz-x`, `gz2-x`, `gz2-y`, `gz5-` and `gz6-`
+appear **0** times each; `gz4-x` and `gz4-y` once each. **`gz5-*` and `gz6-*` have no entry and are not
+touched by this gate.**
+
+**Both command lines were booted in a terminal**, which is the only place a banner can be seen — goose
+discards the extension’s stderr entirely, and `argv as received` returns zero hits across the whole of the
+second Gate Zero in goose’s own server logs:
+
+```
+  wishmail correspondent — DRY RUN: nothing will be signed
+  argv as received  ["C:/Users/Sonic/.wishmail/demo/gz4-y","--dry-run"]
+wishmail correspondent — home …\gz4-y, keys loaded, account (not bought yet), payer 0.0.10492953
+  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+  … exit 0, no run.lock
+
+  argv as received  ["C:/Users/Sonic/.wishmail/demo/gz4-x","--dry-run"]
+wishmail correspondent — home …\gz4-x, keys loaded, account (not bought yet), payer 0.0.10492952
+  … exit 0, no run.lock
+```
+
+**`keys loaded`, not `keys born`** — the agent keystores were born under GATE FUND and this boot only opened
+them. **`account (not bought yet)`** on both, which is the precondition restated by the server itself. Each
+names its own brand-new operator.
+
+**The counter is DOWN and stays down until the fill-in.** Port 4600 is closed.
+
+---
+**Sonic signs. I sign nothing.**
+
+---
+
+  **GATE FOUR — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
