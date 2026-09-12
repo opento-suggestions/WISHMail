@@ -7767,6 +7767,24 @@ names its own brand-new operator.
 
   **GATE FOUR — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
+> **NOTE ADDED 2026-09-11, beneath the report and not amending it — the HEAD this gate actually runs on.**
+>
+> The report above names HEAD `970163a`, which was true when it was written and is no longer
+> true. Two commits landed after it and before the counter starts:
+>
+> - **`07f846b`** — the repair of `app/OPERATIONS.md`, which `789de50` had
+>   spliced into itself. Documentation only; it restores text and changes no behaviour.
+> - **`c925c29`** — this report, plus one prose correction in `app/sdk/config.template.json`.
+>
+> **Neither touches a line of the golden path.** No logic under `app/src/` or `app/sdk/` has
+> moved since `970163a`, and all twenty-four `check:*` are green at both, with
+> `check:captured` 20 and `check:receipt` 43 byte-identical.
+>
+> **The HEAD checked out when the counter starts is the commit carrying this note**, verified with
+> `git rev-parse HEAD` at that moment and written into the run of record beneath. **Nothing lands
+> between that verification and the end of the run** — and by the standing ruling **tomorrow’s recorded take
+> runs on that same HEAD**, so nothing lands between this gate and the take either.
+
 ---
 
 ## Entities
