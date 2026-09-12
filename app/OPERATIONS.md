@@ -6156,6 +6156,271 @@ Zero's question, on **fresh homes**, and nothing is now known to stand in front 
 
   **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
+## GATE ZERO, THE SECOND — fresh homes on the demo operators. Gate report, written 2026-09-12 before any signature
+
+**What this answers, and why it is a second one.** The first Gate Zero asked whether goose drives this server
+through the golden path and **did not find out**: it was driven with no script, `generate_mailbox` was called on a
+home with no account, and eight permanent topics were created before anything reached a letter. Part A then ran the
+rehearsal from `docs/OPERATOR-SCRIPT.md` and found the one thing that would still have stopped it — the model
+serialises object arguments as JSON strings, so `send` refused its own coordinates. **Both are fixed and courted,
+and A3 now returns the would-do card under Goose Desktop's own client.** What no dry run can reach is what is left:
+**a lane born, an envelope on it, and a schedule executed onto the recipient's manifest topic.** That is this gate.
+
+**Nothing from the first run is reused.** `gz-x` and `gz-y` are damaged homes and **never go live again**
+(RECORD, Sonic 2026-09-11): they keep the eight orphan topics, and `gz-x` holds an outstanding purchase in state
+`signed` against a transfer that never landed. This gate runs on **two fresh homes** on the **same demo operator
+wallets**, which is what keeps it a Gate Zero and not Gate Four — Gate Four's question is a brand-new wallet, and it
+stays its own.
+
+**IT IS A GATE AND NOT A PROBE.** Real `$POSTAGE`, the real counter, the real treasury, the real HOL anchor, and
+it creates **permanent entities** — six topics per agent, one of them an HCS-1 file topic with no admin key at all.
+Its entities are **residue**.
+
+---
+
+### 1. The parties, and the mirror reading each is entered on
+
+Read 2026-09-12, before anything was written, because a receipt cannot show any of it:
+
+```
+  C2OPERATOR  0.0.10450880   378.62178036 h   $POSTAGE 0      autoAssoc -1   deleted false
+  C1OPERATOR  0.0.10450879   322.70803327 h   $POSTAGE 1      autoAssoc -1   deleted false
+  treasury    0.0.10426205    20.00000000 h   $POSTAGE 9,957
+  Postmaster payer 0.0.8641261  3318.26340551 h
+  PriceList   0.0.10426551   4 messages; sequence 4 latest at 1789055861.123389104
+              provisioning {method "hbar", unitPrice "30", registrationFee "0.05"}
+```
+
+| Role | Home | Agent | Operator | Why this way round |
+|---|---|---|---|---|
+| **SENDER** | `gz2-x` | `DemoAgentX2` | **C2OPERATOR `0.0.10450880`** | It holds **zero `$POSTAGE`**, so §4.4's hop fires — still the untested path under goose. |
+| **RECIPIENT** | `gz2-y` | `DemoAgentY2` | **C1OPERATOR `0.0.10450879`** | It holds the **stray stamp** and never spends it on the answering side. |
+
+**Both operators read `max_automatic_token_associations = -1`**, so **no `TokenAssociateTransaction` is expected
+from either**. `ensurePayerHoldsStamps` reads the mirror, emits `provision.autoassociates` and submits nothing
+(`app/sdk/mailbox.ts:282-286`). **If either reads anything else on the day it will submit one, paid by that
+operator, about 0.05 ℏ — that is the code working and not a stop.** Its other branch
+(`mailbox.ts:287-294`) **has still never executed against the network**, and this gate cannot make it; that is
+Gate Four's to find.
+
+**The two homes, written 2026-09-12 and outside the repository** under `~/.wishmail/demo/`, gitignored. Each
+carries its operator's payer block, copied value-to-value from a home already running on that wallet; **the agent's
+own keys were born on first boot, in the agent's own process**, and no key was printed, logged or written inside
+the repository (P-13, `npm run p13:check` green). Neither has a `record.json`.
+
+```
+  gz2-x   born 2026-09-12T01:02:16.727Z
+          302a300506032b6570032100140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174
+          accounts under this key: 0
+  gz2-y   born 2026-09-12T01:02:18.856Z
+          302a300506032b6570032100b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26
+          accounts under this key: 0
+```
+
+**Zero accounts under either key** is the precondition `buy_stamp` refuses on, and it is checked here rather than
+assumed.
+
+---
+
+### 2. What it creates, per agent
+
+The six-row template, D-147 and D-150, unchanged: the account (created by the purchase's stamp transfer to the
+agent's public-key alias, HIP-542); the doorbell, HCS-10 inbound, `hcs-10:0:60:0:<agent>`, no submit key, admin
+the agent's, **HIP-991 fee of 1 `$POSTAGE` to the treasury with the agent's own key exempt** (D-137); the log,
+`hcs-10:0:60:1`; the manifest topic, `wishmail:manifest:1`; the declaration registry, HCS-2, `hcs-2:0:60`; and
+the HCS-11 profile file on HCS-1, `<sha256>:brotli:base64`, **no admin key** (D-150) and therefore permanent.
+
+Plus, per agent: the profile's HCS-1 chunks, the HCS-2 `register` entry, §9.2's account memo, and one registration
+on the HOL anchor `0.0.6913983` **paid by the agent itself** (§9.5, T-P13-4) — **only if `register_agent` is
+called, and the script does not call it** (see §9). Then, between them: **one lane**, born on Y2's doorbell when
+Y2's watcher answers X2's ring.
+
+**The doorbell memo now cannot be built without an owner**, and `generate_mailbox` refuses before any
+`TopicCreate` on a home with no account. Both refusals landed 2026-09-11 and are courted offline; **this gate is
+the first that runs with them in place.**
+
+---
+
+### 3. The arithmetic, and the line to watch
+
+Payload: the demo sentence, **70 bytes**, one chunk. Certified, `returnReceipt` requested.
+
+```
+  weight        1 ounce (one chunk)
+  postage       weight 1 + receipt fee 1        = 2 stamps to the treasury
+  the door      1 stamp at the RECIPIENT's door   (HIP-991, consumed to the treasury)
+
+  X2  12 -> 9        two as postage, one hopped to its payer for the ring
+  C2OPERATOR  0 -> receives 1 -> the doorbell fee consumes it -> 0
+  Y2  12 -> 12       the recipient is charged nothing, at any step, including across the ack (T-P16-2)
+  C1OPERATOR  1 -> 1 the stray stamp is NOT spent: the answering side pays in h, and Y2's own key is
+                     fee-exempt on Y2's own doorbell (D-137), so connection_created costs no stamp
+  treasury    9,957 -> 9,936    (-24 sold, +2 postage, +1 door)
+```
+
+**The hop is the line to watch.** `ringStamp` fires only where a door will actually be rung *and* the payer holds
+no stamp — both true here, and it has never fired under goose. If it does not fire, or fires for a reply, that is a
+finding.
+
+**In ℏ:** each provisioning purchase is **30 ℏ + 0.05 ℏ + twelve stamps at the day's rate**, which at the last quote
+read (HBAR/USD 0.07435566) came to **43.44887532 ℏ** for the buyer's two legs. **The quote and the actual both go in
+the run of record**; the gap between them is the rate moving, which is why D-170 put the rate and its instant into
+the receipt. **The Postmaster loses money on each and that is recorded, not discovered**: two mailboxes is roughly
+**56 ℏ** of `0.0.8641261` against 60 ℏ taken, and it holds **3318.26 ℏ**, so the carried legs cannot fail for want
+of funds.
+
+---
+
+### 4. Every consensus write, in order, with its payer
+
+**Act one — Y2 is provisioned, then X2.** Y2 first, because **her watcher must be running before he rings.** Per
+agent, nine writes:
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 1 | the purchase — ONE transaction, THREE legs: ℏ to the Postmaster, 12 `$POSTAGE` to the agent's key alias **which creates the account**, 0.05 ℏ from the Postmaster to it | the agent | **that agent's operator** |
+| 2–6 | the five topics of the template | agent + operator | **the Postmaster**, carried |
+| 7 | the profile's HCS-1 chunks | the agent | the Postmaster, carried |
+| 8 | the HCS-2 register entry | the agent | the Postmaster, carried |
+| 9 | §9.2's account memo | the agent | the Postmaster, carried |
+
+**`register_agent` is NOT on this gate's path** and is off the goose allowlist. The `hcs14` declaration the
+letter path resolves is published by rows 7–9 above; the HOL anchor serves the `hol` profile, which `send` never
+consults. **So no `hol` resolution is claimed by this run, and none is asserted.**
+
+**Act two — X2's letter to Y2, one `send()` call:**
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 10 | the stamp hop — 1 `$POSTAGE` X2 → C2OPERATOR, **because C2OPERATOR holds none** | X2 | C2OPERATOR |
+| 11 | the ring — `connection_request` on Y2's doorbell. **The HIP-991 fee consumes one stamp to the treasury** | X2 | C2OPERATOR |
+| 12 | X2's outbound record of the ring, on X2's log | X2 | C2OPERATOR |
+| 13 | Y2's watcher answers: **the lane**, submit key a threshold of exactly X2's and Y2's keys, no custom fee | Y2 | C1OPERATOR |
+| 14 | Y2's `connection_created` on its own doorbell — §7.1's authority | Y2 | C1OPERATOR |
+| 15 | Y2's outbound record of the lane, acceptor reading | Y2 | C1OPERATOR |
+| 16 | X2's outbound record of the lane, requester reading (D-174) | X2 | C2OPERATOR |
+| 17 | the resolution manifest, on **X2's** manifest topic | X2 | C2OPERATOR |
+| 18 | **the settlement** — the envelope's postage to the treasury under memo `wishmail:<aadHash>` | X2 | C2OPERATOR |
+| 19 | chunk 0 on the lane | X2 | C2OPERATOR |
+| 20 | the **ScheduleCreate** — inner: the receipt manifest to **Y2's** manifest topic; inner payer C2OPERATOR; expiry 30 days | X2 | C2OPERATOR |
+| 21 | the `transaction` operation on the lane naming the schedule — **empty memo** (§6.1, T-P9-5) | X2 | C2OPERATOR |
+
+**Act three:**
+
+| # | Write | Signs | Pays |
+|---|---|---|---|
+| 22 | `inbox` at Y2 — **writes nothing** (§6.5) | — | — |
+| 23 | **Y2's `ack`** — a ScheduleSign; the network executes the receipt onto Y2's manifest topic the instant it lands | Y2 | C1OPERATOR |
+| 24 | the stranger's `verify`, twice — **reads only** | — | — |
+
+---
+
+### 5. The submit→learn window, per write, and how a rerun resumes from inside it
+
+Every row above is a signature leaving a process before its outcome is known, and **no offline check reaches it,
+because there is no offline consensus node** (CLAUDE.md §12).
+
+| Window | What can be true and unknown | How a rerun resumes |
+|---|---|---|
+| the purchase landed, the answer was lost | the transfer is on consensus and the counter's record of it may be gone | **The reference is the transfer's own transaction id**, written down before the signature left (`counter.ts`, `remember(… state 'signed')`). Calling `buy_stamp` again with the same arguments resumes it and never buys twice (T-P11-5). **If the counter's record is gone: STOP. Do not reconstruct the receipt.** |
+| the purchase settled and the mailbox step threw | the account exists, the mailbox does not, and the home's `s.account` may still be empty | **This is how C1OPERATOR paid 31.34 ℏ twice on 2026-09-11.** Call `buy_stamp` with the same arguments: it resumes from the outstanding reference. **Do not call it with different arguments, and do not call `generate_mailbox`.** |
+| any mailbox row | a topic may exist and the agent's record not name it | Every row is confirmed by a **mirror read** before the next is built. A rerun re-derives from consensus. |
+| **the ring landed, the answer is not yet visible** | the request is on Y2's door and a stamp is gone; Y2 may or may not have answered | **Wait, and spend nothing.** `send` rings at most once and every attempt after is a re-READ (30 s × 3). A second ring is a second stamp and a second lane, **and a lane cannot be closed**. |
+| the window closed with no answer | Y2's watcher was not running | **A slip, which is a result and not a failure** (F-6). One stamp is consumed at the door, no envelope is assembled, no postage is affixed. **Do not ring again without the word.** |
+| `send` died after the settlement | postage is consumed and the envelope may be SETTLED with no receipt request | The row is written **before** the transfer is submitted, so a resume re-reads the lane and creates only what is missing. A rerun *without* resume composes a new envelope and the first settlement becomes an **orphan** — reported under `orphans` by a Verifier that reads the treasury window, which **this release does not** (L-13, §G-31). |
+| an identical `ScheduleCreate` twice | a schedule may exist and this process not know its id | The ledger refuses a second: `IDENTICAL_SCHEDULE_ALREADY_CREATED` carries the existing id, and the step reads the lane first. Two guards. |
+| the ack | the ScheduleSign may have executed unseen | Execution is on consensus and idempotent; signing an executed schedule is refused by the network. `verify` is what says whether the receipt landed. |
+
+---
+
+### 6. What it asserts from the mirror, and never from a receipt
+
+Before: both operators exist, are not deleted, hold enough ℏ, and their `max_automatic_token_associations` is read
+and written down — done, §1. After each write: the entity exists with the shape it was created under — **the
+doorbell's memo names its own account** (the thing that failed on 2026-09-11), its custom fee is one unit of
+`0.0.10426208` collected by `0.0.10426205` with the agent's key exempt; the lane's submit key is a threshold of
+**exactly** two keys; the profile file's memo carries the digest of the bytes on it.
+
+The acceptance test for provisioning is **not** this process's output: it is **the resolver**, run against each
+agent's own address under `hcs14`. **`hol` is not asserted**, because `register_agent` is not called.
+
+---
+
+### 7. Idempotency, and every way it stops
+
+Every provisioning verb is idempotent **against consensus and never against local state**.
+
+- The MCP server prints anything but `DRY RUN`/`LIVE` with the argv that carried it → **stop**.
+- **A `buy_stamp` card that says DRY in a LIVE window** → the flag did not arrive → **stop**.
+- **A connection error to `127.0.0.1:4600`** → in this gate the counter is UP, so it means the counter has **died**
+  → **stop** and say so. (The inverse reading belongs to the DRY rehearsal only.)
+- The counter refuses the quote → **stop**; nothing is signed before it answers.
+- `buy_stamp` refuses because an account already exists under that agent's key → **stop and report**: these homes
+  are new and §1 proved it.
+- The purchase transfers and the counter's record is lost → **STOP. Do not reconstruct the receipt.**
+- Any mailbox row fails → **stop**; what landed is in `record.json` from a mirror read, and a resume is a decision.
+- **Any doorbell whose memo does not name its own account** → **stop**: that is 2026-09-11 repeating and the fix
+  failing.
+- `send` returns an `AttemptedDeliverySlip` → Y2's watcher did not answer in 90 s. **A result, not a failure.**
+- `SEND_LANE_INVALID` → the lane is closed, carries a fee, or its key list is not exactly X2's and Y2's → **stop**.
+- Y2's `inbox` does not open the letter byte for byte → **stop. Do not re-send.**
+- `ack` returns `ACK_NOT_OPENED` → the schedule's body names a different identifier, postmark or epoch
+  (T-P1-9) → **stop**; that is the check working.
+- **Y2's balances move by one tinybar or one stamp across the ack → stop**: T-P16-2 is violated.
+- The stranger's two `verify` runs disagree on the digest → **stop**: §11.7's MUST is violated.
+- Any mirror readback disagreeing with what a process believes → **the mirror is the record; stop and report.**
+- **A second Correspondent refuses to start on a home** → that is the lock working. Stop the first.
+
+---
+
+### 8. The arrangement, and which process is up when
+
+```
+  1.  the counter      UP FIRST: npm run counter. Needed for buy_stamp and nothing else.
+  2.  Y2's window      goose, demoagenty -> gz2-y, --live. PROVISION FIRST, and leave the window OPEN:
+                       its watcher is what answers the ring.
+  3.  X2's window      goose, demoagentx -> gz2-x, --live. Provision, then resolve, then send.
+  4.  the stranger     npm run verify -- --lane <lane>, from anywhere, holding nothing.
+```
+
+**One extension per goose window**; each Correspondent takes the lock on its own home.
+
+---
+
+### 9. WHAT GREEN IS
+
+The golden path is **chunk 0's consensus postmark → the recipient's `ScheduleSign` executing the receipt
+manifest.** The run is done when **both** are true on a mirror node, read after the ack and not before:
+
+```
+  (a) GET /api/v1/schedules/<scheduleId>              -> executed_timestamp NOT null
+  (b) GET /api/v1/topics/<Y2 manifest>/messages       -> one message whose decoded bytes hash to
+                                                         the receipt manifest's hash
+```
+
+And the chain that joins them, each read from consensus: chunk 0 on the lane at sequence 1 with its postmark; the
+`transaction` operation at sequence 2 naming the schedule; the execution strictly after chunk 0; the receipt on
+Y2's manifest topic at its sequence.
+
+**What GREEN is not.** It is not `send` returning — `send` returns after the ScheduleCreate and before anyone
+signs (P-14, T-P14-1). It is not the card saying a receipt was requested. **It is the execution, on consensus, read
+back.**
+
+---
+
+### 10. The gate
+
+Nothing signs until this report is committed and Sonic has said the word. **The fill-in is physical, not paper:**
+everything rehearsed so far ran with the servers in DRY, where no client has an operator. `AUTHORIZED` means the
+two goose entries are flipped to `--live`, the servers restarted, each banner saying so with the argv that carried
+the flag, and the counter up.
+
+It runs under HEAD at the time, with the spec at `v0.5.13`, twenty-two `check:*` green, `typecheck` and
+`p13:check` green, and the conformance report at 44 passing with digest `51453eea…`.
+
+  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+
+
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
 
 **The Gate Zero report is not amended by any of this, and Gate Four gets its own.** This is the list of what that

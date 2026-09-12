@@ -18,8 +18,11 @@ The per-home lock cannot catch it: two homes take two different locks and both s
 
 | Window | Extension | Home | Agent | Operator |
 |---|---|---|---|---|
-| **SENDER** | `demoagentx` | `~/.wishmail/demo/gz-x` | DemoAgentX | `0.0.10450880` |
-| **RECIPIENT** | `demoagenty` | `~/.wishmail/demo/gz-y` | DemoAgentY | `0.0.10450879` |
+| **SENDER** | `demoagentx` | `~/.wishmail/demo/gz2-x` | DemoAgentX2 | `0.0.10450880` |
+| **RECIPIENT** | `demoagenty` | `~/.wishmail/demo/gz2-y` | DemoAgentY2 | `0.0.10450879` |
+
+**Both extensions now point at the FRESH homes for the second Gate Zero.** `gz-x` and `gz-y` are the damaged
+homes from 2026-09-11 and are no longer wired to anything; they never go live again.
 
 In each window, open the extension list and **turn the other one off**.
 
@@ -29,10 +32,15 @@ Both entries carry `available_tools: [buy_stamp, resolve, send, inbox, ack]`, wh
 
 ---
 
-# PART A — THE DRY REHEARSAL (`gz-x` and `gz-y`, signs nothing)
+# PART A — THE DRY REHEARSAL — RUN AND PASSED, 2026-09-11
 
-`gz-x` and `gz-y` are **debug homes now and never go live again**. Both goose entries are `--dry-run`. The purpose of
-Part A is to prove the model can be driven through the shape of the flow before a single ℏ is spent on the real one.
+**Part A is history and is kept for the shape.** It ran on `gz-x` and `gz-y` and it did its job: it found that the
+model serialises object arguments as JSON strings, which killed `send`, and that is now fixed and courted
+(`app/OPERATIONS.md`, Gate Zero Part A). A3 re-run under Goose Desktop returns the would-do card.
+
+**The steps below reference `gz-x`/`gz-y`, which the goose entries no longer point at.** To rehearse on the fresh
+homes, run the same five instructions with the entries as they now stand — the expectations for A1 and A4 are the
+FRESH-home ones named in each step, not the damaged-home ones.
 
 **The check that this is DRY: the first `buy_stamp` card must say DRY / would-do.** If it does not, or if you see a
 connection error to `127.0.0.1:4600`, that window is not in DRY — **stop**.
@@ -98,14 +106,16 @@ Part B does not start.
 **fresh homes**, and it is the same six instructions whichever gate is running:
 
 - **The next live act is a SECOND GATE ZERO** — the demo operators we already own (`0.0.10450879`,
-  `0.0.10450880`), with **fresh homes** carrying no residue. It re-asks the question the first Gate Zero could not
-  answer: does goose drive this server through the golden path.
+  `0.0.10450880`), on the **fresh homes `gz2-x` (DemoAgentX2, SENDER) and `gz2-y` (DemoAgentY2, RECIPIENT)**,
+  written 2026-09-12 with keys born on first boot and no residue. It re-asks the question the first Gate Zero could
+  not answer: does goose drive this server through the golden path. **Its gate report is `app/OPERATIONS.md`,
+  "GATE ZERO, THE SECOND", and its fill-in is unfilled.**
 - **Gate Four comes after it** — two **brand-new** operator wallets Sonic creates and funds, with no history at
   all. It asks its own question: whether a brand-new wallet survives the lifecycle.
 
-Neither home exists yet. When the wallets do, the homes are written the way `gz-x` and `gz-y` were, the roles stay
-the same (X sends, Y receives), and this file is re-pointed at them. **Each gate has its own gate report and its own
-fill-in, and neither is the one above.**
+**`gz2-x` and `gz2-y` exist now** and the goose entries point at them. Gate Four's homes do not exist yet; when
+its wallets do, they are written the same way, the roles stay the same (X sends, Y receives), and this file is
+re-pointed again. **Each gate has its own gate report and its own fill-in.**
 
 **Before any of it: the counter must be up** (`npm run counter`) and its banner must say
 `the counter is at http://127.0.0.1:4600/`. `buy_stamp` needs it; nothing else does. In LIVE a connection error to
@@ -114,17 +124,17 @@ fill-in, and neither is the one above.**
 **Both windows must be restarted with `--live`**, and that restart IS the gate: the banner says `LIVE: this run CAN
 SIGN and CAN SPEND` with the argv that carried the flag.
 
-### B1 — RECIPIENT window, first, because her watcher must be running before he rings
+### B1 — RECIPIENT window (`gz2-y`), first, because her watcher must be running before he rings
 
 > Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
 > true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
 
 **Expect:** this takes a minute or more — it is one transfer, five topics, the profile's chunks, a registry entry and
 an account memo. The card is a **StampReceipt**: `txRef`, a `price` of about 43 ℏ, and `holder` naming the account
-the purchase created. **Write that account id down — it is DemoAgentY's address, and it is what the sender needs.**
+the purchase created. **Write that account id down — it is DemoAgentY2's address, and it is what the sender needs.**
 **stop**
 
-### B2 — SENDER window
+### B2 — SENDER window (`gz2-x`)
 
 > Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
 > true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
@@ -140,7 +150,7 @@ reconstruct the receipt.**
 > Call the `resolve` tool once with `address` set to the account id from step B1 and `profile` `hcs14`. Show me the
 > coordinates. Then stop.
 
-**Expect:** coordinates naming DemoAgentY's doorbell and manifest topic, and a proof hash. If this returns
+**Expect:** coordinates naming DemoAgentY2's doorbell and manifest topic, and a proof hash. If this returns
 `RESOLVE_NOT_FOUND`, B1 did not finish — **stop**. **stop**
 
 ### B4 — SENDER window — the letter
@@ -184,7 +194,7 @@ without refusing**. That is the end of what goose can tell you.
 **The run is green when two facts are on a mirror node, and I read them after — not you:**
 
 1. the schedule's `executed_timestamp` is **not null**, and
-2. the receipt manifest is on **DemoAgentY's own manifest topic**, at a sequence number, hashing to what the
+2. the receipt manifest is on **DemoAgentY2's own manifest topic**, at a sequence number, hashing to what the
    schedule carried — chained back to chunk 0's postmark.
 
 Tell me B6 is done and I will read both from the mirror and write the run of record.

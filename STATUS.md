@@ -59,7 +59,29 @@ RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** 
 is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
 Both are **NOT YET**, and both get their own gate report.
 
-**Two fixes landed, and only two** (RECORD, Sonic: on the golden path, by the filter, so it moves). `generateMailbox`
+**THE SECOND GATE ZERO IS PREPARED AND WAITS ON A SIGNATURE** (2026-09-12). Its report is `app/OPERATIONS.md`,
+**GATE ZERO, THE SECOND**, committed before anything can sign, fill-in unfilled. It runs on **two fresh homes on
+the same demo operator wallets** — `gz2-x` (**DemoAgentX2**, SENDER, C2OPERATOR `0.0.10450880`, which holds **zero
+`$POSTAGE`** so §4.4's hop fires) and `gz2-y` (**DemoAgentY2**, RECIPIENT, C1OPERATOR `0.0.10450879`, which holds
+the stray stamp and never spends it). Keys **born on first boot** 2026-09-12, both **unprovisioned**, **zero
+accounts under either key** — checked against the mirror, not assumed. Both operators read
+`max_automatic_token_associations = -1`, so **no `TokenAssociateTransaction` is expected**; the branch that would
+submit one (`app/sdk/mailbox.ts:287-294`) **has still never run live**, and that is Gate Four's question, not
+this one. `PriceList` sequence 4 is still latest. The goose entries point at the fresh homes and are
+**`--dry-run`**; **AUTHORIZED means flipping both to `--live`**. `gz-x` and `gz-y` keep their damage and are wired
+to nothing.
+
+**Part A ran and passed, and its blocker is cleared.** Five instructions from `docs/OPERATOR-SCRIPT.md` in two DRY
+goose windows. It found that the model serialises object arguments as JSON strings — `send` refused its own
+coordinates, so the golden path would have died at the letter after ~87 ℏ of mailboxes. The surface now reads an
+object argument that arrives as a JSON string (`coordinates`, `payment`, `holder`, `scope`, `window`,
+`receiptWindow`; never `payload`), parses it and validates it exactly as an object, and refuses anything else
+while **naming that it arrived as a string**. No schema moved. Courted at 149 assertions and proved under Goose
+Desktop's own client: A3 now returns `DRY RUN — send would post one certified envelope to 0.0.10462700`, with
+`wouldRing: true` and `payloadBytes 70`, and not one tinybar moved. **The allowlist also held**:
+`generate_mailbox`, `register_agent` and `verify` appear zero times in either log.
+
+**Two fixes landed before that, and only two** (RECORD, Sonic: on the golden path, by the filter, so it moves). `generateMailbox`
 refuses before any `TopicCreate` when the home has no account, naming `buy_stamp` with `provision` as the path; and
 `template.doorbell()` refuses an empty owner rather than rendering one. Courted on the model in
 `app/sdk/correspondent.check.ts`, 118 → **126** assertions — and it is a court: with both fixes reverted, **exactly

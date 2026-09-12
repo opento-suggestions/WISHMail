@@ -127,7 +127,16 @@ never matches and the process starts, does nothing and exits 0 with no banner. *
 symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
 it is build work for after submission.
 
-**GATE ZERO RAN AND DID NOT REACH THE GOLDEN PATH; ITS FILL-IN IS BACK TO NOT YET** (2026-09-11 night). Driven by
+**THE SECOND GATE ZERO IS PREPARED AND WAITS ON SONIC'S WORD** (2026-09-12). Report: `app/OPERATIONS.md`,
+**GATE ZERO, THE SECOND**, committed before anything can sign. Fresh homes **`gz2-x`** (DemoAgentX2, SENDER,
+C2OPERATOR `0.0.10450880`, zero `$POSTAGE` so the hop fires) and **`gz2-y`** (DemoAgentY2, RECIPIENT,
+C1OPERATOR `0.0.10450879`); keys born on first boot, both unprovisioned, zero accounts under either key, both
+operators `autoAssoc -1`. Goose entries point at them and are **`--dry-run`**; AUTHORIZED means `--live`.
+**Part A passed and cleared the blocker**: the model stringifies object arguments, so the surface now parses an
+object argument that arrives as a JSON string (never `payload`) and names a string that will not parse instead of
+calling it missing — courted at 149 assertions, proved under goose, no schema moved.
+
+**THE FIRST GATE ZERO RAN AND DID NOT REACH THE GOLDEN PATH** (2026-09-11 night). Driven by
 goose with no script, the model called `generate_mailbox` on a home with no account; four topics per agent were
 submitted before the declaration validator refused, so **eight permanent topics are on `hedera:testnet`**, two of
 them doorbells whose memo names no owner — and **the doorbells are numbered before the accounts**, which is the tell.
