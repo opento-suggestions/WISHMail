@@ -14568,6 +14568,121 @@ and the live invocation is `npm run gate4:wallets`, with `--live` **baked into t
 
 ---
 
+## GATE FUND — THE RUN OF RECORD. 2026-09-11, and all six stand
+
+**Read from the mirror, from no card and from no driver's own output.** The gate report above is not amended.
+
+```
+$ npm run gate4:wallets
+
+  gate4:wallets — LIVE: this run CAN SIGN and CAN SPEND
+  argv as received  ["--live"]
+```
+
+**One pass, no stop.** Six accounts created, six homes written, six agent keystores born afterward.
+
+### 1. The six, read back from the mirror
+
+```
+  home    account         balance            slots  deleted  tokens  memo   for
+  gz4-x   0.0.10492952    250.00000000 h       0    false      0      ""    Gate Four — SENDER
+  gz4-y   0.0.10492953    250.00000000 h       0    false      0      ""    Gate Four — RECIPIENT
+  gz5-x   0.0.10492954    250.00000000 h       0    false      0      ""    the take — SENDER
+  gz5-y   0.0.10492957    250.00000000 h       0    false      0      ""    the take — RECIPIENT
+  gz6-x   0.0.10492960    250.00000000 h       0    false      0      ""    the spare — SENDER
+  gz6-y   0.0.10492962    250.00000000 h       0    false      0      ""    the spare — RECIPIENT
+                          ----------------
+                          1500.00000000 h funded
+```
+
+**`max_automatic_token_associations` reads `0` on every one, from the mirror**, which is the whole point of the
+gate and exactly the class of fact a receipt cannot show. Each holds **zero tokens** and carries **no account
+memo** — it is an operator wallet and not an agent.
+
+### 2. FUNDING, AND IT IS NOT REVENUE
+
+**This table is the funding, and it is excluded from every economics line in this repository.** The Postmaster's
+payer is the source because it is the wallet we control; these transfers are a float into demo wallets we hold the
+keys to, not a sale, not a gift and not a cost of running a Postmaster. Gate Zero the second measured the
+Postmaster at **+26.97999223 ℏ** net clean of funding, and **Gate Four's economics line will be computed over Gate
+Four's transactions only** and will say so in words.
+
+```
+  home    CryptoCreateAccount                        consensus                 payer debit      of which fee
+  gz4-x   0.0.8641261@1789188694.567726462  SUCCESS  1789188700.005518850       250.67192702      0.67192702
+  gz4-y   0.0.8641261@1789188695.988754361  SUCCESS  1789188702.777714524       250.67192702      0.67192702
+  gz5-x   0.0.8641261@1789188701.090970032  SUCCESS  1789188705.384410415       250.67192702      0.67192702
+  gz5-y   0.0.8641261@1789188701.755006523  SUCCESS  1789188707.481644104       250.67192702      0.67192702
+  gz6-x   0.0.8641261@1789188704.535454321  SUCCESS  1789188709.362761104       250.67192702      0.67192702
+  gz6-y   0.0.8641261@1789188704.213826126  SUCCESS  1789188711.948273630       250.67192702      0.67192702
+                                                                              --------------    ------------
+                                                                              1504.03156212      4.03156212
+
+  0.0.8641261   before  3345.24339774 h      after  1841.21183562 h      delta  -1504.03156212 h
+```
+
+### 3. THE DIVERGENCE, AND IT IS OURS
+
+**§4 of the report predicted the six create fees at "~0.30 ℏ (~0.05 each)". They measured 0.67192702 ℏ each,
+4.03156212 ℏ in total — thirteen times the estimate.** The final balance is **1841.21183562 ℏ** against a
+predicted ~1844.94.
+
+**The bound held and the point estimate did not.** The report also wrote the floor — "NOT BELOW 1815.24 ℏ even if
+every create charged its full declared maximum" — and 1841.21 is inside it, which is why writing a bound beside an
+estimate is worth the line it costs. Nothing about the gate changes: every wallet holds its full 250 ℏ, and the
+overrun came out of the Postmaster's own pocket, not out of the funding.
+
+**The estimate was wrong for a bad reason: the right number was already in this file.** `0.05 ℏ` is the
+*`TokenAssociateTransaction`* estimate — the thing Gate Four exists to fire — and it was carried across to
+`CryptoCreateAccount` by nothing but proximity. Gate Zero the second's own per-agent cost table records
+`account 0.67263366` for exactly this operation, two hundred lines above where the prediction was written.
+**Measure what an operation costs before predicting it, and prefer this file's own measurement to a recollection**
+— which is the rule the doorbell taught on 2026-09-09 and this is its second occasion.
+
+### 4. The homes, and the keys
+
+Six homes under `~/.wishmail/demo/`, **outside the repository and gitignored**. Each `config.json` was written at
+mode `0600` **with its payer key in it, before its account existed** — the ruled order — and then had
+`payer.accountId` filled in after the mirror agreed. No key was printed, logged, or written inside the repository;
+`npm run p13:check` is green and the repository does not contain the gz4-x payer key
+(`sha256 77c55a1b5a785002…`, printed as a digest and never as the key).
+
+**The agent keys were born afterward, on each home's first boot, in the agent's own process** — `--dry-run`, which
+reads no payer key and starts no watcher — and **every one of them has zero accounts under it**, which is the
+precondition `buy_stamp` with `provision: true` refuses on, checked here rather than assumed:
+
+```
+  gz4-x  born 2026-09-12T04:52:52.136Z  d652ad7f98eaeed92af0b56ad69d479e9ed744677f34edd79707b8b01e1d28e3  accounts 0
+  gz4-y  born 2026-09-12T04:52:54.352Z  a9ba313a66913d555c8b496c16b87078fc08f59456a7a9d9d52e0f0802c82b2d  accounts 0
+  gz5-x  born 2026-09-12T04:52:56.569Z  54b28659d0eea31e6b25c93d568aa4d84b833cc1203440eda5d351294fad11b8  accounts 0
+  gz5-y  born 2026-09-12T04:52:58.786Z  7dd1e255d2778e6ebeb608a927b431b9e67bb9cd883798413aa94d30476cc4ce  accounts 0
+  gz6-x  born 2026-09-12T04:53:01.108Z  8aa432e03d08f113913c9f2a4d6a7f2b57db124b31e48192e767f82717416cba  accounts 0
+  gz6-y  born 2026-09-12T04:53:03.323Z  0a37fd6e719ba5bbca6dc36e34c0afc9ecb7201fca953d324bb90b3ca9e565ab  accounts 0
+```
+
+Each home's `config.json` names its own operator and its own `displayName`: DemoAgentX4/Y4, X5/Y5, X6/Y6.
+
+### 5. What this run did NOT do
+
+No topic, no token, no agent, no purchase — and **no association**, which is the agent's own act at provisioning
+and belongs to Gate Four. **The counter stayed down throughout.** No goose entry was written for any of the six.
+`ENTITIES.md` and `demo-agents.hedera-testnet.json` are not regenerated: these are operator wallets, not agents,
+and the generator reads agents' `record.json` files — of which there are none yet.
+
+**Four of the six are born and will now be left alone.** `gz5-x`/`gz5-y` are tomorrow's recorded take and
+`gz6-x`/`gz6-y` are the spare, so a take spoiled by something outside this code costs a rename rather than a
+second GATE FUND. Neither pair gets a goose entry tonight and neither is provisioned.
+
+### 6. The entities this run created, as residue
+
+Six accounts. They are permanent, they hold the operators' float, and their keys live in their own homes. They are
+**not** agents and appear in no declaration; nothing on consensus points at them but the transactions that made
+them.
+
+  **GATE FUND — RUN 2026-09-11. All six stand, every one with zero association slots.**
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
