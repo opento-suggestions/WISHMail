@@ -7765,7 +7765,7 @@ names its own brand-new operator.
 
 ---
 
-  **GATE FOUR — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE FOUR — [ FULLY AUTHORIZED ]**
 
 > **NOTE ADDED 2026-09-11, beneath the report and not amending it — the HEAD this gate actually runs on.**
 >
