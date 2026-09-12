@@ -18,13 +18,22 @@ The per-home lock cannot catch it: two homes take two different locks and both s
 
 | Window | Extension | Home | Agent | Operator |
 |---|---|---|---|---|
-| **SENDER** | `demoagentx` | `~/.wishmail/demo/gz2-x` | DemoAgentX2 | `0.0.10450880` |
-| **RECIPIENT** | `demoagenty` | `~/.wishmail/demo/gz2-y` | DemoAgentY2 | `0.0.10450879` |
+| **SENDER** | `demoagentx5` | `~/.wishmail/demo/gz5-x` | DemoAgentX5 | `0.0.10492954` |
+| **RECIPIENT** | `demoagenty5` | `~/.wishmail/demo/gz5-y` | DemoAgentY5 | `0.0.10492957` |
 
-**Both extensions now point at the FRESH homes for the second Gate Zero.** `gz-x` and `gz-y` are the damaged
-homes from 2026-09-11 and are no longer wired to anything; they never go live again.
+**Those are the ONLY two WISHMail entries in `config.yaml`, and both are `--dry-run`.** Every earlier pair was
+**removed outright rather than repointed**: `demoagentx`/`demoagenty` (the second Gate Zero, on `gz2-x`/`gz2-y`)
+and `demoagentx4`/`demoagenty4` (Gate Four, on `gz4-x`/`gz4-y`) no longer exist. The reason is the hazard a
+repoint leaves behind — a same-name edit that silently fails to take (a restart not done, a `.bak` reloaded)
+points a `--live` window at a home the gate has **spent**, where a plain `buy_stamp` without `provision`
+**succeeds and spends**. A name that is gone cannot load a stale target; it either exists or it does not.
+`gz-x` and `gz-y` are the damaged homes from 2026-09-11 and are wired to nothing. They never go live again.
 
-In each window, open the extension list and **turn the other one off**.
+**`gz6-x`/`gz6-y` are the spare and carry NO entry** — operators `0.0.10492960` and `0.0.10492962`, born under
+GATE FUND on the same terms. They are wired only if this take is spoiled, by the same remove-and-rename.
+
+`demoagenty5` ships `enabled: false`, and that is the discipline and not a fault: in each window, open the
+extension list and **turn the other one off**.
 
 Both entries carry `available_tools: [buy_stamp, resolve, send, inbox, ack]`, which is goose's own allowlist
 (`crates/goose/src/agents/extension.rs:394-420`: empty means all, non-empty means only those). `generate_mailbox`,
@@ -38,9 +47,11 @@ Both entries carry `available_tools: [buy_stamp, resolve, send, inbox, ack]`, wh
 model serialises object arguments as JSON strings, which killed `send`, and that is now fixed and courted
 (`app/OPERATIONS.md`, Gate Zero Part A). A3 re-run under Goose Desktop returns the would-do card.
 
-**The steps below reference `gz-x`/`gz-y`, which the goose entries no longer point at.** To rehearse on the fresh
-homes, run the same five instructions with the entries as they now stand — the expectations for A1 and A4 are the
-FRESH-home ones named in each step, not the damaged-home ones.
+**The steps below reference `gz-x`/`gz-y`, which no goose entry has pointed at since 2026-09-11, and their
+expectations are the DAMAGED-home ones.** Do not read A1 or A4 as predictions for the take: on `gz5` A1 returns
+`holder` as a **public key** rather than an account, and A4 refuses with `INBOX_MIRROR_UNREACHABLE` rather than
+returning `[]`. **B0 below is the rehearsal for this take** — it is A1 on the right home with the card read for
+the two fields that identify it — so Part A is read for its shape and B0 is the step that is run.
 
 **The check that this is DRY: the first `buy_stamp` card must say DRY / would-do.** If it does not, or if you see a
 connection error to `127.0.0.1:4600`, that window is not in DRY — **stop**.
