@@ -61,45 +61,46 @@ RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** 
 is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
 Both are **NOT YET**, and both get their own gate report.
 
-**THE NEXT LIVE ACT IS THE RECORDED TAKE, and everything it needs already exists.** It runs on
-**`gz5-x` (DemoAgentX5, SENDER)** and **`gz5-y` (DemoAgentY5, RECIPIENT)**, whose operators
-`0.0.10492954` and `0.0.10492957` are brand-new, hold 250 h each and read **zero association
-slots** — so the associate fires again, as it did at Gate Four. **`gz6-x`/`gz6-y` are the
-spare**, on `0.0.10492960` and `0.0.10492962`, so a spoiled take costs a rename and not a
-second GATE FUND. All four were born under GATE FUND: configs written, **keys born**, zero accounts confirmed
-and **never provisioned**.
+**THE RECORDED TAKE IS RUN AND GREEN** (2026-09-12), and **the letter arrived byte-identical for the first
+time in three attempts.** **DemoAgentY5** is `0.0.10509139` (home `gz5-y`) and **DemoAgentX5** is
+`0.0.10509170` (home `gz5-x`), on the brand-new GATE FUND wallets `0.0.10492957` and
+`0.0.10492954`; they correspond on lane `0.0.10509262`. GREEN from the mirror: schedule
+`0.0.10509266` executed at `1789244564.149812105`, the receipt manifest at **sequence 1 of her own**
+topic `0.0.10509148` at that instant to the nanosecond, chained to chunk 0. A stranger reads it back at
+`3245fa58…`. **Every stamp row matched exactly** — 9, 12, 0, 0, treasury 9915 → 9894 — and the
+Postmaster netted **+27.06329700 ℏ**, GATE FUND’s funding excluded.
 
-**`gz5` IS WIRED AND WAITING.** `config.yaml` holds exactly two WISHMail entries —
-`demoagentx5` and `demoagenty5`, pointed at `gz5-x` and `gz5-y`, both
-**`--dry-run`**, allowlist `[buy_stamp, resolve, send, inbox, ack]`. Both command lines are
-pre-flighted in a terminal and name their own operators. **No `--live` appears anywhere in the file, and
-no spent home is named in it.** `gz6` has no entry: it is wired only if the take is spoiled, by the same
-remove-and-rename.
+**THE PAYLOAD SURVIVED, AND B3½ IS WHY.** `Certified agent mail proven on Hedera.` — 38 bytes,
+ciphertext 54 — rendered at B5 **byte-identical to the literal**. The second Gate Zero lost a character and
+Gate Four lost a space; the **only** thing that changed is the read-back before the spend
+(`docs/OPERATOR-SCRIPT.md` B3½). The same card proved two of 2026-09-11’s fixes live: `payload` came
+back a **base64 string** a human could read, and the pending receipt carried exactly the four
+`PendingReceipt` fields and not a §5.8 ReturnReceipt.
 
-**So tomorrow is: restart Goose Desktop → B0 in each window (DRY, `holder` a public key, `buyer`
-reading `0.0.10492957` / `0.0.10492954`) → on the word, flip both to `--live`, start
-the counter, confirm the banners in a terminal → B1 through B6.** Nothing else is outstanding.
+**ONE DIVERGENCE, and it is not in the letter.** The acceptor created **six** connection topics to announce one
+lane; five stand **empty and abandoned** (`0.0.10509248`, `…250`, `…254`, `…258`,
+`…260`), costing 2.69040835 ℏ. `watcher.ts``’`s `answer()` confirms the new lane’s submit key from
+the mirror **once** before announcing it: a topic not yet ingested reads `null`, `submitKeys ?? []` is
+empty, the length test fails, and it throws **after the topic is permanent and before it is announced** — then
+the poll loop answers the same request again five seconds later by creating another. **That is §12’s own
+look-twice rule in the one path that does not obey it**, and `send` already does. **The residue is
+DELETABLE** (all five carry her own key as `admin_key`), unlike the first Gate Zero’s. Recorded, not
+repaired. Run of record: `app/OPERATIONS.md`, **THE RECORDED TAKE — THE RUN OF RECORD**.
 
-**IT RUNS ON GATE FOUR'S HEAD, `dc418dea29e9ac26f1bb423621f777eb59d0ef1c` — RECORD (Sonic).**
-Anything that must exist for the take had to land before Gate Four, and **nothing may land between the gate and
-the take** beyond the record of the gate itself.
+**THE FIXTURES ARE REGISTERED, which was the first act after the take** (RECORD, Sonic).
+`RUN_FIXTURE_NAMES` goes 4 → 7 and `allFixtures()` 6 → 9, adding `gate-zero-two-certified`,
+`gate-four-certified` and `recorded-take-certified` **together**. **No findings**: 87 registered, 44
+passed, 43 failed, digest `51453eea…`, all unchanged. That was the outcome to be suspicious of, so
+`allFixtures()` was run directly and returns nine — the bodies do read them. **The digest cannot move on a
+fixture**: a result row carries `fixtureKinds` and never a fixture name, so a report cannot distinguish six
+captures from nine. Raised as a §5.10 question, MINE, 0.6 either way. `conformance/DERIVATION.md` §G.
 
-**The letter is `Certified agent mail proven on Hedera.`** — 38 bytes,
-`Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=`. **The comma is dropped deliberately** (RECORD,
-Sonic): punctuation is a plausible seam for the model's re-encoding failure, so it is **cut rather than
-risked**. That is a smaller target and **not a safe one** — the mechanism is re-encoding, not length.
-
-**TWO NETS, and they are the whole mitigation.** **B3½** is the read-back *before* the spend — the model
-repeats the payload string, calls no tool, and the operator compares 52 characters by eye before a stamp moves;
-it is the only place the payload can be checked, because a letter cannot be withdrawn. **B5** is the
-rendered-against-printed check *after* — the card must render the sentence in full beside the plaintext printed
-in B4, and a missing character means stop, do not `ack`. B3½ prevents; B5 catches.
-
-**Fixture registration is the FIRST ACT AFTER THE TAKE, never before it** (RECORD, Sonic).
-`gate-zero-two-certified` and `gate-four-certified` are captured and deliberately absent from
-`conformance/support/fixtures.ts`, so the battery goes into the take exactly as it stands: **87 registered,
-44 passed, 43 failed**, report digest `51453eea…`. Both are registered together afterward and whatever
-the ~ten fixture-iterating bodies then say is reported as findings, never narrowed away.
+**THE SPENT HOMES ARE DISARMED.** `gz5-x` and `gz5-y` now have accounts, so `buy_stamp` with
+`provision` refuses on them and a **plain** `buy_stamp` would succeed and spend. Their goose entries are
+**`--dry-run` with a read-only allowlist of `[inbox, resolve]`** — `buy_stamp`, `send` and
+`ack` are **off the list entirely**, so nothing can spend even if a flag were changed by hand. **No
+`--live` appears anywhere in `config.yaml`.** `gz6-x`/`gz6-y` (`0.0.10492960`,
+`0.0.10492962`) are **unspent, unwired and still hold 250 ℏ each** — a second take costs a rename.
 **GATE FOUR IS RUN AND GREEN** (2026-09-11), and it closes the question four gates could not ask. Two
 **brand-new operator wallets** — `0.0.10492952` and `0.0.10492953`, created under GATE FUND
 with **zero automatic association slots** — carried two agents through the whole lifecycle under goose. **The
