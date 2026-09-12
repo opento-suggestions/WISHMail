@@ -5860,6 +5860,15 @@ topics each as this agent's entities, and those topics cannot serve the agent th
 **Neither home is repaired and neither is deleted.** They are the evidence, and they are the DRY/debug homes from
 here on: **`gz-x` and `gz-y` never go live again** (RECORD, Sonic 2026-09-11).
 
+> **NOTE ADDED 2026-09-11, beside the ruling and not amending it (RECORD, Sonic).** The ruling is **narrowed
+> rather than breached**, and it now reads: a spent home never provisions, never spends, and never runs under
+> `--live`; **a read-only DRY boot with a read-only allowlist is permitted.** The occasion was `gz2-y`, whose
+> letter is the only real opened correspondence this deployment holds, and which was the only way to prove the
+> `inbox` fix under goose before Gate Four rather than after it. What makes it safe is structural and not a
+> promise: `--dry-run` reads **no payer key** and gives no client an operator, the doorbell watcher **does not
+> start**, a dry run takes **no `run.lock`**, and §6.5 writes nothing (D-29). The entry carried the allowlist
+> `[inbox]` and nothing else, so no other verb was callable, and it was **deleted after the proof**.
+
 ---
 
 ### 7. RESIDUE — every entity, with the why
@@ -6981,6 +6990,92 @@ this file and the ~ten bodies that iterate every fixture are not armed against i
 and not the evidence**: Gate Four runs tonight and the battery goes into it exactly as green as it was — 87
 registered, **44 passed**, 43 failed. Gate Four's own capture follows, and both are registered together
 afterward, with whatever those bodies then say reported as findings rather than narrowed away.
+
+---
+
+## THE REHEARSAL GATE, BEFORE GATE FOUR. 2026-09-11 — every window DRY; nothing can sign and nothing can spend
+
+**Not a gate and it has no fill-in.** It stands between Part 1's fix and GATE FUND's report because the `inbox`
+narrowing changed the one card a judge actually reads, and a change to the golden path that has never been seen
+through goose's own serialiser is a change that has not been tested where it matters.
+
+### Why A3 alone was not enough, and the code is what says so
+
+The instruction was to re-run A3 — the DRY `send` on `gz-x` — because it "exercises `structured.ts`'s send path
+under goose's serialiser". **It does not, and this is the deviation.** `send` has a DRY branch
+(`app/sdk/server.ts`, `case 'send'` → `if (s.dryRun)`), and `planned()` returns a text block and `_meta` and
+**no `structuredContent` at all**. The same is true of `buy_stamp`, `ack` and both affordances. So in a dry
+session the only verbs that emit `structuredContent` are the three with no DRY branch: **`resolve`, `inbox` and
+`verify`**.
+
+Which turns the finding around: A3 proves the boundary coercion still reads a stringified `coordinates` and that
+the send path reaches its plan — worth having, and it is kept — but **`inbox` is the verb that was changed, and
+`inbox` is rehearsable**. It needs a home holding a real opened letter, which `gz-x` has not and `gz2-y` does.
+
+### The entries, and the hazard that was removed first
+
+Both standing entries were **`--live` and pointed at SPENT homes**. A same-name repoint that silently failed to
+take — Goose Desktop needing its restart, a `.bak` reloading, an edit that did not land — would have put the
+first `buy_stamp` **live against `gz2-x`**, where a plain purchase without `provision` would **succeed and
+spend**, that agent having an account and stamps. So they were **removed outright** rather than repointed, and
+the new entries carry new names: a new name cannot load a stale target, because it either exists or it does not.
+
+| entry | home | mode | allowlist |
+|---|---|---|---|
+| `rehearsalx` | `gz-x` (debug) | `--dry-run` | `buy_stamp, resolve, send, inbox, ack` |
+| `inboxproofy2` | `gz2-y` (spent, read-only) | `--dry-run` | `inbox` **alone** |
+
+Zero `--live` lines remain anywhere in `config.yaml` and `gz2-x` is named nowhere in it. **Both are deleted
+after the rehearsal.**
+
+**Terminal pre-flight, both command lines, before either was handed over.** goose **discards** the extension's
+stderr — `argv as received` returns **0 hits** across the whole of the second Gate Zero in
+`~/AppData/Roaming/Block/goose/data/logs/server/` — so the banner proves the command line works and proves
+nothing about what a goose window loaded:
+
+```
+  wishmail correspondent — DRY RUN: nothing will be signed
+  argv as received  ["C:/Users/Sonic/.wishmail/demo/gz2-y","--dry-run"]
+wishmail correspondent — home …\gz2-y, keys loaded, account 0.0.10489361, payer 0.0.10450879
+  DRY RUN — no payer key was read and no client has an operator; the doorbell watcher is NOT running.
+  … exit 0, no run.lock
+```
+
+### What discriminates a home INSIDE goose, since the banner cannot
+
+Not a refusal: on a spent home a DRY `buy_stamp` with `provision` returns `planned(…)` **before any mirror
+read** and never reaches the "account exists" refusal. The discriminator is in that same card, twice over —
+`holder` is `{publicKey: …}` on a fresh home and `{account: …}` on a spent one, and `buyer` names the operator
+wallet. One card proves which `config.json` and which `keystore.json` a window loaded. **That is step 0 of
+`docs/OPERATOR-SCRIPT.md` Part B.**
+
+### The three instructions, one per turn
+
+**R1 — `rehearsalx` window.** Call `resolve` once with `address` `0.0.10462700` and `profile` `hcs14`.
+*Expect:* real coordinates for DemoAgentA2 — a doorbell, a manifest topic, a proof hash. A live mirror read that
+works in DRY because resolving pays nothing (P-4). **This is the one verb that courts `STRUCTURED.resolve`
+through goose's serialiser.** **stop**
+
+**R2 — `rehearsalx` window.** Call `send` once, passing the coordinates object from R1's result **unchanged**,
+`payload` `VGhpcyBsZXR0ZXIgaXMgY2VydGlmaWVkLCBhbmQgaXRzIHJlY2VpcHQgd2lsbCBiZSBzaWduZWQgb24gY29uc2Vuc3VzLg==`,
+`returnReceipt` true. *Expect:* a **DRY RUN / would-do** card. The pass is that `send` accepted coordinates
+handed straight from `resolve` — the boundary coercion, still holding. **It carries no `structuredContent`, and
+that is the point above.** **stop**
+
+**R3 — `inboxproofy2` window**, with `rehearsalx` toggled off. Call `inbox` once with no arguments.
+*Expect,* and all four are asserted:
+
+1. `payload` is a **base64 string** — **not** `{"type":"Buffer","data":[…]}`;
+2. the text block renders the demo sentence, **labelled as a rendering of the bytes**;
+3. **none** of `lane`, `chunkPostmarks`, `detail`, `openedUnderEpoch` appears in `structuredContent`;
+4. `returnReceipt`, if present, is the `PendingReceipt` shape — `scheduleId`, `sequenceNumber`,
+   `consensusTimestamp`, `requestedByHeader` — and not a §5.8 ReturnReceipt.
+
+**stop.** The card is recorded verbatim below.
+
+### The cards, as they came back
+
+*(filled after the rehearsal)*
 
 ---
 
