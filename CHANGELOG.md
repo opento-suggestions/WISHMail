@@ -2,6 +2,58 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [Gate Zero, run and not reached] — 2026-09-11 — goose drove it, four topics per agent went first, and the fill-in is NOT YET
+
+**[S]** ruled; **[CC]** sleuthed, recorded, fixed and retuned. Gate Zero was authorised and run. **It did not reach
+the golden path**: an unscripted model called `generate_mailbox` on a home with no account, and that verb submitted
+**four topics per agent** before the declaration validator refused — **eight permanent topics on `hedera:testnet`**,
+two of them fee-bearing doorbells whose memo names no owner. No `send`, no `ack`, no lane, no envelope;
+121.87558034 ℏ of the two operators' own money spent for no letter. The fill-in is back to **NOT YET**.
+
+### Fixed
+
+- **`generateMailbox` refuses before any `TopicCreate` when the home has no account** (`app/sdk/mailbox.ts`),
+  naming `buy_stamp` with `provision: true` as the path. The account was previously checked at the fifth step, by
+  a JSON Schema pattern, with four irreversible acts in front of it.
+- **`template.doorbell()` refuses an empty owner** (`app/src/ops/template.ts`) rather than rendering
+  `hcs-10:0:60:0:`, which is a door with no house.
+- Courted in `app/sdk/correspondent.check.ts`, 118 → **126** assertions. Reverting both fixes fails exactly those
+  6 and no others — run, not assumed.
+
+### Changed
+
+- **Both goose entries are `--dry-run`** and their descriptions say DEBUG HOME. `gz-x` and `gz-y` never go live
+  again (RECORD, Sonic).
+- **`available_tools` is set to `[buy_stamp, resolve, send, inbox, ack]` on both entries.** It **is** an allowlist,
+  checked on the bare tool name before the `<ext>__` prefix
+  (`goose/crates/goose/src/agents/extension.rs:394-420`, `extension_manager.rs:960`/`:964`). `generate_mailbox`,
+  `register_agent` and `verify` are deliberately off it.
+- **Three tool descriptions state their precondition**, and `resolve` and `send` give the address form with a real
+  example (`app/sdk/server.ts`). No schema moved — the notes hang off the description builder, as `BUY_STAMP_NOTE`
+  already did.
+
+### Added
+
+- **`docs/OPERATOR-SCRIPT.md`** — the operator script: one instruction per turn, per window, with the exact
+  arguments, the card to expect, and *stop* at the end of each. A DRY rehearsal on `gz-x`/`gz-y`, then the live
+  sequence. The demo sentence is pre-encoded to base64 so the model copies rather than encodes.
+- **`app/OPERATIONS.md`: the run of record**, beneath the Gate Zero report and never in it — where goose's own logs
+  and session database live, the call sequence from the log, every entity with its payer and consensus timestamp,
+  the four purchases, the deltas, both `record.json`, the residue table with a why per row, the mechanism at
+  file:line, the fix, and five findings recorded-and-not-fixed. Plus **GATE FOUR — PREP**.
+
+### Recorded, not fixed
+
+- **`app/sdk/counter.ts:315` signs with the wrong key once the agent has an account.** The price always leaves the
+  operator (`from: s.homePayerId`), so signing with the agent's key omits the only signature the network needs —
+  both INVALID_SIGNATURE transfers. Not on the golden path.
+- **`buy_stamp`'s `holder` is required by its published input schema and never read by its handler**, which is why
+  `holder: "{\"publicKey\": \"demo\"}"` — a string, not an object — was accepted twice in silence. Making it
+  optional is a published-input-schema change and therefore **0.6, never a patch** (§1.7).
+- **A provisioning purchase can settle twice on one operator** — 31.34488754 ℏ at 22:56:32 and again at 22:56:41.
+- **`INBOX_MIRROR_UNREACHABLE` names the wrong cause**, now observed four more times as the first thing a model sees.
+- **goose does not capture an extension's stderr**, so the DRY/LIVE banner is not auditable from goose's own record.
+
 ## [Gate Zero, prepared] — 2026-09-11 — the goose seam, a mode that cannot sign, and a folder renamed
 
 **[S]** ruled; **[CC]** read, built, proved and recorded. **Nothing signed on `hedera:testnet`.** Gate Zero's report

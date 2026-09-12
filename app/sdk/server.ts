@@ -155,7 +155,35 @@ const BUY_STAMP_NOTE =
   'way, call it again with the same arguments**: it resumes the purchase this home already made, creates only what is ' +
   'missing, and never buys twice. It refuses with STAMP_HOLDER_INVALID only where this agent has an account and NO ' +
   'purchase is outstanding — which means either it already has a mailbox (buy without `provision`) or it brought its own ' +
-  'account (use `generate_mailbox`, and your own operator pays).';
+  'account (use `generate_mailbox`, and your own operator pays).' +
+  ' PRECONDITION for a NEW agent: call it with `provision: true` and `count: 12` BEFORE anything else — this agent ' +
+  'has no account until this call creates one, and every other tool that writes will refuse until it does. ' +
+  '`holder` and `payment` are JSON OBJECTS and never strings containing JSON. `holder` is REQUIRED by ' +
+  'the schema and IGNORED by this surface: a Correspondent always buys for ITSELF — its own public key before it ' +
+  'has an account, its own account after. Pass `{\"publicKey\": \"self\"}` to satisfy the schema, and know it is not read.';
+
+/**
+ * WHAT A MODEL GETS WRONG WHEN NOBODY TELLS IT — measured, 2026-09-11.
+ *
+ * The goose seam's first live run is in `app/OPERATIONS.md` as the Gate Zero
+ * divergence. The model invented four address forms in a row — `demo`,
+ * `0.0.10487063@hcs14`, `hcs14://0.0.10487063`, `test@test` — because nothing
+ * on this surface ever showed it one. These notes are the cheapest possible
+ * fix: the precondition, and for the two tools that take an address, the form
+ * with a real example. No schema moves.
+ */
+const RESOLVE_NOTE =
+  ' THE ADDRESS IS A HEDERA ACCOUNT ID and nothing else: `0.0.10462700`. CAIP-10 (`hedera:testnet:0.0.10462700`) ' +
+  'and `uaid:` are also accepted; a name, a URL, a `scheme://` prefix and an `@profile` suffix are NOT, and come ' +
+  'back RESOLVE_UNSUPPORTED_ADDRESS. The profile is a SEPARATE argument — `{"address": "0.0.10462700", "profile": ' +
+  '"hcs14"}` — and never part of the address. Precondition: none. It reads a mirror node and pays nothing, so it ' +
+  'works before this agent has an account (P-4).';
+
+const SEND_NOTE =
+  ' PRECONDITION: this agent must already have its mailbox — `buy_stamp` with `provision: true` — or this refuses ' +
+  'SEND_UNRESOLVED. `coordinates` is the object `resolve` returned, PASSED THROUGH UNCHANGED: call `resolve` on ' +
+  'the recipient first and hand its `coordinates` straight to this tool, never a re-typed address. `payload` is ' +
+  'BASE64 of the bytes to send. Every object argument is a JSON OBJECT and never a string containing JSON.';
 
 /**
  * The session, and the one moment it changes.
@@ -181,7 +209,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
       ...six().map((t) => ({
         name: t.name,
         description:
-          `${t.summary}${t.name === 'buy_stamp' ? BUY_STAMP_NOTE : ''} Used by ${t.usedBy.join(', ')}. ` +
+          `${t.summary}${t.name === 'buy_stamp' ? BUY_STAMP_NOTE : t.name === 'resolve' ? RESOLVE_NOTE : t.name === 'send' ? SEND_NOTE : ''} Used by ${t.usedBy.join(', ')}. ` +
           `Reads consensus: ${t.reads ? 'yes' : 'no'}; writes: ${t.writes ? 'yes' : 'no'}; pays: ${t.pays}. ` +
           `Failures: ${t.failures.join(', ')}.` +
           '',

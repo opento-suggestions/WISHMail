@@ -127,7 +127,17 @@ never matches and the process starts, does nothing and exits 0 with no banner. *
 symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
 it is build work for after submission.
 
-**GATE ZERO IS WRITTEN AND WAITS ON SONIC'S WORD** (2026-09-11). Its report is `app/OPERATIONS.md`, committed before
+**GATE ZERO RAN AND DID NOT REACH THE GOLDEN PATH; ITS FILL-IN IS BACK TO NOT YET** (2026-09-11 night). Driven by
+goose with no script, the model called `generate_mailbox` on a home with no account; four topics per agent were
+submitted before the declaration validator refused, so **eight permanent topics are on `hedera:testnet`**, two of
+them doorbells whose memo names no owner — and **the doorbells are numbered before the accounts**, which is the tell.
+No `send`, no `ack`, no lane: 121.87558034 ℏ of the operators' own money and no letter. The run of record, the
+mechanism at file:line, the two fixes and five findings recorded-and-not-fixed are `app/OPERATIONS.md`, **GATE ZERO
+— THE DIVERGENCE, AND THE RUN OF RECORD**; the entities are residue, each with a why. **`gz-x` and `gz-y` are
+DRY/debug homes now and never go live again** (RECORD). **The next live act is a second Gate Zero on the demo
+operators with fresh homes**; Gate Four, on brand-new wallets, follows it. The operator script that drives either is
+`docs/OPERATOR-SCRIPT.md` — one instruction per turn — because **the model does not work the flow out**. What
+follows is the gate report as it was written, and it is not amended: Its report is `app/OPERATIONS.md`, committed before
 anything can sign, fill-in unfilled. It is the first time **goose** drives the Correspondent MCP server on
 consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack → verify — and
 it is deliberately separate from Gate Four so that Gate Four can ask its own question: whether a brand-new HBAR-only

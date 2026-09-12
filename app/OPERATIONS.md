@@ -5663,6 +5663,359 @@ changed the price mid-gate and there is none.**
 §4 is still a signature leaving a process before its outcome is known. It also does not prove the counter is up —
 §7's quote did that once and the counter was stopped again; it comes up at the run.
 
+## GATE ZERO — THE DIVERGENCE, AND THE RUN OF RECORD. 2026-09-11, after the run
+
+**The gate report above is not edited, and neither is its before-state.** This sits beneath them, dated, as a run of
+record does. **The fill-in is NOT YET**: Gate Zero's question — does goose drive this server through the golden path
+— **was not answered**, because the golden path was never reached. No envelope was composed, no lane was born, no
+letter was sent, nothing was acked. What ran instead is recorded here in full, because it is the finding.
+
+**The one-sentence version.** Two goose sessions were opened on the LIVE entries and the model was left to work the
+flow out for itself. It called `generate_mailbox` first — before any purchase, on a home with no account — and that
+verb built and submitted **four topics per agent** before the fifth step refused, leaving **eight permanent topics on
+`hedera:testnet`**, two of them fee-bearing doorbells whose memo names no owner. It then invented four address forms,
+passed JSON objects as strings, bought four stamps it did not need, paid for provisioning twice on one operator, and
+finished with two INVALID_SIGNATURE transfers. **Nothing that happened was outside the code's own behaviour**; every
+one of these is a defect of ours or a gap in what the surface tells a model.
+
+---
+
+### 1. Where goose's own record lives, so the next divergence is read the same way
+
+**Read goose before the mirror.** The cards pasted into a conversation are the model's rendering; these are the
+machine's.
+
+```
+  logs      C:\Users\Sonic\AppData\Roaming\Block\goose\data\logs\server\<YYYY-MM-DD>\<HHMMSS>-goosed.log
+  sessions  C:\Users\Sonic\AppData\Roaming\Block\goose\data\sessions\sessions.db   (SQLite; -wal beside it)
+  config    C:\Users\Sonic\AppData\Roaming\Block\goose\config\config.yaml  (+ .bak, .bak.1, .bak.2, written by goose itself)
+```
+
+**The log** carries one `dispatch_tool_call` span per call, and each span embeds the whole conversation so far plus
+`input={"tool":"<ext>__<name>","arguments":{…}}`. It does **NOT** capture the extension's stderr, so the Correspondent's
+banners are not in it — which is why the DRY/LIVE banner cannot be audited after the fact from goose alone, and why
+the stop condition has to live in the conversation.
+
+**The session database** is the better source and holds the results: table `messages` (`role`, `content_json`,
+`created_timestamp`, `session_id`) against table `sessions`. Content items are typed `text`, `toolRequest` and
+`toolResponse`; a `toolResponse` carries the full result including `_meta["wishmail/code"]`. Node 22's built-in
+`node:sqlite` reads it with nothing installed — copy the file first and open the copy.
+
+Tonight's two sessions: **`20260911_1`** "Demo Agent X initialization" (22:52:44–22:59:37Z) and **`20260911_2`**
+"Demo Agent Y session" (22:55:12–22:58:05Z). **One demo extension was enabled in each**, which is the one piece of
+discipline that held.
+
+---
+
+### 2. The call sequence, from the log and not from the cards
+
+**SENDER window (`20260911_1`, DemoAgentX).** Sonic's opening turn was *"Hello, you are Demo Agent X. You will be
+steering the experimental extension named accordingly. Proceed."* — and "Proceed" is the whole of the instruction the
+model had.
+
+```
+  22:54:35  inbox {}                     -> INBOX_MIRROR_UNREACHABLE (no doorbell; buy a mailbox first)
+  22:54:36  generate_mailbox {}          -> REFUSED: the declaration does not validate: /account must match
+                                            pattern "^[0-9]+\.[0-9]+\.[0-9]+$"     <-- FOUR TOPICS ALREADY EXIST
+  22:55:49  buy_stamp {count 1, holder "{\"publicKey\": \"demo\"}", payment "{\"method\": \"hbar\"}"}
+                                         -> SUCCESS, 1 stamp, 1.34488754 h, holder 0.0.10487063
+  22:55:54  buy_stamp {… provision true} -> the SAME receipt returned
+  22:56:37  resolve {address "demo"}                    -> RESOLVE_UNSUPPORTED_ADDRESS
+  22:57:31  buy_stamp {count 5, provision true}         -> STAMP_HOLDER_INVALID (correct)
+  22:57:48  generate_mailbox {dryRun true}              -> MAILBOX_REFUSED (dry-run)
+  22:57:50  generate_mailbox {}          -> MAILBOX_REFUSED: doorbell at 0.0.10487041 diverges from its declared
+                                            shape: memo want "hcs-10:0:60:0:0.0.10487063" got "hcs-10:0:60:0:"
+  22:57:54  resolve {address "0.0.10487063@hcs14"}      -> RESOLVE_UNSUPPORTED_ADDRESS
+  22:58:22  resolve {address "hcs14://0.0.10487063"}    -> RESOLVE_UNSUPPORTED_ADDRESS
+  22:58:26  resolve {address "0.0.10487063", profile "hcs14"}
+                                         -> RESOLVE_NOT_FOUND: account memo is not an HCS-11 memo of either form: ""
+  22:58:31  buy_stamp {holder {account 0.0.10487063}}   -> STAMP_PAYMENT_FAILED: INVALID_SIGNATURE
+  22:58:41  register_agent {dryRun true}
+  22:58:46  buy_stamp {…}                               -> STAMP_PAYMENT_FAILED: INVALID_SIGNATURE
+  22:58:59  inbox {lane "0.0.10487041"}     <-- the DOORBELL passed as a lane
+  22:59:34  verify {scope "{\"topics\": [\"0.0.10487041\"]}"}
+```
+
+**RECIPIENT window (`20260911_2`, DemoAgentY).** The same shape, and the same first move:
+
+```
+  22:55:59  inbox {}                     -> INBOX_MIRROR_UNREACHABLE
+  22:56:00  generate_mailbox {}          -> REFUSED: /account must match pattern …      <-- FOUR MORE TOPICS
+  22:56:30  buy_stamp {count 1, holder "{\"publicKey\": \"test-key\"}", provision true}
+                                         -> MAILBOX_REFUSED: doorbell at 0.0.10487067 diverges … got "hcs-10:0:60:0:"
+                                            BUT THE TRANSFER HAD ALREADY SETTLED: 31.34488754 h
+  22:56:40  buy_stamp {… provision true} -> MAILBOX_REFUSED, and A SECOND 31.34488754 h SETTLED
+  22:56:47  resolve {address "test@test"}                    -> RESOLVE_UNSUPPORTED_ADDRESS
+  22:57:32  buy_stamp {count 1, provision false}             -> SUCCESS, 1 stamp, 1.34488754 h
+  22:57:45  generate_mailbox {}                              -> MAILBOX_REFUSED (same divergence)
+  22:57:56  resolve {address "test@0.0.10487080", profile "hcs14"} -> RESOLVE_UNSUPPORTED_ADDRESS
+  22:57:57  resolve {address "0.0.10487080", profile "hcs14"}      -> RESOLVE_NOT_FOUND
+  22:57:59  buy_stamp {… provision true}                     -> the same receipt returned
+```
+
+**No `send`. No `ack`. No lane. No envelope.** The golden path was never entered.
+
+---
+
+### 3. What is on consensus tonight, per home, every id read from the mirror
+
+**Eight topics. All eight are permanent; a topic cannot be deleted.** Consensus timestamps are the mirror's.
+
+**DemoAgentX — home `gz-x`, agent key `22cd19c2…`, every row paid by C2OPERATOR `0.0.10450880`:**
+
+| Entity | Id | Consensus | Memo | Paid |
+|---|---|---|---|---|
+| **doorbell** (HCS-10 inbound) | `0.0.10487041` | `1789167277.367573104` | **`hcs-10:0:60:0:` — NO OWNER** | 27.03358182 ℏ |
+| log (HCS-10 outbound) | `0.0.10487045` | `1789167285.699454062` | `hcs-10:0:60:1` | 0.40481109 ℏ |
+| manifest | `0.0.10487048` | `1789167292.502713104` | `wishmail:manifest:1` | 0.40481109 ℏ |
+| declaration registry (HCS-2) | `0.0.10487050` | `1789167300.680749280` | `hcs-2:0:60` | 0.40481109 ℏ |
+| **account** | `0.0.10487063` | `1789167350.238097103` | `""` — no HCS-11 memo | created by the Postmaster, 0.67244368 ℏ |
+
+The doorbell carries the HIP-991 fee correctly — 1 unit of `0.0.10426208` to `0.0.10426205`, the agent's own key
+exempt — and `autoRenewAccount 0.0.10450880`. It holds **0 messages**. The account holds **0 ℏ and 1 $POSTAGE**.
+
+**DemoAgentY — home `gz-y`, agent key `20ae2f8e…`, every row paid by C1OPERATOR `0.0.10450879`:**
+
+| Entity | Id | Consensus | Memo | Paid |
+|---|---|---|---|---|
+| **doorbell** | `0.0.10487067` | `1789167361.522673589` | **`hcs-10:0:60:0:` — NO OWNER** | 27.03358182 ℏ |
+| log | `0.0.10487068` | `1789167363.459558781` | `hcs-10:0:60:1` | 0.40481109 ℏ |
+| manifest | `0.0.10487072` | `1789167371.439843104` | `wishmail:manifest:1` | 0.40481109 ℏ |
+| declaration registry | `0.0.10487075` | `1789167379.522664104` | `hcs-2:0:60` | 0.40481109 ℏ |
+| **account** | `0.0.10487080` | `1789167392.080221103` | `""` | created by the Postmaster, 0.67244368 ℏ |
+
+The account holds **0.1 ℏ and 3 $POSTAGE** — 0.05 ℏ of registration fee from each of the two provisioning purchases
+that settled, and one stamp from each of the three purchases.
+
+**THE TELL, and it is on consensus and not in a log: the doorbells are numbered BEFORE the accounts.**
+`0.0.10487041` predates `0.0.10487063` by **73 seconds**; `0.0.10487067` predates `0.0.10487080` by **31 seconds**.
+A doorbell is a door on a house that did not exist when the door was hung, and the memo says so by naming nobody.
+
+---
+
+### 4. The four purchases
+
+| Transaction | Consensus | Result | What moved |
+|---|---|---|---|
+| `0.0.8641261@1789167343.109022006` | `1789167350.238097103/104` | **SUCCESS** | CryptoCreateAccount (Postmaster pays 0.67244368 ℏ) + transfer: C2OPERATOR −1.34488754 ℏ, treasury −1 $POSTAGE → `0.0.10487063` |
+| `0.0.8641261@1789167384.906420210` | `1789167392.080221104` | **SUCCESS** | CryptoCreateAccount + **provisioning** transfer: C1OPERATOR **−31.34488754 ℏ** → `0.0.10487080` |
+| `0.0.8641261@1789167395.427339817` | `1789167401.270150308` | **SUCCESS** | **a SECOND provisioning** transfer: C1OPERATOR **−31.34488754 ℏ** |
+| `0.0.8641261@1789167446.869833765` | `1789167453.598345104` | **SUCCESS** | transfer: C1OPERATOR −1.34488754 ℏ, 1 $POSTAGE |
+| `0.0.8641261@1789167504.362787612` | `1789167512.550081104` | **INVALID_SIGNATURE** | nothing; the Postmaster paid the 0.01882841 ℏ node fee |
+| `0.0.8641261@1789167522.108801306` | `1789167527.730000104` | **INVALID_SIGNATURE** | nothing; the Postmaster paid the 0.01882841 ℏ node fee |
+
+**WHICH SIGNATURE WAS MISSING, AND WHY — `app/sdk/counter.ts:315`.**
+
+```ts
+  const signer = s.account === '' ? s.homePayer : s.agent;
+```
+
+The comment above it reasons: *"The agent's key signs because the agent is the party whose account the price leaves
+— and where the holder is a bare public key, the operator's key signs, because the agent has no account for the
+price to leave."* **That premise is false.** Every quote this function asks for is built with
+`payment: { method, from: s.homePayerId }` (`counter.ts:288` and `:360`) — the price **always** leaves the
+**operator's** account and never the agent's. So the moment the agent has an account, this signs with the **agent's**
+key a body that debits the **operator**, and the operator's signature — the only one the network needs — is absent.
+
+That is exactly when the two failures happened: X bought successfully at 22:55:49 while `s.account` was still empty,
+and failed at 22:58:31 and 22:58:42 once the purchase had given it one. Y never hit it, because its window never
+made a purchase after its session learned its account.
+
+**It is NOT on the golden path** — the first provisioning purchase always runs with no account, and provisioning
+already includes stamps, so a correct run never reaches the branch. **Recorded, not fixed tonight** (the ruling for
+this pass names two fixes and this is not one of them). It is a one-line correction when it is taken.
+
+---
+
+### 5. The deltas, against §10's before-state
+
+```
+                         before             after              delta
+  C1OPERATOR 0.0.10450879  414.99071098      322.70803327      -92.28267771 h   $POSTAGE 1 -> 1
+  C2OPERATOR 0.0.10450880  408.21468299      378.62178036      -29.59290263 h   $POSTAGE 0 -> 0
+  treasury   0.0.10426205   $POSTAGE 9,961    $POSTAGE 9,957    -4 stamps
+  DemoAgentX 0.0.10487063          -          0 h, 1 $POSTAGE
+  DemoAgentY 0.0.10487080          -          0.1 h, 3 $POSTAGE
+```
+
+**121.87558034 ℏ of the two operators' own money**, for no letter. Of it, **54.07 ℏ is the two doorbells** — the
+single most expensive row in the template, and both are unusable. **62.69 ℏ is two provisioning purchases on one
+operator**, of which one was redundant. The Postmaster's payer `0.0.8641261` paid two account creations and two
+node fees for failed transfers and carried no mailbox row, because no mailbox reached the carry.
+
+---
+
+### 6. Both `record.json` as they stand, and what they mean
+
+Neither home was wiped; both are readable and both are **wrong about the world in the same way** — they name four
+topics each as this agent's entities, and those topics cannot serve the agent they name.
+
+- **`gz-x`** carries the four topics above and a `purchase` row in state **`signed`**, reference
+  `0.0.8641261@1789167522.108801306` — one of the two INVALID_SIGNATURE transfers, with `account: ""`. That is an
+  **outstanding purchase that never landed**, and it is the state `buyStamps`' resume path reads. A later
+  `buy_stamp` on this home would try to resume a transfer that does not exist.
+- **`gz-y`** carries its four topics and a `purchase` row in state **`settled`**, reference
+  `0.0.8641261@1789167446.869833765`, `account: 0.0.10487080`.
+
+**Neither home is repaired and neither is deleted.** They are the evidence, and they are the DRY/debug homes from
+here on: **`gz-x` and `gz-y` never go live again** (RECORD, Sonic 2026-09-11).
+
+---
+
+### 7. RESIDUE — every entity, with the why
+
+All ten entities below are **residue**: inputs to a rehearsal that failed, not part of any deployment, superseded by
+nothing and serving nothing.
+
+| Entity | Why it exists, and why it is residue |
+|---|---|
+| `0.0.10487041` doorbell (X) | Created by `generate_mailbox` on a home with no account. Its memo names no owner, so no reader can tell whose door it is and §7.1's binding cannot use it. Fee-bearing and admin-keyed to an agent that will never use it. **Cannot be deleted.** |
+| `0.0.10487045` log (X) | Same call, row 2. Never written to. |
+| `0.0.10487048` manifest (X) | Same call, row 3. Never written to. |
+| `0.0.10487050` declRegistry (X) | Same call, row 4. Holds no register entry: the declaration never validated. |
+| `0.0.10487063` account (X) | Created by HIP-542 alias when one stamp was transferred to X's key. Holds 1 $POSTAGE, no ℏ, and **no HCS-11 account memo**, so it resolves to nothing. |
+| `0.0.10487067` doorbell (Y) | As X's, and identically ownerless. |
+| `0.0.10487068` log (Y) | Same call, row 2. |
+| `0.0.10487072` manifest (Y) | Same call, row 3. |
+| `0.0.10487075` declRegistry (Y) | Same call, row 4. |
+| `0.0.10487080` account (Y) | Created by the first provisioning purchase. Holds 3 $POSTAGE and 0.1 ℏ of registration fees, and no account memo. |
+
+---
+
+### 8. THE MECHANISM, and it is the ordering before it is anything else
+
+**The reading offered was: the doorbell is created before the declaration validation refuses, with the memo's owner
+empty. That is CONFIRMED on consensus and in the code, and it understates it by three topics.**
+
+`generateMailbox` (`app/sdk/mailbox.ts:348`) did this, in this order:
+
+1. `resolveSelf(source, s.ledgerTag, s.account)` — the idempotency gate. With `s.account === ''` it finds nothing,
+   which is true and useless.
+2. `ensurePayerHoldsStamps` — reads the operator, not the agent. Passes.
+3. Builds `subject` with `account: s.account`, **the empty string**.
+4. **Row 1 — `topicRow(… template.doorbell(subject) …)` — SUBMITS.** Memo `hcs-10:0:60:0:`.
+5. Rows 2, 3, 4 — log, manifest, declaration registry — **SUBMIT**. None of their memos carries the account, so
+   none of them notices.
+6. The profile and the §9.1 declaration are built, and `app/src/ops/declaration.ts:196` throws *"the declaration
+   does not validate, and is not published: /account must match pattern `^[0-9]+\.[0-9]+\.[0-9]+$`"*.
+
+**So: which is the defect — the memo builder, the topic creator, or the ordering?** The **ordering** is the defect,
+and the **memo builder** is a second one behind it.
+
+- It is **not the topic creator**. `topicRow` submits the shape it is handed and confirms it from the mirror
+  afterwards; it did both correctly, and on the second run it is what **caught** the divergence
+  (`mailbox.ts:214`, "diverges from its declared shape").
+- It is **the ordering**, because the account is a precondition of the whole template and was checked at step 6, at
+  the first field that happens to meet a JSON Schema pattern. Four irreversible acts stood in front of that check.
+  The validator was doing its job; it was simply the only thing in the function doing it, and it was last.
+- It is **also the memo builder**, because `template.doorbell` rendered `hcs-10:0:60:0:` without complaint. A
+  builder that can produce a memo naming nobody is a builder that will, and the four-second window between "the
+  ordering is fixed" and "someone calls the template directly" is not worth leaving open.
+
+**Does `buy_stamp` with `provision: true` share any of it?** It shares the **function** and **not the defect**.
+`counter.ts:465` calls `generateMailbox(carried, …)` where `carried` is a session re-booted with
+`expectAccount: true` **after** the purchase has created the account, and `counter.ts:455-462` refuses unless the
+mirror agrees the key owns exactly that account. So on the provisioned path `s.account` is always populated, and the
+new refusal can never fire there. Y's session proves the seam works in the other direction too: at 22:56:30
+`buy_stamp` with `provision` settled its transfer, reached the mailbox step, met the already-broken doorbell and
+refused with `MAILBOX_REFUSED` — the shape check catching what the ordering check should have prevented.
+
+---
+
+### 9. THE FIX, and only this
+
+Two refusals, both in front of the first irreversible act, both courted on the model with no network and no key.
+
+1. **`app/sdk/mailbox.ts`, first statement of `generateMailbox` after the emitter** — refuses with
+   `MailboxRefusal` when `s.account === ''`, **before the idempotency read and before any `TopicCreate`**, naming
+   `buy_stamp` with `provision: true` as the path and saying that nothing was created.
+2. **`app/src/ops/template.ts`, `doorbell()`** — throws where `s.account` is empty rather than rendering
+   `hcs-10:0:60:0:`, naming the same path.
+
+**The court is `app/sdk/correspondent.check.ts`**, +8 assertions, 118 → **126**. It is a court and not a decoration:
+with both fixes reverted, **exactly those 6 of the 8 fail** and the other 120 assertions pass — run, not assumed.
+It also pins the two facts that make the ordering the defect: rows 2 and 3 carry no account in their memos, so no
+row after the first could have caught this.
+
+**Green after the fix:** `typecheck`, `p13:check`, and **all twenty-two `check:*`**. `check:captured` 20
+assertions and `check:receipt` 43, **byte-identical in their recorded digests**; `conformance` unmoved at 44
+passing, report digest `51453eea…`.
+
+**`generate_mailbox`'s published description already promised this refusal** — *"It refuses if the agent has no
+account yet"* (`app/sdk/tools.ts:57`). It was documentation of a behaviour the code did not have. It does now.
+
+---
+
+### 10. Recorded and NOT fixed, each a finding of tonight
+
+1. **`counter.ts:315` signs with the wrong key once the agent has an account** — §4 above. Not on the golden path.
+2. **`buy_stamp`'s `holder` is REQUIRED by its published input schema and never read by its handler.**
+   `app/sdk/server.ts:276-280` always uses `s.account === '' ? { publicKey: s.agentPublicHex } : { account: s.account }`.
+   It is why `holder: "{\"publicKey\": \"demo\"}"` — a **string**, not even an object — was accepted in silence
+   twice. Making it optional is a change to a published input schema and therefore **0.6, never a patch** (§1.7).
+3. **A provisioning purchase can settle twice on one operator.** Y paid 31.34488754 ℏ at 22:56:32 and again at
+   22:56:41, because the first call's mailbox step threw after the transfer and the session's `s.account` was still
+   empty when the second call quoted. 30 ℏ of the second is simply gone.
+4. **`INBOX_MIRROR_UNREACHABLE` names the wrong cause** — the mirror is reachable; the agent has no doorbell. Already
+   recorded at Gate Zero §4.2 and now observed four more times as the first thing a model sees.
+5. **goose does not capture an extension's stderr**, so the DRY/LIVE banner is not auditable from goose's own record.
+   The stop condition must stay in the conversation.
+
+---
+
+### 11. What the goose surface now carries, and why
+
+- **`available_tools` IS an allowlist** — `goose/crates/goose/src/agents/extension.rs:394-420`: *"If no tools are
+  specified, all tools are available / If tools are specified, only those tools are available"*. It is checked on
+  the **bare** tool name, before the `<ext>__` prefix is applied (`extension_manager.rs:960` checks `tool.name`,
+  `:964` prefixes afterwards; `:1369` uses `resolved.actual_tool_name`). Both entries now carry exactly
+  **`[buy_stamp, resolve, send, inbox, ack]`**.
+- **`generate_mailbox` is off the list.** It is the self-provisioned path and it is what did tonight's damage.
+- **`register_agent` is off the list, and it is not needed for the golden path.** The `hcs14` declaration that
+  `resolve` and `send` depend on is published by provisioning itself — the profile, its HCS-1 chunks, the HCS-2
+  register entry and §9.2's account memo, all inside `generateMailbox`. `register_agent` writes to the HOL anchor
+  `0.0.6913983`, which serves the `hol` profile, and the letter path never consults it. Off unless it is wanted
+  on video.
+- **`verify` is off the list**, because the stranger's verification is run from a command line holding nothing
+  (P-4) and is weaker from inside an agent's own window.
+- **Both entries are `--dry-run`** with descriptions that say DEBUG HOME.
+- **Three tool descriptions now state their precondition**, and `resolve` and `send` give the address form with a
+  real example — because the model invented four forms and nothing on the surface had ever shown it one. No schema
+  moved: the notes hang off `app/sdk/server.ts`'s description builder, the way `BUY_STAMP_NOTE` already did.
+- **The operator script is `docs/OPERATOR-SCRIPT.md`** — one instruction per turn, the card to expect, and the word
+  *stop* at the end of each. The model does not work the flow out; it is driven.
+
+---
+
+## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
+
+**The Gate Zero report is not amended by any of this, and Gate Four gets its own.** This is the list of what that
+report must carry, written now so that supplying the wallets is the only thing left.
+
+**When Sonic supplies the two brand-new operator accounts:**
+
+1. **Write the two homes the way `gz-x` and `gz-y` were** — `config.json` from `app/sdk/config.template.json`
+   with that operator's `payer.accountId` and `payer.derKey`, the network, the counter's loopback address and the
+   agent's public identity; keys **born on first boot** into `keystore.json`, in the agent's own process. Outside
+   the repository, under `~/.wishmail/demo/`, gitignored.
+2. **The roles stay as they are: X is the SENDER, Y is the RECIPIENT.**
+3. **Read each wallet's `max_automatic_token_associations` from the mirror and write it INTO the gate report**,
+   because it is exactly the class of fact a receipt cannot show.
+4. **Name this, because it has never run:** `ensurePayerHoldsStamps`' `TokenAssociateTransaction` branch
+   (`app/sdk/mailbox.ts:287-294`) **has never executed against the network**. It is skipped whenever the operator
+   auto-associates — `-1`, or free slots — and **both demo operators have read `-1` every time**, so every gate so
+   far has taken the other branch (`mailbox.ts:282-286`, which emits `provision.autoassociates` and submits
+   nothing). **A brand-new wallet with 0 association slots fires it at provisioning**, paid by that operator, about
+   0.05 ℏ. That is the code working and not a stop — but it is untested live, and Gate Four is the first run that
+   can test it.
+5. The gate report also carries, as Gate Zero's did: every entity each provisioning will create; the quote at
+   `PriceList` sequence 4 **and** the actual; the submit→learn window per write and the resume from inside it;
+   every way it stops; and what the run of record will cite.
+
+  **NEXT LIVE ACT — [ a second GATE ZERO on the demo operators with fresh homes ]**
+
+  **GATE — [ NOT YET ]**
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.

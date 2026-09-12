@@ -45,8 +45,34 @@ repository; **the one-line fix — compare real paths — is deliberately NOT ma
 for after submission. **Nothing on consensus is affected by the rename**, and nothing off it except paths: all
 eighteen files under `~/.wishmail/demo/` were searched and not one names the repository's path.
 
-**ONE THING IS WAITING ON A SIGNATURE, and it is GATE ZERO.** Its report is `app/OPERATIONS.md`, written 2026-09-11
-before anything can sign, with its fill-in unfilled. It is the first time **goose** drives the Correspondent MCP
+**GATE ZERO RAN ON 2026-09-11, IT DID NOT REACH THE GOLDEN PATH, AND ITS FILL-IN IS BACK TO NOT YET.** Two goose
+sessions were opened LIVE and the model was left to work the flow out for itself. It called `generate_mailbox`
+first — before any purchase, on a home with no account — and that verb built and submitted **four topics per agent**
+before the fifth step refused, leaving **eight permanent topics on `hedera:testnet`**, two of them fee-bearing
+doorbells whose memo names no owner (`hcs-10:0:60:0:`, the account missing). **The doorbells are numbered before the
+accounts** — 73 seconds for X, 31 for Y — which is the tell, and it is on consensus. It then invented four address
+forms, passed JSON objects as strings, paid for provisioning twice on one operator, and finished with two
+INVALID_SIGNATURE transfers. **121.87558034 ℏ of the two operators' own money, and no letter.** No `send`, no
+`ack`, no lane, no envelope. The whole of it — goose's own logs, every id from the mirror, the mechanism, the fix
+and five findings recorded-and-not-fixed — is `app/OPERATIONS.md`, **GATE ZERO — THE DIVERGENCE, AND THE RUN OF
+RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** (RECORD, Sonic). The next live act
+is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
+Both are **NOT YET**, and both get their own gate report.
+
+**Two fixes landed, and only two** (RECORD, Sonic: on the golden path, by the filter, so it moves). `generateMailbox`
+refuses before any `TopicCreate` when the home has no account, naming `buy_stamp` with `provision` as the path; and
+`template.doorbell()` refuses an empty owner rather than rendering one. Courted on the model in
+`app/sdk/correspondent.check.ts`, 118 → **126** assertions — and it is a court: with both fixes reverted, **exactly
+those 6 fail and the other 120 pass**. **The goose surface is retuned**: both entries `--dry-run`, and
+`available_tools` — which **is** an allowlist, checked on the bare tool name
+(`goose/crates/goose/src/agents/extension.rs:394-420`, `extension_manager.rs:960`) — set to exactly
+`[buy_stamp, resolve, send, inbox, ack]`. `generate_mailbox`, `register_agent` and `verify` are off it. Three tool
+descriptions now state their precondition and give the address form with a real example, with no schema change.
+**The operator script is `docs/OPERATOR-SCRIPT.md`** — one instruction per turn, the card to expect, and *stop* at
+the end of each: the model is driven and does not work the flow out.
+
+**The superseded description of where Gate Zero stood, kept because the report below it is not amended:** its report
+is `app/OPERATIONS.md`, written 2026-09-11 before anything could sign. It is the first time **goose** drives the Correspondent MCP
 server on consensus — two throwaway agents on the operator wallets we already own, provision → buy → send → ack →
 verify — and it exists as its own gate so that Gate Four can ask its own question, which is whether a brand-new
 HBAR-only wallet survives the lifecycle. It is **a gate and not a probe**: it uses the real `$POSTAGE`, the real

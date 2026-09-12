@@ -75,6 +75,20 @@ export interface TemplateSubject {
  * test, in both halves — one stamp from a stranger, zero from the owner.
  */
 export function doorbell(s: TemplateSubject): TopicShape {
+  // THE OWNER IS NOT OPTIONAL. HCS-10's inbound memo names the account the door
+  // belongs to, and `hcs-10:0:60:0:` with nothing after it is not that memo —
+  // it is a door with no house. A topic cannot be un-created, so this refuses
+  // where it can still be refused: before the shape reaches a TopicCreate.
+  // Measured, not supposed: on 2026-09-11 `generate_mailbox` ran on a home whose
+  // purchase had not happened, and 0.0.10487041 and 0.0.10487067 are on
+  // hedera:testnet permanently, each with this memo (app/OPERATIONS.md, the
+  // Gate Zero divergence).
+  if (s.account === '') {
+    throw new Error(
+      'the doorbell memo has no owner: an HCS-10 inbound topic names the account it belongs to, and this agent has ' +
+        'no account yet. Buy one with `buy_stamp` and `provision` — the purchase creates the account (§4.6, HIP-542).',
+    );
+  }
   return {
     memo: `hcs-10:0:${HCS10_TTL}:0:${s.account}`,
     submitKey: null,

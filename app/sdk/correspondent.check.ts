@@ -35,7 +35,7 @@ import { carryFeeCapTinybars } from '../src/counter/server.js';
 import type { CounterContext } from '../src/counter/context.js';
 import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
 import { HCS2_REGISTER_TX_MEMO, accountMemoFor, registerOperation, registryMemo } from '../src/ops/declaration.js';
-import { topicCreateFor } from './mailbox.js';
+import { generateMailbox, topicCreateFor } from './mailbox.js';
 import { HomeBusy, lockHome } from './lock.js';
 import type { Signer } from '../src/ops/identity.js';
 import { toMirrorTxId, type Mirror } from '../src/ops/mirror.js';
@@ -793,6 +793,85 @@ function fieldsFor(_key: string): Record<string, string> {
   after.release();
 
   fs.rmSync(dir, { recursive: true, force: true });
+}
+
+/* ------------------------------------------------------------------ */
+/* THE GATE ZERO DIVERGENCE — a mailbox with no agent to belong to.       */
+/*                                                                        */
+/* 2026-09-11: `generate_mailbox` was called on a home whose purchase had */
+/* not happened. `s.account` was the empty string; every row of the       */
+/* template was still constructible; FOUR topics per agent were created   */
+/* on hedera:testnet before the declaration validator refused at the      */
+/* fifth step, where `/account` first meets a pattern. 0.0.10487041 and   */
+/* 0.0.10487067 carry the memo `hcs-10:0:60:0:` — a door with no house —  */
+/* and a topic cannot be deleted.                                         */
+/*                                                                        */
+/* Two refusals now stand in front of that, and these are their courts.   */
+/* Both run on the MODEL: no network, no key, no signature.               */
+/* ------------------------------------------------------------------ */
+{
+  const withAccount: template.TemplateSubject = {
+    account: '0.0.4242',
+    publicKey: 'aa'.repeat(32),
+    treasury: '0.0.10426205',
+    stampToken: '0.0.10426208',
+    autoRenewAccount: '0.0.999',
+  };
+  const withNone: template.TemplateSubject = { ...withAccount, account: '' };
+
+  is("row 1's memo names the account when there is one", template.doorbell(withAccount).memo, 'hcs-10:0:60:0:0.0.4242');
+
+  let refused = '';
+  try {
+    template.doorbell(withNone);
+  } catch (e) {
+    refused = e instanceof Error ? e.message : String(e);
+  }
+  is('the doorbell builder REFUSES an empty owner rather than rendering one', refused !== '', true);
+  is(
+    'and its refusal names the path that creates the account',
+    /buy_stamp/.test(refused) && /provision/.test(refused),
+    true,
+  );
+  is(
+    'the memo that reached consensus on 2026-09-11 is now unbuildable',
+    (() => {
+      try {
+        return template.doorbell(withNone).memo;
+      } catch {
+        return 'REFUSED';
+      }
+    })(),
+    'REFUSED',
+  );
+
+  // The other three rows do not carry the account in their memos, so they are
+  // NOT the place for this check — which is exactly why the refusal belongs in
+  // generateMailbox as well, before row 1 is ever reached.
+  is('row 2 carries no account in its memo', template.log(withNone).memo, 'hcs-10:0:60:1');
+  is('row 3 carries no account in its memo', template.manifest(withNone).memo, 'wishmail:manifest:1');
+
+  // generateMailbox refuses BEFORE any TopicCreate. The session is a stub: if
+  // the refusal did not come first, the very next thing this function does is
+  // read a mirror through it, and a stub would throw something else — so the
+  // message is the assertion, not merely the throw.
+  let mailboxRefusal = '';
+  try {
+    await generateMailbox({ account: '', mirror: null } as never, {} as never, {});
+  } catch (e) {
+    mailboxRefusal = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  }
+  is('generate_mailbox REFUSES a home with no account', /^MailboxRefusal:/.test(mailboxRefusal), true);
+  is(
+    'and it names buy_stamp with provision as the path, not a workaround',
+    /buy_stamp/.test(mailboxRefusal) && /provision: true/.test(mailboxRefusal),
+    true,
+  );
+  is(
+    'and it says nothing was created, because nothing was',
+    /nothing is created/.test(mailboxRefusal),
+    true,
+  );
 }
 
 /* ------------------------------------------------------------------ */

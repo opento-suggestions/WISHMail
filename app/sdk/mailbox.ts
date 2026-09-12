@@ -353,6 +353,30 @@ export async function generateMailbox(s: Session, record: AgentRecord, options: 
   };
   const source = mirrorSource(s.mirror);
 
+  // --- BEFORE ANY TopicCreate: is there an agent for this mailbox to belong to?
+  //
+  // Every row of the template names the agent's account, and row 1's memo IS
+  // that account (§9.2, HCS-10 inbound). With no account the rows are still
+  // constructible — a memo with an empty tail, a registry with nothing to
+  // register — and they were constructed, and four topics per agent were
+  // created on hedera:testnet before the declaration validator refused at the
+  // fifth step, where `/account` first meets a pattern. A topic cannot be
+  // deleted. The check belongs HERE, before the first signature, and not at the
+  // first field that happens to be validated.
+  //
+  // This does not narrow the provisioned path: `buy_stamp` with `provision`
+  // calls this function with a session booted `expectAccount: true` after the
+  // purchase has created the account (app/sdk/counter.ts:465), so the account is
+  // always present by the time it arrives here.
+  if (s.account === '') {
+    throw new MailboxRefusal(
+      'this agent has no account, so there is nothing for a mailbox to belong to and nothing is created. Buy one ' +
+        'with `buy_stamp` and `provision: true` — that is the whole of §4.6\'s provisioned path: it creates the ' +
+        'account, builds the mailbox and returns the receipt (D-168). `generate_mailbox` is the SELF-provisioned ' +
+        'path, for an agent that already has an account and pays for its own mailbox.',
+    );
+  }
+
   // --- The idempotency gate, and it reads CONSENSUS (D-165). -----------------
   const already = await resolveSelf(source, s.ledgerTag, s.account);
   if (already !== null) {
