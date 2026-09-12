@@ -6154,7 +6154,7 @@ Not one tinybar and not one stamp moved. No entity was created and no home chang
 lane born, an envelope on it, a schedule executed onto the recipient's manifest topic. That is the second Gate
 Zero's question, on **fresh homes**, and nothing is now known to stand in front of it.
 
-  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED — Sonic, 2026-09-12 ]**
 
 ## GATE ZERO, THE SECOND — fresh homes on the demo operators. Gate report, written 2026-09-12 before any signature
 
@@ -6418,7 +6418,7 @@ the flag, and the counter up.
 It runs under HEAD at the time, with the spec at `v0.5.13`, twenty-two `check:*` green, `typecheck` and
 `p13:check` green, and the conformance report at 44 passing with digest `51453eea…`.
 
-  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED — Sonic, 2026-09-12 ]**
 
 
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
