@@ -53,6 +53,10 @@ import { networkConstants } from '../ops/networks.js';
 import { HCS10_TTL, doorbell, log as logRow, manifest, declRegistry, profileFile, type TemplateSubject } from '../ops/template.js';
 import { topicCreateFor } from '../../sdk/mailbox.js';
 import { schemas } from '../schema/loader.js';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import addFormatsImport from 'ajv-formats';
+import { bundled } from '../mcp/bundle.js';
+import { tool } from '../mcp/tools.js';
 import { build } from './server.js';
 import { carryFeeCapTinybars } from './server.js';
 import { openCarry } from './carry.js';
@@ -485,6 +489,29 @@ async function main(): Promise<void> {
         schemas(repoRoot()).validate('stamp-receipt', receipt),
         [],
       );
+      {
+        // AND INSIDE THE WRAPPER THIS SURFACE PUBLISHES, which is a different
+        // claim: MCP validates `structuredContent` against the tool's
+        // `outputSchema`, and that schema is `{receipt: <StampReceipt>}` with
+        // `additionalProperties: false` — not the bare receipt. `check:outputs`
+        // courts every other verb on a real return and courts THIS one on a
+        // hand-built receipt, because the only producer of a real one is a
+        // counter; one is standing right here, so the real thing is courted
+        // here instead of nowhere.
+        const addFormats =
+          (addFormatsImport as unknown as { default?: (a: unknown) => void }).default ??
+          (addFormatsImport as unknown as (a: unknown) => void);
+        const ajv = new Ajv2020({ strict: false, allErrors: true });
+        addFormats(ajv);
+        const validate = ajv.compile(bundled(tool('buy_stamp').outputSchema, repoRoot()));
+        const valid = validate(JSON.parse(JSON.stringify(issued.structuredContent))) === true;
+        ok(
+          'and the structuredContent this counter actually returned validates against buy_stamp’s own ' +
+            'published outputSchema' +
+            (valid ? '' : ` — ${ajv.errorsText(validate.errors)}`),
+          valid,
+        );
+      }
       const again = await call({ count: 12, payment: { method: 'hbar', from: BUYER, quoteRef: REFERENCE, receipt: true }, holder: { publicKey: agentKey.publicKey.toStringDer() }, provision: true });
       is(
         'and a replayed reference returns the receipt it already bought, never a second one (T-P11-5)',

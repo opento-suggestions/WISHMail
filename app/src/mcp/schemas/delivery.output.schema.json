@@ -2,18 +2,49 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:wishmail:app:0.5:delivery",
   "title": "Delivery",
-  "description": "§6.5's Delivery — {envelope, opened: bool, payload?, reason?, returnReceipt?}. It lives here and not in spec/schemas/ because §18.5 fixes the fourteen files there by name and Delivery is not among them: §6.5 defines it in prose, as the shape inbox returns, and adding a fifteenth file would be a specification change (§1.7). Reported as a divergence with the Step 3 record.",
+  "description": "§6.5's Delivery — {envelope, opened: bool, payload?, reason?, returnReceipt?}. It lives here and not in spec/schemas/ because §18.5 fixes the fourteen files there by name and Delivery is not among them: §6.5 defines it in prose, as the shape inbox returns, and adding a fifteenth file would be a specification change (§1.7).",
   "type": "object",
   "properties": {
     "envelope": { "$ref": "urn:wishmail:0.5:envelope" },
     "opened": { "type": "boolean" },
-    "payload": { "type": "string", "contentEncoding": "base64", "description": "Present exactly when opened is true." },
+    "payload": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Present exactly when opened is true. THE BYTES, base64 — the same alphabet send.input.schema.json accepts them in. A rendering of them as UTF-8 text may appear in the tool's text block, labelled as a rendering; it never replaces them here."
+    },
     "reason": {
       "type": "string",
       "enum": ["INBOX_INCOMPLETE", "INBOX_UNBOUND", "INBOX_UNSTAMPED", "INBOX_EPOCH_UNKNOWN", "INBOX_SCHEMA_UNRESOLVED"],
       "description": "§6.5's reasons on an unopened delivery. None of these is a failure of the tool (P-12)."
     },
-    "returnReceipt": { "$ref": "urn:wishmail:0.5:return-receipt" }
+    "returnReceipt": {
+      "title": "PendingReceipt",
+      "type": "object",
+      "description": "§6.5's fourth field: THE PENDING SCHEDULE, read off the lane's `transaction` operation, so that `ack` can sign it (§10.4). This named urn:wishmail:0.5:return-receipt until 2026-09-11 and that was wrong on §6.5's own words — a §5.8 ReturnReceipt does not exist until `ack` has signed and the network has executed, so the $ref named an object no delivery can ever carry. Corrected here rather than accommodated in the handler, because there was nothing to accommodate.",
+      "properties": {
+        "scheduleId": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "The HIP-423 schedule the sender created and the recipient signs (§10.4)."
+        },
+        "sequenceNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Where the request sits on the lane, so a reader can go and look at it."
+        },
+        "consensusTimestamp": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "When the request landed on the lane."
+        },
+        "requestedByHeader": {
+          "type": "boolean",
+          "description": "True where the envelope's own header asked for a receipt (§7.7, `hdr.rr`)."
+        }
+      },
+      "required": ["scheduleId", "sequenceNumber", "consensusTimestamp", "requestedByHeader"],
+      "additionalProperties": false
+    }
   },
   "required": ["envelope", "opened"],
   "additionalProperties": false

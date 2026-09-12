@@ -18,7 +18,6 @@
  * all. Adding files to `spec/schemas/` for them would be a specification
  * change; so they are release artifacts, under `src/mcp/schemas/`, with `$id`s
  * in a `urn:wishmail:app:` space that cannot be mistaken for a registered one.
- * Reported as a divergence with the Step 3 record.
  *
  * Conformance: T-P15-4.
  */

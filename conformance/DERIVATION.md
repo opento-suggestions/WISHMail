@@ -38,7 +38,7 @@ in any class; refused for any clause whose claim is replay of consensus; every m
    that passed would tell the register something false. Rows below marked **partial** are expanded, do all
    the reachable work, and then fail naming the clause that is out of reach. They count as `expanded` and as
    `failed`, and a claim is made off `passed` alone, so nothing is over-claimed by them.
-2. **The registered bodies share fixtures with the twenty-two `check:*` courts and share no code that
+2. **The registered bodies share fixtures with the twenty-three `check:*` courts and share no code that
    decides a verdict.** A fixture loader is plumbing; an assertion is not. The duplication is deliberate.
 3. **"Not expanded, because X" is a correct line on the harness.** A body that faked X would not be.
 

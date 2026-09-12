@@ -173,8 +173,8 @@ unparseable: under `--dry-run` it boots and serves, under `--live` it prints LIV
 watcher does not start in DRY. **`AUTHORIZED` now means something physical**: the server is restarted with `--live`
 and its banner says so with the argv that carried the flag.
 
-**Twenty-two `check:*` are green** with `typecheck` and `p13:check`, `check:letter` at 199 assertions and
-`check:correspondent` at 118, and `check:captured` and `check:receipt` are byte-identical in their recorded digests
+**Twenty-three `check:*` are green** with `typecheck` and `p13:check`, `check:letter` at 199 assertions,
+`check:correspondent` at 149 and `check:outputs` at 41, and `check:captured` and `check:receipt` are byte-identical in their recorded digests
 through every fix of the day — which was the acceptance test all of it was run against. The conformance report has
 not moved: 44 passing, digest `51453eea…`.
 

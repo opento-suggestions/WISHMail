@@ -2,6 +2,79 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [C0.2, closed] — 2026-09-11 — `inbox` promised base64 and sent a Buffer, and now a court holds every verb to its own schema
+
+**[S]** ruled; **[CC]** found, fixed and courted. The second half of plan C0's item 2, open since the probe, and
+the last of the five. **No specification text moves and no version event follows** (D-178): the tool schemas under
+`app/src/mcp/schemas/` are release artifacts in the `urn:wishmail:app:0.5:` space and are not among §18.5's
+fourteen.
+
+### Fixed
+
+- **`inbox`'s `structuredContent` is the shape its published `outputSchema` names** (`app/sdk/server.ts`).
+  `payload` is base64, as the schema has always declared and as `send` has always *accepted* it; it crossed the
+  wire as `{"type":"Buffer","data":[84,104,105,…]}` and rendered the letter as decimal byte values in goose
+  session `20260912_4` at 01:22:29. The four keys an `additionalProperties: false` schema forbids —
+  `lane`, `chunkPostmarks`, `detail`, `openedUnderEpoch` — travel in `_meta['wishmail/inbox']`. **Nothing is
+  lost**: `lane` is already `envelope.lane` and `openedUnderEpoch` is already `envelope.keyEpoch`, both REQUIRED
+  by §5.5. `ack` is untouched — it reads its deliveries from `inbox()` the function, never from this result.
+- **`delivery.output.schema.json`'s `returnReceipt` named the wrong object.** It `$ref`'d
+  `urn:wishmail:0.5:return-receipt`; §6.5 says a delivery carries **the pending schedule**, and a §5.8
+  ReturnReceipt does not exist until `ack` has signed and the network has executed. Replaced with an inline
+  `PendingReceipt`. A correction, not a widening: the `$ref` named an object no delivery could ever carry.
+- **All six verbs route through one shaping function**, `app/sdk/structured.ts` (D-178). `verify` included: its
+  shape is right today, but the handler spread whatever `verify()` returned into a wrapper that is
+  `additionalProperties: false`.
+
+### Added
+
+- **`npm run check:outputs`** — `app/sdk/outputs.check.ts`, **41 assertions**, the twenty-third `check:*`. Every
+  verb the server publishes, read from `six()` and never restated, validated against its own published
+  `outputSchema` on a real return from the model court, after the JSON round trip a wire imposes. Beyond
+  validation it asserts that **every declared key has a producer and every produced key a declaration** — the
+  only assertion that reaches `postmark`, `settlement` and `observations`, which declare no
+  `additionalProperties` and where ajv is therefore silent — and it asserts **`contentEncoding` by hand**,
+  because 2020-12 makes it an annotation and ajv does not enforce it. That is the hole the Buffer crossed.
+- **The `inbox` card renders the payload as UTF-8 when the bytes are valid UTF-8**, labelled as a rendering and
+  never replacing the bytes (Sonic's ruling). `TextDecoder` with `fatal: true`, not `Buffer.toString('utf8')`,
+  which substitutes U+FFFD silently and would render every byte string as if it were text.
+- **`check:exchange` courts the counter's real receipt inside the published wrapper** (49 → **50** assertions).
+  `check:outputs` courts `buy_stamp` on a hand-built receipt and says so, because the only producer of a real one
+  is a counter; one is already standing over a loopback socket there. It passed — **no third instance of this
+  defect is on the golden path**.
+- **D-178** (`spec/adr/D-178.md`, ledger §B): `structuredContent` is exactly what §6 names; `_meta` is
+  observation; the text block is prose. An app-surface rule, not specification.
+
+### Changed
+
+- **`app/src/tools/court.ts` is new and holds the model court's world** — `letter.check.ts` lines 109–403, a
+  **pure move**, so `check:letter` and `check:outputs` stand in the same world. A court whose world is not the
+  letter's world proves nothing about the letter's outputs. Verified mechanically: `check:letter` printed
+  **199 assertions before and 199 after**.
+- `app/src/mcp/declared.ts` is new: what a bundled schema declares, what an instance carries, and where the
+  `contentEncoding`s are.
+
+### Recorded, not fixed
+
+- **§G-32** — §6.5 requires a Delivery for an envelope whose chunk 0 never arrived (F-4) and §5.5 has no Envelope
+  to put in it; `inbox.ts`'s `placeholder()` fabricates one with `keyEpoch: -1` and empty strings. About twelve
+  violations of a **frozen** schema, so it cannot be fixed by moving one. A **0.6 candidate**.
+- **§G-33** — three fields this implementation writes that the frozen schemas do not declare, all invisible to
+  ajv and all found by `check:outputs`'s path diff: `settlement.tokenId` (§11.4 needs the token; §5.6 declares
+  seven fields), `observations.verifierSpec` (added by **D-173** and the schema was never amended), and
+  `observations.stampTokenUnknown`. Beside them, one field **declared and never produced** —
+  `correspondence[].returnReceipt`, even for a letter that was acked. All are VERIFIER-side and off the goose
+  allowlist, so none is on the golden path.
+- **Two sentences deleted rather than left pointing at nothing**: `delivery.output.schema.json` and
+  `src/mcp/tools.ts` both said the Delivery divergence was "Reported as a divergence with the Step 3 record".
+  Step 3 carries no such report and the claim could not be located.
+
+### Not changed, deliberately
+
+`app/OPERATIONS.md`'s five "twenty-two `check:*`" lines: one is inside the first Gate Zero's **gate report** and
+four are dated run records. **A gate report is never amended after its run.** The present-tense counts moved in
+`CLAUDE.md`, `STATUS.md`, `docs/GATE-RECORD.md` and `conformance/DERIVATION.md`.
+
 ## [Gate Zero, run and not reached] — 2026-09-11 — goose drove it, four topics per agent went first, and the fill-in is NOT YET
 
 **[S]** ruled; **[CC]** sleuthed, recorded, fixed and retuned. Gate Zero was authorised and run. **It did not reach

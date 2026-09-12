@@ -315,7 +315,7 @@ implementation and that test compares two.** That is not a defect to be closed h
 specification is for, and the remaining three conditions wait on somebody else's Verifier. Silence claims nothing
 (§1.5), so this release is silent.
 
-Alongside it, **twenty-two offline checks are green** — the reference implementation's own courts, which run with no
+Alongside it, **twenty-three offline checks are green** — the reference implementation's own courts, which run with no
 network at all. They appraise the real captured bytes of the correspondences above and refuse altered copies: a
 changed header, a settlement whose memo names another envelope, a settlement affixed by an account the chunks do not
 name, a lane born at a third party's door, a lane whose key list carries a third key.

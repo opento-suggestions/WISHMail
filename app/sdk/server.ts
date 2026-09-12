@@ -46,6 +46,7 @@ import { MailboxRefusal, generateMailbox } from './mailbox.js';
 import { RegistrationRefusal, registerAgent } from './registration.js';
 import { boot, type Session } from './session.js';
 import { affordances, six } from './tools.js';
+import { STRUCTURED, inboxCard, observedDelivery } from './structured.js';
 import { watchDoorbell, type Watcher } from './watcher.js';
 
 function ok(payload: unknown, structured?: Record<string, unknown>): Record<string, unknown> {
@@ -332,7 +333,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
                 ? await resolveHcs14(source, s.ledgerTag, address, mine)
                 : { failure: 'RESOLVE_PROFILE_MISMATCH' as const, detail: `this release resolves hcs14 and hol, not ${profile}` };
           if ('failure' in r) return refuse(r.failure, r.detail);
-          return ok(r.coordinates, { coordinates: r.coordinates as unknown as Record<string, unknown> });
+          return ok(r.coordinates, STRUCTURED.resolve(r.coordinates));
         }
 
         case 'verify': {
@@ -349,7 +350,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
             narrative: args['narrative'] === true,
             mirror: s.home.mirrorNodeUrl,
           });
-          return ok(out, out as unknown as Record<string, unknown>);
+          return ok(out, STRUCTURED.verify(out));
         }
 
         case 'buy_stamp': {
@@ -385,9 +386,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           if (hadNoAccount) await box.reboot();
           // The door is watched from the moment there is a door.
           if (bought.mailbox !== undefined) watcherFor();
-          return ok(bought.receipt, {
-            receipt: bought.receipt as unknown as Record<string, unknown>,
-          });
+          return ok(bought.receipt, STRUCTURED.buy_stamp(bought.receipt));
         }
 
         case 'generate_mailbox': {
@@ -591,7 +590,6 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           // secret — but it travels as OBSERVATION, in `_meta`, where a schema
           // does not claim it is the tool's output. The card carries it in
           // prose for whoever is reading rather than parsing.
-          const spec64 = out.kind === 'postmark' ? out.postmark : out.slip;
           return {
             content: [
               {
@@ -599,7 +597,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
                 text: `${story.join('\n')}\n\n${JSON.stringify(out, null, 2)}`,
               },
             ],
-            structuredContent: { result: spec64 as unknown as Record<string, unknown> },
+            structuredContent: STRUCTURED.send(out),
             _meta: { 'wishmail/spec': RELEASE.spec, 'wishmail/send': out as unknown as Record<string, unknown> },
           };
         }
@@ -613,7 +611,42 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
             lanes,
             ...(typeof args['since'] === 'string' ? { since: args['since'] } : {}),
           });
-          return ok(out, { deliveries: out as unknown as Record<string, unknown>[] });
+          // §6.5's result, in the shape the published `outputSchema` names and
+          // no other — the same narrowing `send` took, against the same defect.
+          //
+          // WHAT THIS RETURNED, AND WHAT THE SCHEMA SAYS. It returned the
+          // internal `Delivery`: `payload` crossed the wire as
+          // `{"type":"Buffer","data":[…]}` where the schema declares a base64
+          // STRING, and four further keys — `lane`, `chunkPostmarks`,
+          // `detail`, `openedUnderEpoch` — are forbidden outright by a schema
+          // that is `additionalProperties: false`. Proved live under goose on
+          // 2026-09-12, where it rendered the letter as a list of decimal byte
+          // values; goose does not validate, so it cost nothing but the card.
+          //
+          // NOTHING IS LOST BY NARROWING. `lane` is already `envelope.lane` and
+          // `openedUnderEpoch` is already `envelope.keyEpoch` — both REQUIRED
+          // fields of the §5.5 Envelope this delivery carries. `detail` says of
+          // itself that it is not part of §6.5's shape. `chunkPostmarks` is real
+          // evidence and is not a §5.7 Postmark, so it travels where `send` puts
+          // its postmarks: `_meta`, as OBSERVATION, where no schema claims it is
+          // the tool's output.
+          //
+          // `ack` IS UNTOUCHED: it re-reads its deliveries from `inbox()` the
+          // function, below, and never from this result.
+          const structured = STRUCTURED.inbox(out);
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `${inboxCard(out, lanes)}\n\n${JSON.stringify(structured, null, 2)}`,
+              },
+            ],
+            structuredContent: structured,
+            _meta: {
+              'wishmail/spec': RELEASE.spec,
+              'wishmail/inbox': { lanes: [...lanes], deliveries: out.map(observedDelivery) },
+            },
+          };
         }
 
         case 'ack': {
@@ -655,7 +688,7 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           // here. `receipt` stays the structured output its schema names.
           return ok(
             { receipt: out.receipt, schedule: out.schedule, alreadyExecuted: out.alreadyExecuted },
-            { receipt: out.receipt as unknown as Record<string, unknown> },
+            STRUCTURED.ack(out.receipt),
           );
         }
 

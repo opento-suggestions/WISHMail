@@ -6782,6 +6782,137 @@ report must carry, written now so that supplying the wallets is the only thing l
 
   **GATE — [ NOT YET ]**
 
+## C0.2's DELIVERY HALF, AND THE COURT THAT CLOSES THE CLASS. 2026-09-11, offline; nothing signed
+
+**Nothing in this section touches `hedera:testnet`, reads a key or opens a socket.** It is not a gate and it has
+no fill-in. It is the last of plan C0's five items, and it was still open because the half of it that mattered
+was only ever visible on real bytes through a real client.
+
+### 1. What was wrong, and how it was seen
+
+`app/src/mcp/schemas/delivery.output.schema.json` declares `payload` as
+`{"type":"string","contentEncoding":"base64"}` and is `additionalProperties: false` over §6.5's five fields.
+`inbox`'s handler returned the internal `Delivery`. In goose session `20260912_4` at **01:22:29** the payload came
+back as:
+
+```
+"payload": {"type":"Buffer","data":[84,104,105,115,32,108,101,116,116,101,114,32,105,115,32,...]}
+```
+
+That is the letter — the payoff shot, the recipient reading it — rendered as a list of decimal byte values.
+**goose does not validate `structuredContent`, so it cost nothing mechanically and everything on camera.**
+
+It is the same defect as C0.1's `send` half, and the pair of them is why this section exists: **a published
+`outputSchema` and a handler return are two artefacts and nothing made them agree.** Neither is reachable from a
+CLI, which reads the text block; neither is reachable from `check:mcp`, which compiles every schema and validates
+no instance. Three gates driven by CLIs found neither. The first gate driven by goose found both.
+
+### 2. Four violations, and which side moved for each
+
+| # | what | which side moved |
+|---|---|---|
+| 1 | `payload` is a Node `Buffer`, serialising as `{"type":"Buffer","data":[…]}` | **handler** — `.toString('base64')`. What `send.input.schema.json` accepts in base64, `inbox` returns in base64; a `Buffer` is a Node artefact and not a wire shape (T-P15-4). |
+| 2 | `lane`, `chunkPostmarks`, `detail`, `openedUnderEpoch` — four keys the schema forbids | **handler**, all four, into `_meta['wishmail/inbox']`. **Nothing is lost**: `lane` IS `envelope.lane` and `openedUnderEpoch` IS `envelope.keyEpoch`, both REQUIRED by §5.5, so the outer copies were a second spelling and somewhere for them to disagree; `detail` says of itself it is not part of §6.5's shape; `chunkPostmarks` is real evidence that is **not** a §5.7 Postmark. |
+| 3 | `returnReceipt` `$ref`s `urn:wishmail:0.5:return-receipt`; the handler ships a `PendingReceipt` | **schema** — and it is a *correction*, not a widening. The handler cannot move: no ReturnReceipt exists at `inbox` time, because `ack` creates it and an executed schedule witnesses it. §6.5's own words say a delivery carries **the pending schedule**. The `$ref` named an object no delivery can ever carry. |
+| 4 | the F-4 placeholder envelope | **neither.** §6.5 requires the Delivery and §5.5 has no Envelope to put in it; `envelope.schema.json` is **frozen**. Raised as ledger **§G-32**, a 0.6 candidate, and not coded around. |
+
+**No version event.** The tool schemas under `app/src/mcp/schemas/` are release artifacts in the
+`urn:wishmail:app:0.5:` namespace. §18.5 fixes the fourteen in `spec/schemas/` by name and none of these is among
+them; `app/src/schema/loader.ts` hard-codes the same fourteen and **throws on a fifteenth**; `spec/pins.json`
+records no digest for them; and `app/src/ops/schemas13.ts` registers only `spec/schemas/`, read from the committed
+git blob. §1.7 is not engaged.
+
+**The rule is D-178**, and it is the thing that stops a third occurrence: *`structuredContent` carries exactly what
+§6 names; `_meta` carries the evidence the implementation also holds; the text block carries the prose.* The
+shaping is a **function** — `app/sdk/structured.ts` — read by the handler and by the court, because a court that
+restated it would court its own restatement.
+
+### 3. The card, per Sonic's ruling
+
+The bytes stay base64 in `structuredContent`, because the schema and §6.4 say so. The **text block** may render
+them as UTF-8 **when and only when they are valid UTF-8**, labelled as a rendering and never replacing them:
+
+```
+1 delivery(ies) on 1 lane(s). inbox wrote nothing (§6.5, D-29).
+  08329989… — OPENED on 0.0.10489454, key epoch 1, 1 chunk(s), 70 byte(s)
+      a receipt is pending on schedule 0.0.10489457; `ack` signs it (§6.6, §10.4)
+      a RENDERING of those bytes as UTF-8 — the bytes themselves stay base64 in the result:
+      | This letter is certified, and its receipt will be signed on consensus.
+```
+
+`TextDecoder` with `fatal: true`, **not** `Buffer.toString('utf8')`, which substitutes U+FFFD silently and would
+therefore render every byte string and call it text. C0 control characters decline to render, because a card goes
+to a terminal — that guard is Claude's and Sonic kept it.
+
+### 4. `check:outputs` — the twenty-third check, and the class rather than the instance
+
+`npm run check:outputs`, `app/sdk/outputs.check.ts`, **41 assertions**. For every verb the server publishes —
+**read from `six()` and never restated**, so a seventh verb arrives with no producer and fails — it asks three
+questions, and only the first is ajv's:
+
+1. **Does the shaped return validate against the published schema, after a JSON round trip?** The round trip is
+   not decoration: it is what turns a `Buffer` into `{"type":"Buffer",…}`, which is what a client actually sees.
+2. **Does every declared key have a producer, and every produced key a declaration?** Two written lists,
+   `UNPRODUCED` and `UNDECLARED`, each asserted by **equality** so neither can quietly absorb a regression.
+3. **Is every `contentEncoding` honoured?** 2020-12 makes it an **annotation**; ajv does not enforce it and
+   `{strict: false}` does not warn. It is the exact hole the Buffer crossed, so it is asserted by hand, as a
+   decode/encode round trip that also rejects non-canonical padding and a base64url string under `base64`.
+
+**The coverage is stated rather than implied**, and the PASS line says it: `resolve`, `send` (both arms of §6.4's
+`oneOf`), `inbox` (an opened delivery with a payload and a pending schedule, **and** an unopened one so §6.5's
+`reason` has a producer), `ack` and `verify` are **real handler returns** over the modelled ledger.
+**`buy_stamp` is hand-built and is not courted on a real return here** — the receipt is the counter's, and the
+only producer of a real one is a counter. So the real one is courted where a counter is already standing:
+`check:exchange` gained one assertion (49 → **50**) validating the receipt **it actually issued over a loopback
+socket** against `buy_stamp`'s own published `outputSchema`. **It passed** — there is no third instance of this
+defect on the golden path.
+
+**The world is the letter's world.** `check:letter`'s model court moved to `app/src/tools/court.ts` as a **pure
+move** — lines 109–403, byte for byte, nine declarations exported and one import line back — so both courts stand
+in the same world. A court whose world is not the letter's proves nothing about the letter's outputs. **The move
+is verified mechanically and not argued: `check:letter` printed 199 assertions before and 199 after.**
+
+### 5. What the first run found, and what was done with each
+
+Run **before** the fix, deliberately, so the first run is the evidence.
+
+| finding | verdict |
+|---|---|
+| `inbox` fails validation ten ways on `returnReceipt` alone, plus four forbidden keys | **fixed** — §2 above |
+| `bundle.correspondence[].settlement.tokenId` is produced and **not declared** | **recorded, §G-33.** §5.6 declares seven fields; §11.4 needs the token, so the implementation writes an eighth. `settlement.schema.json` omits `additionalProperties`, so **ajv is silent** — this was found by the path diff and by nothing else. |
+| `bundle.observations.verifierSpec` is produced and not declared | **recorded, §G-33.** Added by **D-173** in the 0.5.12 patch; the schema was not amended in the same patch. |
+| `bundle.observations.stampTokenUnknown` is produced and not declared | **recorded, §G-33.** |
+| `bundle.correspondence[].returnReceipt` is **declared and never produced**, even for a letter that was acked | **recorded, §G-33.** The bundle carries the receipt's *appraisal*, not the receipt. This is the D-166 class — a declared field with no producer validates forever. |
+
+**All four are `verify`, which is VERIFIER-side and not on the goose allowlist the demo drives**, so none is on
+the golden path and all are recorded rather than fixed (RECORD, Sonic). Two of them would need a **frozen** schema
+to move, which is 0.6 and never a patch.
+
+**One court hole, named rather than hidden:** this court posts one letter on one lane, so it produces no slip, no
+orphan, no off-chain chunk and no agent-identifier ordering, and it never reaches the F-4 placeholder of §G-32.
+Every one of those paths is in `UNPRODUCED` with its reason.
+
+### 6. Also in this change
+
+- `delivery.output.schema.json` and `src/mcp/tools.ts` both claimed the Delivery divergence was "Reported as a
+  divergence with the Step 3 record". **Step 3 is `app/OPERATIONS.md` §"Step 3" and carries no such report** — the
+  claim could not be located and both sentences are deleted rather than left pointing at nothing.
+- `STATUS.md` carried `check:correspondent` at **118**; it has been 149 since the boundary coercion landed.
+  Corrected.
+- **`app/OPERATIONS.md`'s five "twenty-two `check:*`" lines are NOT updated**, and that is deliberate: one is
+  inside the first Gate Zero's gate report (§8, "What the dry runs proved") and four are dated run records. A gate
+  report is never amended after its run. The present-tense counts in `CLAUDE.md`, `STATUS.md`,
+  `docs/GATE-RECORD.md` and `conformance/DERIVATION.md` moved to twenty-three.
+
+### 7. The battery
+
+`typecheck`, `p13:check` and **all twenty-three `check:*` green**. `check:letter` **199** (unmoved by the court
+extraction), `check:correspondent` 149, `check:exchange` **50**, `check:outputs` **41**. **`check:captured` 20 and
+`check:receipt` 43 — byte-identical**, which is what says the network's own recorded digests did not move.
+`npm run conformance`: register 87 · **passed 44** · failed 43, unchanged.
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
