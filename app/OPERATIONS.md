@@ -7994,6 +7994,25 @@ are registered together next, and whatever the bodies then say is reported as fi
 
   **GATE FOUR — RUN 2026-09-11. GREEN.**
 
+> **NOTE ADDED 2026-09-11, beneath this run of record and not amending it — what follows this gate.**
+>
+> **The recorded take runs on GATE FOUR'S HEAD, `dc418dea29e9ac26f1bb423621f777eb59d0ef1c`**
+> (RECORD, Sonic). That is the commit this gate ran under, and the standing ruling is that anything the take
+> needs had to land before the gate. **Nothing may land between them** beyond the record of the gate itself —
+> this run of record, the resume surfaces, and the capture.
+>
+> **Fixture registration is the FIRST ACT AFTER THE TAKE, never before it** (RECORD, Sonic).
+> `gate-zero-two-certified` and `gate-four-certified` are captured and deliberately absent
+> from `conformance/support/fixtures.ts`, so `allFixtures()` does not return them and the ~ten
+> bodies that iterate every fixture are armed against neither. The battery therefore enters the take exactly as
+> it entered this gate — **87 registered, 44 passed, 43 failed**, report digest `51453eea…`. Both are
+> registered **together** afterward, and whatever those bodies then say is reported as findings rather than
+> narrowed away.
+>
+> **The take's homes are `gz5-x`/`gz5-y`, its spare `gz6-x`/`gz6-y`** — all four born
+> under GATE FUND, never provisioned, carrying no goose entry. `docs/OPERATOR-SCRIPT.md` Part B is the
+> per-turn sequence, repointed to `gz5`, with **B3½** added and the sentence corrected.
+
 ---
 
 ## Entities

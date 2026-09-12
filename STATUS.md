@@ -4,10 +4,12 @@ The one file in this repository where ordering is allowed. Specification: **0.5.
 
 ## 0. Where it stands, 2026-09-11
 
-**Three gates are run on `hedera:testnet`, each under a gate report committed before its first signature.** Gate One
-bought a mailbox through the counter; Gate Two ran the letter loop with a return receipt and a reply; Gate Three
-provisioned a third Correspondent and did the whole of §6.4 in **one `send()` call** — first contact and
-`returnReceipt` together. Three agents, four letters, two lanes, and A2's doorbell still holding zero messages.
+**FIVE GATES ARE RUN AND GREEN on `hedera:testnet`, each under a gate report committed before its first
+signature.** Gate One bought a mailbox through the counter; Gate Two ran the letter loop with a return receipt
+and a reply; Gate Three provisioned a third Correspondent and did the whole of §6.4 in **one `send()`
+call**; **Gate Zero the second** was the first gate driven by **goose**; and **Gate Four** carried two agents on
+**brand-new wallets with zero association slots** through the whole lifecycle, firing the one branch four gates
+could not reach.
 
 **Read end to end: [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).** That is a reading. The records are
 `app/OPERATIONS.md` — one gate report and one run of record per signed act, the report never amended — and
@@ -59,6 +61,34 @@ RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** 
 is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
 Both are **NOT YET**, and both get their own gate report.
 
+**THE NEXT LIVE ACT IS THE RECORDED TAKE, and everything it needs already exists.** It runs on
+**`gz5-x` (DemoAgentX5, SENDER)** and **`gz5-y` (DemoAgentY5, RECIPIENT)**, whose operators
+`0.0.10492954` and `0.0.10492957` are brand-new, hold 250 h each and read **zero association
+slots** — so the associate fires again, as it did at Gate Four. **`gz6-x`/`gz6-y` are the
+spare**, on `0.0.10492960` and `0.0.10492962`, so a spoiled take costs a rename and not a
+second GATE FUND. All four were born under GATE FUND: configs written, **keys born**, zero accounts confirmed,
+**never provisioned, and no goose entry**. Tomorrow starts at instruction one.
+
+**IT RUNS ON GATE FOUR'S HEAD, `dc418dea29e9ac26f1bb423621f777eb59d0ef1c` — RECORD (Sonic).**
+Anything that must exist for the take had to land before Gate Four, and **nothing may land between the gate and
+the take** beyond the record of the gate itself.
+
+**The letter is `Certified agent mail proven on Hedera.`** — 38 bytes,
+`Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=`. **The comma is dropped deliberately** (RECORD,
+Sonic): punctuation is a plausible seam for the model's re-encoding failure, so it is **cut rather than
+risked**. That is a smaller target and **not a safe one** — the mechanism is re-encoding, not length.
+
+**TWO NETS, and they are the whole mitigation.** **B3½** is the read-back *before* the spend — the model
+repeats the payload string, calls no tool, and the operator compares 52 characters by eye before a stamp moves;
+it is the only place the payload can be checked, because a letter cannot be withdrawn. **B5** is the
+rendered-against-printed check *after* — the card must render the sentence in full beside the plaintext printed
+in B4, and a missing character means stop, do not `ack`. B3½ prevents; B5 catches.
+
+**Fixture registration is the FIRST ACT AFTER THE TAKE, never before it** (RECORD, Sonic).
+`gate-zero-two-certified` and `gate-four-certified` are captured and deliberately absent from
+`conformance/support/fixtures.ts`, so the battery goes into the take exactly as it stands: **87 registered,
+44 passed, 43 failed**, report digest `51453eea…`. Both are registered together afterward and whatever
+the ~ten fixture-iterating bodies then say is reported as findings, never narrowed away.
 **GATE FOUR IS RUN AND GREEN** (2026-09-11), and it closes the question four gates could not ask. Two
 **brand-new operator wallets** — `0.0.10492952` and `0.0.10492953`, created under GATE FUND
 with **zero automatic association slots** — carried two agents through the whole lifecycle under goose. **The

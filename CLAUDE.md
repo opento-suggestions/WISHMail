@@ -27,8 +27,10 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
 earlier days — history, not instructions. **Decisions run to D-177** in ledger §B, one ADR each in `spec/adr/`.
 
-**Where the build stands, 2026-09-11.** The specification is **0.5.13**, tagged `v0.5.13`; **three gates are run**
-and nothing waits on a signature. **Twenty-four `check:*` are green** with `typecheck` and `p13:check`. **Five gates are run**, Gate Four newest. The whole
+**Where the build stands, 2026-09-11.** The specification is **0.5.13**, tagged `v0.5.13`; **FIVE GATES
+ARE RUN AND GREEN** — Gate One, Gate Two, Gate Three, Gate Zero the second, and **Gate Four**, the newest — and
+nothing waits on a signature. **Twenty-four `check:*` are green** with `typecheck` and
+`p13:check`. The whole
 battery is the loop to run after any change: `npm run typecheck`, then every `check:*` in `package.json`, then
 `npm run p13:check`, then `npm run conformance`.
 
@@ -127,6 +129,34 @@ never matches and the process starts, does nothing and exits 0 with no banner. *
 symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
 it is build work for after submission.
 
+**THE NEXT LIVE ACT IS THE RECORDED TAKE, and everything it needs already exists.** It runs on
+**`gz5-x` (DemoAgentX5, SENDER)** and **`gz5-y` (DemoAgentY5, RECIPIENT)**, whose operators
+`0.0.10492954` and `0.0.10492957` are brand-new, hold 250 ℏ each and read **zero association
+slots** — so the associate fires again, as it did at Gate Four. **`gz6-x`/`gz6-y` are the
+spare**, on `0.0.10492960` and `0.0.10492962`, so a spoiled take costs a rename and not a
+second GATE FUND. All four were born under GATE FUND: configs written, **keys born**, zero accounts confirmed,
+**never provisioned, and no goose entry**. Tomorrow starts at instruction one.
+
+**IT RUNS ON GATE FOUR’S HEAD, `dc418dea29e9ac26f1bb423621f777eb59d0ef1c` — RECORD (Sonic).** Anything
+that must exist for the take had to land before Gate Four, and **nothing may land between the gate and the
+take**. The one exception already taken is the record of the gate itself.
+
+**The letter is `Certified agent mail proven on Hedera.`** — 38 bytes,
+`Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=`. **The comma is dropped deliberately** (RECORD,
+Sonic): punctuation is a plausible seam for the model’s re-encoding failure, so it is **cut rather than
+risked**. That is a smaller target and **not a safe one** — the mechanism is re-encoding, not length.
+
+**TWO NETS, and they are the whole mitigation.** **B3½** is the read-back *before* the spend — the model
+repeats the payload string, calls no tool, and the operator compares 52 characters by eye before a stamp moves;
+it is the only place the payload can be checked, because a letter cannot be withdrawn. **B5** is the
+rendered-against-printed check *after* — the card must render the sentence in full beside the plaintext printed
+in B4, and a missing character means stop, do not `ack`. B3½ prevents; B5 catches.
+
+**Fixture registration is the FIRST ACT AFTER THE TAKE, never before it** (RECORD, Sonic).
+`gate-zero-two-certified` and `gate-four-certified` are captured and deliberately absent from
+`conformance/support/fixtures.ts`, so the battery goes into the take exactly as it stands: **87 registered,
+44 passed, 43 failed**, report digest `51453eea…`. Both are registered together afterward and whatever
+the ~ten fixture-iterating bodies then say is reported as findings, never narrowed away.
 **GATE FOUR IS RUN AND GREEN** (2026-09-11), and it closes the question four gates could not ask. Two
 **brand-new operator wallets** — `0.0.10492952` and `0.0.10492953`, created under GATE FUND
 with **zero automatic association slots** — carried two agents through the whole lifecycle under goose. **The
@@ -393,4 +423,21 @@ Each is one sentence and each names where it came from. They are rules because e
   means "insert everything before the match", and spliced **7,194 lines of `app/OPERATIONS.md` into itself** — in a diff that was one hunk, insertions only, with every heading still present, so the
   line count was the only tell. Pass a FUNCTION, `replace(a, () => b)`, which is never scanned for
   `$` — the scripts that did so that night were unharmed, which is the whole evidence for the rule.)
+- **A fee is read from the mirror's own measured rows, never recalled** (2026-09-11, twice in one night:
+  GATE FUND predicted six `CryptoCreateAccount` fees at ~0.05 h each and they charged **0.67192702**,
+  and the same 0.05 h sat in the shipped config template for a `TokenAssociateTransaction` this
+  deployment had already paid **twice, at 0.62811176 and 0.62936798**, at Step 4 — both right numbers were on
+  the mirror and in this repository the whole time. The **bound** written beside the first estimate is what
+  kept it honest, so write a bound beside every prediction, and prefer this repository's own measurement to
+  a recollection of it.)
+- **The goose model RE-ENCODES a long string literal from its own reading of it rather than copying it**
+  (2026-09-11/12, twice on consensus: a 96-character payload arrived as 92 and the letter landed *"…on
+  consensu."*; a 52-character payload arrived as **52 characters carrying padding the literal does not have**
+  and the letter landed *"mail,proven"*. A copy is byte-identical, so the second proves the first was never a
+  truncation — **length was never the mechanism** and shortening the literal was never the fix. Two nets, and
+  both are needed: **read-back-before-spend** (`docs/OPERATOR-SCRIPT.md` **B3½** — the model repeats the
+  string, calls no tool, and the operator compares before a stamp moves, because a letter cannot be withdrawn)
+  and the **rendered-against-printed check** at **B5**. B5 was only possible at all once `inbox` returned
+  base64 instead of a Node `Buffer` — which is why a card a human can read is a safety property and not
+  a courtesy.)
 - **Where believing a single read would cost an irreversible act, look twice before acting and never after** (2026-09-10: a lane taken for absent is a doorbell rung, a ring that need not have happened opens a second lane, and a lane cannot be closed — so `send` re-READS where the other party has rung its door, which is Gate One's "mirror-lag read believed once" in the one place the cost is permanent).
