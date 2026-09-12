@@ -59,6 +59,35 @@ RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** 
 is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
 Both are **NOT YET**, and both get their own gate report.
 
+**GATE FOUR IS RUN AND GREEN** (2026-09-11), and it closes the question four gates could not ask. Two
+**brand-new operator wallets** — `0.0.10492952` and `0.0.10492953`, created under GATE FUND
+with **zero automatic association slots** — carried two agents through the whole lifecycle under goose. **The
+thing it exists to see happened on both:** `ensurePayerHoldsStamps`' `TokenAssociateTransaction`
+branch (`app/sdk/mailbox.ts`) **executed against the network for the first time in five gates**, at
+0.67094579 ℏ each, paid and signed by each operator on its own client, **after that agent’s purchase and before
+that agent’s first topic** — when no doorbell in the gate had a single message on it. It fired on the
+recipient’s operator too, which never rings and ends **associated with a balance of zero**: one association
+bought for nothing, predicted in the report and measured in the run.
+
+**DemoAgentY4** is `0.0.10493463` (home `gz4-y`) and **DemoAgentX4** is `0.0.10493552`
+(home `gz4-x`); they correspond on lane `0.0.10493664`. GREEN from the mirror: schedule
+`0.0.10493669` executed at `1789191546.406458105`, the receipt manifest at **sequence 1 of her own**
+topic `0.0.10493477` at that instant to the nanosecond, chained to chunk 0 at `1789191200.199570248`.
+A stranger read it back twice at `d452d9b7…`. **All five stamp predictions matched exactly**, and
+**zero transactions name the recipient** (T-P16-2, measured). The Postmaster netted **+27.06223486 ℏ** over the
+gate, funding excluded.
+
+**One divergence, and it is not this implementation’s:** the letter reads *"Certified agent mail,proven on
+Hedera."* — 38 bytes, a space short. **The model re-encodes the payload rather than copying it**, which the
+second Gate Zero’s 69-byte letter was the first instance of; that one looked like truncation and this one
+proves it is not, being the same length as the literal and carrying padding the literal lacks. **Found in one
+glance because of the UTF-8 rendering that landed hours earlier.** The fix is `docs/OPERATOR-SCRIPT.md`
+**B3½**, a read-back before the irreversible step. Run of record: `app/OPERATIONS.md`, **GATE FOUR —
+THE RUN OF RECORD**.
+
+**GATE FUND** created **six** wallets at 250 ℏ each with zero slots — `gz4-*` for this gate,
+`gz5-*` for the recorded take, `gz6-*` spare. Its funding table is kept clean of every
+economics line.
 **THE SECOND GATE ZERO IS RUN AND IT IS GREEN** (2026-09-12). **Four gates now stand on `hedera:testnet`, and
 this is the first driven by goose.** Six instructions from `docs/OPERATOR-SCRIPT.md`, one per turn, in two goose
 windows: both agents provisioned, a lane born, one certified letter with a return receipt across it, the recipient

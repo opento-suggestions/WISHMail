@@ -7787,6 +7787,215 @@ names its own brand-new operator.
 
 ---
 
+## GATE FOUR — THE RUN OF RECORD. 2026-09-11, and it is GREEN
+
+**Read from the mirror, from no card.** The gate report above is not amended. **One pass, no stop** — and one
+divergence, recorded in §7 below, which is not a defect in this implementation.
+
+**It ran under HEAD `dc418dea29e9ac26f1bb423621f777eb59d0ef1c`**, which is the fill-in commit and one past
+`d0dcbf7`, the commit the dated note names. No logic under `app/src/` or `app/sdk/` moved between them. **Nothing
+landed between that verification and this record**, and by the standing ruling the recorded take runs on the same
+HEAD.
+
+### 1. GREEN, read from the mirror
+
+```
+(a) the schedule            0.0.10493669
+    executed_timestamp      1789191546.406458105        NOT NULL
+    deleted false · wait_for_expiry false · signatures 3
+    creator / payer         0.0.10492952   <-- the SENDER's operator
+
+(b) the receipt manifest    sequence 1 of 0.0.10493477 — DemoAgentY4's OWN manifest topic
+    consensus               1789191546.406458105        the same instant, to the nanosecond
+    508 bytes · sha256 543125e4ea969179921b1243d993689d4695ed3523b324153c023fb4de48242c
+    body.hash               2522afecd884c8f796c8a5c7d3d07f54afefc03ecbea3e91ab8989febe44de79
+
+(c) chained back to chunk 0 on lane 0.0.10493664 at 1789191200.199570248
+```
+
+### 2. THE BRANCH THAT HAD NEVER RUN, AND NOW HAS — ON BOTH OPERATORS
+
+**This is what Gate Four was for.** `ensurePayerHoldsStamps`' `TokenAssociateTransaction`
+(`app/sdk/mailbox.ts`) had never executed against `hedera:testnet` across four gates, because every operator
+had read `-1`.
+
+```
+  0.0.10492953-1789190598-837961116   SUCCESS   0.67094579 h   at 1789190606.141571104   (RECIPIENT's operator)
+  0.0.10492952-1789190866-759282405   SUCCESS   0.67094579 h   at 1789190873.434942104   (SENDER's operator)
+```
+
+Each **paid and signed by that operator's own wallet on its own local client** — never by the carrying
+Postmaster, whose carry policy would have refused it, correctly.
+
+**The ordering the report predicted, on consensus:**
+
+```
+  RECIPIENT   purchase 1789190603.079658104  <  ASSOCIATE 1789190606.141571104  <  first topic 1789190610.360167104
+  SENDER      purchase 1789190862.665447595  <  ASSOCIATE 1789190873.434942104  <  first topic 1789190875.422689021
+```
+
+**After each purchase, before each first topic, and therefore long before any ring** — and it can be said more
+strongly than that: when each association landed, **no doorbell in this gate had a single message on it.**
+
+**It fired on the recipient's operator too**, which never rings and ends holding an **associated `$POSTAGE`
+balance of zero** — one association bought for nothing, predicted in the report and measured here.
+
+### 3. Every entity this gate created
+
+| what | id | payer |
+|---|---|---|
+| **DemoAgentY4** account | `0.0.10493463` | Postmaster (HIP-542 alias, leg 2 of the purchase) |
+| her doorbell | `0.0.10493468` | Postmaster, carried |
+| her log | `0.0.10493472` | Postmaster, carried |
+| her manifest topic | `0.0.10493477` | Postmaster, carried |
+| her declaration registry | `0.0.10493479` | Postmaster, carried |
+| her profile file | `0.0.10493485` | Postmaster, carried |
+| **DemoAgentX4** account | `0.0.10493552` | Postmaster |
+| his doorbell | `0.0.10493556` | Postmaster, carried |
+| his log | `0.0.10493558` | Postmaster, carried |
+| his manifest topic | `0.0.10493560` | Postmaster, carried |
+| his declaration registry | `0.0.10493563` | Postmaster, carried |
+| his profile file | `0.0.10493568` | Postmaster, carried |
+| **the lane** | `0.0.10493664` | `0.0.10492953`, the recipient's operator — she answered |
+| **the schedule** | `0.0.10493669` | `0.0.10492952`, the sender's operator |
+
+Both doorbell memos name their own accounts — `hcs-10:0:60:0:0.0.10493463` and `hcs-10:0:60:0:0.0.10493552` —
+each carrying §4.4's one-stamp fee to the treasury with the owner's own key exempt. The lane's memo is
+`hcs-10:1:60:2:0.0.10493468:1`, naming the door it was born at, and it carries **no custom fee**.
+
+### 4. The letter
+
+```
+  1789191161.922647104  §4.4's HOP        1 stamp  X4 -> 0.0.10492952   (his operator held none)
+  1789191171.358336483  the ring          connection_request on HER door; the fee consumed that stamp
+                                          treasury +1, operator -1
+  1789191185.825764310  connection_created  the lane 0.0.10493664, paid by HER operator
+  1789191198.178731473  the settlement    2 stamps  X4 -> treasury, memo wishmail:fce89926…
+  1789191200.199570248  chunk 0           lane seq 1, one chunk
+  1789191202.182188104  ScheduleCreate    0.0.10493669
+  1789191205.565234274  transaction op    the schedule announced on the lane, seq 2
+  1789191546.406458105  EXECUTED          and the receipt lands on her own manifest topic
+```
+
+**§4.4's hop fired four seconds before the ring**, for the second time in this deployment's life, and the
+doorbell's HIP-991 fee consumed exactly the stamp it had just been given.
+
+### 5. The stamp table — predicted against measured
+
+```
+                                  predicted   measured
+  DemoAgentX4  (sender)                   9          9    MATCH   +12 bought, -1 hop, -2 settlement
+  DemoAgentY4  (recipient)               12         12    MATCH   +12 bought, CHARGED NOTHING
+  0.0.10492952 (sender's operator)        0          0    MATCH   +1 hop, -1 doorbell fee
+  0.0.10492953 (recipient's operator)     0          0    MATCH   associated, never holds one
+  treasury     0.0.10426205            9915       9915    MATCH   -24 sold, +1 fee, +2 settlement
+```
+
+**All five matched exactly.** That is the second gate running where every stamp prediction landed on the unit.
+
+**T-P16-2, measured rather than argued:** `/transactions?account.id=0.0.10493463` returns **zero
+transactions**. Not one names the recipient. She signed for her letter and paid nothing at any step, because the
+schedule's inner body names the sender's own operator as payer.
+
+### 6. The economics, over Gate Four only
+
+```
+  the Postmaster spent   58.29613544 h   over 20 transactions (two full mailboxes, two account creations)
+  the Postmaster took    85.35837030 h
+  net                   +27.06223486 h
+```
+
+**The six GATE FUND creates are excluded and are recorded in their own table beneath that gate's report.** They
+are a float into wallets we hold the keys to — not a sale, not a gift, and not a cost of running a Postmaster.
+The figure above is Gate Four's alone, and it is within 0.09 ℏ of the second Gate Zero's +26.97999223, which is
+the same shape of run.
+
+Each operator spent **44.08986319 ℏ** on its purchase and association, identical to the tinybar, out of 250.
+
+### 7. THE DIVERGENCE — the model does not copy the payload, it re-encodes it
+
+**The letter on consensus reads `Certified agent mail,proven on Hedera.` — 38 bytes. The operator script asked
+for `Certified agent mail, proven on Hedera.` — 39 bytes.** The space after the comma is missing.
+
+**Nothing in this implementation did it, and nothing about GREEN moves.** The model altered the payload in the
+tool call, before the server saw a byte. From goose's own session database:
+
+```
+  the script's literal   Q2VydGlmaWVkIGFnZW50IG1haWwsIHByb3ZlbiBvbiBIZWRlcmEu   52 chars, NO padding
+  what 20260912_9 sent   Q2VydGlmaWVkIGFnZW50IG1haWwscHJvdmVuIG9uIEhlZGVyYS4=   52 chars, PADDED
+```
+
+**It is the same length as the literal and it carries padding the literal does not have.** A copy would be
+byte-identical. **It regenerated the base64 from its own reading of the sentence** — and that reading dropped a
+space.
+
+**This supersedes the diagnosis written beneath the second Gate Zero's run of record**, which called the same
+behaviour a truncation. Seen beside this one, both are the same defect: the model **retypes** the payload.
+`20260912_5` sent 92 characters where the script had 96 and lost a trailing character; `20260912_9` sent 52 where
+the script had 52 and lost an interior one. Length was never the mechanism, and shortening the sentence was
+therefore never the fix.
+
+**Every weld holds over the bytes that were actually sent**: the AAD hashed them, the envelope sealed them
+(`ciphertextBytes 54`), the settlement named that envelope and no other, the recipient opened it **byte for
+byte**, and the receipt executed. The digest below is the digest of that correspondence.
+
+**It was found in one glance, and only because of the fix that landed hours earlier.** Until 2026-09-11 `inbox`
+returned the payload as a Node `Buffer` and goose rendered it as decimal byte values; the UTF-8 rendering read it
+back as text and the byte count said 38. **RULED (Sonic): ack and finish the gate.** Gate Four's question is
+whether a brand-new wallet survives the lifecycle, and a letter whose prose is one space different answers it
+exactly as well; stopping would have abandoned GATE ACK over wording and left a schedule pending.
+
+**The fix for the take is `docs/OPERATOR-SCRIPT.md` B3½**, a read-back step before the irreversible one: the
+model repeats the payload string, calls no tool, and the operator compares 52 characters by eye before a stamp
+moves. It costs one turn and it works whatever the sentence says. The take's sentence is also changed to
+`Certified agent mail proven on Hedera.` — no punctuation with a space after it, a smaller target and not a safe
+one.
+
+### 8. The stranger, holding nothing, twice
+
+```
+$ npm run verify -- --lane 0.0.10493664
+  holding  no key · no account · no stamp · no counter · no home
+  bundle digest   d452d9b70d1cfaf28780591a4738d0f13eaace7a19d5821c33a5ad2e3b1ffd94
+  envelope        fce899267de02593b7d3228816198d247312ee09e60668dab5a45546fcf9536d
+  state           ACKED          receipt   acked
+  APPRAISED       unverified     reasons   T-P12-4
+  DECLARED        trust class math · 0 endorsement(s)
+```
+
+**Run twice; the digest is `d452d9b7…` both times**, and `narrative.bundleDigest` matches the bundle. §11.7's
+MUST holds. The narrative says it in prose: *"Its postage was 2 stamp(s) in token 0.0.10426208, affixed by
+0.0.10493552 to 0.0.10426205 … under the memo wishmail:fce89926…, which names this envelope and no other."*
+
+**`unverified` is correct output and not a shortfall** — this release claims no profile, so T-P12-4 is what a
+Verifier reaches (§1.5, §9.6, D-177).
+
+### 9. The capture
+
+```
+$ npm run capture -- --lane 0.0.10493664 --name gate-four-certified
+  captured    conformance/fixtures/gate-four-certified.json
+  topics      0.0.10493560, 0.0.10493664, 0.0.10493468, 0.0.10448509, 0.0.10448507, 0.0.10493477
+  schedules   0.0.10493669       envelopes 1
+  digest      d452d9b70d1cfaf28780591a4738d0f13eaace7a19d5821c33a5ad2e3b1ffd94
+```
+
+A mirror read: no key, no `Client`, no signature, nothing spent. **The suite now holds two uncaptured-until-now
+gates as fixtures** — `gate-zero-two-certified` and `gate-four-certified` — and **neither is registered in
+`conformance/support/fixtures.ts` yet**, by the ruling that kept the battery unchanged through the gate. They
+are registered together next, and whatever the bodies then say is reported as findings.
+
+### 10. What this gate does NOT prove, named as the report named it in advance
+
+- **No `hol` resolution.** `register_agent` was off the allowlist by design; T-P6-5 and T-P13-4 stay unexpanded.
+- **No `verified` appraisal**, because this release claims no profile. Correct output, not a shortfall.
+- **And nothing is left in the brand-new-wallet category for the operator path.** The association fired on both
+  operators, at the predicted point in the order, and that question is closed.
+
+  **GATE FOUR — RUN 2026-09-11. GREEN.**
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.

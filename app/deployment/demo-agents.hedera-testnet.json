@@ -1,7 +1,7 @@
 {
   "_readme": "The demo Correspondents’ own entities on consensus, snapshotted from each home’s record.json by `npm run entities:md -- --homes <parent>`. It is here and NOT in hedera-testnet.json because that file is the Postmaster’s ops record and takes no Correspondent entity id (CLAUDE.md §11). Every field is public: an id, a role, and the account that paid. No key, no config, no keystore — those stay in the home, outside the repository, and are never read by the generator (P-13). ENTITIES.md is generated from this file and is never hand-edited; `npm run check:entities` is what holds that.",
   "ledgerTag": "hedera:testnet",
-  "takenAt": "2026-09-12T01:28:00.431Z",
+  "takenAt": "2026-09-12T05:44:23.029Z",
   "agents": [
     {
       "slug": "a",
@@ -602,6 +602,186 @@
           "id": "0.0.10489361",
           "payer": "0.0.8641261",
           "transactionId": "0.0.8641261@1789175845.742003653",
+          "consensusTimestamp": ""
+        }
+      ]
+    },
+    {
+      "slug": "gz4-x",
+      "ledgerTag": "hedera:testnet",
+      "operatorWallet": "0.0.10492952",
+      "entities": [
+        {
+          "key": "purchase",
+          "kind": "transfer",
+          "role": "the provisioning purchase this agent was bought by",
+          "id": "0.0.10493552",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190858.367853616",
+          "consensusTimestamp": "",
+          "state": "settled",
+          "reference": "0.0.8641261@1789190858.367853616"
+        },
+        {
+          "key": "doorbell",
+          "kind": "topic",
+          "role": "doorbell (HCS-10 inbound)",
+          "id": "0.0.10493556",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190870.638747975",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "log",
+          "kind": "topic",
+          "role": "log (HCS-10 outbound)",
+          "id": "0.0.10493558",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190872.471029459",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "manifest",
+          "kind": "topic",
+          "role": "manifest",
+          "id": "0.0.10493560",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190872.018202497",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "declRegistry",
+          "kind": "topic",
+          "role": "declaration registry (HCS-2)",
+          "id": "0.0.10493563",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190879.811167629",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileFile",
+          "kind": "topic",
+          "role": "HCS-11 profile file (HCS-1)",
+          "id": "0.0.10493568",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190884.692673106",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileChunks",
+          "kind": "message",
+          "role": "HCS-11 profile, as HCS-1 chunks",
+          "id": "0.0.10493568",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789190903.714133591"
+        },
+        {
+          "key": "registryEntry",
+          "kind": "message",
+          "role": "HCS-2 register entry naming the profile file",
+          "id": "0.0.10493563",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789190907.342638775"
+        },
+        {
+          "key": "accountMemo",
+          "kind": "account-update",
+          "role": "§9.2’s account memo, the first link in the chain",
+          "id": "0.0.10493552",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190902.444516772",
+          "consensusTimestamp": ""
+        }
+      ]
+    },
+    {
+      "slug": "gz4-y",
+      "ledgerTag": "hedera:testnet",
+      "operatorWallet": "0.0.10492953",
+      "entities": [
+        {
+          "key": "purchase",
+          "kind": "transfer",
+          "role": "the provisioning purchase this agent was bought by",
+          "id": "0.0.10493463",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190597.609805730",
+          "consensusTimestamp": "",
+          "state": "settled",
+          "reference": "0.0.8641261@1789190597.609805730"
+        },
+        {
+          "key": "doorbell",
+          "kind": "topic",
+          "role": "doorbell (HCS-10 inbound)",
+          "id": "0.0.10493468",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190604.589268782",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "log",
+          "kind": "topic",
+          "role": "log (HCS-10 outbound)",
+          "id": "0.0.10493472",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190615.360084694",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "manifest",
+          "kind": "topic",
+          "role": "manifest",
+          "id": "0.0.10493477",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190623.086906204",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "declRegistry",
+          "kind": "topic",
+          "role": "declaration registry (HCS-2)",
+          "id": "0.0.10493479",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190628.987879809",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileFile",
+          "kind": "topic",
+          "role": "HCS-11 profile file (HCS-1)",
+          "id": "0.0.10493485",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190638.508801677",
+          "consensusTimestamp": ""
+        },
+        {
+          "key": "profileChunks",
+          "kind": "message",
+          "role": "HCS-11 profile, as HCS-1 chunks",
+          "id": "0.0.10493485",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789190652.902787398"
+        },
+        {
+          "key": "registryEntry",
+          "kind": "message",
+          "role": "HCS-2 register entry naming the profile file",
+          "id": "0.0.10493479",
+          "payer": "0.0.8641261",
+          "transactionId": "",
+          "consensusTimestamp": "1789190658.877544601"
+        },
+        {
+          "key": "accountMemo",
+          "kind": "account-update",
+          "role": "§9.2’s account memo, the first link in the chain",
+          "id": "0.0.10493463",
+          "payer": "0.0.8641261",
+          "transactionId": "0.0.8641261@1789190655.787878539",
           "consensusTimestamp": ""
         }
       ]

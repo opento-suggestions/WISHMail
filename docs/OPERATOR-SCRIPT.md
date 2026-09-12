@@ -109,13 +109,16 @@ Part B does not start.
 are **spent**: D-165 refuses `provision: true` on an agent that already has an account, and a plain `buy_stamp`
 without `provision` on a spent home would **succeed and spend**. Part B runs on fresh homes only.
 
-**The next live act is GATE FOUR**, on **`gz4-x` (DemoAgentX4, SENDER)** and **`gz4-y` (DemoAgentY4, RECIPIENT)**,
-under two **brand-new** operator wallets with no history at all. It asks the one question four gates have not:
-**whether a brand-new wallet survives the lifecycle.** Concretely — both existing demo operators read
-`max_automatic_token_associations = -1`, so `ensurePayerHoldsStamps`' `TokenAssociateTransaction` branch
-(`app/sdk/mailbox.ts`) **has never executed against the network**. The new wallets read **0**, so it fires at
-provisioning, before any ring, on **both** operators. Its gate report is `app/OPERATIONS.md`, **"GATE FOUR"**, and
-it carries its own fill-in.
+**GATE FOUR IS RUN AND GREEN** (2026-09-11, on `gz4-x`/`gz4-y`). It asked whether a brand-new wallet survives
+the lifecycle and the answer is yes: `ensurePayerHoldsStamps`' `TokenAssociateTransaction` branch
+(`app/sdk/mailbox.ts`) executed against the network for the first time in five gates, on **both** operators,
+after each purchase and before each first topic.
+
+**The next live act is THE RECORDED TAKE**, on **`gz5-x` (DemoAgentX5, SENDER)** and **`gz5-y` (DemoAgentY5,
+RECIPIENT)**, whose operators are `0.0.10492954` and `0.0.10492957` — brand-new, zero association slots, 250 ℏ
+each, born under GATE FUND and never provisioned. **`gz6-x`/`gz6-y` are the spare**, on `0.0.10492960` and
+`0.0.10492962`, for a take spoiled by something outside this code. The take runs on **the HEAD Gate Four ran
+on**, and nothing lands between.
 
 **Before any of it: the counter must be up** (`npm run counter`) and its banner must say
 `the counter is at http://127.0.0.1:4600/`. `buy_stamp` needs it; nothing else does. In LIVE a connection error to
@@ -137,7 +140,7 @@ and inside goose the proof is **B0**.
 | field | must read | if it reads this instead — **STOP** |
 |---|---|---|
 | `holder` | `{"publicKey": "<a long hex string>"}` | `{"account": "0.0.…"}` — this home already has an agent; it is a **spent** home |
-| `buyer` | the **brand-new** operator wallet for this gate | `0.0.10450880` or `0.0.10450879` — this is a demo operator, not Gate Four's |
+| `buyer` | `0.0.10492957` in the RECIPIENT window, `0.0.10492954` in the SENDER window | anything else. `0.0.10450879/80` is a demo operator; `0.0.10492952/53` is Gate Four's, already spent; `0.0.10492960/62` is the spare |
 
 `holder` names the agent and `buyer` names the operator, so **one card proves which `config.json` and which
 `keystore.json` this window loaded.** Either field wrong is a stop, and no instruction below may be run.
@@ -145,21 +148,21 @@ and inside goose the proof is **B0**.
 **This is also the DRY check.** The card must say `DRY RUN — buy_stamp would …`. When you restart `--live`, the
 same call is the real purchase: **in LIVE a "would do" card means the flag did not arrive — stop.** **stop**
 
-### B1 — RECIPIENT window (`gz4-y`), first, because her watcher must be running before he rings
+### B1 — RECIPIENT window (`gz5-y`), first, because her watcher must be running before he rings
 
 > Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
 > true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
 
 **Expect:** this takes a minute or more — **an association**, one transfer, five topics, the profile's chunks, a
 registry entry and an account memo. The card is a **StampReceipt**: `txRef`, a `price` of about 43 ℏ, and `holder`
-naming the account the purchase created. **Write that account id down — it is DemoAgentY4's address, and it is
+naming the account the purchase created. **Write that account id down — it is DemoAgentY5's address, and it is
 what the sender needs.**
 
 **What you will NOT see, and it is not a failure:** the `provision.associated` line announcing the
 `TokenAssociateTransaction`. It goes to stderr and goose discards it. **The association is read from the mirror
 afterward, and it is the thing this gate exists to see.** **stop**
 
-### B2 — SENDER window (`gz4-x`)
+### B2 — SENDER window (`gz5-x`)
 
 > Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
 > true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
@@ -175,25 +178,39 @@ reconstruct the receipt.**
 > Call the `resolve` tool once with `address` set to the account id from step B1 and `profile` `hcs14`. Show me the
 > coordinates. Then stop.
 
-**Expect:** coordinates naming DemoAgentY4's doorbell and manifest topic, and a proof hash. If this returns
+**Expect:** coordinates naming DemoAgentY5's doorbell and manifest topic, and a proof hash. If this returns
 `RESOLVE_NOT_FOUND`, B1 did not finish — **stop**. **stop**
+
+### B3½ — SENDER window — READ THE PAYLOAD BACK BEFORE IT IS SENT
+
+> Repeat the payload string back to me exactly as you will send it. Do not call any tool. Then stop.
+
+**Compare what it says, character for character, with the literal in B4 below.** If it differs by so much as one
+character, say so and do not go on: correct it, and have it read the string back again.
+
+**This step exists because the model DOES NOT COPY THE LITERAL — it re-encodes the sentence from its own reading
+of it, and it has got that wrong twice on consensus.** Gate Zero the second landed
+*"…signed on consensu."*, 69 bytes instead of 70. Gate Four landed *"Certified agent mail,proven on Hedera."*,
+38 bytes instead of 39 — and that one was **the same length as the literal** and carried base64 padding the
+literal does not have, which is the proof it was regenerated rather than truncated. A copy is byte-identical.
+
+**The letter cannot be withdrawn once it is sent**, so this is the only place the payload can be checked. It
+costs one turn. **stop**
 
 ### B4 — SENDER window — the letter
 
 > Call the `send` tool once. For `coordinates`, pass the coordinates object from the previous `resolve` result
 > unchanged. For `payload`, pass exactly
-> `Q2VydGlmaWVkIGFnZW50IG1haWwsIHByb3ZlbiBvbiBIZWRlcmEu`
-> — which is the sentence **`Certified agent mail, proven on Hedera.`** — and set `returnReceipt` to true. Then
+> `Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=`
+> — which is the sentence **`Certified agent mail proven on Hedera.`** — and set `returnReceipt` to true. Then
 > stop.
 
 **The plaintext is printed beside the base64 on purpose.** At B5 you check the rendering against **that printed
 line**, not against memory.
 
-**Why this literal and not a longer one.** On 2026-09-12 the model **truncated** a 96-character base64 payload in
-the tool call, before the server saw a byte: the second Gate Zero's letter landed 69 bytes instead of 70, reading
-*"…on consensu."* It sent the same literal correctly twice and wrongly once, and the once was the recorded run.
-This literal is **52 characters and has no padding at all** — and what the model dropped last time was a padded
-tail, `zLg==`.
+**Why this sentence.** It carries **no punctuation with a space after it**, which is what the model lost at Gate
+Four. That makes it a smaller target and **not a safe one** — the mechanism is re-encoding, not truncation, and
+**B3½ above is what actually closes it.** 38 bytes, 52 characters.
 
 **Expect:** a **Postmark** — chunk 0's lane, sequence number and consensus timestamp — and a text block naming what
 landed. `send` returns after the ScheduleCreate and **before anyone signs**, so a Postmark is not yet the delivery.
@@ -205,12 +222,12 @@ saying so**: a second ring is a second stamp and a second lane, and a lane canno
 
 > Call the `inbox` tool once with no arguments. Show me the whole result. Then stop.
 
-**Expect:** one delivery, `opened: true`, **39 byte(s)**, and a rendering. Check the rendered line character for
+**Expect:** one delivery, `opened: true`, **38 byte(s)**, and a rendering. Check the rendered line character for
 character against the printed sentence:
 
 ```
       a RENDERING of those bytes as UTF-8 — the bytes themselves stay base64 in the result:
-      | Certified agent mail, proven on Hedera.
+      | Certified agent mail proven on Hedera.
 ```
 
 **If a single character is missing, the model truncated the base64 at B4.** The letter is already on consensus and
@@ -239,10 +256,10 @@ without refusing**. That is the end of what goose can tell you.
 **The run is green when two facts are on a mirror node, and I read them after — not you:**
 
 1. the schedule's `executed_timestamp` is **not null**, and
-2. the receipt manifest is on **DemoAgentY4's own manifest topic**, at a sequence number, hashing to what the
+2. the receipt manifest is on **DemoAgentY5's own manifest topic**, at a sequence number, hashing to what the
    schedule carried — chained back to chunk 0's postmark.
 
-**And one more, which only Gate Four can show:** a `TokenAssociateTransaction` for `$POSTAGE 0.0.10426208` on
-**each** new operator wallet, timestamped **before** that agent's first ring.
+**And, as at Gate Four:** a `TokenAssociateTransaction` for `$POSTAGE 0.0.10426208` on **each** new operator
+wallet, timestamped **before** that agent's first ring. These operators also read zero slots, so it fires again.
 
 Tell me B6 is done and I will read all of it from the mirror and write the run of record.

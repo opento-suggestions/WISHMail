@@ -28,7 +28,7 @@ Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plan
 earlier days — history, not instructions. **Decisions run to D-177** in ledger §B, one ADR each in `spec/adr/`.
 
 **Where the build stands, 2026-09-11.** The specification is **0.5.13**, tagged `v0.5.13`; **three gates are run**
-and nothing waits on a signature. **Twenty-four `check:*` are green** with `typecheck` and `p13:check`. The whole
+and nothing waits on a signature. **Twenty-four `check:*` are green** with `typecheck` and `p13:check`. **Five gates are run**, Gate Four newest. The whole
 battery is the loop to run after any change: `npm run typecheck`, then every `check:*` in `package.json`, then
 `npm run p13:check`, then `npm run conformance`.
 
@@ -127,6 +127,35 @@ never matches and the process starts, does nothing and exits 0 with no banner. *
 symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
 it is build work for after submission.
 
+**GATE FOUR IS RUN AND GREEN** (2026-09-11), and it closes the question four gates could not ask. Two
+**brand-new operator wallets** — `0.0.10492952` and `0.0.10492953`, created under GATE FUND
+with **zero automatic association slots** — carried two agents through the whole lifecycle under goose. **The
+thing it exists to see happened on both:** `ensurePayerHoldsStamps`' `TokenAssociateTransaction`
+branch (`app/sdk/mailbox.ts`) **executed against the network for the first time in five gates**, at
+0.67094579 ℏ each, paid and signed by each operator on its own client, **after that agent’s purchase and before
+that agent’s first topic** — when no doorbell in the gate had a single message on it. It fired on the
+recipient’s operator too, which never rings and ends **associated with a balance of zero**: one association
+bought for nothing, predicted in the report and measured in the run.
+
+**DemoAgentY4** is `0.0.10493463` (home `gz4-y`) and **DemoAgentX4** is `0.0.10493552`
+(home `gz4-x`); they correspond on lane `0.0.10493664`. GREEN from the mirror: schedule
+`0.0.10493669` executed at `1789191546.406458105`, the receipt manifest at **sequence 1 of her own**
+topic `0.0.10493477` at that instant to the nanosecond, chained to chunk 0 at `1789191200.199570248`.
+A stranger read it back twice at `d452d9b7…`. **All five stamp predictions matched exactly**, and
+**zero transactions name the recipient** (T-P16-2, measured). The Postmaster netted **+27.06223486 ℏ** over the
+gate, funding excluded.
+
+**One divergence, and it is not this implementation’s:** the letter reads *"Certified agent mail,proven on
+Hedera."* — 38 bytes, a space short. **The model re-encodes the payload rather than copying it**, which the
+second Gate Zero’s 69-byte letter was the first instance of; that one looked like truncation and this one
+proves it is not, being the same length as the literal and carrying padding the literal lacks. **Found in one
+glance because of the UTF-8 rendering that landed hours earlier.** The fix is `docs/OPERATOR-SCRIPT.md`
+**B3½**, a read-back before the irreversible step. Run of record: `app/OPERATIONS.md`, **GATE FOUR —
+THE RUN OF RECORD**.
+
+**GATE FUND** created **six** wallets at 250 ℏ each with zero slots — `gz4-*` for this gate,
+`gz5-*` for the recorded take, `gz6-*` spare. Its funding table is kept clean of every
+economics line.
 **THE SECOND GATE ZERO IS RUN AND GREEN** (2026-09-12), and it is **the first gate driven by goose**. Six
 instructions, one per turn, one pass, no stop: both agents provisioned on fresh homes, a lane born
 (`0.0.10489454`), one certified letter with a return receipt, opened and signed for, and the receipt executed
