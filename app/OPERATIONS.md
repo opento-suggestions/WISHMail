@@ -8310,7 +8310,7 @@ in that window).
 restarted with `--live`, the counter up at `http://127.0.0.1:4600/`, and both banners re-proved **in a
 terminal** — never from inside goose, which discards the extension’s stderr entirely.
 
-  **THE RECORDED TAKE — [ ]**
+  **THE RECORDED TAKE — [ AUTHORIZED ]**
 
 ---
 
