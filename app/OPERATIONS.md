@@ -6101,6 +6101,59 @@ byte-identical in their recorded digests; `conformance` unmoved at 44 passing, d
   envelope on it, a schedule executed onto the recipient's manifest topic. That is the second Gate Zero's question,
   on **fresh homes**, and it is now unblocked.
 
+### 6. A3 RE-RUN UNDER GOOSE ITSELF — 2026-09-11, DRY, and it is the proof that mattered
+
+**The coercion was proved against a reference client before it was pushed. This is the same call under Goose
+Desktop's own client, which is the one under test.** Session **`20260912_3`** "Resolve address, send certified"
+(00:52:25–00:53:47Z), SENDER window on `gz-x`, `--dry-run`.
+
+```
+  00:53:34  resolve {"address":"0.0.10462700","profile":"hcs14"}
+            -> doorbell 0.0.10462704 · log 0.0.10462708 · manifest 0.0.10462713 · keyEpoch 1
+               proof 57625b02c36fc8f2a6a80607445fccf4bd7d129b0985a16cc07eea82f65a1fe5
+               trustClass math · resolvedAt 1789174414.450000000
+
+  00:53:46  send {"coordinates":"{\"address\": \"0.0.10462700\", …}",   <-- A STRING, AGAIN
+                  "payload":"VGhpcyBsZXR0ZXIg…","returnReceipt":true}
+
+            -> DRY RUN — send would post one certified envelope to 0.0.10462700
+               recipient   0.0.10462700 · doorbell 0.0.10462704 · manifest 0.0.10462713 · keyEpoch 1
+               resolution  hcs14 · trustClass math · endorsements [] · proofHash 57625b02…
+               lane        NONE — this is first contact, and a doorbell would be rung
+               wouldRing   true
+               payloadBytes 70
+               returnReceipt true
+               note        Nothing was signed and nothing was spent.
+```
+
+**Three things that card settles.**
+
+1. **The model stringified `coordinates` AGAIN**, in a fresh session, on the same instruction. The behaviour is
+   stable and not a one-off, so **the coercion is load-bearing and not belt-and-braces**: without it this call
+   refuses, and with it the same bytes produce the would-do card.
+2. **The card is not a shrug — it has read the recipient.** It names A2's real doorbell and manifest topic, the key
+   epoch, the resolution profile and the proof hash, and it says `lane: NONE — this is first contact, and a
+   doorbell would be rung` with `wouldRing: true`, which is the correct reading of §7.1 for a sender that has
+   never written to this recipient. `payloadBytes 70` is the demo sentence decoded from base64 to exactly its own
+   length, so the payload survived the round trip unaltered.
+3. **The proof hash is identical to A3's first run** (`57625b02…`) across a different session and a later
+   `resolvedAt`, which is §10.2's rule behaving: the same inputs resolve to the same proof.
+
+**And DRY meant it.** Read from the mirror after the session closed, against the figures in §5 of the run of record
+above:
+
+```
+  C1OPERATOR 0.0.10450879   322.70803327 h   $POSTAGE 1      unchanged
+  C2OPERATOR 0.0.10450880   378.62178036 h   $POSTAGE 0      unchanged
+  treasury   0.0.10426205    20.00000000 h   $POSTAGE 9,957  unchanged
+```
+
+Not one tinybar and not one stamp moved. No entity was created and no home changed.
+
+**PART A IS COMPLETE AND ITS BLOCKER IS CLEARED.** What remains unproved is only what a DRY run cannot reach: a
+lane born, an envelope on it, a schedule executed onto the recipient's manifest topic. That is the second Gate
+Zero's question, on **fresh homes**, and nothing is now known to stand in front of it.
+
   **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
 
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
