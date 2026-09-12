@@ -143,8 +143,13 @@ and inside goose the proof is **B0**.
 
 ### B0 — EACH window, before anything else — which home am I actually driving?
 
-> Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
-> true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
+**RECIPIENT window:**
+
+> call buy_stamp, count: 12, provision: true, publickey self, hbar payment method, buyer 0.0.10492957
+
+**SENDER window:**
+
+> call buy_stamp, count: 12, provision: true, publickey self, hbar payment method, buyer 0.0.10492954
 
 **In DRY this is a rehearsal and signs nothing.** Read two fields off the card and nothing else:
 
@@ -161,8 +166,7 @@ same call is the real purchase: **in LIVE a "would do" card means the flag did n
 
 ### B1 — RECIPIENT window (`gz5-y`), first, because her watcher must be running before he rings
 
-> Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
-> true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
+> call buy_stamp, count: 12, provision: true, publickey self, hbar payment method, buyer 0.0.10492957
 
 **Expect:** this takes a minute or more — **an association**, one transfer, five topics, the profile's chunks, a
 registry entry and an account memo. The card is a **StampReceipt**: `txRef`, a `price` of about 43 ℏ, and `holder`
@@ -175,8 +179,7 @@ afterward, and it is the thing this gate exists to see.** **stop**
 
 ### B2 — SENDER window (`gz5-x`)
 
-> Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
-> true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
+> call buy_stamp, count: 12, provision: true, publickey self, hbar payment method, buyer 0.0.10492954
 
 **Expect:** the same shape, a second StampReceipt, a different `holder`. **stop**
 
@@ -186,15 +189,18 @@ reconstruct the receipt.**
 
 ### B3 — SENDER window
 
-> Call the `resolve` tool once with `address` set to the account id from step B1 and `profile` `hcs14`. Show me the
-> coordinates. Then stop.
+> call resolve, address ACCOUNT-FROM-B1, profile hcs14, show me the coordinates, then stop
+
+**Substitute the account id before you paste it.** `ACCOUNT-FROM-B1` is DemoAgentY5's address, the one B1's
+receipt named in `holder`. Pasted unsubstituted, the model will either ask or invent — and an invented address
+is the 2026-09-11 divergence.
 
 **Expect:** coordinates naming DemoAgentY5's doorbell and manifest topic, and a proof hash. If this returns
 `RESOLVE_NOT_FOUND`, B1 did not finish — **stop**. **stop**
 
 ### B3½ — SENDER window — READ THE PAYLOAD BACK BEFORE IT IS SENT
 
-> Repeat the payload string back to me exactly as you will send it. Do not call any tool. Then stop.
+> repeat the payload string back to me exactly as you will send it, do not call any tool, then stop
 
 **Compare what it says, character for character, with the literal in B4 below.** If it differs by so much as one
 character, say so and do not go on: correct it, and have it read the string back again.
@@ -210,11 +216,9 @@ costs one turn. **stop**
 
 ### B4 — SENDER window — the letter
 
-> Call the `send` tool once. For `coordinates`, pass the coordinates object from the previous `resolve` result
-> unchanged. For `payload`, pass exactly
-> `Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=`
-> — which is the sentence **`Certified agent mail proven on Hedera.`** — and set `returnReceipt` to true. Then
-> stop.
+> call send, returnReceipt: true, coordinates: the coordinates object from the previous resolve result unchanged, then stop after sending. the payload is exactly this and nothing else: Q2VydGlmaWVkIGFnZW50IG1haWwgcHJvdmVuIG9uIEhlZGVyYS4=
+
+That base64 is the sentence **Certified agent mail proven on Hedera.**
 
 **The plaintext is printed beside the base64 on purpose.** At B5 you check the rendering against **that printed
 line**, not against memory.
@@ -231,7 +235,7 @@ saying so**: a second ring is a second stamp and a second lane, and a lane canno
 
 ### B5 — RECIPIENT window — and READ THE LETTER
 
-> Call the `inbox` tool once with no arguments. Show me the whole result. Then stop.
+> call inbox, no arguments, show me the whole result, then stop
 
 **Expect:** one delivery, `opened: true`, **38 byte(s)**, and a rendering. Check the rendered line character for
 character against the printed sentence:
@@ -251,7 +255,9 @@ running a build from before 2026-09-11 — **stop**.
 
 ### B6 — RECIPIENT window — signing for it
 
-> Call the `ack` tool once with `envelopeId` set to the id from the previous result. Then stop.
+> call ack, envelopeId ENVELOPE-FROM-B5, then stop
+
+**Substitute the envelope id before you paste it**, from the delivery B5 returned.
 
 **Expect:** the ack signs the scheduled receipt, and the network executes it the instant the last signature lands.
 If it returns `ACK_NOT_OPENED`, the schedule's body names a different identifier, postmark or epoch — that is the
