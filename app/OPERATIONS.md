@@ -14560,7 +14560,8 @@ and the live invocation is `npm run gate4:wallets`, with `--live` **baked into t
 
 ---
 
-  **GATE FUND — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+  **GATE FUND — [ AUTHORIZED ]** — Sonic, 2026-09-11, after the rehearsal passed and the goose child
+  processes were confirmed reaped.
 
   Funding wallet: **`0.0.8641261`**, the Postmaster's payer, named by Sonic 2026-09-11.
   Six wallets, 250 ℏ each, 1500 ℏ total. **Naming the wallet is not the word.**
