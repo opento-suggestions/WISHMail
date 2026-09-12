@@ -6913,6 +6913,77 @@ extraction), `check:correspondent` 149, `check:exchange` **50**, `check:outputs`
 
 ---
 
+## THE CAPTURE THE SECOND GATE ZERO OWED. 2026-09-11, a mirror read; nothing signed, nothing spent
+
+**Not a gate and it has no fill-in.** `sdk/capture.cli.ts` builds a `Reader`, and a `Reader` has no write
+method. Asserted rather than assumed, by tracing every import it reaches: it constructs **no Hedera `Client`**
+(the only `Client` in its graph is a **type-only** import in `sdk/live.ts` and a parameter type in
+`ops/hcs10.ts`), it reads **no key** (`dotenv` sits behind `ensureLoaded()`, which only `readSecret` calls, and
+capture imports `repoRoot` alone), and its whole I/O surface is HTTP GETs against a mirror node. Its only side
+effect is writing the fixture — and it **silently overwrites a same-named file**, which is why a fresh name was
+used: the four original captures are declared records that must not be rewritten.
+
+### What it was for
+
+Gate Zero the second is the only gate not driven by a CLI. Its run of record printed the stranger's bundle digest
+**twice from the live mirror**, which satisfies §11.7's stability MUST and does **not** show the number
+reproducing from evidence a stranger could hold. That is repetition, not reproduction, and it was the one gap the
+plan's own standard named.
+
+```
+$ npm run capture -- --lane 0.0.10489454 --name gate-zero-two-certified
+
+  captured    conformance/fixtures/gate-zero-two-certified.json
+  lane        0.0.10489454
+  topics      0.0.10489401, 0.0.10489454, 0.0.10489363, 0.0.10448509, 0.0.10448507, 0.0.10489371
+  schedules   0.0.10489457
+  envelopes   1
+  envelope    08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f
+  appraised   unverified (T-P12-4)
+  digest      fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848
+```
+
+**The digest is the one the run of record printed**, to the byte.
+
+### `check:gzero2` — 45 assertions, and what it holds that no other court does
+
+`npm run check:gzero2`, `app/src/tools/gzero2.check.ts`, modelled on `check:gate3`. It reads the file and
+reaches `fca22d10…` **with no network**, twice, and again as a Verifier at another patch of 0.5 (§11.7, T-P3-1).
+Beyond the digest:
+
+- **The recipient's doorbell memo names its own account** — `hcs-10:0:60:0:0.0.10489361`. That is the
+  2026-09-11 defect asserted **absent from the bytes the network kept**, rather than from the code that wrote
+  them, and it is asserted as *not* the ownerless `hcs-10:0:60:0:` form the first Gate Zero left on two
+  permanent topics. Her own key is fee-exempt at her own door (D-137), and the door carries §4.4's one stamp to
+  the treasury and no other fee.
+- **The lane's birth walks from the lane alone** (D-171), with the parties supplied to nothing: the lane's memo
+  names the door, the door's memo names its owner, the answer on it names who rang. The lane's submit key is a
+  threshold of **exactly** the two agents' keys (T-P17-2) and it carries no custom fee (T-P11-3).
+- **T-P16-2 on a real HIP-423 schedule.** `0.0.10489457` executed at `1789176191.217453809`; its inner body is
+  paid by the **sender's** operator `0.0.10450880`, so the recipient signed for her letter and was charged
+  nothing for it. The receipt manifest is at **sequence 1** of her own manifest topic `0.0.10489371` at that
+  same instant to the nanosecond.
+- Two alterations — a settlement memo naming a different envelope, and a chunk that no longer rebuilds to its
+  identifier — each drops the standing or loses the envelope, and each moves the digest.
+
+### From HEAD, not from a tag
+
+Plan C4 asked for a digest "shown to reproduce from the fixture **at the tag**, never from a live re-run". The
+second half is met. The first cannot be: **`v0.5.13` is `363a8b8` and HEAD is twenty-six commits past it**,
+three of them in `app/sdk/` — the two provisioning refusals and the boundary coercion — so a Verifier at that
+tag is a materially different binary from the one that took this capture. Recorded as **reproduces from HEAD at
+specification 0.5.13**, binding to whatever tag is next cut.
+
+### Deliberately NOT registered with the suite
+
+RECORD (Sonic, 2026-09-11). `conformance/support/fixtures.ts` is untouched, so `allFixtures()` does not return
+this file and the ~ten bodies that iterate every fixture are not armed against it. **The reason is the calendar
+and not the evidence**: Gate Four runs tonight and the battery goes into it exactly as green as it was — 87
+registered, **44 passed**, 43 failed. Gate Four's own capture follows, and both are registered together
+afterward, with whatever those bodies then say reported as findings rather than narrowed away.
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.

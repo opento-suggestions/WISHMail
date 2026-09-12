@@ -1,0 +1,397 @@
+{
+  "_readme": "A correspondence captured from hedera:testnet, byte for byte as a mirror node returned it. Nothing here is a key and nothing here is private: every byte is on a public topic. It exists so the suite can run with no network (P-4) — a test that reached a mirror node would be a test of the mirror node. The appraisal below is what THIS release reached; a release claiming a profile reaches a different one, and the difference is the point of §11.4.",
+  "ledgerTag": "hedera:testnet",
+  "capturedAt": "2026-09-12T04:07:59.544Z",
+  "lane": "0.0.10489454",
+  "topics": {
+    "0.0.10489401": [
+      {
+        "topicId": "0.0.10489401",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789176121.917537358",
+        "runningHash": "L3ms6RcbgZ5/SXTJuWkz9sEbvTUWjdBUjwWWnv4Wmb2SckglYGbsldVcPGcSuWwQ",
+        "runningHashVersion": 3,
+        "contents": "{\"rule\":{\"id\":\"hcs14\",\"revision\":\"0.5\"},\"inputs\":{\"digest\":\"f02f1db69c8048b03866229062473c958d32134a6a00343084e83433be8c3cdf\",\"locator\":{\"ledgerTag\":\"hedera:testnet\",\"address\":\"0.0.10489361\",\"account\":\"0.0.10489361\",\"memo\":\"hcs-11:hcs://2/0.0.10489372\",\"registryTopic\":\"0.0.10489372\",\"registrySequence\":1,\"consensusTimestamp\":\"1789175847.090453104\",\"profileTopic\":\"0.0.10489374\"}},\"output\":{\"digest\":\"90ad9960abf4750fc2a25f0309d26ac96ac47d97d0fb0919e7beb365898621a8\"},\"meaning\":{\"statement\":\"Declared under HCS-11 via the HCS-2 registry the account memo names.\",\"uri\":{\"ledgerTag\":\"hedera:testnet\",\"topicId\":\"0.0.10489401\"},\"trustClass\":\"math\",\"endorsements\":[]},\"hash\":\"8b243455a893ddfa5fc24a7ec600d565cc977111bee836e59e4b70e21e6e9151\"}",
+        "payer": "0.0.10450880"
+      }
+    ],
+    "0.0.10489454": [
+      {
+        "topicId": "0.0.10489454",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789176126.262539578",
+        "runningHash": "NhRiv4V7sYb0/b8DDXk6Fs8en/rs9BCGEZVmJr/fGVj3B6tnEXTTFBBT41FEVOC7",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"message\",\"operator_id\":\"0.0.10489395@0.0.10489394\",\"data\":\"{\\\"p\\\":\\\"wishmail\\\",\\\"s\\\":\\\"hcs://13/0.0.10448509#1\\\",\\\"id\\\":\\\"08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f\\\",\\\"i\\\":0,\\\"n\\\":1,\\\"d\\\":\\\"hhVfxUUi9fdltCBtII9-dtXseA4jSX5f_j0jrwpXIJnk4SFoSzgiyDy8gXOhY5YfHT_BNiicF9xxa_pPtLT_L5v5uyoioozCe6PnmwcDUzoKOJ2obA\\\",\\\"hdr\\\":{\\\"l\\\":\\\"hedera:testnet\\\",\\\"pr\\\":\\\"hcs14\\\",\\\"rp\\\":{\\\"h\\\":\\\"8b243455a893ddfa5fc24a7ec600d565cc977111bee836e59e4b70e21e6e9151\\\",\\\"u\\\":{\\\"ledgerTag\\\":\\\"hedera:testnet\\\",\\\"topicId\\\":\\\"0.0.10489401\\\",\\\"sequenceNumber\\\":1}},\\\"nc\\\":\\\"fRVrqhP9mNXvewi-xlqhdQ\\\",\\\"ke\\\":1,\\\"ep\\\":\\\"qHWw2oFowto5hFQ_CI1DR6pe_7nQsxPFka_oajMnfzQ\\\",\\\"st\\\":\\\"0.0.10450880@1789176115.751660511\\\",\\\"w\\\":1,\\\"h\\\":\\\"ae50f7a26f905d700b6ae13315ffb8ae50ac079723bca139760e52c4b5318a60\\\",\\\"cb\\\":85,\\\"rr\\\":true}}\"}",
+        "payer": "0.0.10450880"
+      },
+      {
+        "topicId": "0.0.10489454",
+        "sequenceNumber": 2,
+        "consensusTimestamp": "1789176131.249818104",
+        "runningHash": "9RTPKIydP+PM+m96o4ngu8aFkIFrF849bd7+MLlJ2AurW8h6Kv7fBS/OmB/DPfwP",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"transaction\",\"operator_id\":\"0.0.10489395@0.0.10489394\",\"schedule_id\":\"0.0.10489457\",\"data\":\"wishmail:receipt:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f\"}",
+        "payer": "0.0.10450880"
+      }
+    ],
+    "0.0.10489363": [
+      {
+        "topicId": "0.0.10489363",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789176108.702187104",
+        "runningHash": "cLBpf9Lzv8+MFij1qQQmyLUghQ78JZOzlNGH+cFPmFSVoRturjE+4cRk+Qf/pWrM",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_request\",\"operator_id\":\"0.0.10489395@0.0.10489394\"}",
+        "payer": "0.0.10450880"
+      },
+      {
+        "topicId": "0.0.10489363",
+        "sequenceNumber": 2,
+        "consensusTimestamp": "1789176115.957363104",
+        "runningHash": "u8SbOhnPtxoQqTYQAkzLCiNxzUlBP54XaZnZdyMojNhl2+PEvas4mb1JrkwoOX9E",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-10\",\"op\":\"connection_created\",\"connection_topic_id\":\"0.0.10489454\",\"connected_account_id\":\"0.0.10489394\",\"operator_id\":\"0.0.10489363@0.0.10489361\",\"connection_id\":1}",
+        "payer": "0.0.10450879"
+      }
+    ],
+    "0.0.10448509": [
+      {
+        "topicId": "0.0.10448509",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1788989754.597764781",
+        "runningHash": "nDufrVDSFPavJrwvy6Bj7FIscl/Zh/GptnLenz1KBjSv5eObnB2+olFFGBKd8U0w",
+        "runningHashVersion": 3,
+        "contents": "{\"p\":\"hcs-2\",\"op\":\"register\",\"t_id\":\"0.0.10448507\",\"metadata\":{\"name\":\"chunk\",\"description\":\"WISHMail chunk schema, specification minor version 0.5 (§18.5)\"}}",
+        "payer": "0.0.8641261"
+      }
+    ],
+    "0.0.10448507": [
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1788989743.942824104",
+        "runningHash": "InAse4YH0JPPpeN3UYRsXSHJoaUXYyxjHXWojbnGkcfbFvnuB3LXwwojnwkGQYsf",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":0,\"c\":\"data:application/schema+json;base64,Gy8aACwKbGdqg+FBsss3HDoldWEz4ZDV1CpKu7h3RgrPeM9IjBZq+YEyu/7y5K1c079RsfC3IXAFpPG1dY3TVGDRSRAFYb9a+wyQIpAaUUa59Oue/YC3B7Q/rBhnd6YPiGQUoUIVG2lS0epUZPzy57IzflOE7bws0UTvbpsFqE+qn6emumRKFpf7PQuChjVk/rrURTJWvSbbCqqcefG5QZIlQ6IvXPN4hVBbO5D+YiCHhjbb020ag7m0F6PeKFOvjX/rtbsYbL9+1Svga/A/IGKrInh6bXR2fvMflHpusjUf/Dn05F+MhPp9/OIKLWONzm4jMoPOJoQOVn3QYYX8rlnnX7NNN70nKpaXx7IPfTvBc+BVrj8TtAEn2DbSTie4fqFF/5IDbn6vazLbOjUeLZJLb6KdeMr+SEGJvr0OuqL5JA62d2Q004osaoBnzJ5QIwv2AmUQldwNhow2AQimigq6v2n74HA2e/Vf+pb3xeYDWwUSUTMpMEaKttUSpEF+I0LItYw0J47/P9Wawc7/njPpbqzhFZA/QgJqS0jrNn5XNJIC+WJ+t7q+OWyBxa5MNgRSgoeVoG0bjH3oj7NQMOECxOFLLMOvu4ocuf0bneQ/Fm8vy9rMZBFRg0igzHAGng3v+RLU4kEJXREhzXHBir1SpgPcxTWfXSoSxJtXQSANC/r7T3YlseJlrvEMJ5bHKwb4oC87QNgA4Cpy5Y83hpN4Y2b4YkWOm9VmAdNlFANIolcaH8+qudUfLb8u2xthc8MZ8yQS0rPxzbZR5o/VTt00lYd8efkzklt45D+twhExWKrRFXdGNoHhoGtEnbnTZr/g53f3Oov+v/FGIlPrlQ63fTrLkH2IjLoxueQYHVuqnDcpPVhn2eMt7VJFBtfTI5zXUbWhPSm7VMPN0auHcJNNQcJgnBZdTucFMtWXi6gjfAWYFeTrYsZh6LwpEB5J7IQZoYVVuL1D1z\"}",
+        "payer": "0.0.8641261"
+      },
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 2,
+        "consensusTimestamp": "1788989745.883028933",
+        "runningHash": "/9puhITW2Ik1x7WdcY+j7AoXEyCFlcmGCiauepVxqHqd+EPtq3isAXK0xBhxlPQ4",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":1,\"c\":\"c8rai8yHqAIlA/86bWRctpx5gozH9wbEOXdlyPsyRYOk3uZy08UHVuGdR0bz5Al1iW7WqH/rQ1afBw8CEBu9uqivUDmsEb3pMcJgYnH84oAdoZnXBp3uzs+F0ltrB1PrujCc8r+kkKoWJ+yGKexefpzO5X2XCipcK5CPPnXIJQ0TL7ln9d2i2Nn5yw6XFCod7OimVCwFGO1wviQ3qpqYyCSUvLf6jfBbx2bRkkaLSeAaQcA8r5jRLqzEjFLmKZKJhrIpI8BwLADnY3oTHRp47kBs9k1aAkWEeSwmrjmRznMprVaaSCN7TUUGw08XzGQL7relVizCgWF1hdoOnWVumCba69Jic0kic/V0gMDTNjg1ezdRhM8G5SuKY9eH7zoF1yFboKQyP3tlq1rK6BA1ekj8T2S9Hlqt4crEs4jJqZfeTKCwfJfcBBU8QRFP6psGVMSeGaLE9rsl6n+tjnydQj1wed3zbEthoUpS1OWx57IIvRIUp6ngBq4JSojojiZqWoWoP2lKKQkFQJg+BrOT4KytZYoMlbSHBwNYfiDCJpklQXgP+hW0gVCWU9gTr0KuFl2HHH3VBvEb2K/F1PH1H1kdXtfotxpF1cIq6vE4BSZC9G4dDYh9uF3TAc7qxTb/bASgpoyu3SBE6QQWlyLZWbCKNWNJaabwkmTZKI8ywOXhUAl88OsOvYfHeQU1ApA7iSr6f6KkrJYnc4VRuV/mp3ETvQ3pSbKWZIzcyAyu5eOx489MS4937DlxYr6AG9pxlmJIvms//dr88K03EXwNxb/SJ9nuzG0Nrnf8+R9b+Go+V/nMhfDBpiDi+XlgwMHWxM05BpJS2ncsXdvTdGSuqgnreVxl2OVHHG1IecXrMSMyhIIRWryMllQfpMpiC7FyuTSk+N+FjyHdqapNFwNOeKKDUt6aihOM7Y6LSNkPW8bN+aFC/0u0vpzTcheCa58zv2TKOaUSz4c/ahOLw2cfQLCPCOehMor0oy9pT9UtxP2v36vB/H\"}",
+        "payer": "0.0.8641261"
+      },
+      {
+        "topicId": "0.0.10448507",
+        "sequenceNumber": 3,
+        "consensusTimestamp": "1788989747.788260386",
+        "runningHash": "MCMzuSi6kuK426aRBFN5upIqtmoj7LjLvWUHay70O+USbhvpAH1hKXLcATfbG2b1",
+        "runningHashVersion": 3,
+        "contents": "{\"o\":2,\"c\":\"/XJpN7qts6yLBOkUhVltiMWCiTDFZLaDZLXDWiJtdYVfOuo3seVkNps+OCWXUfxiZG2uc+ZuzmslMgpXOo7uUeT9ebexjmdM2rkK+VAVHi4sQwIi5CIQ1Srh1EQsJxG6zgqV6DueoUvKfA5cNftZfigeWHEwpeNXM6UDStiwblVTtiYNJ2GfOZJQJnqu3zlgcHiWWArNr/oA\"}",
+        "payer": "0.0.8641261"
+      }
+    ],
+    "0.0.10489371": [
+      {
+        "topicId": "0.0.10489371",
+        "sequenceNumber": 1,
+        "consensusTimestamp": "1789176191.217453809",
+        "runningHash": "lB5ugqXDaiq+tsyNRWvjhJojELHlE+BcALQvq9vQzQHYpkVnlaBSYug0RQz5wwe4",
+        "runningHashVersion": 3,
+        "contents": "{\"hash\":\"188b619e00daf47b8bf2b8b1bc6dbc10a52e27753a108351400856c8bcefb1b0\",\"inputs\":{\"digest\":\"3fd081d7ba57a2155f9bc07ec7cbc51a4f61255d0e05d823841b764c11f84a39\",\"locator\":{\"ledgerTag\":\"hedera:testnet\",\"sequenceNumber\":1,\"topicId\":\"0.0.10489454\"}},\"meaning\":{\"endorsements\":[],\"statement\":\"0.0.10489361 opened this envelope with its AAD verified.\",\"trustClass\":\"math\",\"uri\":{\"ledgerTag\":\"hedera:testnet\",\"topicId\":\"0.0.10489371\"}},\"output\":{\"value\":\"opened\"},\"rule\":{\"id\":\"wishmail:receipt\",\"revision\":\"0.5\"}}",
+        "payer": "0.0.10450880"
+      }
+    ]
+  },
+  "topicInfo": {
+    "0.0.10489401": {
+      "topicId": "0.0.10489401",
+      "memo": "wishmail:manifest:1",
+      "submitKeys": [
+        "140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174"
+      ],
+      "adminKey": "140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10489454": {
+      "topicId": "0.0.10489454",
+      "memo": "hcs-10:1:60:2:0.0.10489363:1",
+      "submitKeys": [
+        "140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174",
+        "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26"
+      ],
+      "adminKey": "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10489363": {
+      "topicId": "0.0.10489363",
+      "memo": "hcs-10:0:60:0:0.0.10489361",
+      "submitKeys": [],
+      "adminKey": "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26",
+      "customFees": [
+        {
+          "amount": 1,
+          "tokenId": "0.0.10426208",
+          "collector": "0.0.10426205"
+        }
+      ],
+      "feeExemptKeys": [
+        "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26"
+      ],
+      "deleted": false
+    },
+    "0.0.10448509": {
+      "topicId": "0.0.10448509",
+      "memo": "hcs-2:0:60",
+      "submitKeys": [
+        "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460"
+      ],
+      "adminKey": "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10448507": {
+      "topicId": "0.0.10448507",
+      "memo": "af96d14f28628027e7ccaa15cfac66ac002db3bc80e8272a7c2352adcfadc3ec:brotli:base64",
+      "submitKeys": [
+        "960fd90e66390a97075087e3b472d968e08fd204c07cea4ff8992682f1558460"
+      ],
+      "adminKey": null,
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    },
+    "0.0.10489371": {
+      "topicId": "0.0.10489371",
+      "memo": "wishmail:manifest:1",
+      "submitKeys": [
+        "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26"
+      ],
+      "adminKey": "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26",
+      "customFees": [],
+      "feeExemptKeys": [],
+      "deleted": false
+    }
+  },
+  "accounts": {
+    "0.0.10489394": {
+      "memo": "hcs-11:hcs://2/0.0.10489402",
+      "key": "140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174"
+    },
+    "0.0.10426205": {
+      "memo": "",
+      "key": "0232144fec2cbf7818e2b1a5ad1c0f00e93398eeeaa643d7fe66828b5ff768a4"
+    },
+    "0.0.10489361": {
+      "memo": "hcs-11:hcs://2/0.0.10489372",
+      "key": "b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26"
+    }
+  },
+  "settlements": {
+    "0.0.10450880@1789176115.751660511": {
+      "ledgerTag": "hedera:testnet",
+      "txRef": "0.0.10450880@1789176115.751660511",
+      "from": "0.0.10489394",
+      "to": "0.0.10426205",
+      "amount": 2,
+      "memo": "wishmail:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+      "consensusTimestamp": "1789176123.808518352",
+      "tokenId": "0.0.10426208"
+    }
+  },
+  "schedules": {
+    "0.0.10489457": {
+      "ledgerTag": "hedera:testnet",
+      "scheduleId": "0.0.10489457",
+      "creator": "0.0.10450880",
+      "payer": "0.0.10450880",
+      "consensusTimestamp": "1789176129.148390104",
+      "executedTimestamp": "1789176191.217453809",
+      "expirationTime": "1794532928.000000000",
+      "waitForExpiry": false,
+      "deleted": false,
+      "signatures": [
+        {
+          "publicKeyPrefix": "YUfDOZHizRqtUiHs5E7CiaEhGnI6NpGoA5W5UFSxXMA=",
+          "consensusTimestamp": "1789176129.148390104",
+          "type": "ED25519"
+        },
+        {
+          "publicKeyPrefix": "uZ9EJ0QcraXesxRZwR82u/01ZEDLPvexSVfM5fIZeiY=",
+          "consensusTimestamp": "1789176191.217453808",
+          "type": "ED25519"
+        },
+        {
+          "publicKeyPrefix": "EXMZdJHzFVUxk0AN+H4GoTTSmrI5XLHlp2sPVUBqGAw=",
+          "consensusTimestamp": "1789176191.217453808",
+          "type": "ED25519"
+        }
+      ],
+      "transactionBody": "CICEr1+qAYYECgUYm5yABRL8A3siaGFzaCI6IjE4OGI2MTllMDBkYWY0N2I4YmYyYjhiMWJjNmRiYzEwYTUyZTI3NzUzYTEwODM1MTQwMDg1NmM4YmNlZmIxYjAiLCJpbnB1dHMiOnsiZGlnZXN0IjoiM2ZkMDgxZDdiYTU3YTIxNTVmOWJjMDdlYzdjYmM1MWE0ZjYxMjU1ZDBlMDVkODIzODQxYjc2NGMxMWY4NGEzOSIsImxvY2F0b3IiOnsibGVkZ2VyVGFnIjoiaGVkZXJhOnRlc3RuZXQiLCJzZXF1ZW5jZU51bWJlciI6MSwidG9waWNJZCI6IjAuMC4xMDQ4OTQ1NCJ9fSwibWVhbmluZyI6eyJlbmRvcnNlbWVudHMiOltdLCJzdGF0ZW1lbnQiOiIwLjAuMTA0ODkzNjEgb3BlbmVkIHRoaXMgZW52ZWxvcGUgd2l0aCBpdHMgQUFEIHZlcmlmaWVkLiIsInRydXN0Q2xhc3MiOiJtYXRoIiwidXJpIjp7ImxlZGdlclRhZyI6ImhlZGVyYTp0ZXN0bmV0IiwidG9waWNJZCI6IjAuMC4xMDQ4OTM3MSJ9fSwib3V0cHV0Ijp7InZhbHVlIjoib3BlbmVkIn0sInJ1bGUiOnsiaWQiOiJ3aXNobWFpbDpyZWNlaXB0IiwicmV2aXNpb24iOiIwLjUifX0="
+    }
+  },
+  "settlement": {
+    "ledgerTag": "hedera:testnet",
+    "txRef": "0.0.10450880@1789176115.751660511",
+    "from": "0.0.10489394",
+    "to": "0.0.10426205",
+    "amount": 2,
+    "memo": "wishmail:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+    "consensusTimestamp": "1789176123.808518352",
+    "tokenId": "0.0.10426208"
+  },
+  "envelope": {
+    "ledgerTag": "hedera:testnet",
+    "lane": "0.0.10489454",
+    "profile": "hcs14",
+    "resolutionProof": {
+      "hash": "8b243455a893ddfa5fc24a7ec600d565cc977111bee836e59e4b70e21e6e9151",
+      "uri": {
+        "ledgerTag": "hedera:testnet",
+        "topicId": "0.0.10489401",
+        "sequenceNumber": 1
+      }
+    },
+    "nonce": "fRVrqhP9mNXvewi-xlqhdQ",
+    "aad": "eyJsIjoiaGVkZXJhOnRlc3RuZXQiLCJsYW5lIjoiMC4wLjEwNDg5NDU0IiwibmMiOiJmUlZycWhQOW1OWHZld2kteGxxaGRRIiwicCI6Indpc2htYWlsIiwicnAiOiI4YjI0MzQ1NWE4OTNkZGZhNWZjMjRhN2VjNjAwZDU2NWNjOTc3MTExYmVlODM2ZTU5ZTRiNzBlMjFlNmU5MTUxIiwidiI6IjAuNSJ9",
+    "aadHash": "08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+    "keyEpoch": 1,
+    "ephemeralPub": "qHWw2oFowto5hFQ_CI1DR6pe_7nQsxPFka_oajMnfzQ",
+    "ciphertextDigest": "ae50f7a26f905d700b6ae13315ffb8ae50ac079723bca139760e52c4b5318a60",
+    "ciphertextBytes": 85,
+    "weight": 1,
+    "settlementRef": "0.0.10450880@1789176115.751660511",
+    "schemaRef": "hcs://13/0.0.10448509#1",
+    "chunkCount": 1
+  },
+  "chunks": [
+    {
+      "ledgerTag": "hedera:testnet",
+      "topicId": "0.0.10489454",
+      "sequenceNumber": 1,
+      "consensusTimestamp": "1789176126.262539578",
+      "runningHash": "",
+      "runningHashVersion": 0,
+      "envelopeId": "08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+      "chunkIndex": 0
+    }
+  ],
+  "appraisal": {
+    "declared": {
+      "trustClass": "math",
+      "endorsements": []
+    },
+    "appraised": {
+      "standing": "unverified",
+      "reasons": [
+        "T-P12-4"
+      ]
+    },
+    "resolution": {
+      "standing": "unverified",
+      "reasons": [
+        "T-P12-4"
+      ]
+    },
+    "receipt": {
+      "status": "acked",
+      "reasons": []
+    }
+  },
+  "correspondence": [
+    {
+      "envelope": {
+        "ledgerTag": "hedera:testnet",
+        "lane": "0.0.10489454",
+        "profile": "hcs14",
+        "resolutionProof": {
+          "hash": "8b243455a893ddfa5fc24a7ec600d565cc977111bee836e59e4b70e21e6e9151",
+          "uri": {
+            "ledgerTag": "hedera:testnet",
+            "topicId": "0.0.10489401",
+            "sequenceNumber": 1
+          }
+        },
+        "nonce": "fRVrqhP9mNXvewi-xlqhdQ",
+        "aad": "eyJsIjoiaGVkZXJhOnRlc3RuZXQiLCJsYW5lIjoiMC4wLjEwNDg5NDU0IiwibmMiOiJmUlZycWhQOW1OWHZld2kteGxxaGRRIiwicCI6Indpc2htYWlsIiwicnAiOiI4YjI0MzQ1NWE4OTNkZGZhNWZjMjRhN2VjNjAwZDU2NWNjOTc3MTExYmVlODM2ZTU5ZTRiNzBlMjFlNmU5MTUxIiwidiI6IjAuNSJ9",
+        "aadHash": "08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+        "keyEpoch": 1,
+        "ephemeralPub": "qHWw2oFowto5hFQ_CI1DR6pe_7nQsxPFka_oajMnfzQ",
+        "ciphertextDigest": "ae50f7a26f905d700b6ae13315ffb8ae50ac079723bca139760e52c4b5318a60",
+        "ciphertextBytes": 85,
+        "weight": 1,
+        "settlementRef": "0.0.10450880@1789176115.751660511",
+        "schemaRef": "hcs://13/0.0.10448509#1",
+        "chunkCount": 1
+      },
+      "state": "ACKED",
+      "chunks": [
+        {
+          "ledgerTag": "hedera:testnet",
+          "topicId": "0.0.10489454",
+          "sequenceNumber": 1,
+          "consensusTimestamp": "1789176126.262539578",
+          "runningHash": "",
+          "runningHashVersion": 0,
+          "envelopeId": "08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+          "chunkIndex": 0
+        }
+      ],
+      "offChain": [],
+      "settlement": {
+        "ledgerTag": "hedera:testnet",
+        "txRef": "0.0.10450880@1789176115.751660511",
+        "from": "0.0.10489394",
+        "to": "0.0.10426205",
+        "amount": 2,
+        "memo": "wishmail:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f",
+        "consensusTimestamp": "1789176123.808518352",
+        "tokenId": "0.0.10426208"
+      },
+      "requests": [
+        {
+          "scheduleId": "0.0.10489457",
+          "sequenceNumber": 2,
+          "consensusTimestamp": "1789176131.249818104",
+          "status": "acked"
+        }
+      ],
+      "appraisal": {
+        "declared": {
+          "trustClass": "math",
+          "endorsements": []
+        },
+        "appraised": {
+          "standing": "unverified",
+          "reasons": [
+            "T-P12-4"
+          ]
+        },
+        "resolution": {
+          "standing": "unverified",
+          "reasons": [
+            "T-P12-4"
+          ]
+        },
+        "receipt": {
+          "status": "acked",
+          "reasons": []
+        }
+      }
+    }
+  ],
+  "bundleDigest": "fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848",
+  "narrative": {
+    "bundleDigest": "fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848",
+    "text": "This reading covers 2 topic(s) on hedera:testnet, from consensus timestamp 1789176126.262539578 to 1789176126.262539578, under specification 0.5.\n\nEnvelope 08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f.\nIt was posted to lane 0.0.10489454 in 1 chunk(s), the first postmarked at 1789176126.262539578 as sequence 1.\nIts postage was 2 stamp(s) in token 0.0.10426208, affixed by 0.0.10489394 to 0.0.10426205 at 1789176123.808518352 under the memo wishmail:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f, which names this envelope and no other.\nIts resolution was made under the hcs14 profile, declared at trust class math with no endorsements, and its manifest is message 1 on topic 0.0.10489401.\nIt was sealed against key epoch 1, over 85 bytes of ciphertext, weighing 1 ounce(s).\nIts state is ACKED.\nIts standing is unverified, which is the lowest any check yielded, and the checks that yielded it are T-P12-4.\nIts return receipt is acked.\nThis reading says nothing about what the envelope contained; nothing on any topic can."
+  }
+}

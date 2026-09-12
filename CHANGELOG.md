@@ -2,6 +2,34 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [The capture the second Gate Zero owed] — 2026-09-11 — a digest that reproduces from disk, and the suite's fifth real fixture
+
+**[S]** ruled; **[CC]** captured and courted. A mirror read: no key, no `Client`, no signature, nothing spent.
+
+### Added
+
+- **`conformance/fixtures/gate-zero-two-certified.json`** — lane `0.0.10489454`, the second Gate Zero's
+  correspondence and the first this deployment produced under goose. Its run of record printed the stranger's
+  digest **twice from the live mirror**, which is repetition and not reproduction; this is the evidence a
+  stranger could actually hold.
+- **`npm run check:gzero2`** — `app/src/tools/gzero2.check.ts`, **45 assertions**, the twenty-fourth
+  `check:*`. It reaches `fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848` with no network,
+  twice, and again as a Verifier at another patch of 0.5. Beyond the digest it asserts the recipient's doorbell
+  memo **naming its own account** — the 2026-09-11 ownerless-door defect, asserted absent from the bytes the
+  network kept rather than from the code that wrote them — the lane's birth walked from the lane alone (D-171),
+  a real HIP-423 schedule executed with its inner body paid by the **sender's** operator so the recipient was
+  charged nothing (T-P16-2), and two alterations each refused.
+
+### Recorded
+
+- **The digest reproduces from HEAD at specification 0.5.13, not from a tag.** `v0.5.13` is `363a8b8` and HEAD
+  is twenty-six commits past it, three of them in `app/sdk/`, so a Verifier at that tag is a materially
+  different binary. Plan C4's "at the tag" cannot be met and the reason is written down rather than elided.
+- **The fixture is deliberately NOT registered in `conformance/support/fixtures.ts`** (RECORD, Sonic). The ~ten
+  bodies that iterate every fixture stay unarmed against it tonight, so the battery enters Gate Four exactly as
+  green as it was: 87 registered, 44 passed, 43 failed. Both new fixtures are registered together after Gate
+  Four.
+
 ## [C0.2, closed] — 2026-09-11 — `inbox` promised base64 and sent a Buffer, and now a court holds every verb to its own schema
 
 **[S]** ruled; **[CC]** found, fixed and courted. The second half of plan C0's item 2, open since the probe, and

@@ -28,7 +28,7 @@ Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plan
 earlier days — history, not instructions. **Decisions run to D-177** in ledger §B, one ADR each in `spec/adr/`.
 
 **Where the build stands, 2026-09-11.** The specification is **0.5.13**, tagged `v0.5.13`; **three gates are run**
-and nothing waits on a signature. **Twenty-three `check:*` are green** with `typecheck` and `p13:check`. The whole
+and nothing waits on a signature. **Twenty-four `check:*` are green** with `typecheck` and `p13:check`. The whole
 battery is the loop to run after any change: `npm run typecheck`, then every `check:*` in `package.json`, then
 `npm run p13:check`, then `npm run conformance`.
 

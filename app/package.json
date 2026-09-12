@@ -56,7 +56,8 @@
     "check:receipt": "tsx src/tools/receipt.check.ts",
     "check:reply": "tsx src/tools/reply.check.ts",
     "check:gate3": "tsx src/tools/gate3.check.ts",
-    "check:outputs": "tsx sdk/outputs.check.ts"
+    "check:outputs": "tsx sdk/outputs.check.ts",
+    "check:gzero2": "tsx src/tools/gzero2.check.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",

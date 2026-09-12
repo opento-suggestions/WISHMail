@@ -38,7 +38,7 @@ in any class; refused for any clause whose claim is replay of consensus; every m
    that passed would tell the register something false. Rows below marked **partial** are expanded, do all
    the reachable work, and then fail naming the clause that is out of reach. They count as `expanded` and as
    `failed`, and a claim is made off `passed` alone, so nothing is over-claimed by them.
-2. **The registered bodies share fixtures with the twenty-three `check:*` courts and share no code that
+2. **The registered bodies share fixtures with the twenty-four `check:*` courts and share no code that
    decides a verdict.** A fixture loader is plumbing; an assertion is not. The duplication is deliberate.
 3. **"Not expanded, because X" is a correct line on the harness.** A body that faked X would not be.
 
@@ -365,6 +365,49 @@ what a Verifier followed, which is what the flag was built to guarantee.
 record printed**. So the only thing that moved between the two readings is the one field D-173 moved, and
 every other byte of the evidence is unchanged across a re-read of the mirror at a different time. That is
 the dated note beside `1c4359e5…` in `app/OPERATIONS.md` and LIMITATIONS L-1, shown rather than asserted.
+
+
+### The seventh capture: the second Gate Zero's lane, and the digest it owed
+
+**2026-09-11.** A mirror read and nothing else — `sdk/capture.cli.ts` builds a `Reader` and a `Reader` has no
+write method; its whole I/O surface is HTTP GETs, it constructs no `Client` and reads no key. It signs nothing and
+spends nothing.
+
+```
+gate-zero-two-certified.json   lane 0.0.10489454   1 envelope
+```
+
+**Why it was owed.** Gate Zero the second is the only gate not driven by a CLI — six instructions in two goose
+windows — and its run of record printed a stranger's bundle digest **twice from the live mirror** and had no
+fixture. Two live re-runs satisfy §11.7's stability MUST; they do not show the digest reproducing from evidence a
+stranger could hold. Now it does: `npm run check:gzero2` reads the file and computes
+`fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848` — **the number the run of record printed** —
+with no network, twice, and again as a Verifier at another patch of 0.5.
+
+**From HEAD, not from a tag, and the plan's own wording is what makes that worth saying.** Plan C4 asked for a
+digest "shown to reproduce from the fixture **at the tag**, never from a live re-run". The second half is
+satisfied. The first cannot be: `v0.5.13` is `363a8b8` and HEAD is **twenty-six commits past it**, three of them
+in `app/sdk/` — the two provisioning refusals and the boundary coercion — so a Verifier at that tag is a
+materially different binary from the one that took this capture. **Recorded as: reproduces from HEAD at
+specification 0.5.13**, and it will bind to whatever tag is next cut, by its own hand, after a confirmed push.
+It needs no `SPEC_WHEN_CAPTURED` substitution, unlike every capture before `gate-three-certified`: it was taken
+under a release that already writes the minor version (D-173).
+
+**NOT REGISTERED WITH THE SUITE, and that is a decision with a date.** RECORD (Sonic, 2026-09-11):
+`RUN_FIXTURE_NAMES` in `conformance/support/fixtures.ts` is left untouched tonight, so `allFixtures()` does not
+return this file and the roughly ten bodies that iterate every fixture — T-P3-4, T-P4-1, T-P12-4, T-P12-2,
+T-P11-3, T-P9-1, T-P9-3, T-P7-4, T-P17-3, T-P2-1, T-P6-2, T-P14-1 — are not armed against it. The reason is the
+calendar and not the evidence: **Gate Four runs tonight, and the battery goes into it exactly as green as it
+was** — 87 registered, 44 passed, 43 failed. Gate Four's own capture follows, and **both are registered
+together afterward**, with whatever those bodies then say reported as findings rather than narrowed away.
+
+**What its own court asserts, beyond the digest.** `check:gzero2`, 45 assertions: the recipient's doorbell memo
+naming **its own account**, which is the 2026-09-11 ownerless-door defect asserted absent from the bytes the
+network kept; the lane's birth walked from the lane's own memo down to the door that answered and the party that
+rang; two stamps settled in `$POSTAGE` under a memo naming that envelope and no other; a real HIP-423 schedule
+**executed**, its inner body paid by the **sender's** operator so the recipient signed for her letter and was
+charged nothing (T-P16-2), and its receipt manifest at sequence 1 of her own topic at that instant to the
+nanosecond; and two alterations each refused.
 
 ### The replay completes, and reaches `verified`
 

@@ -65,6 +65,7 @@
     "check:receipt": "npm run check:receipt --workspace app --",
     "check:reply": "npm run check:reply --workspace app --",
     "check:gate3": "npm run check:gate3 --workspace app --",
-    "check:outputs": "npm run check:outputs --workspace app --"
+    "check:outputs": "npm run check:outputs --workspace app --",
+    "check:gzero2": "npm run check:gzero2 --workspace app --"
   }
 }
