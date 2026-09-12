@@ -134,8 +134,19 @@ it is build work for after submission.
 `0.0.10492954` and `0.0.10492957` are brand-new, hold 250 ℏ each and read **zero association
 slots** — so the associate fires again, as it did at Gate Four. **`gz6-x`/`gz6-y` are the
 spare**, on `0.0.10492960` and `0.0.10492962`, so a spoiled take costs a rename and not a
-second GATE FUND. All four were born under GATE FUND: configs written, **keys born**, zero accounts confirmed,
-**never provisioned, and no goose entry**. Tomorrow starts at instruction one.
+second GATE FUND. All four were born under GATE FUND: configs written, **keys born**, zero accounts confirmed
+and **never provisioned**.
+
+**`gz5` IS WIRED AND WAITING.** `config.yaml` holds exactly two WISHMail entries —
+`demoagentx5` and `demoagenty5`, pointed at `gz5-x` and `gz5-y`, both
+**`--dry-run`**, allowlist `[buy_stamp, resolve, send, inbox, ack]`. Both command lines are
+pre-flighted in a terminal and name their own operators. **No `--live` appears anywhere in the file, and
+no spent home is named in it.** `gz6` has no entry: it is wired only if the take is spoiled, by the same
+remove-and-rename.
+
+**So tomorrow is: restart Goose Desktop → B0 in each window (DRY, `holder` a public key, `buyer`
+reading `0.0.10492957` / `0.0.10492954`) → on the word, flip both to `--live`, start
+the counter, confirm the banners in a terminal → B1 through B6.** Nothing else is outstanding.
 
 **IT RUNS ON GATE FOUR’S HEAD, `dc418dea29e9ac26f1bb423621f777eb59d0ef1c` — RECORD (Sonic).** Anything
 that must exist for the take had to land before Gate Four, and **nothing may land between the gate and the

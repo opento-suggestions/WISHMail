@@ -8012,6 +8012,16 @@ are registered together next, and whatever the bodies then say is reported as fi
 > **The take's homes are `gz5-x`/`gz5-y`, its spare `gz6-x`/`gz6-y`** — all four born
 > under GATE FUND, never provisioned, carrying no goose entry. `docs/OPERATOR-SCRIPT.md` Part B is the
 > per-turn sequence, repointed to `gz5`, with **B3½** added and the sentence corrected.
+>
+> **CORRECTION, later the same night: the take IS wired, and the line above saying it carries no goose entry
+> is superseded.** The two `gz4` entries were left `--live` and pointed at homes this gate had
+> just **spent** — the precise hazard removed before Gate Four, re-formed by arming it — and their
+> descriptions still read "DRY RUN: CANNOT sign", which had become false. Both operators still hold ~205 ℏ.
+> They are **removed**, and `demoagentx5`/`demoagenty5` put in their place at
+> **`--dry-run`**, allowlist of the five, each pre-flighted in a terminal and naming its own operator
+> (`0.0.10492954`, `0.0.10492957`). **Zero `--live` lines remain in the file and no
+> spent home is named in it.** Two entries, never four, so the toggle hazard that kept `gz5` out
+> earlier does not arise. `gz6` stays unwired until it is needed.
 
 ---
 
