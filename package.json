@@ -66,6 +66,8 @@
     "check:reply": "npm run check:reply --workspace app --",
     "check:gate3": "npm run check:gate3 --workspace app --",
     "check:outputs": "npm run check:outputs --workspace app --",
-    "check:gzero2": "npm run check:gzero2 --workspace app --"
+    "check:gzero2": "npm run check:gzero2 --workspace app --",
+    "gate4:wallets": "npm run gate4:wallets --workspace app --",
+    "gate4:wallets:plan": "npm run gate4:wallets:plan --workspace app --"
   }
 }

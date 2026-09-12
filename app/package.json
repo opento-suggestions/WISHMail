@@ -57,7 +57,9 @@
     "check:reply": "tsx src/tools/reply.check.ts",
     "check:gate3": "tsx src/tools/gate3.check.ts",
     "check:outputs": "tsx sdk/outputs.check.ts",
-    "check:gzero2": "tsx src/tools/gzero2.check.ts"
+    "check:gzero2": "tsx src/tools/gzero2.check.ts",
+    "gate4:wallets": "tsx src/ops/gate-four-wallets.ts --live",
+    "gate4:wallets:plan": "tsx src/ops/gate-four-wallets.ts --dry-run"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.81.0",
