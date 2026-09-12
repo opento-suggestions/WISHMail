@@ -536,3 +536,77 @@ T-P11-1 (one token) and T-P7-4 (a network that refuses). Both say so in the body
 `check:captured` and `check:receipt` pass byte-identically through all of it — `8d30dfdc…`, `00229e6f…`,
 `1c4359e5…`, `34b314c4…` and `473cba1b…` are what they were. No captured letter reaches any branch that was fixed,
 which is why that was the right acceptance test to be given.
+
+---
+
+## G. THE EIGHTH CAPTURE, AND THE REGISTRATION OF ALL THREE. 2026-09-12
+
+### The eighth capture: the recorded take’s lane
+
+**2026-09-12.** A mirror read and nothing else — `sdk/capture.cli.ts` builds a `Reader` and a
+`Reader` has no write method. It signs nothing and spends nothing.
+
+```
+recorded-take-certified.json   lane 0.0.10509262   1 envelope
+  envelope  3051fb6090d254cbb610470f722633fb119cd83aaa84ffae3ce19db98a113f8e
+  digest    3245fa580c7aff4288af2c0a951febf491303533241657e56e05716984f6dd2f
+  topics    0.0.10509177, 0.0.10509262, 0.0.10509142, 0.0.10448509, 0.0.10448507, 0.0.10509148
+  schedule  0.0.10509266 (EXECUTED)         appraised unverified (T-P12-4)
+```
+
+**Why it is worth holding.** It is the correspondence in which **the payload arrived byte-identical for the
+first time** — 38 bytes, ciphertext 54 — after two consecutive runs in which the model retyped the literal
+rather than copying it. Its run of record is `app/OPERATIONS.md`, **THE RECORDED TAKE — THE RUN OF
+RECORD**, and its divergence is not in the letter but in the lane birth: six connection topics created to
+announce one lane, five abandoned.
+
+### The registration, which is the first act after the take
+
+**RECORD (Sonic): fixture registration is the first act after the take, never before it.** The reason was the
+calendar and never the evidence — the battery had to enter Gate Four and then the take **exactly as green as
+it was**, at 87 registered, 44 passed, 43 failed, report digest `51453eea…`. It did, both times. So the
+three are registered **together**, now:
+
+```
+  RUN_FIXTURE_NAMES   4 -> 7      allFixtures()   6 -> 9
+    + gate-zero-two-certified     lane 0.0.10489454   fca22d10…   the first gate driven by goose
+    + gate-four-certified         lane 0.0.10493664   d452d9b7…   the brand-new wallet
+    + recorded-take-certified     lane 0.0.10509262   3245fa58…   the take
+```
+
+All three post-date D-173, so each carries the **minor** version and none needs the `SPEC_WHEN_CAPTURED`
+substitution the pre-0.5.12 captures need. Sixteen bodies iterate `allFixtures()` — T-P2-1, T-P3-4,
+T-P4-1, T-P6-2, T-P7-4, T-P9-1, T-P9-3, T-P9-7, T-P9-8, T-P11-3, T-P12-2, T-P12-4, T-P14-1, T-P17-2, T-P17-3
+and their kin — and every one of them is now armed against three correspondences it had never read.
+
+### The result, and it is reported rather than celebrated
+
+**No findings. 87 registered, 44 passed, 43 failed — unchanged, and the report digest is unchanged too.**
+That was the outcome to be suspicious of, so it was checked rather than accepted: `allFixtures()` was run
+directly and returns **nine**, naming all three new lanes and their digests, so the bodies genuinely read them.
+The three simply satisfy every clause those bodies assert.
+
+**The digest did not move for a structural reason, and it is worth writing down.** A result row in
+`conformance/reports/all.json` carries `test`, `invariant`, `classes`, `extension`,
+`outcome` and `fixtureKinds` — **kinds, never names**. No fixture name appears anywhere in the digested
+content. So a report is by construction unable to distinguish a suite run against six captures from the same
+suite run against nine.
+
+**MINE, and named as a question rather than a defect:** §5.10 has a conformance claim name its report, and the
+report says which tests passed but not how much evidence they passed over. Two releases at one digest may have
+been tested against very different corpora. Whether that is a gap in §5.10 or correct economy — the register
+being a statement about tests and not about fixtures — is Sonic’s to rule, and it is a 0.6 question either
+way, the schemas being frozen.
+
+### What courts each of the three
+
+- `gate-zero-two-certified` has a **bespoke offline court**, `check:gzero2`, 45 assertions, written
+  before the registration and kept: the doorbell memo naming its own account, the lane birth walk, T-P16-2 on a
+  real executed schedule, and `fca22d10…` reproduced from disk twice and again at another patch.
+- `gate-four-certified` and `recorded-take-certified` have **no bespoke court, and now do not need
+  one**: registration puts them under the sixteen iterating bodies, which is broader than a hand-written check
+  and is the suite doing its own job. Both digests were reproduced offline from the fixture before this entry
+  was written — `d452d9b7…` and `3245fa58…`, with no network.
+
+**From HEAD at specification 0.5.13, not from a tag**, for the same reason the seventh capture records: `v0.5.13`
+is `363a8b8` and HEAD is well past it. Each binds to whatever tag is next cut.

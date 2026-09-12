@@ -133,6 +133,8 @@ below is public and nothing here is a key: a home’s config and keystore are ne
 | gz2-y | **provisioned** | `0.0.10489361` | `0.0.10450879` | `0.0.8641261@1789175795.394278638` |
 | gz4-x | **provisioned** | `0.0.10493552` | `0.0.10492952` | `0.0.8641261@1789190858.367853616` |
 | gz4-y | **provisioned** | `0.0.10493463` | `0.0.10492953` | `0.0.8641261@1789190597.609805730` |
+| gz5-x | **provisioned** | `0.0.10509170` | `0.0.10492954` | `0.0.8641261@1789244140.001448711` |
+| gz5-y | **provisioned** | `0.0.10509139` | `0.0.10492957` | `0.0.8641261@1789244037.142321481` |
 
 **An operator may own many agents** (D-165): the wallet is the operator’s, the home is the agent’s, and a fresh
 home is a new agent. The operator wallet above is read from **consensus** and never from a home’s config, which is
@@ -228,6 +230,24 @@ of record.
 | gz4-y | HCS-11 profile, as HCS-1 chunks | `0.0.10493485` | `0.0.8641261` |
 | gz4-y | HCS-2 register entry naming the profile file | `0.0.10493479` | `0.0.8641261` |
 | gz4-y | §9.2’s account memo, the first link in the chain | `0.0.10493463` | `0.0.8641261` |
+| gz5-x | the provisioning purchase this agent was bought by | `0.0.10509170` | `0.0.8641261` |
+| gz5-x | doorbell (HCS-10 inbound) | [`0.0.10509173`](https://hashscan.io/testnet/topic/0.0.10509173) | `0.0.8641261` |
+| gz5-x | log (HCS-10 outbound) | [`0.0.10509176`](https://hashscan.io/testnet/topic/0.0.10509176) | `0.0.8641261` |
+| gz5-x | manifest | [`0.0.10509177`](https://hashscan.io/testnet/topic/0.0.10509177) | `0.0.8641261` |
+| gz5-x | declaration registry (HCS-2) | [`0.0.10509179`](https://hashscan.io/testnet/topic/0.0.10509179) | `0.0.8641261` |
+| gz5-x | HCS-11 profile file (HCS-1) | [`0.0.10509181`](https://hashscan.io/testnet/topic/0.0.10509181) | `0.0.8641261` |
+| gz5-x | HCS-11 profile, as HCS-1 chunks | `0.0.10509181` | `0.0.8641261` |
+| gz5-x | HCS-2 register entry naming the profile file | `0.0.10509179` | `0.0.8641261` |
+| gz5-x | §9.2’s account memo, the first link in the chain | `0.0.10509170` | `0.0.8641261` |
+| gz5-y | the provisioning purchase this agent was bought by | `0.0.10509139` | `0.0.8641261` |
+| gz5-y | doorbell (HCS-10 inbound) | [`0.0.10509142`](https://hashscan.io/testnet/topic/0.0.10509142) | `0.0.8641261` |
+| gz5-y | log (HCS-10 outbound) | [`0.0.10509145`](https://hashscan.io/testnet/topic/0.0.10509145) | `0.0.8641261` |
+| gz5-y | manifest | [`0.0.10509148`](https://hashscan.io/testnet/topic/0.0.10509148) | `0.0.8641261` |
+| gz5-y | declaration registry (HCS-2) | [`0.0.10509152`](https://hashscan.io/testnet/topic/0.0.10509152) | `0.0.8641261` |
+| gz5-y | HCS-11 profile file (HCS-1) | [`0.0.10509153`](https://hashscan.io/testnet/topic/0.0.10509153) | `0.0.8641261` |
+| gz5-y | HCS-11 profile, as HCS-1 chunks | `0.0.10509153` | `0.0.8641261` |
+| gz5-y | HCS-2 register entry naming the profile file | `0.0.10509152` | `0.0.8641261` |
+| gz5-y | §9.2’s account memo, the first link in the chain | `0.0.10509139` | `0.0.8641261` |
 
 **The payer column is the point of it.** Every row of a mailbox names the Postmaster as payer — it provisioned
 what it sold (D-168) — and the registration on the HOL anchor names **the agent’s own account**, which is the one

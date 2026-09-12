@@ -40,6 +40,14 @@ export const RUN_FIXTURE_NAMES = [
   'checkpoint-two-receipt',
   'checkpoint-two-reply',
   'gate-three-certified',
+  // Registered together 2026-09-12, the first act after the recorded take
+  // (RECORD, Sonic). All three post-date D-173, so each carries the minor
+  // version and needs no SPEC_WHEN_CAPTURED substitution. The first two were
+  // held out deliberately so the battery entered Gate Four and the take
+  // exactly as green as it was; the third is the take itself.
+  'gate-zero-two-certified',
+  'gate-four-certified',
+  'recorded-take-certified',
 ] as const;
 
 /**
