@@ -59,7 +59,33 @@ RECORD**. **`gz-x` and `gz-y` are DRY/debug homes now and never go live again** 
 is **a second Gate Zero on the same demo operators with fresh homes**, and Gate Four — brand-new wallets — after it.
 Both are **NOT YET**, and both get their own gate report.
 
-**THE SECOND GATE ZERO IS PREPARED AND WAITS ON A SIGNATURE** (2026-09-12). Its report is `app/OPERATIONS.md`,
+**THE SECOND GATE ZERO IS RUN AND IT IS GREEN** (2026-09-12). **Four gates now stand on `hedera:testnet`, and
+this is the first driven by goose.** Six instructions from `docs/OPERATOR-SCRIPT.md`, one per turn, in two goose
+windows: both agents provisioned, a lane born, one certified letter with a return receipt across it, the recipient
+opened it and signed for it, and the network executed the receipt onto her own manifest topic. **One pass, no
+stop.** GREEN read from the mirror and from no card: schedule `0.0.10489457` `executed_timestamp`
+**`1789176191.217453809`**, and the receipt manifest at **sequence 1 of `0.0.10489371`** at that same instant to
+the nanosecond, hashing to `188b619e…` — chained back to chunk 0 on lane `0.0.10489454` at
+`1789176126.262539578`. A stranger holding nothing read it back **twice at one digest**, `fca22d10…`, state
+**ACKED**.
+
+**Every one of the five stamp predictions matched exactly** — X2 12→9, Y2 12→12 (charged nothing at any step,
+T-P16-2), C2OPERATOR 0→0, C1OPERATOR 1→1, treasury 9,957→**9,936**. **§4.4's hop fired under goose for the first
+time**, the line the gate report said to watch. **Both doorbell memos name their own accounts**, which is the
+2026-09-11 defect not recurring, and `send` accepted a **stringified `coordinates`** for the third session
+running — the coercion was the only reason there was a letter to record. The run of record is
+`app/OPERATIONS.md`, **GATE ZERO, THE SECOND — THE RUN OF RECORD**, with every id, every readback and one
+divergence: §3's carry estimate undercounted the Postmaster's revenue, which measured **+26.97999223 ℏ** rather
+than a loss.
+
+**Three things it does NOT prove, named rather than implied:** no `hol` resolution (`register_agent` was off the
+path by design); no `verified` appraisal, because this release claims no profile (`release.ts:43` is
+`profiles: {}`, so `unverified` via T-P12-4 is correct output and not a shortfall); and **no brand-new operator
+wallet** — both wallets auto-associate at `-1`, so `ensurePayerHoldsStamps`' `TokenAssociate` branch
+(`app/sdk/mailbox.ts:287-294`) **still has never run live**. That is Gate Four, untouched.
+
+**The superseded preparation note, kept because the gate report beneath it is not amended:** it was prepared
+2026-09-12. Its report is `app/OPERATIONS.md`,
 **GATE ZERO, THE SECOND**, committed before anything can sign, fill-in unfilled. It runs on **two fresh homes on
 the same demo operator wallets** — `gz2-x` (**DemoAgentX2**, SENDER, C2OPERATOR `0.0.10450880`, which holds **zero
 `$POSTAGE`** so §4.4's hop fires) and `gz2-y` (**DemoAgentY2**, RECIPIENT, C1OPERATOR `0.0.10450879`, which holds

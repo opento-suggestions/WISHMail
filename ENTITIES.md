@@ -127,6 +127,10 @@ below is public and nothing here is a key: a home’s config and keystore are ne
 | a2 | **provisioned** | `0.0.10462700` | `0.0.10450879` | `0.0.8641261@1789058834.851527600` |
 | b | **provisioned** | `0.0.10452127` | `0.0.10450880` | `0.0.8641261@1789007373.238805114` |
 | c | **provisioned** | `0.0.10468684` | `0.0.10450880` | `0.0.8641261@1789088736.041814712` |
+| gz-x | **provisioned** | `` | `0.0.10450880` | `0.0.8641261@1789167522.108801306` |
+| gz-y | **provisioned** | `0.0.10487080` | `0.0.10450879` | `0.0.8641261@1789167446.869833765` |
+| gz2-x | **provisioned** | `0.0.10489394` | `0.0.10450880` | `0.0.8641261@1789175901.303688982` |
+| gz2-y | **provisioned** | `0.0.10489361` | `0.0.10450879` | `0.0.8641261@1789175795.394278638` |
 
 **An operator may own many agents** (D-165): the wallet is the operator’s, the home is the agent’s, and a fresh
 home is a new agent. The operator wallet above is read from **consensus** and never from a home’s config, which is
@@ -176,6 +180,34 @@ of record.
 | c | HCS-2 register entry naming the profile file | `0.0.10468693` | `0.0.8641261` |
 | c | §9.2’s account memo, the first link in the chain | `0.0.10468684` | `0.0.8641261` |
 | c | the agent’s own registration on the HOL anchor (§9.5, T-P13-4) | `0.0.6913983` | `0.0.10468684` |
+| gz-x | doorbell (HCS-10 inbound) | [`0.0.10487041`](https://hashscan.io/testnet/topic/0.0.10487041) | `0.0.10450880` |
+| gz-x | log (HCS-10 outbound) | [`0.0.10487045`](https://hashscan.io/testnet/topic/0.0.10487045) | `0.0.10450880` |
+| gz-x | manifest | [`0.0.10487048`](https://hashscan.io/testnet/topic/0.0.10487048) | `0.0.10450880` |
+| gz-x | declaration registry (HCS-2) | [`0.0.10487050`](https://hashscan.io/testnet/topic/0.0.10487050) | `0.0.10450880` |
+| gz-x | the provisioning purchase this agent was bought by | — | `` |
+| gz-y | doorbell (HCS-10 inbound) | [`0.0.10487067`](https://hashscan.io/testnet/topic/0.0.10487067) | `0.0.10450879` |
+| gz-y | log (HCS-10 outbound) | [`0.0.10487068`](https://hashscan.io/testnet/topic/0.0.10487068) | `0.0.10450879` |
+| gz-y | manifest | [`0.0.10487072`](https://hashscan.io/testnet/topic/0.0.10487072) | `0.0.10450879` |
+| gz-y | declaration registry (HCS-2) | [`0.0.10487075`](https://hashscan.io/testnet/topic/0.0.10487075) | `0.0.10450879` |
+| gz-y | the provisioning purchase this agent was bought by | `0.0.10487080` | `` |
+| gz2-x | the provisioning purchase this agent was bought by | `0.0.10489394` | `0.0.8641261` |
+| gz2-x | doorbell (HCS-10 inbound) | [`0.0.10489395`](https://hashscan.io/testnet/topic/0.0.10489395) | `0.0.8641261` |
+| gz2-x | log (HCS-10 outbound) | [`0.0.10489398`](https://hashscan.io/testnet/topic/0.0.10489398) | `0.0.8641261` |
+| gz2-x | manifest | [`0.0.10489401`](https://hashscan.io/testnet/topic/0.0.10489401) | `0.0.8641261` |
+| gz2-x | declaration registry (HCS-2) | [`0.0.10489402`](https://hashscan.io/testnet/topic/0.0.10489402) | `0.0.8641261` |
+| gz2-x | HCS-11 profile file (HCS-1) | [`0.0.10489403`](https://hashscan.io/testnet/topic/0.0.10489403) | `0.0.8641261` |
+| gz2-x | HCS-11 profile, as HCS-1 chunks | `0.0.10489403` | `0.0.8641261` |
+| gz2-x | HCS-2 register entry naming the profile file | `0.0.10489402` | `0.0.8641261` |
+| gz2-x | §9.2’s account memo, the first link in the chain | `0.0.10489394` | `0.0.8641261` |
+| gz2-y | the provisioning purchase this agent was bought by | `0.0.10489361` | `0.0.8641261` |
+| gz2-y | doorbell (HCS-10 inbound) | [`0.0.10489363`](https://hashscan.io/testnet/topic/0.0.10489363) | `0.0.8641261` |
+| gz2-y | log (HCS-10 outbound) | [`0.0.10489368`](https://hashscan.io/testnet/topic/0.0.10489368) | `0.0.8641261` |
+| gz2-y | manifest | [`0.0.10489371`](https://hashscan.io/testnet/topic/0.0.10489371) | `0.0.8641261` |
+| gz2-y | declaration registry (HCS-2) | [`0.0.10489372`](https://hashscan.io/testnet/topic/0.0.10489372) | `0.0.8641261` |
+| gz2-y | HCS-11 profile file (HCS-1) | [`0.0.10489374`](https://hashscan.io/testnet/topic/0.0.10489374) | `0.0.8641261` |
+| gz2-y | HCS-11 profile, as HCS-1 chunks | `0.0.10489374` | `0.0.8641261` |
+| gz2-y | HCS-2 register entry naming the profile file | `0.0.10489372` | `0.0.8641261` |
+| gz2-y | §9.2’s account memo, the first link in the chain | `0.0.10489361` | `0.0.8641261` |
 
 **The payer column is the point of it.** Every row of a mailbox names the Postmaster as payer — it provisioned
 what it sold (D-168) — and the registration on the HOL anchor names **the agent’s own account**, which is the one

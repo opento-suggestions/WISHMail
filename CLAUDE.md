@@ -127,7 +127,20 @@ never matches and the process starts, does nothing and exits 0 with no banner. *
 symlinks this repo** — the one-line fix is to compare real paths, it is deliberately NOT made before the gate, and
 it is build work for after submission.
 
-**THE SECOND GATE ZERO IS PREPARED AND WAITS ON SONIC'S WORD** (2026-09-12). Report: `app/OPERATIONS.md`,
+**THE SECOND GATE ZERO IS RUN AND GREEN** (2026-09-12), and it is **the first gate driven by goose**. Six
+instructions, one per turn, one pass, no stop: both agents provisioned on fresh homes, a lane born
+(`0.0.10489454`), one certified letter with a return receipt, opened and signed for, and the receipt executed
+onto the recipient's own manifest topic. GREEN from the mirror: schedule `0.0.10489457` executed at
+`1789176191.217453809`, receipt at `0.0.10489371` #1 at that instant, chained to chunk 0 at
+`1789176126.262539578`; a stranger read it back twice at digest `fca22d10…`, state ACKED. **All five stamp
+predictions matched exactly** and **§4.4's hop fired for the first time**. **DemoAgentY2** is `0.0.10489361`
+(home `gz2-y`) and **DemoAgentX2** is `0.0.10489394` (home `gz2-x`). Run of record: `app/OPERATIONS.md`,
+**GATE ZERO, THE SECOND — THE RUN OF RECORD**, with one divergence recorded (§3's carry estimate undercounted
+revenue; the Postmaster netted **+26.97999223 ℏ**). **Not proved and named**: no `hol` resolution, no `verified`
+appraisal (this release claims no profile, so T-P12-4's `unverified` is correct output), and no brand-new
+wallet — `mailbox.ts:287-294`'s TokenAssociate branch still has never run live, which is Gate Four.
+
+**The superseded preparation note:** Report: `app/OPERATIONS.md`,
 **GATE ZERO, THE SECOND**, committed before anything can sign. Fresh homes **`gz2-x`** (DemoAgentX2, SENDER,
 C2OPERATOR `0.0.10450880`, zero `$POSTAGE` so the hop fires) and **`gz2-y`** (DemoAgentY2, RECIPIENT,
 C1OPERATOR `0.0.10450879`); keys born on first boot, both unprovisioned, zero accounts under either key, both

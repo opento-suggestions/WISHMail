@@ -6421,6 +6421,338 @@ It runs under HEAD at the time, with the spec at `v0.5.13`, twenty-two `check:*`
   **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED — Sonic, 2026-09-12 ]**
 
 
+## GATE ZERO, THE SECOND — THE RUN OF RECORD. 2026-09-12, and it is GREEN
+
+**The gate report above is not edited.** This sits beneath it, dated, with every id and every mirror readback.
+
+**IT RAN IN ONE PASS WITH NO STOP.** Six instructions from `docs/OPERATOR-SCRIPT.md`, one per turn, in two goose
+windows on the LIVE entries. **Both agents were provisioned, a lane was born, one certified letter with a return
+receipt crossed it, the recipient opened it and signed for it, and the network executed the receipt onto her own
+manifest topic.** A stranger holding nothing read it back twice at one digest. **Every one of the five stamp
+predictions in §3 of the gate report matched exactly.**
+
+**This is the first time goose has driven this server through the golden path on `hedera:testnet`**, and it is
+what the first Gate Zero asked and could not answer.
+
+---
+
+### 1. WHAT GREEN IS, READ FROM THE MIRROR AND NOT FROM ANY CARD
+
+**(a) The schedule has executed.**
+
+```
+  GET /api/v1/schedules/0.0.10489457
+    consensus_timestamp  1789176129.148390104
+    executed_timestamp   1789176191.217453809      <-- NOT NULL
+    deleted false · wait_for_expiry false · signatures 3
+    creator 0.0.10450880 · payer 0.0.10450880
+  https://hashscan.io/testnet/schedule/0.0.10489457
+```
+
+**(b) The receipt manifest is on the RECIPIENT's own manifest topic.**
+
+```
+  GET /api/v1/topics/0.0.10489371/messages?limit=25&order=asc
+    seq 1 · consensus 1789176191.217453809 · 508 bytes
+    body.hash      188b619e00daf47b8bf2b8b1bc6dbc10a52e27753a108351400856c8bcefb1b0
+    inputs.digest  3fd081d7ba57a2155f9bc07ec7cbc51a4f61255d0e05d823841b764c11f84a39
+  https://hashscan.io/testnet/topic/0.0.10489371
+```
+
+`body.hash` is the hash the `ack`'s own receipt named, and the message's consensus timestamp is **the execution
+instant to the nanosecond** — the receipt did not arrive near the execution, it *is* the execution.
+
+**And the chain that joins them, each read from consensus:**
+
+```
+  chunk 0        lane 0.0.10489454  seq 1  consensus 1789176126.262539578  op=message
+  the request    lane 0.0.10489454  seq 2  consensus 1789176131.249818104  op=transaction, naming 0.0.10489457
+  the execution  1789176191.217453809                      STRICTLY AFTER chunk 0, by 64.96 seconds
+  the receipt    0.0.10489371 #1    at the execution instant
+```
+
+**GREEN.**
+
+---
+
+### 2. The six instructions, and what each returned
+
+Sessions **`20260912_4`** (RECIPIENT, `gz2-y`) and **`20260912_5`** (SENDER, `gz2-x`), read from goose's own
+session database. **Six tool calls, and not one other** — the allowlist held again.
+
+```
+  01:16:40  Y2  buy_stamp {count 12, provision true, payment "{...}", holder "{...}"}
+                -> StampReceipt · txRef 0.0.8641261@1789175795.394278638 · 12 stamps · 13.45267471 h
+                   account 0.0.10489361 · doorbell 0.0.10489363 · log 0.0.10489368
+                   manifest 0.0.10489371 · declRegistry 0.0.10489372 · profileFile 0.0.10489374
+
+  01:18:24  X2  buy_stamp {the same}
+                -> StampReceipt · txRef 0.0.8641261@1789175901.303688982 · 12 stamps · 13.45267471 h
+                   account 0.0.10489394 · doorbell 0.0.10489395 · log 0.0.10489398
+                   manifest 0.0.10489401 · declRegistry 0.0.10489402 · profileFile 0.0.10489403
+
+  01:19:58  X2  resolve {address 0.0.10489361, profile hcs14}
+                -> doorbell 0.0.10489363 · manifest 0.0.10489371 · keyEpoch 1 · trustClass math
+                   proof 8b243455a893ddfa5fc24a7ec600d565cc977111bee836e59e4b70e21e6e9151
+
+  01:22:12  X2  send {coordinates "<A STRING>", payload "VGhpcyBsZXR0ZXIg…", returnReceipt true}
+                -> Postmark · lane 0.0.10489454 seq 1 at 1789176126.262539578
+                   envelope 08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f
+
+  01:22:29  Y2  inbox {}
+                -> 1 delivery, opened true, 70 bytes of payload, state from the lane
+
+  01:23:14  Y2  ack {envelopeId 08329989…}
+                -> receipt · schedule 0.0.10489457 · executedTimestamp 1789176191.217453809
+```
+
+**`send`'s `coordinates` arrived as a JSON STRING again** — the third session running. **The coercion pushed
+at `0d742cc` is the only reason this gate reached a letter at all**, and it was load-bearing on the night it
+mattered, not belt-and-braces.
+
+**`send`'s own narration, which is the ten sentences D-162 put in one template**, is the clearest account of
+what happened and is quoted whole:
+
+```
+  0.0.10489361 resolves under hcs14 at trust class math; its manifest topic is 0.0.10489371 and its key epoch 1.
+  ringing the doorbell 0.0.10489363; one stamp goes to the treasury for the request.
+  the connection request is at sequence 1 on 0.0.10489363, at 1789176108.702187104.
+  lane 0.0.10489454 created, its submit key a threshold of exactly the two agents' keys.
+  manifest published at 0.0.10489401 sequence 1.
+  envelope 08329989…, sealed against key epoch 1, 85 bytes of ciphertext.
+  assembled: 1 chunk(s), weight 1, postage 2.
+  postage affixed at 0.0.10450880@1789176115.751660511 under the memo wishmail:08329989…,
+      which names this envelope and no other.
+  chunk 0 of 1 postmarked on 0.0.10489454 at sequence 1.
+  every chunk has a consensus timestamp; the first is 1789176126.262539578.
+  a return receipt is requested: schedule 0.0.10489457 is on the lane at sequence 2,
+      and it is the recipient's to sign.
+  the schedule stands unsigned. Nothing is claimed about whether anyone has read the letter.
+```
+
+**The last sentence is P-14 and §11.8 doing their job**: `send` returned before anyone signed, and said so.
+
+---
+
+### 3. Every entity, with its payer and its consensus timestamp
+
+**DemoAgentY2 — home `gz2-y`, agent key `b99f4427…`. The purchase is paid by C1OPERATOR; every mailbox row is
+CARRIED by the Postmaster `0.0.8641261`.**
+
+| Entity | Id | Consensus | Payer | Cost |
+|---|---|---|---|---|
+| account | `0.0.10489361` | `1789175801.455577103` | Postmaster | 0.67263366 ℏ |
+| **doorbell** | `0.0.10489363` | `1789175807.454565517` | Postmaster | **27.04256425 ℏ** |
+| log | `0.0.10489368` | `1789175815.617806970` | Postmaster | 0.40627073 ℏ |
+| manifest | `0.0.10489371` | `1789175823.742109502` | Postmaster | 0.40627073 ℏ |
+| declaration registry | `0.0.10489372` | `1789175830.197721187` | Postmaster | 0.40627073 ℏ |
+| profile file (HCS-1) | `0.0.10489374` | `1789175836.809625104` | Postmaster | 0.27174400 ℏ |
+| profile chunks | on `0.0.10489374` | `1789175843.488583409` | Postmaster | 0.00750174 ℏ |
+| HCS-2 register entry | on `0.0.10489372` | `1789175847.090453104` | Postmaster | 0.00363221 ℏ |
+| §9.2 account memo | `0.0.10489361` | `1789175851.162597699` | Postmaster | 0.00430485 ℏ |
+
+**DemoAgentX2 — home `gz2-x`, agent key `140bb1a8…`, the same shape:**
+
+| Entity | Id | Consensus | Cost |
+|---|---|---|---|
+| account | `0.0.10489394` | `1789175906.182427078` | 0.67263366 ℏ |
+| **doorbell** | `0.0.10489395` | `1789175909.130790104` | **27.04256425 ℏ** |
+| log | `0.0.10489398` | `1789175915.610524104` | 0.40627073 ℏ |
+| manifest | `0.0.10489401` | `1789175922.675389541` | 0.40627073 ℏ |
+| declaration registry | `0.0.10489402` | `1789175924.514593407` | 0.40627073 ℏ |
+| profile file (HCS-1) | `0.0.10489403` | `1789175926.417438237` | 0.27174400 ℏ |
+| profile chunks | on `0.0.10489403` | `1789175934.682314667` | 0.00753833 ℏ |
+| HCS-2 register entry | on `0.0.10489402` | `1789175937.235459097` | 0.00363221 ℏ |
+| §9.2 account memo | `0.0.10489394` | `1789175941.230294104` | 0.00430485 ℏ |
+
+**And between them, the lane:** `0.0.10489454`, created by **C1OPERATOR** at `1789176114.065044104` for
+0.53945220 ℏ.
+
+**`register_agent` was not called and no HOL registration was made**, as §4 of the gate report said. **No
+`TokenAssociateTransaction` appears for either operator**, as §1 predicted from `autoAssoc -1`.
+
+---
+
+### 4. THE PREDICATES, each checked against the mirror
+
+**The doorbell memos name their own accounts.** This is the 2026-09-11 defect, and it is the reason the fix exists:
+
+```
+  0.0.10489363   memo "hcs-10:0:60:0:0.0.10489361"   <-- names DemoAgentY2
+  0.0.10489395   memo "hcs-10:0:60:0:0.0.10489394"   <-- names DemoAgentX2
+```
+
+**Not one ownerless memo.** Both carry the HIP-991 fee, one unit of `0.0.10426208` collected by `0.0.10426205`.
+
+**The lane's submit key is a threshold of EXACTLY the two agents' keys**, decoded from the mirror's protobuf:
+
+```
+  threshold 1 of 2
+    140bb1a8d12dc11827c6e14d92e634bc59f0ee29af6af8884fd561e46c24f174   DemoAgentX2
+    b99f4427441cada5deb31459c11f36bbfd356440cb3ef7b14957cce5f2197a26   DemoAgentY2
+  custom fees: none          memo "hcs-10:1:60:2:0.0.10489363:1"
+```
+
+The lane's memo names **the doorbell that answered and the sequence it answered at** — the real HCS-10
+connection-topic form, which is what D-171 has a Verifier walk down to find the lane without resolving anything.
+
+**Both accounts carry §9.2's HCS-11 memo:** `hcs-11:hcs://2/0.0.10489372` on Y2 and
+`hcs-11:hcs://2/0.0.10489402` on X2 — each naming its own declaration registry.
+
+**NOTHING WAS RUNG THAT SHOULD NOT HAVE BEEN, and it is a count.** `0.0.10489363` (Y2's door) holds **2**
+messages — the request and the `connection_created`. `0.0.10489395` (X2's door) holds **0**. X2 rang once; nobody
+rang X2.
+
+**The settlement is one transfer under one memo:**
+
+```
+  0.0.10450880@1789176115.751660511  at 1789176123.808518352
+  memo   "wishmail:08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f"
+  token  0.0.10489394: -2   ->   0.0.10426205: +2
+```
+
+Two stamps, from the sender's own account to the treasury, under a memo naming this envelope and no other (§4.3).
+
+---
+
+### 5. THE ARITHMETIC — every stamp prediction matched EXACTLY
+
+Against §3 of the gate report, which was written before anything signed:
+
+```
+                        predicted        actual
+  X2                    12 -> 9          9           MATCH
+  Y2                    12 -> 12         12          MATCH   (T-P16-2: charged nothing, at any step)
+  C2OPERATOR             0 -> 0          0           MATCH   (the hop fired; the door consumed it)
+  C1OPERATOR             1 -> 1          1           MATCH   (the stray stamp was not spent)
+  treasury           9,957 -> 9,936      9,936       MATCH   (-24 sold, +2 postage, +1 door)
+```
+
+**§4.4's HOP FIRED, under goose, for the first time.** It is visible as C2OPERATOR's transfer at
+`1789176104.638020104`, four seconds before the ring: X2 moved one stamp to its own payer because that payer held
+none, and the doorbell's HIP-991 fee then consumed it. **That was the line the gate report said to watch, and it
+behaved.**
+
+**In ℏ:**
+
+```
+                         before             after            delta       transactions
+  C2OPERATOR  (sender)    378.62178036      334.29305690    -44.32872346      11
+  C1OPERATOR  (recipient) 322.70803327      278.02212512    -44.68590815       5
+  Postmaster  0.0.8641261 3318.26340551    3345.24339774    +26.97999223      20
+  DemoAgentX2 0.0.10489394          -        0.05000000 h · 9 stamps
+  DemoAgentY2 0.0.10489361          -        0.05000000 h · 12 stamps
+```
+
+Each agent holds **exactly one registration fee** and nothing more — the invariant of §11, and neither spent it,
+because `register_agent` was not on this path.
+
+**The purchase was ONE transaction with THREE legs, exactly as §4.6 specifies**, and the mirror shows all three in
+one `CRYPTOTRANSFER`:
+
+```
+  0.0.10450879: -43.45267471 h      the buyer pays
+  0.0.8641261:  +42.71120731 h      the Postmaster receives (node 0.0.802 takes 0.69146740)
+  0.0.10426205: -12  ->  0.0.10489361: +12       the stamps
+  0.0.10489361: +0.05000000 h       the registration fee, funded by the Postmaster
+```
+
+---
+
+### 6. DIVERGENCE — the Postmaster made money, and §3 of the gate report said it would not
+
+**One number in the gate report was wrong, and it was ours.** §3 predicted *"two mailboxes is roughly 56 ℏ of the
+Postmaster's payer against 60 ℏ taken"*. Measured:
+
+```
+  the Postmaster spent   58.44242239 h over 20 transactions (two full mailboxes, two account creations)
+  the Postmaster took    85.42241462 h  (42.71120731 x 2)
+  net                   +26.97999223 h
+```
+
+**The spend was right; the revenue was undercounted.** §3 counted only the 30 ℏ provisioning leg as revenue and
+forgot that **the stamps are bought from the Postmaster too** — the buyer's whole 43.45 ℏ lands on
+`0.0.8641261`, less the node's fee. At `PriceList` sequence 4 the provisioned path is **profitable**, not
+loss-making.
+
+**This does not overturn LIMITATIONS L-5 or ledger §G-20**, and it must not be read as doing so: the doorbell alone
+measured **27.04256425 ℏ** tonight, against the 2 ℏ provisioning price that sequences 2 and 3 carried, and at that
+price the Postmaster lost heavily on every sale. What is now measured is that **sequence 4's 30 ℏ covers it**.
+Recorded here; the correction to L-5's framing is a decision for Sonic and not taken by this run.
+
+---
+
+### 7. The stranger, holding nothing, twice
+
+```
+  $ npm run verify -- --lane 0.0.10489454
+    scope    lane 0.0.10489454
+    holding  no key · no account · no stamp · no counter · no home
+
+    bundle digest   fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848
+    envelope        08329989df027eb94bd99937c95134a4df1b93f749bf5d1f10fd47c5ac68022f
+    state           ACKED
+    APPRAISED       unverified          reasons T-P12-4
+    DECLARED        trust class math · 0 endorsement(s)
+    receipt         acked
+```
+
+**Run twice; the digest is `fca22d10…` both times**, and `narrative.bundleDigest` matches the bundle. §11.7's MUST
+holds.
+
+**`unverified` IS THE CORRECT OUTPUT AND IS NOT A SHORTFALL.** `T-P12-4` is the register's row for *"a Verifier
+claiming NO PROFILE appraises every fixture's resolution as unverified, never fails, and passes the VERIFIER
+suite"*, and this release claims none: `app/src/release.ts:43` is `profiles: {}`, because §1.5's silence claims
+nothing. The envelope is **ACKED** and **bound and stamped**; its address is simply unappraised by a Verifier that
+has not claimed the profile to appraise it with. That is P-12 downgrading instead of erroring, and §11.5's table as
+D-177 settled it. **A Verifier claiming `hcs14` is what would reach `verified`, and this deployment publishes
+no such claim.**
+
+**The reading says the postage was affixed by `0.0.10489394`** — the sender's own account — and names the memo
+that binds it to this envelope and no other. A stranger reconstructed that from consensus alone.
+
+---
+
+### 8. What this proves, and the three things it does not
+
+**Proved, on `hedera:testnet`, driven by goose:**
+
+1. **The golden path completes.** Provision → buy → resolve → send → inbox → ack → execute, with the receipt on the
+   recipient's own manifest topic at the execution instant, chained back to chunk 0's postmark.
+2. **The 2026-09-11 fixes hold where it counts.** Both doorbell memos name their own accounts; `generate_mailbox`
+   was never reachable; and `send` accepted a stringified `coordinates` for the third session running, which is
+   the only reason there was a letter to record.
+3. **The payer seam works in both directions under an MCP client**: every mailbox row carried by the Postmaster,
+   every act outside the purchase paid by that agent's own operator, and the agent signing throughout.
+4. **§4.4's hop fires**, which no gate had ever exercised.
+5. **T-P16-2 holds**: the recipient was charged nothing, in ℏ or in stamps, at any step including across the ack.
+
+**NOT proved, and named rather than implied:**
+
+1. **No `hol` resolution.** `register_agent` was off the path by design, so nothing is claimed about §9.5's
+   `blurred` rule on these two agents.
+2. **No `verified` appraisal**, for the reason in §7: this release claims no profile. The capture that would let a
+   profile-claiming Verifier try it was not taken tonight.
+3. **A brand-new operator wallet.** Both wallets here are ones we already own and both auto-associate at `-1`, so
+   `ensurePayerHoldsStamps`' `TokenAssociateTransaction` branch (`app/sdk/mailbox.ts:287-294`) **still has
+   never executed against the network.** That is Gate Four's question and it is untouched by this run.
+
+---
+
+### 9. Residue
+
+**All fourteen entities above are residue** — inputs to a rehearsal that succeeded, not part of the deployment,
+superseded by nothing. They are permanent: two HCS-1 profile topics have no admin key at all, and a topic cannot be
+deleted. `app/deployment/demo-agents.hedera-testnet.json` and `ENTITIES.md` are **regenerated from each home's
+own `record.json`** by `npm run entities:md -- --homes <parent>`, never hand-written; `check:entities` green.
+
+The generated table now carries **eight agents**. Note that `gz-x` renders as *provisioned* with an **empty
+account**: that is its damaged `record.json` faithfully reproduced — the outstanding purchase in state `signed`
+against a transfer that never landed — and it is left exactly as it is.
+
+  **GATE ZERO (second, fresh homes on the demo operators) — RUN 2026-09-12. GREEN.**
+
+
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
 
 **The Gate Zero report is not amended by any of this, and Gate Four gets its own.** This is the list of what that
