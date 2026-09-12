@@ -8314,6 +8314,220 @@ terminal** — never from inside goose, which discards the extension’s stderr 
 
 ---
 
+## THE RECORDED TAKE — THE RUN OF RECORD. 2026-09-12, and it is GREEN
+
+**Beneath the report above, which is not amended.** Every id and every figure here is a mirror-node read taken
+after the run, never a card and never an SDK receipt (D-144). **The operator drove `docs/OPERATOR-SCRIPT.md`
+Part B, B0 through B6, one instruction per turn.**
+
+### 1. The five markers, all met
+
+```
+  TAKE RECIPIENT   MET   DemoAgentY5  0.0.10509139   home gz5-y   operator 0.0.10492957
+  TAKE SENDER      MET   DemoAgentX5  0.0.10509170   home gz5-x   operator 0.0.10492954
+  TAKE STAMPS      N/A   provisioning carried the twelve
+  TAKE SEND        MET   envelope 3051fb60…   lane 0.0.10509262   one chunk, 38 bytes
+  TAKE ACK         MET   schedule 0.0.10509266 EXECUTED at 1789244564.149812105
+```
+
+### 2. The entities, from the mirror
+
+```
+  DemoAgentY5   account   0.0.10509139   memo hcs-11:hcs://2/0.0.10509152
+                doorbell  0.0.10509142   hcs-10:0:60:0:0.0.10509139   one HIP-991 fee
+                log       0.0.10509145   manifest 0.0.10509148   registry 0.0.10509152
+                profile   0.0.10509153   (HCS-1, brotli:base64)
+  DemoAgentX5   account   0.0.10509170   memo hcs-11:hcs://2/0.0.10509179
+                doorbell  0.0.10509173   hcs-10:0:60:0:0.0.10509170   ZERO messages, never rung
+                log       0.0.10509176   manifest 0.0.10509177   registry 0.0.10509179
+                profile   0.0.10509181   (HCS-1, brotli:base64)
+  THE LANE      0.0.10509262   hcs-10:1:60:2:0.0.10509142:1   born 1789244444.459274153
+  THE ENVELOPE  3051fb6090d254cbb610470f722633fb119cd83aaa84ffae3ce19db98a113f8e
+  THE SCHEDULE  0.0.10509266   executed 1789244564.149812105   3 signatures
+  BUNDLE DIGEST 3245fa580c7aff4288af2c0a951febf491303533241657e56e05716984f6dd2f
+```
+
+### 3. GREEN, the two facts, read from the mirror and from no card
+
+1. **The schedule executed.** `0.0.10509266`, `executed_timestamp` =
+   `1789244564.149812105`, `deleted: false`, three signatures.
+2. **The receipt manifest is on DemoAgentY5’s OWN manifest topic**, `0.0.10509148` **sequence 1**, at
+   `1789244564.149812105` — the same instant to the nanosecond — and **chained back to chunk 0**:
+   its `inputs.locator` is `{topicId: 0.0.10509262, sequenceNumber: 1}`. It reads, in its own words,
+   *"0.0.10509139 opened this envelope with its AAD verified."*, rule `wishmail:receipt` revision `0.5`.
+
+**A stranger holding no key, no account, no stamp, no counter and no home** reads the lane back at digest
+`3245fa58…`: state **ACKED**, receipt **acked**, appraised `unverified` with reason `T-P12-4` and no
+other — **correct output**, this release claiming no profile (§1.5, §9.6, D-177).
+
+### 4. THE LETTER ARRIVED INTACT, AND IT IS THE FIRST TIME
+
+**The payload rendered at B5 is byte-identical to the literal.**
+
+```
+  literal   "Certified agent mail proven on Hedera."   38 bytes
+  rendered  "Certified agent mail proven on Hedera."   38 bytes      IDENTICAL
+  chunk 0   cb = 54 = 38 plaintext + 16 AES-GCM tag
+```
+
+**Twice before, it did not.** The second Gate Zero landed 69 bytes for a 70-byte literal
+(*"…on consensu."*); Gate Four landed 38 for a 39-byte literal (*"Certified agent mail,proven on Hedera."*),
+the same length as its literal and carrying padding the literal lacked, which is what proved the mechanism is
+**re-encoding and not truncation**. **The only thing that changed this run is B3½**, the read-back before the
+spend. The defect that fired twice did not fire.
+
+**Two things from the 2026-09-11 C0.2 work are proved live on consensus by that one card:** `payload` came
+back as a **base64 string** the card could render as a sentence, not as `{"type":"Buffer","data":[…]}` —
+which is the whole reason B5 is a check a human can perform — and the pending receipt carried **exactly the
+four `PendingReceipt` fields** (`scheduleId`, `sequenceNumber`, `consensusTimestamp`,
+`requestedByHeader`) and not a §5.8 ReturnReceipt, which is the corrected schema meeting the wire.
+
+### 5. The order of acts, and the association in its predicted place
+
+```
+  1789244045.206477370  Y5 purchase, one atomic three-leg CryptoTransfer     -43.41849606 h
+  1789244052.755122104  Y5 operator TokenAssociate $POSTAGE                   -0.67092479 h
+  1789244053.603969104  Y5 doorbell created            <- the FIRST topic, after the associate
+  1789244147.029887310  X5 purchase                                          -43.41849606 h
+  1789244154.075346235  X5 operator TokenAssociate $POSTAGE                   -0.67092479 h
+  1789244155.960083922  X5 doorbell created            <- likewise
+  1789244398.489354822  §4.4 HOP: one stamp X5 -> its operator
+  1789244404.148201622  the ring: connection_request on Y5 doorbell #1
+  1789244407 .. 444     SIX CONSENSUSCREATETOPIC        <- see §7, the divergence
+  1789244446.482080104  connection_created on Y5 doorbell #2, naming 0.0.10509262
+  1789244453.320194486  the resolution manifest, X5 manifest topic #1
+  1789244455.507487660  the settlement, two stamps to the treasury
+  1789244459.505553104  CHUNK 0 on the lane, sequence 1
+  1789244463.548120370  ScheduleCreate 0.0.10509266
+  1789244467.160130401  the transaction operation announcing it on the lane
+  1789244564.149812105  ScheduleSign -> EXECUTED, receipt on Y5 manifest #1
+```
+
+**The association fired on BOTH operators, after each purchase and before that agent’s first topic**, at
+**0.67092479 ℏ each** against 0.67094579 predicted from Gate Four — a difference of 0.00002100 ℏ. It fired
+on the recipient’s operator too, which **never rings** (her doorbell holds a request; his holds **zero**
+messages) and ends associated with a balance of zero. **This is a repetition of Gate Four and not a new
+observable**, as the report said in advance.
+
+### 6. The stamp table, predicted against measured
+
+```
+                                   predicted   measured
+  DemoAgentX5  (sender)                    9          9    +12 bought, -1 hop, -2 settlement
+  DemoAgentY5  (recipient)                12         12    +12, and CHARGED NOTHING (T-P16-2)
+  0.0.10492954 (sender operator)           0          0    +1 hop, -1 doorbell fee
+  0.0.10492957 (recipient operator)        0          0    associated, never holds one
+  treasury 0.0.10426205                 9894       9894    -24 sold, +1 doorbell, +2 settlement
+```
+
+**Every row exact.** A net −21 on the treasury, which is what the second Gate Zero and Gate Four each
+measured on their own pairs.
+
+**T-P16-2, measured:** the recipient signed for her own letter and **not one stamp of hers moved at any step**.
+Her only ℏ costs after provisioning are her own door’s answer and a `ScheduleSign` of 0.01476032 ℏ.
+
+### 7. THE DIVERGENCE — six lane topics to announce one lane, and five are abandoned
+
+**The doorbell is correct: exactly one `connection_request` and exactly one `connection_created`**, and
+the answer names `0.0.10509262`. But the acceptor created **six** connection topics to get there:
+
+```
+  0.0.10509248  1789244407.459239480   0 messages   ABANDONED   0.53808167 h
+  0.0.10509250  1789244413.666566104   0 messages   ABANDONED   0.53808167 h
+  0.0.10509254  1789244421.819009104   0 messages   ABANDONED   0.53808167 h
+  0.0.10509258  1789244429.681782319   0 messages   ABANDONED   0.53808167 h
+  0.0.10509260  1789244437.000160104   0 messages   ABANDONED   0.53808167 h
+  0.0.10509262  1789244444.459274153   2 messages   THE LANE    0.53808167 h
+                                                    wasted      2.69040835 h
+```
+
+**THE MECHANISM, at file:line, and it is a rule this repository already wrote down.**
+`app/sdk/watcher.ts`’s `answer()` creates the topic, then **confirms its shape from the mirror before
+announcing it** — which is right, and is there so that a lane whose submit key is wrong is never announced.
+But the confirmation reads the mirror **once**:
+
+```ts
+  const created = await submit(s.client, s.payerId, tx, [s.agent]);   // the topic is PERMANENT here
+  const info = await s.consensus.topic(lane);                         // and the mirror may not have it yet
+  const keys = [...(info?.submitKeys ?? [])].sort();
+  if (keys.length !== want.length || ...) throw new Error(...);       // null -> [] -> length 0 !== 2 -> THROW
+```
+
+A topic the mirror has not yet ingested returns `null`, `info?.submitKeys ?? []` is the empty list, the
+length test fails, and `answer()` throws **after the topic exists and before it is announced**.
+`watchDoorbell`’s loop catches, reports, and ticks again five seconds later; the request is **still**
+unanswered, so it answers it again — **by creating another topic**. Six ticks, and on the sixth the mirror had
+caught up.
+
+**This is CLAUDE.md §12’s own rule, in a path that does not obey it:** *where believing a single read would cost
+an irreversible act, look twice before acting and never after*. `send` obeys it — it re-reads where the other
+party has rung. The lane-birth path does not, and a lane cannot be closed.
+
+**A second, smaller fault rides with it: the error names the wrong cause.** A `null` read is reported as
+*"the submit key is [] and not the two agents’ keys (§7.1, T-P17-2)"*, which says the lane is malformed when
+the truth is that the mirror had not seen it. Same class as `INBOX_MIRROR_UNREACHABLE` naming the wrong cause
+on a doorbell that simply does not exist.
+
+**What it cost, and it closes the balance to a thousandth of an ℏ:**
+
+```
+  0.0.10492957 predicted   250 - 43.39 - 0.671 - 1.233  =  204.71 h
+  0.0.10492957 measured                                    201.99007052 h
+  the gap                                                    2.71992948 h
+  five abandoned topics at 0.53808167                        2.69040835 h
+  the stamp leg floating with the rate (D-170)               0.02880701 h
+  unexplained                                                0.00071412 h
+```
+
+**THE RESIDUE IS DELETABLE, WHICH THE FIRST GATE ZERO’S WAS NOT.** All five carry
+`admin_key` = DemoAgentY5’s own key `7b3a7ff4…` and `auto_renew_account` = `0.0.10492957`. The
+agent that made them can delete them, so this is **recoverable residue and not a permanent scar** — unlike the
+2026-09-11 doorbells, whose memo named no owner and which have no admin key at all. **Not deleted here**: that
+is a live signing act and it is not part of this run.
+
+**Nothing about the letter, the receipt, the settlement or GREEN is affected.** The lane that carries the
+correspondence is the one the doorbell names, the envelope binds to it, and the five empty topics are
+unreachable from any evidence a Verifier reads.
+
+**Recorded and NOT repaired in this run.** The code is frozen; this is build work with a named mechanism, and
+the fix is the one `send` already has.
+
+### 8. The ℏ cost, both operators, every row measured
+
+```
+  0.0.10492957  RECIPIENT           11 transactions        0.0.10492954  SENDER            12 transactions
+    CryptoTransfer  -43.41849606                             CryptoTransfer  -43.41849606
+    TokenAssociate   -0.67092479                             TokenAssociate   -0.67092479
+    6x CreateTopic   -3.22849002   <- five wasted            hop transfer     -0.01476032
+    connection_created -0.67226663                           the ring         -0.67226663
+    outbound record  -0.00499166                             outbound x3      -0.01844232
+    ScheduleSign     -0.01476032                             settlement       -0.01476032
+                                                             chunk 0          -0.00987331
+                                                             ScheduleCreate   -0.13418495
+                                                             announce+receipt -0.00915192
+    net             -48.00992948                             net             -44.96286062
+    250 ->          201.99007052 h                           250 ->           205.03713938 h
+```
+
+**The Postmaster:** 1868.27407048 ℏ before, **1895.33736748** ℏ after — **+27.06329700 ℏ** over the take,
+as at both prior gates. **GATE FUND’s six creations are funding and are excluded**, being recorded in GATE
+FUND’s own table above. **No line here is a sale that was not one.**
+
+### 9. What this run did NOT prove, exactly as named in advance
+
+- **No `hol` resolution.** `register_agent` was off the allowlist by design; T-P6-5 and T-P13-4 stay
+  unexpanded.
+- **No `verified` appraisal.** This release claims no profile, so `unverified` on T-P12-4 is correct
+  output and not a shortfall.
+- **Nothing new about the brand-new wallet.** Gate Four closed it; this repeated it.
+- **`payment` is accepted and ignored**, as the report recorded in advance: the published input schema
+  requires and validates it, `app/sdk/server.ts` never reads `args['payment']`, the buyer is always the
+  home’s own payer and the method always `hbar`. It fails safe. Input side of the C0.2 class, unrepaired.
+
+  **THE RECORDED TAKE — RUN 2026-09-12. GREEN.**
+
+---
+
 ## Entities
 
 Filled as each is created. Each row names what made it, what signed it, and the mirror-node read that confirmed it. The probe above is **not** an entity: it keeps nothing, and appears only in its own section.
