@@ -200,6 +200,84 @@ export interface SessionBox {
   readonly reboot: () => Promise<void>;
 }
 
+/**
+ * OBJECT ARGUMENTS THAT ARRIVE AS STRINGS, AND WHY THIS IS HERE.
+ *
+ * Measured, 2026-09-11, in goose's own session database (Gate Zero, Part A):
+ * the model serialises nested object arguments as JSON STRINGS. Every
+ * occurrence, both nights, across two sessions:
+ *
+ *   20260911_1 22:55:53  buy_stamp  holder:string  payment:string
+ *   20260911_1 22:59:34  verify     scope:string   window:OBJECT   <- inconsistent
+ *   20260912_1 00:24:16  buy_stamp  payment:string holder:string
+ *   20260912_1 00:27:11  send       coordinates:string             <- the blocker
+ *
+ * `buy_stamp` survived it by accident, because its handler reads neither
+ * `holder` nor `payment`. `send` did not: the guard below it tests
+ * `typeof coordinates !== 'object'`, so the golden path ends at the letter
+ * with SEND_UNRESOLVED. This is the whole of what stopped Gate Zero's second
+ * question being asked at all.
+ *
+ * SO THE SURFACE IS LENIENT IN EXACTLY ONE DIRECTION. A string that parses to
+ * a JSON OBJECT is parsed, and then validated exactly as an object would have
+ * been — no validation is skipped and no refusal is softened. Anything else —
+ * a string that does not parse, or one that parses to a number, a string, a
+ * null or an array — is left as it arrived, and the handler refuses as before.
+ *
+ * WHAT IS NOT COERCED, and deliberately:
+ *   - `payload`. It is base64 TEXT (§6.4: "payload is bytes", and a tool input
+ *     is JSON), so a payload that happened to look like JSON must stay the
+ *     string it is. It is not in the list below and must never be.
+ *   - numbers and booleans. `count`, `provision`, `returnReceipt` and
+ *     `dryRun` arrived correctly typed in every one of the calls above, so
+ *     widening to them would be inventing a defect nobody has observed.
+ *
+ * No schema moves: this widens what is ACCEPTED, never what is published
+ * (§1.7). LIMITATIONS L-14 records the leniency.
+ */
+const OBJECT_ARGUMENTS = ['coordinates', 'payment', 'holder', 'scope', 'window', 'receiptWindow'] as const;
+
+/** A plain JSON object — not an array, not null. What the schemas mean by "object". */
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * Parse any of {@link OBJECT_ARGUMENTS} that arrived as a JSON string. Returns
+ * the arguments to use, and the names of any that arrived as a string and
+ * could NOT be read as an object — so a refusal can say that rather than
+ * calling the argument missing, which sends a caller hunting for the wrong bug.
+ */
+export function readObjectArguments(args: Record<string, unknown>): {
+  readonly args: Record<string, unknown>;
+  readonly unreadable: readonly string[];
+} {
+  const out: Record<string, unknown> = { ...args };
+  const unreadable: string[] = [];
+  for (const key of OBJECT_ARGUMENTS) {
+    const v = out[key];
+    if (typeof v !== 'string') continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(v);
+    } catch {
+      unreadable.push(key);
+      continue;
+    }
+    if (isPlainObject(parsed)) out[key] = parsed;
+    else unreadable.push(key);
+  }
+  return { args: out, unreadable };
+}
+
+/** The sentence a refusal adds where the argument it wanted arrived as a string. */
+export function arrivedAsString(key: string): string {
+  return (
+    `\`${key}\` arrived as a STRING containing text, and this tool takes an object. ` +
+    'Pass it as a JSON object, not as a string with JSON inside it.'
+  );
+}
+
 export function build(box: SessionBox, watcherFor: () => Watcher | undefined): Server {
   const server = new Server({ name: 'wishmail-correspondent', version: RELEASE.spec }, { capabilities: { tools: {} } });
   const root = repoRoot();
@@ -228,7 +306,13 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const name = request.params.name;
-    const args = (request.params.arguments ?? {}) as Record<string, unknown>;
+    // Object arguments that arrived as JSON strings are read as objects here,
+    // ONCE, before any handler sees them — so every verb is lenient in the
+    // same way and none of them is lenient twice.
+    const raw = (request.params.arguments ?? {}) as Record<string, unknown>;
+    const { args, unreadable } = readObjectArguments(raw);
+    /** Name an argument that arrived as an unreadable string, for a refusal. */
+    const asString = (key: string): string | null => (unreadable.includes(key) ? arrivedAsString(key) : null);
     const s = box.s;
     try {
       switch (name) {
@@ -253,7 +337,12 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
 
         case 'verify': {
           const scope = args['scope'] as { lane?: string; topics?: string[]; envelopeId?: string } | undefined;
-          if (scope === undefined) return refuse('VERIFY_SCOPE_INVALID', 'a scope names a lane, an envelope on a lane, or a set of topics');
+          if (scope === undefined) {
+            return refuse(
+              'VERIFY_SCOPE_INVALID',
+              asString('scope') ?? 'a scope names a lane, an envelope on a lane, or a set of topics',
+            );
+          }
           // A READER and nothing else: no key, no stamp, no account, no counter.
           const out = await verify(liveReader(s.home.mirrorNodeUrl, s.ledgerTag), scope, {
             ...(args['window'] === undefined ? {} : { window: args['window'] as { from: string; to: string } }),
@@ -363,7 +452,8 @@ export function build(box: SessionBox, watcherFor: () => Watcher | undefined): S
           if (coordinates === undefined || typeof coordinates !== 'object' || typeof coordinates.address !== 'string') {
             return refuse(
               'SEND_UNRESOLVED',
-              '`coordinates` is required: §6.4 takes the coordinates `resolve` returned, which carry a resolution proof',
+              asString('coordinates') ??
+                '`coordinates` is required: §6.4 takes the coordinates `resolve` returned, which carry a resolution proof',
             );
           }
           const payload = args['payload'];

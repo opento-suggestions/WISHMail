@@ -42,8 +42,13 @@ connection error to `127.0.0.1:4600`, that window is not in DRY — **stop**.
 > Call the `buy_stamp` tool once with exactly these arguments and show me the whole result: `count` 12, `provision`
 > true, `payment` `{"method": "hbar"}`, `holder` `{"publicKey": "self"}`. Do not call any other tool. Then stop.
 
-**Expect:** a card saying `DRY RUN — would buy 12 stamp(s) and provision this agent's mailbox`, with a `holder`
-naming a `publicKey` beginning `22cd19c2` and a `buyer` of `0.0.10450880`. Nothing is signed. **stop**
+**Expect:** a card saying `DRY RUN — buy_stamp would buy 12 stamp(s) and provision this agent's mailbox`, with
+`"holder": {"account": "0.0.10487063"}` and `"buyer": "0.0.10450880"`. Nothing is signed.
+
+**Why `account` and not a public key:** `gz-x` is a **damaged home**. Its account `0.0.10487063` was created on
+2026-09-11 by the run that also left it four unusable topics, so it is no longer a fresh agent and `buy_stamp`
+reports the account it has rather than the key it would have bought one with. On a fresh home this line reads
+`"holder": {"publicKey": "…"}` instead. Either way, **the card saying DRY is the check**. **stop**
 
 ### A2 — SENDER window
 
@@ -68,8 +73,12 @@ straight from `resolve`. **stop**
 
 > Call the `inbox` tool once with no arguments. Then stop.
 
-**Expect:** `INBOX_MIRROR_UNREACHABLE: this agent has no doorbell on consensus; buy a mailbox first (§4.6)`. The
-mirror is reachable; the agent has no door. The code names the wrong cause and that is recorded, not fixed. **stop**
+**Expect:** `[]` — an empty inbox.
+
+**Why empty and not a refusal:** `gz-y` is a **damaged home** too. It has a doorbell, `0.0.10487067`, left by the
+2026-09-11 run, and `inbox` reads it and finds nothing on it. On a fresh home this instead returns
+`INBOX_MIRROR_UNREACHABLE: this agent has no doorbell on consensus; buy a mailbox first (§4.6)` — where the mirror
+is reachable and the agent simply has no door, and the code names the wrong cause (recorded, not fixed). **stop**
 
 ### A5 — RECIPIENT window
 

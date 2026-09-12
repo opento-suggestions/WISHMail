@@ -5987,6 +5987,122 @@ account yet"* (`app/sdk/tools.ts:57`). It was documentation of a behaviour the c
 
 ---
 
+## GATE ZERO — PART A, THE DRY REHEARSAL, AND THE ARGUMENT THAT ARRIVES AS A STRING. 2026-09-11, run of record
+
+**Run by Sonic in two goose windows on the DRY entries, both closed afterwards. Nothing signed; both homes are
+untouched by it.** Part A exists because the first Gate Zero was driven with no script. This one was driven from
+`docs/OPERATOR-SCRIPT.md`, one instruction per turn. **It found the thing that would have ended the second Gate
+Zero at the letter, and it cost nothing.**
+
+Sessions **`20260912_1`** "Buying 12 stamps with HBAR" (00:23:02–00:27:37Z, SENDER) and **`20260912_2`**
+"Testing tool calls" (00:27:08–00:29:14Z, RECIPIENT), read from goose's own session database.
+
+### 1. The five steps
+
+| Step | Expected by the script | What the surface returned | |
+|---|---|---|---|
+| **A1** `buy_stamp` (X) | a DRY card | `DRY RUN — buy_stamp would buy 12 stamp(s) and provision this agent's mailbox`, `holder {account 0.0.10487063}`, `buyer 0.0.10450880` | **PASS** |
+| **A2** `resolve` (X) | A2's coordinates | doorbell `0.0.10462704`, log `0.0.10462708`, manifest `0.0.10462713`, keyEpoch 1, proof `57625b02…`, trustClass `math` | **PASS** |
+| **A3** `send` (X) | `SEND_UNRESOLVED: no account yet` | `SEND_UNRESOLVED: \`coordinates\` is required` | **FAIL — the finding** |
+| **A4** `inbox` (Y) | `INBOX_MIRROR_UNREACHABLE` | `[]` | **PASS** |
+| **A5** `ack` (Y) | a refusal | `ACK_NOT_OPENED: no envelope … is on this agent's lanes; §6.6 acknowledges what this agent's own inbox opened` | **PASS** |
+
+**Two of those expectations were the script's and they were wrong, not the surface's.** A1 and A4 were written as
+though `gz-x` and `gz-y` were fresh. They are not: both carry the 2026-09-11 damage, so `buy_stamp` correctly
+reported the account X already has instead of the key it would have bought one with, and `inbox` correctly read
+Y's existing doorbell `0.0.10487067` and found nothing on it. **Both corrected in `docs/OPERATOR-SCRIPT.md`**, with
+what a FRESH home returns named beside each.
+
+**Not ours:** at 00:23:14 the first attempt returned `Rate limit exceeded: Provider returned error` from
+openrouter. Re-pasted at 00:24:07 and it went through.
+
+### 2. THE ALLOWLIST WORKED, and that is the other result
+
+`generate_mailbox`, `register_agent` and `verify` appear **zero times** in either log — not called, not offered,
+not mentioned. goose loaded exactly what was written:
+
+```
+  available_tools: Array [String("buy_stamp"), String("resolve"), String("send"), String("inbox"), String("ack")]
+  args: [ …/app/sdk/server.ts, C:/Users/Sonic/.wishmail/demo/gz-x, --dry-run ]
+```
+
+**Zero `is not available for extension` refusals**, because the model never reached for one. **The verb that created
+eight permanent topics is now unreachable from a goose window**, and the DRY stop condition held on the first call
+in each session.
+
+### 3. THE FINDING — the model serialises object arguments as JSON strings
+
+Every nested object argument, both nights, typed as it actually arrived in goose's session database:
+
+```
+  20260911_1 22:55:53  buy_stamp  count:number  holder:STRING   payment:STRING
+  20260911_1 22:59:34  verify     scope:STRING  window:object          <-- inconsistent, in ONE call
+  20260911_2 22:56:35  buy_stamp  count:number  holder:STRING   payment:STRING  provision:boolean
+  20260912_1 00:24:16  buy_stamp  count:number  provision:boolean  payment:STRING  holder:STRING
+  20260912_1 00:27:11  send       coordinates:STRING  payload:string  returnReceipt:boolean   <-- THE BLOCKER
+  20260912_2 00:28:59  ack        envelopeId:string
+```
+
+**`buy_stamp` survived it by accident**, because its handler reads neither `holder` nor `payment` — the
+schema/handler disagreement already recorded. **`send` did not**: `app/sdk/server.ts`'s guard tests
+`typeof coordinates !== 'object'`, so the golden path ends at the letter. **The second Gate Zero would have bought
+two mailboxes at ~43 ℏ each and then failed at B4.**
+
+**The ruling's conditional is answered and the answer is no.** `count` arrived as a **number** in all eight of its
+occurrences; `provision`, `returnReceipt` and `dryRun` arrived as **booleans** every time
+(`20260912_1 00:27:11 returnReceipt:boolean`); and `window` arrived as a real **object**
+(`20260911_1 22:59:34`). **Only object-typed arguments are stringified, so the helper extends to objects and to
+nothing else.** Widening it to numbers or booleans would be inventing a defect nobody has observed.
+
+### 4. THE FIX — coerce at the boundary (RULING, Sonic 2026-09-11)
+
+One helper in `app/sdk/server.ts`, applied **once**, at the single point every tool call passes through, so every
+verb is lenient in the same way and none of them twice:
+
+- `OBJECT_ARGUMENTS` is exactly `coordinates, payment, holder, scope, window, receiptWindow` — the arguments the
+  published input schemas type as object.
+- A **string that parses to a plain JSON object** is parsed, and then validated exactly as an object would have
+  been. **No validation is skipped and no refusal is softened.**
+- Anything else — a string that does not parse, or one parsing to a number, a string, `null` or an array — is left
+  as it arrived and refuses as before, **naming that it arrived as a string** rather than calling it missing.
+- **`payload` is never coerced**, and is not in the list: §6.4's payload is base64 text, so a payload that happens
+  to look like JSON must stay the string it is.
+- **No schema moves.** This widens what is accepted, never what is published (§1.7). The leniency is recorded in
+  `LIMITATIONS.md`'s tail matter, which keeps L-1 – L-14 fourteen.
+
+**Courted offline in `app/sdk/correspondent.check.ts`** — 126 → **149** assertions, no network and no key: the
+stringified coordinates object from A3, a garbage string, JSON that parses to a number / a quoted string / `null` /
+an array, a `payload` that looks like JSON and must not be touched, all six named arguments at once, and the
+already-correct case where an object arrives as an object and numbers and booleans pass through untouched.
+
+**And proved end to end over real stdio**, replaying A3's exact wire shape against a DRY server on `gz-x`:
+
+```
+  A3 AS GOOSE SENT IT — coordinates is a STRING
+      DRY RUN — send would post one certified envelope to 0.0.10462700
+  the same call with a real OBJECT
+      DRY RUN — send would post one certified envelope to 0.0.10462700
+  a GARBAGE string
+      SEND_UNRESOLVED: `coordinates` arrived as a STRING containing text, and this tool takes an object.
+  JSON that is not an object ("42")
+      SEND_UNRESOLVED: `coordinates` arrived as a STRING containing text, and this tool takes an object.
+
+  IDENTICAL: the stringified call and the object call now answer the same.
+```
+
+**Green:** `typecheck`, `p13:check`, all twenty-two `check:*`. `check:captured` 20 and `check:receipt` 43,
+byte-identical in their recorded digests; `conformance` unmoved at 44 passing, digest `51453eea…`.
+
+### 5. What Part A leaves standing
+
+- **Nothing signed, nothing spent, no entity created.** Both homes are exactly as the 2026-09-11 run left them.
+- **The two damaged homes stay damaged and stay DRY.** `gz-x` and `gz-y` never go live again.
+- **The remaining unknown is the one Part A could not reach**: whether the golden path completes — a lane born, an
+  envelope on it, a schedule executed onto the recipient's manifest topic. That is the second Gate Zero's question,
+  on **fresh homes**, and it is now unblocked.
+
+  **GATE ZERO (second, fresh homes on the demo operators) — [ AUTHORIZED / NOT YET — Sonic fills this ]**
+
 ## GATE FOUR — PREP, written 2026-09-11. NOTHING IS SIGNED AND THIS IS NOT A GATE REPORT
 
 **The Gate Zero report is not amended by any of this, and Gate Four gets its own.** This is the list of what that

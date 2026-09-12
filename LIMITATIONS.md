@@ -238,4 +238,12 @@ No party is named as a funder (§3.9); a stamp is not refunded, extended on cred
 
 Retention (P-15; §15.1): the Postmaster keeps a settled payment reference until the payment it names can no longer land; a purchase or settlement in hand until the transfer or chunks it names are on consensus or the request is refused; and nothing else. It keeps no envelope, chunk, address, resolution proof, or record of who wrote to whom once the carrying submission is witnessed. This release's retention `[fill at deployment: store, and the concrete expiry rule for payment references]`.
 
+**A leniency of this deployment, and not of the specification (2026-09-11).** The Correspondent's MCP surface
+accepts an object argument that arrives as a JSON **string** — `coordinates`, `payment`, `holder`, `scope`,
+`window`, `receiptWindow` — by parsing it and then validating it exactly as an object, because the model driving
+goose serialises nested objects that way and `send` is otherwise unreachable from that client (Gate Zero Part A,
+`app/OPERATIONS.md`). **No published schema changes**: the schemas still type these as objects, this widens only
+what is accepted, `payload` is never coerced because it is base64 text, and a string that does not parse to an
+object is refused as before — naming that it arrived as a string.
+
 Not defined at this version (§1.2, §19): a push or notification surface; postage classes; a non-blocking `send`; any ledger other than `hedera:testnet` and the defined-but-undeployed `hedera:mainnet`; the HCS-19 and HCS-21 postures (held, §16.8).

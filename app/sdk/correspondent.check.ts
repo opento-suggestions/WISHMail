@@ -36,6 +36,7 @@ import type { CounterContext } from '../src/counter/context.js';
 import { UnchunkedTopicMessageSubmitTransaction } from '../src/ops/hcs10.js';
 import { HCS2_REGISTER_TX_MEMO, accountMemoFor, registerOperation, registryMemo } from '../src/ops/declaration.js';
 import { generateMailbox, topicCreateFor } from './mailbox.js';
+import { arrivedAsString, readObjectArguments } from './server.js';
 import { HomeBusy, lockHome } from './lock.js';
 import type { Signer } from '../src/ops/identity.js';
 import { toMirrorTxId, type Mirror } from '../src/ops/mirror.js';
@@ -872,6 +873,76 @@ function fieldsFor(_key: string): Record<string, string> {
     /nothing is created/.test(mailboxRefusal),
     true,
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* OBJECT ARGUMENTS THAT ARRIVE AS STRINGS — Gate Zero Part A, 2026-09-11 */
+/*                                                                        */
+/* goose's model serialises nested object arguments as JSON strings.      */
+/* Measured in its own session database: buy_stamp's holder and payment   */
+/* both nights, verify's scope, and — the blocker — send's coordinates at */
+/* 20260912_1 00:27:11, which ended the golden path with SEND_UNRESOLVED. */
+/* The surface is now lenient in exactly one direction, and these are its */
+/* limits. No network, no key.                                            */
+/* ------------------------------------------------------------------ */
+{
+  const coords = {
+    address: '0.0.10462700',
+    profile: 'hcs14',
+    ledgerTag: 'hedera:testnet',
+    account: '0.0.10462700',
+    doorbell: '0.0.10462704',
+  };
+
+  // 1. THE CASE THAT BLOCKED THE GATE: the exact shape goose sent.
+  const stringified = readObjectArguments({ coordinates: JSON.stringify(coords), payload: 'VGhpcw==', returnReceipt: true });
+  is('a stringified coordinates object is read as an object', stringified.args['coordinates'], coords);
+  is('and nothing is reported unreadable', stringified.unreadable, []);
+  is('the payload beside it is untouched', stringified.args['payload'], 'VGhpcw==');
+  is('and the boolean beside it is untouched', stringified.args['returnReceipt'], true);
+
+  // 2. GARBAGE: a string that is not JSON at all.
+  const garbage = readObjectArguments({ coordinates: 'this is not json' });
+  is('a garbage string is NOT coerced', garbage.args['coordinates'], 'this is not json');
+  is('and it is named as unreadable', garbage.unreadable, ['coordinates']);
+  is(
+    'and the refusal says it arrived as a string, not that it is missing',
+    /arrived as a STRING/.test(arrivedAsString('coordinates')) && !/is required/.test(arrivedAsString('coordinates')),
+    true,
+  );
+
+  // 3. JSON THAT IS NOT AN OBJECT. Each parses, and none of them is an object.
+  for (const [what, v] of [['a number', '42'], ['a quoted string', '"0.0.4242"'], ['null', 'null'], ['an array', '[1,2]']]) {
+    const r = readObjectArguments({ coordinates: v });
+    is(`JSON that is ${what} is not accepted as an object`, r.args['coordinates'], v);
+    is(`and ${what} is named unreadable`, r.unreadable, ['coordinates']);
+  }
+
+  // 4. PAYLOAD IS NEVER COERCED, even when it is valid base64 that is also
+  //    valid JSON. §6.4: "payload is bytes", and a tool input is JSON.
+  const jsonishPayload = readObjectArguments({ payload: '{"not":"a payload object"}' });
+  is('payload that looks like JSON stays the string it is', jsonishPayload.args['payload'], '{"not":"a payload object"}');
+  is('and payload is never reported unreadable', jsonishPayload.unreadable, []);
+
+  // 5. EVERY OBJECT ARGUMENT THE RULING NAMES, and no others.
+  const all = readObjectArguments({
+    coordinates: '{"a":1}',
+    payment: '{"method":"hbar"}',
+    holder: '{"publicKey":"self"}',
+    scope: '{"topics":["0.0.1"]}',
+    window: '{"from":"0.0","to":"9.9"}',
+    receiptWindow: '{"from":"0.0","to":"9.9"}',
+  });
+  is('all six named object arguments are read', Object.values(all.args).every((v) => typeof v === 'object'), true);
+  is('and none of the six is unreadable', all.unreadable, []);
+
+  // 6. AN OBJECT THAT ARRIVES AS AN OBJECT IS UNTOUCHED — the common case, and
+  //    the one the model also produced: verify window at 20260911_1 22:59:34.
+  const already = readObjectArguments({ window: { from: '0.0', to: '9.9' }, count: 12, provision: true });
+  is('an object that arrives as an object is passed through', already.args['window'], { from: '0.0', to: '9.9' });
+  is('a number is passed through untouched', already.args['count'], 12);
+  is('a boolean is passed through untouched', already.args['provision'], true);
+  is('and nothing is unreadable', already.unreadable, []);
 }
 
 /* ------------------------------------------------------------------ */
