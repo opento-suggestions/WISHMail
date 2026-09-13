@@ -27,6 +27,8 @@ You are building WISHMail: certified mail for agents on Hedera, and a bridge bet
 Beside them: `LIMITATIONS.md` is what this deployment does not defend, and `plans/` holds the spent plans of
 earlier days — history, not instructions. **Decisions run to D-177** in ledger §B, one ADR each in `spec/adr/`.
 
+**What this release does NOT do is judge-facing prose now, in `README.md` § `What this does not do`** — the x402 track shortfall dated 2026-09-09, no class claimed and why, `unverified` as correct output, the unwired profiles, testnet only, no forward secrecy, availability and not consumption. **A judge reads that section; a cold session should not contradict it.** Its long form is `LIMITATIONS.md` L-11 and ledger §G-34.
+
 **Where the build stands, 2026-09-12.** The specification is **0.5.13**, tagged `v0.5.13`; **FIVE GATES
 ARE RUN AND GREEN** — Gate One, Gate Two, Gate Three, Gate Zero the second and **Gate Four** — and beneath them
 **THE RECORDED TAKE**, run 2026-09-12 on brand-new wallets under goose and GREEN, which is the demo footage and

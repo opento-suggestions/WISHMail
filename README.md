@@ -75,6 +75,50 @@ two readings of the same lane agree, and the clock the reading was taken at is d
 **Earlier gates, their lanes and their agents:** [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).
 **Every entity, generated and link-checked:** [`ENTITIES.md`](ENTITIES.md).
 
+## What this does not do
+
+**Stated here rather than found later.** Every line below is a scoping decision of ours inside a five-day
+window, and none of them is a limitation of Hedera, of x402, or of the specification.
+
+**It does not meet the Hedera x402 track qualification as written.** The `x402-usdc` method is published on
+consensus in **every** `PriceList` sequence (asset USDC `0.0.429274`, facilitator x402.org, pinned to x402 v2
+at `x402-foundation/x402`), it is accepted by `buy_stamp`’s input schema, it is priced by the Postmaster’s
+quote path, and it is fully specified in §14.2 — where **T-P11-5** and **T-P11-6** court the exchange itself and
+**T-P16-1** is the invariant the POSTMASTER class is deferred on. What is **not** built is this release’s side of
+it: the `402` with its `PAYMENT-REQUIRED` requirements, the `PAYMENT-SIGNATURE` retry, facilitator
+settlement, and the durable payment-reference record that survives a restart. **The Blocky402 facilitator is
+referenced nowhere in this repository.** That was a scoping decision of **2026-09-09** (the MVP rulings, CLAUDE.md
+§11), following the 2026-09-07 ruling that this window covers pre-funded operator paths only: the HBAR leg was
+built first to prove the messaging layer end to end on consensus before a second payment rail was added.
+**The demonstrated paid request settles in ℏ through the Postmaster’s own counter, and not through x402.**
+One further exactness, recorded in ledger §G-34 and `LIMITATIONS.md` L-11: the published method is *priced*
+by the counter, and a purchase made without `provision` would settle that price in ℏ rather than in USDC.
+It is unreachable from an agent’s own surface and the error runs against the Postmaster, but it is a fault and
+it is written down.
+
+**It claims no conformance class.** `RELEASE.classes` is empty, and §1.5 is explicit that silence claims
+nothing. The reason is not shyness: **T-P3-1 requires a second, independent implementation** — a fresh Verifier at
+another patch, at another time, through another mirror node, reaching the same bytes — and this deployment is one
+implementation. Every conformance class includes VERIFIER, so that single row keeps every class from passing in
+full. That is what publishing a specification is for, and it is not a shortfall we can close by ourselves.
+
+**It claims no resolution profile, so the demonstration letter appraises `unverified`.** That is the **correct**
+output under §9.6 and not a failure: a Verifier may rank a resolution no higher than the profiles the release
+claims, and this one claims none. The reason code is `T-P12-4`, and it is the same answer a stranger gets.
+
+**Three registry profiles are specified and are not in the letter path.** `dns` and `nanda` are defined in
+§9 with their trust classes and are not wired into `send` in this window. The **A2A AgentCard** is named as an
+extension candidate and **held** (§16.8, D-128): it has no profile of its own until a release wants one.
+
+**It runs on `hedera:testnet` and nowhere else.** `hedera:mainnet` is defined in the specification and
+undeployed; any other ledger tag is refused.
+
+**It provides no forward secrecy**, and it says so rather than implying otherwise.
+
+**It proves availability, never consumption.** A return receipt is the recipient’s own signature witnessed by
+consensus — it proves the envelope was resolved, settled, opened and signed for. It does not prove, and this
+protocol cannot prove, that a human or an agent then *acted* on it. §2.3 reserves *delivery* for the lane, and
+nothing here turns silence into refusal.
 ## The golden path
 
 **Provision → buy → resolve → send → inbox → ack → verify.** Six tools, one letter. What follows is what the run above

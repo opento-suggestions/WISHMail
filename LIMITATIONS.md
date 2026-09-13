@@ -214,9 +214,36 @@ A public facilitator serves `hedera:testnet`; none serves `hedera:mainnet`; a ma
 
 **This release defers the POSTMASTER claim on T-P16-1, and says why.** Both methods it offers are on `hedera:testnet`, and §14.2 states that on a Hedera network "the buyer signs a Hedera transfer of USDC and so has an account already." So neither method requires no pre-funded Hedera account, and §14.2's MUST — "At least one method the Postmaster offers MUST require no pre-funded Hedera account of the buyer" (`Conformance:` T-P16-1) — is unmet here. The reference deployment covers pre-funded Hedera accounts only at this version; it does not add a non-Hedera method to make the claim true, and it does not claim POSTMASTER until the suite passes in full (§1.5, T-P15-3).
 
-**The `x402-usdc` leg is deferred in this window, and that is our scoping.** The facilitator, the network, the asset and the fee payer above are all established and dated (D-132); what is not built is this release's side of the exchange — the `402` with its `PAYMENT-REQUIRED` requirements, the `PAYMENT-SIGNATURE` retry, and the durable record that recognises requirements it issued across a restart (T-P11-5, T-P11-6). The MVP ships the `hbar` leg only. This is a scope decision of ours inside a five-day window; it is not a limitation of x402, of the facilitator, or of the specification, each of which is ready for it.
+**The `x402-usdc` leg is deferred in this window, and that is our scoping.** The facilitator, the network, the asset and the fee payer above are all established and dated (D-132); what is not built is this release's side of the exchange — the `402` with its `PAYMENT-REQUIRED` requirements, the `PAYMENT-SIGNATURE` retry, and the durable record that recognises requirements it issued across a restart (T-P11-5, T-P11-6). The MVP ships the `hbar` leg only. This is a scope decision of ours inside a five-day window; it is not a limitation of x402, of the facilitator, or of the specification, each of which is ready for it. This release therefore **does not meet the ETHOnline Hedera x402 track qualification as written** — a live x402-gated service settled through the **Blocky402** facilitator — and Blocky402 is referenced nowhere in this repository. **The paid request the demonstration shows settles in ℏ through the Postmaster’s own counter, and not through x402.**
 
 **What remains is the seam, narrowed to what it actually is — and this section no longer stands on both sides of it.** Until 2026-09-11 this release asserted here that "The keyless leg (P-16) is satisfied on `hedera:testnet` through this facilitator" while §14.2 asserted that a Hedera buyer has an account already, and the two could not both hold; ledger §G-8 has recorded that since 2026-09-07 and Sonic ruled it a **specification question and not a build item** the same day. **The half that was ours to correct is corrected above**: this release states what the facilitator is, and does not claim it discharges P-16. **The half that is the specification's is untouched and stays open in §19.3** — how a Postmaster that deploys only on Hedera offers any method requiring no pre-funded Hedera account. No sentence of the specification changes for this, no `CHANGED` marker is placed, and no version moves: nothing normative was wrong, and what was wrong was this document reading its own deployment more generously than §14.2 does. Deliberately not patched at 0.5.1 through 0.5.13.
+
+**CORRECTED 2026-09-12, in the same way and for the same reason as the 2026-09-11 correction above: this
+section read its own deployment more simply than the code does.** “not built” was exact about the 402 handshake
+and **not exact about the quote path**. What the counter does with the published method today is this: called
+with `provision: true` — which is how every gate and the recorded take buy — it refuses at
+`app/src/counter/pricing.ts:270` with `STAMP_METHOD_UNSUPPORTED`, because the published `provisioning` block
+names the `hbar` method. Called **without** `provision` it does not refuse: `quote()` returns the amount in
+the method’s own asset (`app/src/counter/pricing.ts:281`, `currencyOf()` at `:296-298` being
+`m.asset`), and `quotePurchase` then scales that figure at `app/src/counter/purchase.ts:242` and builds
+the price leg as an **HBAR** transfer at `:249-250` — so one USDC is charged as one ℏ. **The asset is
+dropped between the quote and the body**, which is exactly what §14.3 forbids at
+`spec/WISHMAIL_SPEC_v0_5.md:1940`: the amount is “the price of one stamp in the method’s asset” and “the buyer signs that amount and no other”.
+
+**The bound, and it is why this is a correction and not an incident.** No purchase of this kind has ever been
+made: the Correspondent surface cannot make one — the live `buy_stamp` branch passes no payment to
+`buyStamps` at all (`app/sdk/server.ts:380-384`) and `app/sdk/counter.ts:246` defaults the method to
+`hbar` — so only a client speaking to the counter directly could reach it, and that server binds to
+`127.0.0.1` by default (`app/src/counter/server.ts:432`, `app/src/ops/env.ts:78`). The error direction is
+the **Postmaster undercharging itself**: one ℏ against a bundle the `hbar` method prices at about thirteen.
+Every letter on `hedera:testnet` from this deployment was bought on the `hbar` leg with `provision: true`.
+
+**Recorded, not repaired.** Ledger §G-34 carries the finding, its citations and its guard — a one-line refusal in
+`quotePurchase` for any published method whose `asset` is not `0.0.0`, which would make this deferral
+enforced by the code rather than only documented. The code is frozen for the submission window, so the guard is
+named and not taken; §G-34 stays OPEN and the decision is written there when it is made. **No normative sentence
+is wrong here** — §14.3 already says the amount is in the method’s asset — so no `CHANGED` marker is placed and no
+version moves, exactly as in the 2026-09-11 correction.
 
 ## L-12 — A stamp is fungible
 

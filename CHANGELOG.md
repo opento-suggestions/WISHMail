@@ -2,6 +2,53 @@
 
 Format: Keep a Changelog. Versions are the specification's (§1.7): `major.minor` on the wire, `patch` for text and tests. Attribution: **[S]** Sonic (human), **[C]** Claude in chat (drafting, ledger), **[CC]** Claude Code (reconnaissance, agentic). Decisions are `D-n` in `spec/CONFORMANCE_TESTS_v0_5.md` §B; tests are `T-<P-ID>-<n>` in §A.
 
+## [The x402 shortfall, stated] — 2026-09-12 — a published method priced in USDC and settled in ℏ, and the track gap in the open
+
+**[S]** ruled: the submission goes under the Hedera x402 track with the shortfall stated plainly, and the repository must
+say what the ETHGlobal form says, in the same register, so that a judge moving from the form to the tree finds nothing the
+form claimed that the tree does not. **[CC]** found the defect and wrote the text. **Docs and ledger only — no file under
+`app/` changes, no version event, no `CHANGED` marker, no tag.**
+
+### Added
+
+- **Ledger §G-34** — *BUILD, NOT SPEC: a published method’s asset is dropped between the quote and the body.*
+  `quote()` returns an amount in the method’s own asset (`app/src/counter/pricing.ts:281`, `currencyOf()`
+  at `:296-298`), and `quotePurchase` scales that figure (`app/src/counter/purchase.ts:242`) into an
+  **HBAR** transfer (`:249-250`). So `x402-usdc` quotes one USDC and would settle one ℏ. §14.3 is right and
+  the reference falls short of it: `spec/WISHMAIL_SPEC_v0_5.md:1940` fixes the amount as "the price of one stamp in
+  the method’s asset" and holds that "the buyer signs that amount and no other". **The demo path never reaches it** —
+  `provision: true` refuses at `app/src/counter/pricing.ts:270`, and every gate and the recorded take buy that
+  way. **Bound, measured:** unreachable from the Correspondent surface (`app/sdk/server.ts:380-384` passes no
+  payment; `app/sdk/counter.ts:246` defaults to `hbar`), the counter binds to `127.0.0.1` by default
+  (`app/src/counter/server.ts:432`, `app/src/ops/env.ts:78`), and the error direction is the Postmaster
+  undercharging itself. **OPEN**, with the guard named and not taken.
+- **`README.md` § `What this does not do`** — the judge-facing constraints block, placed between the proof and
+  the golden path: the x402 track shortfall, no class claimed and the two-implementations reason, `unverified` as
+  correct output, the profiles specified and not wired, testnet only, no forward secrecy, and availability rather than
+  consumption.
+- **`CLAUDE.md` §0 and `STATUS.md` §0** — one line each pointing a cold session at that section, so the
+  resume surfaces cannot contradict what a judge is reading.
+
+### Changed
+
+- **`LIMITATIONS.md` L-11** — two sentences appended to the deferral paragraph (this release does not meet the
+  Hedera x402 track qualification as written, a live x402-gated service settled through the **Blocky402** facilitator,
+  which is referenced nowhere in this repository; and the demonstrated paid request settles in ℏ through the
+  Postmaster’s own counter), and a new dated subsection of tail matter recording §G-34’s finding — that `not built`
+  was exact about the 402 handshake and **not exact about the quote path**. Same shape and same reasoning as the
+  2026-09-11 self-correction above it. **L-count stays 14**; nothing that stood was rewritten.
+
+### Recorded, not repaired
+
+- The §G-34 guard — a one-line refusal in `quotePurchase` for any published method whose `asset` is not
+  `0.0.0`, which would make L-11’s deferral enforced by the code rather than only documented **(MINE)**. The code is
+  frozen for the submission window; whether it is repaired is Sonic’s, and §G-34 carries the answer when it comes.
+
+### Unchanged, and verified so
+
+- `check:register`, `check:entities` and `p13:check` PASS; the suite reads **87 registered · 44 passed · 43
+  failed**, report digest `51453eea7d11dee8a5cfa71b84de826682d8283c543be48ec65c95625daeb6ec` — as expected, this
+  change having touched no code.
 ## [The capture the second Gate Zero owed] — 2026-09-11 — a digest that reproduces from disk, and the suite's fifth real fixture
 
 **[S]** ruled; **[CC]** captured and courted. A mirror read: no key, no `Client`, no signature, nothing spent.

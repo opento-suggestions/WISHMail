@@ -429,6 +429,44 @@ Correction made during this audit: §6.4 and §7.6 had cited F-2 for stale coord
 
 33. **0.6 CANDIDATES — three fields this implementation writes that the frozen schemas do not declare, and ajv cannot see any of them (Claude Code, 2026-09-11, MINE).** Found on the first run of `check:outputs`, by the assertion that diffs produced paths against declared ones — **not** by validation, which is silent here because `settlement.schema.json` and `evidence-bundle.schema.json`’s `observations` both omit `additionalProperties`, so an undeclared key validates perfectly. (a) **`settlement.tokenId`**: §5.6 declares seven fields and the implementation writes an eighth, because §11.4 needs the token to say the postage was `$POSTAGE` and not another token. (b) **`observations.verifierSpec`**: added by **D-173** in the 0.5.12 patch, which put the Verifier’s own patch outside the digest so the bundle’s `spec` could be the minor version — and the schema was not amended in the same patch. (c) **`observations.stampTokenUnknown`**: written when a scope names no stamp token, to say §11.4’s token and treasury checks did not run, because silence about a check is worse than a sentence. All three are VERIFIER-side and none is on the goose allowlist the demo drives, so all three are **recorded and not fixed** (RECORD, Sonic, 2026-09-11). Both schemas are frozen, so declaring any of them is 0.6. Kept as an assertion rather than a note, in `check:outputs`’s `UNDECLARED` list, which asserts EQUALITY — so a fourth one fails rather than joining them quietly. **Beside them, one declared field nothing produces**: `correspondence[].returnReceipt`, which §5.10 declares and this implementation never writes even for a letter that was acked and whose receipt appraises ACKED — the bundle carries the receipt’s *appraisal* and not the receipt. That is the D-166 class (a declared field with no producer validates forever) and it is build work, not a schema question.
 
+34. **BUILD, NOT SPEC — a published method’s asset is dropped between the quote and the body: `x402-usdc`
+    is priced in USDC and settled in HBAR at the same figure (Claude Code, 2026-09-12, MINE).** §14.3 is right and
+    the reference falls short of it. The text at `spec/WISHMAIL_SPEC_v0_5.md:1940` fixes `unitPrice` as “the price
+    of one stamp **in the method’s asset**” and holds that “the buyer signs that amount and no other”; the MUST at
+    `:1945` has the Postmaster “charge exactly what the price message current at the purchase yields”. **The
+    implementation honours the figure and loses the asset.** `quote()` returns the amount together with the
+    method’s own asset — `app/src/counter/pricing.ts:281`, whose `currencyOf()` at `:296-298` is
+    `m.asset`, so an `x402-usdc` purchase quotes `1` in `0.0.429274`. `quotePurchase` then scales that
+    figure with no reference to the asset — `app/src/counter/purchase.ts:242`, `priceTinybar = scaled(q.amount)`
+    — and builds the price leg as an **HBAR** transfer at `:249-250`, `.addHbarTransfer(buyer, ...)` and
+    `.addHbarTransfer(payTo, ...)`, unconditionally. One USDC becomes one ℏ against a bundle the `hbar` method
+    prices at about thirteen.
+
+    **The demo path is clean, and the reason is a separate check.** With `provision: true` the purchase never
+    reaches the transfer: `app/src/counter/pricing.ts:270` refuses with `STAMP_METHOD_UNSUPPORTED` because the
+    published `provisioning` block names the `hbar` method and this purchase is `x402-usdc`. Every gate and the
+    recorded take buy with `provision: true`, so none of them could have met this.
+
+    **The bound, measured rather than asserted.** It is **unreachable from the Correspondent surface**: the live
+    `buy_stamp` branch calls `buyStamps(s, { count, provision, onLine })` at `app/sdk/server.ts:380-384`
+    and passes no payment at all, and `app/sdk/counter.ts:246` reads `options.method ?? 'hbar'`, so an agent’s
+    own MCP surface can only ever buy in HBAR. It is reachable only by a client speaking to the counter directly,
+    which takes `input.payment?.method` as any string at `app/src/counter/server.ts:141-142`; that server binds to
+    `env.mcpBind` (`app/src/counter/server.ts:432`), which defaults to `127.0.0.1` at
+    `app/src/ops/env.ts:78`. **The error direction is the Postmaster undercharging itself**, never a buyer
+    overcharged.
+
+    **Classified BUILD.** No normative sentence is wrong, no schema moves and no version rides this: §14.3 already
+    says the amount is in the method’s asset and §5.4 already has the receipt record what was charged, so the
+    defect is entirely in `app/src/counter/`. **The guard is a one-line refusal in `quotePurchase` for any
+    published method whose `asset` is not `0.0.0`, beside the `payTo` check already at
+    `app/src/counter/purchase.ts:238` — which would make L-11’s deferral enforced by the code rather than
+    only documented (MINE).** Named here and not taken: the code is frozen for the submission window.
+
+    **OPEN.** Recorded 2026-09-12 in this item, in `LIMITATIONS.md` L-11’s tail matter, and in `README.md`’s
+    `What this does not do`. Whether it is also repaired is Sonic’s, and the answer is written in here when he
+    gives it.
+
 
 ## H. Verified facts (FETCHED; dated per row) — what the build may lean on
 

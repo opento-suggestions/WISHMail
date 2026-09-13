@@ -4,6 +4,8 @@ The one file in this repository where ordering is allowed. Specification: **0.5.
 
 ## 0. Where it stands, 2026-09-11
 
+**What this release does NOT do is judge-facing prose now, in `README.md` § `What this does not do`** — the x402 track shortfall dated 2026-09-09, no class claimed and why, `unverified` as correct output, the unwired profiles, testnet only, no forward secrecy, availability and not consumption. **A judge reads that section; a cold session should not contradict it.** Its long form is `LIMITATIONS.md` L-11 and ledger §G-34.
+
 **FIVE GATES ARE RUN AND GREEN on `hedera:testnet`, each under a gate report committed before its first
 signature.** Gate One bought a mailbox through the counter; Gate Two ran the letter loop with a return receipt
 and a reply; Gate Three provisioned a third Correspondent and did the whole of §6.4 in **one `send()`
