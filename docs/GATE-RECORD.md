@@ -1,4 +1,4 @@
-# Three gates, signed
+# Five gates and a recorded take, signed
 
 **Certified mail for agents on Hedera. Every act below was submitted to consensus, read back from a mirror node, and
 recorded before the next one ran.** Each identifier links to HashScan, where the record is the network's and not ours.
@@ -7,14 +7,14 @@ Ledger `hedera:testnet` · specification **0.5.13**, tagged `v0.5.13` · ETHOnli
 
 > **This file is a reading, not a record.** The records are `app/OPERATIONS.md` — one gate report and one run of
 > record per signed act, in the order they happened — and `ENTITIES.md`, which is generated. Where this file and
-> those disagree, they win. It exists because three gates spread across two thousand lines of operations log are
+> those disagree, they win. It exists because five gates spread across eight thousand lines of operations log are
 > hard to read end to end, and a reader who wants the whole shape should not have to assemble it.
 
 | | |
 |---|---|
-| Gates run | **3** — provisioning, the letter loop, and the whole of `send()` in one call |
-| Correspondents | **3** — bought through the counter, each resolving under two registry profiles |
-| Letters delivered | **4** — two plain, one of them a reply; and **two certified**, each with a return receipt published by the recipient's own signature |
+| Gates run | **5** — provisioning, the letter loop, the whole of `send()` in one call, a model at the controls, and a brand-new wallet — with **the recorded take** beneath them |
+| Correspondents | **9** — every one bought through the counter, its account created by the transfer that paid for it |
+| Letters delivered | **7** across **5 lanes** — two plain, one of them a reply; and **five certified**, each with a return receipt published by the recipient's own signature |
 | Classes claimed | **0** — silence claims nothing (§1.5), and the reason is at the end |
 
 ---
@@ -329,6 +329,112 @@ What this deployment does not defend, in full: [`LIMITATIONS.md`](../LIMITATIONS
 
 ---
 
+## Gate Zero, the second — a model drives it, 2026-09-12
+
+**The first gate not driven by a CLI.** Six instructions in two goose windows, one per turn, one pass, no stop:
+both agents provisioned on fresh homes, a lane born, one certified letter with a return receipt, opened and
+signed for. It matters because every gate before it was driven by code we wrote for the purpose, and a tool
+surface that only its author can operate has not been tested.
+
+| | |
+|---|---|
+| DemoAgentY2, recipient | [`0.0.10489361`](https://hashscan.io/testnet/account/0.0.10489361) — doorbell [`0.0.10489363`](https://hashscan.io/testnet/topic/0.0.10489363), manifest [`0.0.10489371`](https://hashscan.io/testnet/topic/0.0.10489371) |
+| DemoAgentX2, sender | [`0.0.10489394`](https://hashscan.io/testnet/account/0.0.10489394) — doorbell [`0.0.10489395`](https://hashscan.io/testnet/topic/0.0.10489395) |
+| the lane | [`0.0.10489454`](https://hashscan.io/testnet/topic/0.0.10489454) |
+| the schedule | [`0.0.10489457`](https://hashscan.io/testnet/schedule/0.0.10489457) — executed `1789176191.217453809` |
+| a stranger reads | digest `fca22d10b1f5a6dbbf8209748bab90730e46f46081608fee35eb523f4db37848`, state ACKED |
+
+**All five stamp predictions matched exactly**, and §4.4’s hop — a sender whose operator holds no stamp buying
+the ring from the agent itself — fired on consensus for the first time.
+
+### Divergence — the letter is one character short
+
+The letter landed at 69 bytes where the operator script asked for 70. Nothing in the implementation did it: the
+model altered the payload **in the tool call, before the server saw a byte**. Recorded and not repaired, because
+the repair is not in this code. What it cost was one diagnosis that later turned out to be wrong — it was read
+as truncation, and Gate Four proved it is not.
+
+---
+
+## Gate Four — the brand-new wallet, 2026-09-11
+
+**The question four gates could not ask.** Every operator wallet until now had unlimited automatic token
+association slots, so one branch of the provisioning path — the one that associates the wallet with `$POSTAGE`
+explicitly — had **never executed against the network**. Gate Four ran two agents on wallets created minutes
+earlier with **zero** slots.
+
+**It fired, on both operators**, at `0.67094579` ℏ each, after each agent’s purchase and before that
+agent’s first topic — including on the recipient’s, who never rings a doorbell and therefore ends associated
+with a balance of zero. One association bought for nothing, predicted in the report and measured in the run.
+
+| | |
+|---|---|
+| DemoAgentY4, recipient | [`0.0.10493463`](https://hashscan.io/testnet/account/0.0.10493463) — manifest [`0.0.10493477`](https://hashscan.io/testnet/topic/0.0.10493477) |
+| DemoAgentX4, sender | [`0.0.10493552`](https://hashscan.io/testnet/account/0.0.10493552) |
+| the lane | [`0.0.10493664`](https://hashscan.io/testnet/topic/0.0.10493664) |
+| the schedule | [`0.0.10493669`](https://hashscan.io/testnet/schedule/0.0.10493669) — executed `1789191546.406458105` |
+| a stranger reads | digest `d452d9b70d1cfaf28780591a4738d0f13eaace7a19d5821c33a5ad2e3b1ffd94`, state ACKED |
+
+**Zero transactions name the recipient** (P-16, measured rather than asserted), and the Postmaster netted
+**+27.06223486 ℏ** over the gate.
+
+### Divergence — the model retypes the payload, and this is the proof
+
+The letter reads *"Certified agent mail,proven on Hedera."* — 38 bytes where the script asked for 39. The space
+after the comma is gone. **It is the same length as the literal and it carries base64 padding the literal does
+not have**, which is what proves the second Gate Zero’s 69-byte letter was never a truncation: **the model
+re-encodes the sentence from its own reading of it rather than copying the string.** Length was never the
+mechanism, and shortening the sentence was never the fix.
+
+Every weld holds over the bytes actually sent: the AAD hashed them, the seal sealed them, the settlement named
+that envelope and no other, the recipient opened it byte for byte, and the receipt executed. **It was found in
+one glance**, and only because a fix landed hours earlier that made `inbox` return base64 a card could render
+as text instead of a Node `Buffer` rendered as decimal — which is why a card a human can read is a safety
+property and not a courtesy.
+
+---
+
+## The recorded take — and the letter arrives intact, 2026-09-12
+
+**The run at the top of the README, and the first letter in three attempts to arrive byte-identical.** Two more
+brand-new wallets, a model at the controls, and one new step in the operator script: **a read-back before the
+irreversible one**. The model repeats the payload, calls no tool, and a human compares 52 characters before a
+stamp moves — because a letter cannot be withdrawn once it is sent. That single step is the only thing that
+changed, and the defect that fired twice did not fire.
+
+| | |
+|---|---|
+| DemoAgentY5, recipient | [`0.0.10509139`](https://hashscan.io/testnet/account/0.0.10509139) — doorbell [`0.0.10509142`](https://hashscan.io/testnet/topic/0.0.10509142), manifest [`0.0.10509148`](https://hashscan.io/testnet/topic/0.0.10509148) |
+| DemoAgentX5, sender | [`0.0.10509170`](https://hashscan.io/testnet/account/0.0.10509170) — doorbell [`0.0.10509173`](https://hashscan.io/testnet/topic/0.0.10509173), **never rung** |
+| the lane | [`0.0.10509262`](https://hashscan.io/testnet/topic/0.0.10509262) |
+| the letter | `Certified agent mail proven on Hedera.` — 38 bytes, one chunk, ciphertext 54 |
+| the ack | [`1789244564.149812104`](https://hashscan.io/testnet/transaction/0.0.10492957-1789244556-177581616) |
+| the receipt, one nanosecond later | [`1789244564.149812105`](https://hashscan.io/testnet/transaction/0.0.10492954-1789244459-853579572) |
+| the schedule | [`0.0.10509266`](https://hashscan.io/testnet/schedule/0.0.10509266) |
+| a stranger reads | digest `3245fa580c7aff4288af2c0a951febf491303533241657e56e05716984f6dd2f`, state ACKED |
+
+**Every stamp row matched the prediction exactly** — the sender ends with 9, the recipient with 12, both
+operators with 0, and the treasury down a net 21. The Postmaster netted **+27.06329700 ℏ**.
+
+### Divergence — six topics to announce one lane
+
+The doorbell is correct: **one** request and **one** answer, and the answer names the lane above. But the
+acceptor created **six** connection topics to get there, and five stand empty and abandoned, costing
+2.69040835 ℏ.
+
+The mechanism is a rule this repository had already written down, in the one path that did not obey it. The
+acceptor creates the topic, then confirms its submit key from a mirror node **before** announcing it — which is
+right, and is there so that a malformed lane is never announced. But it reads the mirror **once**: a topic the
+mirror has not yet ingested reads as absent, the check fails, and the attempt throws **after the topic is
+permanent and before it is announced**. Five seconds later the request is still unanswered, so it is answered
+again — by creating another topic.
+
+**Nothing about the letter, the receipt, the settlement or the schedule is affected**, and the five are
+unreachable from any evidence a Verifier reads. They are also **deletable** — each carries the recipient’s own key
+as its admin key — unlike the residue an earlier gate left, whose topics name no owner and have no admin key at
+all. Recorded and not repaired; the mechanism is at file:line in the run of record.
+
+---
 ## Reading the record yourself
 
 Every link on this page goes to HashScan on `hedera:testnet`. Timestamps are **consensus** timestamps in
@@ -347,7 +453,7 @@ messages — a request and its answer — and A2's doorbell
 although A2 has sent two letters and received one.
 
 ```
-$ npm run verify -- --lane 0.0.10468898
+$ npm run verify -- --lane 0.0.10509262
 ```
 
 No key, no account, no stamp, no home. That is the second of WISHMail's two claims, and it is the one that is free

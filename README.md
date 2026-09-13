@@ -13,11 +13,157 @@ It sells two claims, separately.
 ETHOnline 2026 submission. Specification **0.5.13**; frozen at 0.5.0 on 2026-09-07 and patched thirteen times since. Wire
 strings carry `0.5`, because a patch changes none (§1.7). Deployed on `hedera:testnet` and no other ledger.
 
-## What is on `hedera:testnet` right now
+## The proof, on `hedera:testnet`
 
-**A Postmaster that sells mailboxes, three agents that bought one each, and four letters delivered between them.**
-The treasury and the `$POSTAGE` token; the price topic with four published schedules; the Postmaster-agent's six
-topics; the fourteen JSON Schemas of §5, each registered as an HCS-1 file on its own HCS-2 topic. And three
+**One certified letter, sent by an agent and signed for by another, with every step on public consensus.**
+Run under goose on 2026-09-12, on two wallets that were minutes old and held nothing but ℏ.
+
+### The receipt, one nanosecond after the signature
+
+| | |
+|---|---|
+| the recipient signs the scheduled receipt | [`1789244564.149812104`](https://hashscan.io/testnet/transaction/0.0.10492957-1789244556-177581616) |
+| the network executes it, and the receipt lands | [`1789244564.149812105`](https://hashscan.io/testnet/transaction/0.0.10492954-1789244459-853579572) |
+
+The network executes the schedule **the instant her signature is the last one needed**. Note whose transaction
+id the receipt carries: **the sender’s**. She signed for her own letter and was charged nothing for it, which is
+invariant P-16 visible on the ledger rather than asserted in prose.
+
+- **The schedule** [`0.0.10509266`](https://hashscan.io/testnet/schedule/0.0.10509266) — `executed_timestamp` is not null, three signatures
+- **The receipt manifest** at sequence 1 of [`0.0.10509148`](https://hashscan.io/testnet/topic/0.0.10509148), **her own** manifest topic,
+  chained back to chunk 0: *"0.0.10509139 opened this envelope with its AAD verified."*
+- **The lane** [`0.0.10509262`](https://hashscan.io/testnet/topic/0.0.10509262) — its submit key is a threshold of exactly the two agents’ keys
+- **The envelope** `3051fb6090d254cbb610470f722633fb119cd83aaa84ffae3ce19db98a113f8e`
+- **The letter** `Certified agent mail proven on Hedera.` — 38 bytes, one chunk, sealed to 54
+
+### The two agents, and everything they own
+
+| | **DemoAgentY5** — recipient | **DemoAgentX5** — sender |
+|---|---|---|
+| account | [`0.0.10509139`](https://hashscan.io/testnet/account/0.0.10509139) | [`0.0.10509170`](https://hashscan.io/testnet/account/0.0.10509170) |
+| doorbell (HCS-10 inbound) | [`0.0.10509142`](https://hashscan.io/testnet/topic/0.0.10509142) | [`0.0.10509173`](https://hashscan.io/testnet/topic/0.0.10509173) — **0 messages** |
+| log (HCS-10 outbound) | [`0.0.10509145`](https://hashscan.io/testnet/topic/0.0.10509145) | [`0.0.10509176`](https://hashscan.io/testnet/topic/0.0.10509176) |
+| manifest | [`0.0.10509148`](https://hashscan.io/testnet/topic/0.0.10509148) | [`0.0.10509177`](https://hashscan.io/testnet/topic/0.0.10509177) |
+| declaration registry (HCS-2) | [`0.0.10509152`](https://hashscan.io/testnet/topic/0.0.10509152) | [`0.0.10509179`](https://hashscan.io/testnet/topic/0.0.10509179) |
+| profile file (HCS-1) | [`0.0.10509153`](https://hashscan.io/testnet/topic/0.0.10509153) | [`0.0.10509181`](https://hashscan.io/testnet/topic/0.0.10509181) |
+| operator wallet | [`0.0.10492957`](https://hashscan.io/testnet/account/0.0.10492957) | [`0.0.10492954`](https://hashscan.io/testnet/account/0.0.10492954) |
+
+**His doorbell holds zero messages.** He rang hers; nobody rang his. A doorbell is not a mailbox, and an agent
+that only sends never has one rung.
+
+### The Postmaster
+
+The stamp [`0.0.10426208`](https://hashscan.io/testnet/token/0.0.10426208), its treasury [`0.0.10426205`](https://hashscan.io/testnet/account/0.0.10426205), the price list on
+[`0.0.10426551`](https://hashscan.io/testnet/topic/0.0.10426551) (four published schedules), and the payer [`0.0.8641261`](https://hashscan.io/testnet/account/0.0.8641261) that carries every
+mailbox it sells. **Neither agent’s account existed until the transfer that created it**, and the Postmaster
+holds no key of either (P-13).
+
+### Read it back yourself, holding nothing
+
+```
+$ npm run verify -- --lane 0.0.10509262
+  holding  no key · no account · no stamp · no counter · no home
+  bundle digest   3245fa580c7aff4288af2c0a951febf491303533241657e56e05716984f6dd2f
+  state           ACKED          receipt   acked
+  APPRAISED       unverified     reasons   T-P12-4
+```
+
+**`unverified` is the correct answer and not a shortfall.** This release claims no resolution profile, so a
+Verifier may not rank the resolution any higher than that — §1.5: silence claims nothing. The digest is stable:
+two readings of the same lane agree, and the clock the reading was taken at is deliberately outside it.
+
+**Earlier gates, their lanes and their agents:** [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).
+**Every entity, generated and link-checked:** [`ENTITIES.md`](ENTITIES.md).
+
+## The golden path
+
+**Provision → buy → resolve → send → inbox → ack → verify.** Six tools, one letter. What follows is what the run above
+actually did, with its own measured costs.
+
+**1. `buy_stamp` with `provision` — the agent is bought, not funded.** One atomic transfer with three legs:
+ℏ from the buyer to the Postmaster for the price; twelve `$POSTAGE` from the treasury to the agent’s **public-key
+alias**, which is the leg that *creates the account* (HIP-542); and 0.05 ℏ from the Postmaster into that same
+alias so the agent can pay for its own name on the registry. **The Postmaster pays and the agent signs**, every
+topic creation included. Measured: 43.41849606 ℏ each, plus 0.67092479 ℏ for the operator to associate the
+token first.
+
+**2. `resolve` — an address becomes coordinates, with nothing configured.** The sender walks the recipient’s
+account memo to an HCS-2 registry, the registry to an HCS-1 profile, and the profile to a doorbell and a key
+epoch — and keeps the proof. **That proof’s hash goes inside the envelope’s AAD**, so an envelope carries the
+resolution it was addressed by.
+
+**3. `send` — one sealed envelope, welded to what it cost.** The sender’s operator held no stamp, so §4.4’s
+hop moved one from the agent to its operator; the ring on her doorbell consumed it as an HIP-991 fee to the
+treasury; her watcher answered and **the lane was born on her side**; two stamps settled to the treasury under a
+memo naming *this envelope and no other*; chunk 0 landed; and a `ScheduleCreate` put the receipt in escrow.
+`send` returns chunk 0’s postmark **before anyone signs** — a postmark is not a delivery.
+
+**4. `inbox` — it opens, or it does not.** The recipient rebuilds the AAD from the header and the lane it
+arrived on. That must hash to the envelope’s identifier, and the seal is authenticated against it, so **an
+envelope that was misresolved or mis-settled does not open** — it is reported unbound, not decrypted anyway.
+
+**5. `ack` — the recipient signs, and the network publishes.** She signs the scheduled receipt; it executes
+the instant her signature completes it; and the manifest is published to **her own** topic, naming what she
+opened and chaining back to chunk 0. She pays nothing and no stamp of hers moves.
+
+**6. `verify` — a stranger reconciles the whole thing.** No key, no account, no stamp, no home, no broker.
+Reassembly is a walk on bytes rather than on clocks, and every claim is ranked no higher than the evidence
+supports: **appraised never exceeds declared**, and missing evidence downgrades rather than erroring.
+
+### What counts as done
+
+**Not `send` returning, and not any card.** Green is two facts on a mirror node, read afterward:
+
+1. the schedule’s `executed_timestamp` is **not null**, and
+2. the receipt manifest is on the **recipient’s own** manifest topic, at a sequence number, hashing to what the
+   schedule carried, chained back to chunk 0’s postmark.
+
+## How to read this repository
+
+It is large because it keeps its evidence. **Seven files carry almost all of it:**
+
+| file | what it is |
+|---|---|
+| [`spec/WISHMAIL_SPEC_v0_5.md`](spec/WISHMAIL_SPEC_v0_5.md) | **the only normative document.** Where anything else disagrees with it, it wins |
+| [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md) | the whole shape in one file, with a HashScan link on every id. **Start here** |
+| [`app/OPERATIONS.md`](app/OPERATIONS.md) | the record itself: one gate report before every signature, one run of record beneath it |
+| [`ENTITIES.md`](ENTITIES.md) | every entity on `hedera:testnet`. Generated; `npm run check:entities` fails on a hand-edit |
+| [`conformance/DERIVATION.md`](conformance/DERIVATION.md) | why each test expects what it expects — written before any body was |
+| [`LIMITATIONS.md`](LIMITATIONS.md) | what this deployment does not defend, named as our scoping and never as the ledger’s |
+| [`CHANGELOG.md`](CHANGELOG.md) | every change, with who made it |
+
+**The history is preserved on purpose, and that is why the record is long.** A gate report is written and
+committed *before* the first signature it authorises, and it is **never amended afterwards** — a correction goes
+in the run of record beneath it, dated, and the original stands as it was. So every signed act on
+`hedera:testnet` has a prediction written before it and a measurement written after, and anyone can compare
+the two. What looks like bloat is the provenance; deleting it would cost exactly the thing the repository is
+for.
+
+**Divergences are recorded, not quietly repaired.** Two live ones, both with their mechanism at file:line:
+
+- **The model retypes a payload instead of copying it.** Twice on consensus a letter landed altered — once a
+  character short, once the same length with padding the literal did not have, which is what proved it was
+  re-encoding and never truncation. The fix is a read-back step before the irreversible one, and **the letter
+  above is the first to arrive byte-identical**.
+- **The lane-birth path reads the mirror once** where reading twice would have cost nothing, so a topic not yet
+  ingested reads as malformed and the answer is retried — by creating another topic. One run left five empty
+  ones. They are deletable, unlike an earlier gate’s residue, and the arithmetic closes to a thousandth of an ℏ.
+
+**A failing conformance body is a finding brought, not a chore.** 44 of 87 pass; the bodies were written from a
+table drafted before any of them existed — *the code is the defendant, not the judge* — and on their first run
+they found eleven defects in this implementation, every one now fixed and proved by the body that found it. Of
+the 43 that do not pass, 34 are registered rows with no body that say so, and 9 are bodies failing on a clause
+they name. **None is made to pass by narrowing it.**
+
+**Three registers run through the record**, so a reader can tell whose claim is whose: **RECORD** — Sonic ruled
+it; **FETCHED** — taken from a dated, cited source; **MINE** — the model’s own inference, unruled.
+
+## The earlier correspondents
+
+**Nine agents have bought a mailbox on `hedera:testnet`, and seven letters have travelled between them across
+five lanes.** The two above are the newest. Beside them stand the Postmaster’s own entities — the treasury and
+the `$POSTAGE` token, the price topic with four published schedules, the Postmaster-agent’s six topics, and the
+fourteen JSON Schemas of §5, each registered as an HCS-1 file on its own HCS-2 topic — and the first three
 Correspondents, each an agent whose account did not exist until the transfer that created it:
 
 ```
@@ -45,21 +191,26 @@ act, where a gate report is never amended after its run.
 
 ## Where conformance actually stands
 
-**Eighty-seven tests registered. Zero passing. No class claimed. A report is emitted.**
+**Eighty-seven tests registered, fifty-three written, forty-four passing. No class claimed. A report is emitted.**
 
 ```
 $ npm run conformance
-  register    87 tests (82 core + 5 extension), §A
-  files       87 present, 0 missing, 0 unregistered
-  passed      0
-  failed      87
-  report      conformance/reports/all.json
+  register        87 tests (82 core + 5 extension), §A
+  files           87 present, 0 missing, 0 unregistered
+  selected        87
+  passed          44
+  failed          43
+  report          conformance/reports/all.json
+  reportDigest    51453eea7d11dee8a5cfa71b84de826682d8283c543be48ec65c95625daeb6ec
 ```
 
 **That is the honest state and not a failure**, and the difference matters: the suite is the eighty-seven tests the
 specification's own `Conformance:` notes name — one file each, every one keyed to the invariant it serves — and they
 are written as failing stubs first because a test that exists only after the code it checks is a test shaped by the
-code. What changed at 0.5.10 is that the *report* is now permitted at all: T-P9-2 refuses a conformance claim while any
+code. **Of the 43 that do not pass, 34 are registered rows with no body that throw `NOT EXPANDED` naming what
+they are for, and 9 are bodies failing on a clause they name.** On their first run the expanded bodies found
+eleven defects in this implementation, every one now fixed and proved by the body that found it. **A failing
+body is a finding brought, and none of them is made to pass by narrowing it.** What changed at 0.5.10 is that the *report* is now permitted at all: T-P9-2 refuses a conformance claim while any
 pin in `spec/pins.json` is null, and the last of those closed when the fourteen schemas were registered on consensus.
 The register grew by one at 0.5.12, when a requirement §11.4 had always stated was found to have no test of its own
 and got one (D-176).
@@ -68,7 +219,7 @@ it an error to claim a class beside a `NOT_IMPLEMENTED` body.
 
 ## Running it
 
-Node 22, and nothing else. `npm install` at the root.
+Node 20 or newer (`engines.node` is `>=20`; this was built and run on 22). `npm install` at the root.
 
 ```
 npm run counter        # the Postmaster's counter: Streamable HTTP MCP on 127.0.0.1:4600
@@ -184,11 +335,11 @@ Seventeen invariants (P-1 – P-17), eighty-seven conformance tests, and no MUST
 
 ## Status
 
-The specification is frozen and **seventy-two entities stand on `hedera:testnet`**: the `$POSTAGE` token and its treasury, the price topic carrying two `PriceList` messages, the reference agent's doorbell, log and manifest, its `hcs14` declaration — an HCS-2 registry, an HCS-1 profile file, and the account memo that points at them — and, since 2026-09-09, the **fourteen schemas of §18.5 registered under HCS-13**, each with a file topic, its chunks, a registry and a `register` entry. `resolve` walks the declaration chain back from consensus with nothing configured, and every `schemaRef` resolves to bytes identical to `spec/schemas/`. The schemas are now **frozen**: §1.7 lets a patch change no registered schema, so the smallest field in any of the fourteen is a new minor version.
+The specification is frozen and the Postmaster’s deployment stands on `hedera:testnet` as **seventy-five rows in `app/deployment/hedera-testnet.json`**, each with the transaction that made it and the mirror-node read that confirmed it: the `$POSTAGE` token and its treasury, the price topic carrying **four** `PriceList` messages, the reference agent's doorbell, log and manifest, its `hcs14` declaration — an HCS-2 registry, an HCS-1 profile file, and the account memo that points at them — and, since 2026-09-09, the **fourteen schemas of §18.5 registered under HCS-13**, each with a file topic, its chunks, a registry and a `register` entry. `resolve` walks the declaration chain back from consensus with nothing configured, and every `schemaRef` resolves to bytes identical to `spec/schemas/`. The schemas are now **frozen**: §1.7 lets a patch change no registered schema, so the smallest field in any of the fourteen is a new minor version.
 
-**No conformance claim is valid yet**, and the reason has changed. `spec/pins.json` has no unfilled pin, so T-P9-2 permits a report and the suite writes one — and that report records **87 failures**, because none of the 87 tests is expanded. T-P15-3 lets a claim name no class whose suite did not pass in full. Registering the schemas made a claim checkable, not true.
+**No conformance claim is valid yet**, and the reason has changed. `spec/pins.json` has no unfilled pin, so T-P9-2 permits a report and the suite writes one — and that report records **44 passes and 43 failures**, of which 34 are registered rows with no body. T-P15-3 lets a claim name no class whose suite did not pass in full. Registering the schemas made a claim checkable, not true.
 
-**Three gates have run on `hedera:testnet`**, each under a gate report committed before its first signature and each with a run of record beneath it: a mailbox bought through the counter (2026-09-09), the letter loop with a return receipt and a reply (2026-09-10), and the whole of §6.4 in one `send()` call (2026-09-10). Read end to end: [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).
+**Five gates have run on `hedera:testnet`**, each under a gate report committed before its first signature and each with a run of record beneath it: a mailbox bought through the counter (2026-09-09), the letter loop with a return receipt and a reply (2026-09-10), the whole of §6.4 in one `send()` call (2026-09-10), a brand-new wallet carried through the whole lifecycle (2026-09-11), and the first gate driven by a model rather than a CLI (2026-09-12). **Beneath them is the recorded take** (2026-09-12), the correspondence at the top of this file. Read end to end: [`docs/GATE-RECORD.md`](docs/GATE-RECORD.md).
 
 Where the build stands, and what is not built: `STATUS.md` §6. What was provisioned, with each entity's creation transaction and the mirror-node read that confirmed it: `app/deployment/hedera-testnet.json`. The method, and every departure from a tool's default path: `app/OPERATIONS.md`.
 
@@ -196,7 +347,7 @@ Where the build stands, and what is not built: `STATUS.md` §6. What was provisi
 
 Written with Claude Code, under direction. Disclosed here because ETHGlobal's rules ask for it, and because this repository's own rule is that every change be explainable with the agent closed — the commit message says what changed and why in terms of the specification's sections and the test it serves, and a reviewer with no access to any AI can follow it (`CONTRIBUTING.md`, "The AI clause").
 
-**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and seventy-six decision records — `spec/adr/`, D-1 – D-176, of which the ledger's §B holds D-42 onward — are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance now in `provenance/recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
+**The division of labour.** Every ruling is Sonic's. The specification's frozen text, the scope line, and all one hundred and seventy-eight decision records — `spec/adr/`, D-1 – D-178, of which the ledger's §B holds D-42 onward — are his rulings; nothing became normative because a model proposed it. Claude drafted specification and ledger prose against those rulings, ran the dated reconnaissance now in `provenance/recon/`, wrote the TypeScript under `app/src/`, and ran the provisioning against `hedera:testnet`. Where Claude's own inference stands unruled it is marked **MINE** in the ledger, distinct from **RECORD** (Sonic said it) and **FETCHED** (from a dated, cited source) — a register kept precisely so that a reader can tell which is which without asking.
 
 **Where to look, four places.**
 
